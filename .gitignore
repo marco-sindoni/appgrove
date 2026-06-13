@@ -1,0 +1,32 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+
+# --- Node / TypeScript (frontend, infra CDK) ---
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.eslintcache
+.npm/
+
+# --- AWS CDK ---
+cdk.out/
+.cdk.staging/
+
+# --- Java / Maven (services) ---
+target/
+*.class
+!.mvn/wrapper/maven-wrapper.jar
+
+# --- Quarkus ---
+.quarkus/
+
+# --- env / secrets ---
+.env
+.env.*
+!.env.example
+*.local
