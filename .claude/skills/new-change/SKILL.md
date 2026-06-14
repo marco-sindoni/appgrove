@@ -66,11 +66,11 @@ not applicable — say so (with the reason) in the implementation log.
 
 Carry these non-negotiable constraints through requirements, implementation, and review:
 
-- **Tenant ID only from the verified JWT** (`jwt.getClaim("sub")`), never from request params/body.
+- **Tenant ID only from the verified JWT** — claim `tenant_id` (account, injected by the Pre-Token-Gen Lambda); `sub` = user_id. Never from request params/body.
 - **Row-level tenant filter** (`WHERE tenant_id = :tid`) on every tenant-scoped query.
 - **`MicroSaasApp` CDK construct** is the building block — adding an app means instantiating the
   construct (name, port, DB schema), not hand-rolling parallel infra.
-- **Structured logging everywhere** — every log carries `tenant_id`, `app_name`, `user_id`.
+- **Structured logging everywhere** — every log carries `tenant_id`, `app_id`, `user_id`.
 
 ## Token budget
 

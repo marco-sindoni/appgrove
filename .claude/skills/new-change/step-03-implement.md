@@ -13,10 +13,10 @@ wait for the developer to ask. Your role is to:
 
 - All change documentation in English
 - Uphold the appgrove invariants:
-  - **tenant_id only from the verified JWT** (`jwt.getClaim("sub")`), never from request body/params
+  - **tenant_id only from the verified JWT** — claim `tenant_id` (account); `sub` = user_id. Never from request body/params
   - **`WHERE tenant_id = :tid`** on every tenant-scoped query
   - new app = instantiate the **`MicroSaasApp`** CDK construct, not bespoke infra
-  - **structured logging** carrying `tenant_id`, `app_name`, `user_id`
+  - **structured logging** carrying `tenant_id`, `app_id`, `user_id`
 
 ## Tests — keep every touched area's suite coherent (stack-aware)
 

@@ -14,11 +14,12 @@ services/
 - **Tenant ID solo dal JWT verificato** — mai da request body/params:
   ```java
   @Inject JsonWebToken jwt;
-  String tenantId = jwt.getClaim("sub"); // mai dal body
+  String tenantId = jwt.getClaim("tenant_id"); // account, iniettato dal Pre-Token-Gen; mai dal body
+  String userId   = jwt.getClaim("sub");       // utente
   ```
 - **Filtro row-level** `WHERE tenant_id = :tid` su ogni query tenant-scoped.
 - **Schema DB dedicato** per app sull'istanza Aurora condivisa (`app_notes`, …).
-- **Logging strutturato** (MDC): ogni log porta `tenant_id`, `app_name`, `user_id`.
+- **Logging strutturato** (MDC): ogni log porta `tenant_id`, `app_id`, `user_id`.
 
 ## Test
 

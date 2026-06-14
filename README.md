@@ -25,10 +25,10 @@ promuovere un'app a microfrontend in futuro senza riscrivere shell/auth/routing.
 
 ## Invarianti architetturali (non negoziabili)
 
-1. **Tenant ID solo dal JWT verificato** (`jwt.getClaim("sub")`) — mai da request body/params
+1. **Tenant ID solo dal JWT verificato** — claim `tenant_id` (= account, iniettato dal Pre-Token-Gen Lambda); `sub` = user_id. Mai da request body/params
 2. **Filtro row-level** `WHERE tenant_id = :tid` su ogni query tenant-scoped
 3. **Construct `MicroSaasApp`** — nuova app = istanziare il construct, non infra bespoke
-4. **Logging strutturato** ovunque: ogni log porta `tenant_id`, `app_name`, `user_id`
+4. **Logging strutturato** ovunque: ogni log porta `tenant_id`, `app_id`, `user_id`
 
 ## Workflow delle change
 

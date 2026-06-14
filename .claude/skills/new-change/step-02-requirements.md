@@ -50,7 +50,7 @@ Then write `changes/NNN-brief-description/requirements.md`:
 
 <List any of these the change must uphold, or "None": tenant_id only from JWT;
 WHERE tenant_id row-level filter; MicroSaasApp construct pattern; structured
-logging (tenant_id/app_name/user_id). Note how the change keeps each one true.>
+logging (tenant_id/app_id/user_id). Note how the change keeps each one true.>
 
 ## Test Requirements (optional)
 
