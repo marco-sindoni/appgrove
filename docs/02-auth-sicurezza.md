@@ -74,13 +74,16 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 ### Secrets (topic H, dettaglio store → #12)
 15. **Zero secret nel codice o in file committati**; tutti in AWS, iniettati a runtime. Per l'auth:
     app client secret Cognito, credenziali DB per la Lambda→core, signing secret webhook Paddle.
-    Store: **Secrets Manager** per credenziali DB e secret sensibili (rotation); scelta fine Secrets Manager vs SSM → [12-environments-config](12-environments-config.md).
+    Store (risolto in [12-environments-config](12-environments-config.md)): **SSM Parameter Store** per config/secret
+    applicativi (app client secret, signing webhook Paddle); **Secrets Manager** solo per le credenziali DB.
 
 ### CORS & cookie (topic I, border con #06)
 16. **API Gateway CORS**: origin = dominio frontend esplicito (es. `https://app.appgrove.app`),
     `Access-Control-Allow-Credentials: true`, **niente wildcard `*`** (incompatibile con credentials).
-17. **Cookie refresh**: `Domain=.appgrove.app`, `Secure`, `HttpOnly`, `SameSite=Lax`, **`Path=/api/auth`**
-    (viaggia solo verso le route auth; le API usano il Bearer access token, non il cookie).
+17. **Cookie refresh**: **host-only sull'host dell'API** (es. `api.appgrove.app`, **nessun** attributo `Domain`),
+    `Secure`, `HttpOnly`, `SameSite=Lax`, **`Path=/api/auth`**. Richiede `app.*` e `api.*` sotto lo stesso
+    registrable domain (`appgrove.app`) perché Lax lo invii nella fetch cross-sottodominio. Host-only →
+    **isolamento automatico tra ambienti** (il cookie di prod non raggiunge test). Schema domini → [12-environments-config](12-environments-config.md).
 
 ## Questioni aperte
 _Nessuna — #02 chiuso._
