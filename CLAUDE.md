@@ -22,8 +22,8 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 |---|---|---|---|
 | 01 | Architettura applicativa & multi-tenancy | [docs/01-architettura.md](docs/01-architettura.md) | 🟢 |
 | 02 | Auth & sicurezza | [docs/02-auth-sicurezza.md](docs/02-auth-sicurezza.md) | 🟢 |
-| 03 | Frontend | [docs/03-frontend.md](docs/03-frontend.md) | 🔴 |
-| 04 | Backend / services (Quarkus) | [docs/04-services-backend.md](docs/04-services-backend.md) | 🔴 |
+| 03 | Frontend | [docs/03-frontend.md](docs/03-frontend.md) | 🟢 |
+| 04 | Backend / services (Quarkus) | [docs/04-services-backend.md](docs/04-services-backend.md) | 🟢 |
 | 05 | Persistenza & dati | [docs/05-persistenza-dati.md](docs/05-persistenza-dati.md) | 🟢 |
 | 06 | Infrastruttura / IaC (CDK) | [docs/06-infra-iac.md](docs/06-infra-iac.md) | 🔴 |
 | 07 | DevOps / CI-CD | [docs/07-devops-cicd.md](docs/07-devops-cicd.md) | 🔴 |
@@ -37,6 +37,11 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 
 Temi sollevati da affrontare nell'argomento giusto (o dedicato): [docs/_BACKLOG.md](docs/_BACKLOG.md)
 — compliance/privacy (GDPR, tracking, T&C con Paddle MoR), configurazione admin, skill da creare.
+
+## Costi AWS
+
+Stima costi viva (principio: costo minimo compatibile coi requisiti), aggiornata a ogni decisione:
+[docs/_COSTI-AWS.md](docs/_COSTI-AWS.md).
 
 ## Come si decide (processo)
 

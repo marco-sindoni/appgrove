@@ -48,7 +48,8 @@ né lo schema dati fisico (→ [05-persistenza-dati](05-persistenza-dati.md)).
 
 ### Routing & API surface (topic E, F)
 6. **Unica API Gateway v2 (HTTP API)** condivisa, routing **path-based** `/api/<app_id>/v1/*`;
-   il core su `/api/platform/v1/*`. **Authorizer Cognito centralizzato**.
+   il core su `/api/platform/v1/*`. **Authorizer centralizzato** (custom Lambda: JWT + entitlement →
+   [02-auth-sicurezza](02-auth-sicurezza.md) §8 / [04-services-backend](04-services-backend.md) §7).
 7. **Nessuna comunicazione service-to-service** nel PoC: ogni app è un verticale isolato.
 12. **Versioning nel path**: `/api/<app_id>/v1/...`. Evoluzione a `v2` senza rompere i client.
 13. **Formato errori = RFC 9457** `application/problem+json` (type/title/status/detail/instance +

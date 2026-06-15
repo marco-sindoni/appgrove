@@ -53,12 +53,12 @@ Gli schemi/grant su AWS nascono da **CDK + Flyway/CI** (mai a mano); in locale p
    `postgresql@17`). Differenze accettate solo su AWS: **RDS Proxy** e **IAM auth** assenti in locale.
 
 ### Domini per ambiente (topic, provisioning → #06)
-9. **prod** su `appgrove.app`: vetrina `appgrove.app`, backoffice `app.appgrove.app`, API/auth `api.appgrove.app`.
+9. **prod** su `appgrove.app`: vetrina `appgrove.app`, backoffice `app.appgrove.app`, **console admin `admin.appgrove.app`**, API/auth `api.appgrove.app`.
 10. **test** su `test.appgrove.app` (**sottodominio** di prod, niente registrazione extra): vetrina `test.appgrove.app`,
-    `app.test.appgrove.app`, `api.test.appgrove.app`. Isolamento garantito dal **cookie host-only** (§#02): prod e test
-    condividono il registrable domain, quindi **vincolo**: mai cookie con `Domain` esteso (`.appgrove.app`), solo host-only.
-11. **local**: mirror sotto `appgrove.app` con segmento `local.` — `app.local.appgrove.app` / `api.local.appgrove.app`
-    → `127.0.0.1` via `/etc/hosts`, **TLS locale via mkcert** (obbligatorio: `.app` è in HSTS preload, HTTPS forzato),
+    `app.test.appgrove.app`, `admin.test.appgrove.app`, `api.test.appgrove.app`. Isolamento garantito dal **cookie host-only**
+    (§#02): prod e test condividono il registrable domain, quindi **vincolo**: mai cookie con `Domain` esteso, solo host-only.
+11. **local**: mirror sotto `appgrove.app` con segmento `local.` — `app.local.appgrove.app` / `admin.local.appgrove.app` /
+    `api.local.appgrove.app` → `127.0.0.1` via `/etc/hosts`, **TLS locale via mkcert** (obbligatorio: `.app` è in HSTS preload, HTTPS forzato),
     reverse proxy locale (dettaglio → [11-developer-experience](11-developer-experience.md)). Parità totale cookie/same-site/CORS.
 12. **DNS/registrazione**: **un solo dominio** `appgrove.app` su **Route53** (una hosted zone); ACM/CloudFront via
     CDK (→ #06). **Certificati ACM gratuiti** per livello: `*.appgrove.app` + apex (prod, copre anche `test.appgrove.app`)

@@ -15,6 +15,11 @@ Probabilmente merita un **documento dedicato** (nuova area, es. `13-compliance-p
 Già parcheggiato negli scope di [03-frontend](03-frontend.md) (pannello admin in generale) e
 [09-pagamenti](09-pagamenti.md) (config admin del modello di costo per-app).
 
+## Dettaglio funzionalità / use case — richiesto 2026-06-14
+Le decisioni di [03-frontend](03-frontend.md) (e affini) fissano stack/architettura/UX a grandi linee. Resta da
+**progettare in dettaglio tutti gli use case** delle varie funzionalità (backoffice, moduli app, console admin):
+flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affrontare in sessioni dedicate per area/app.
+
 ## Skill Claude Code da creare — richiesto 2026-06-14
 Es. **setup-nuova-applicazione** (scaffold servizio + modulo frontend + entry catalog/registry + schema/migration
 + construct CDK). Dettaglio in memoria `skills-backlog`. Da affrontare con tooling/DX ([11-developer-experience](11-developer-experience.md)) o in sessione dedicata.

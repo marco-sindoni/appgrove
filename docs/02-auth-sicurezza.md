@@ -46,8 +46,9 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 ### Modello ruoli & authz (topic D, da #01)
 7. **Ruoli tenant-level**: `owner`, `admin`, `member` (nel claim `roles`). **`platform-admin`** separato
    (livello piattaforma) per il backoffice admin.
-8. **Divisione delle responsabilità**: l'**API Gateway authorizer** fa solo **authn** (JWT valido);
-   il **servizio** fa **authz** sui ruoli (es. `@RolesAllowed`). Le app fanno authz fine internamente se serve.
+8. **Divisione delle responsabilità**: l'**API Gateway** usa un **custom Lambda authorizer** che verifica il
+   **JWT** *e* l'**entitlement** (tenant ha l'`app_id` del path attivo — vedi [04-services-backend](04-services-backend.md) §7);
+   il **servizio** ri-valida il JWT (Quarkus OIDC) e fa l'**authz sui ruoli** (`@RolesAllowed`). Difesa in profondità.
 
 ### Pre-Token-Gen Lambda (topic C)
 9. **Lettura DB diretta**: la Lambda (in VPC) interroga lo schema `platform` del DB core per membership e
