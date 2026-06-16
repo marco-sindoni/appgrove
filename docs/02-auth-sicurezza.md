@@ -7,7 +7,7 @@
 Meccanica di autenticazione e autorizzazione: Cognito, flusso OAuth e gestione token nella SPA,
 Pre-Token-Generation Lambda e naming dei claim, modello ruoli/authz, verifica JWT nei servizi,
 enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la forma architetturale
-(→ [01-architettura](01-architettura.md)) né i dettagli di networking/CDK (→ [06-infra-iac](06-infra-iac.md)).
+(→ [01-architettura](01-architettura.md)) né i dettagli di networking/IaC (→ [06-infra-iac](06-infra-iac.md)).
 
 ## Vincoli ereditati da #01 (già decisi)
 - Cognito = **solo autenticazione** (identity provider); membership/ruoli nel **core service** (DB).

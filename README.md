@@ -10,7 +10,7 @@ vuole; ogni app appare come voce di menù nella sidebar. Vedi
 
 ```
 appgrove/
-├── infra/        # AWS CDK (TypeScript) — construct MicroSaasApp, provisiona tutto
+├── infra/        # Terraform (HCL) — modulo microsaas_app, provisiona/deprovisiona tutto
 ├── frontend/     # workspace React (npm workspaces)
 │   ├── apps/backoffice/      # SPA cliente + vetrina pubblica (modular monolith) → app.appgrove.app
 │   ├── apps/admin/           # console platform-admin separata → admin.appgrove.app
@@ -30,7 +30,7 @@ la **console admin è un'app separata** (i tenant non scaricano mai il codice ad
 
 1. **Tenant ID solo dal JWT verificato** — claim `tenant_id` (= account, iniettato dal Pre-Token-Gen Lambda); `sub` = user_id. Mai da request body/params
 2. **Filtro row-level** `WHERE tenant_id = :tid` su ogni query tenant-scoped
-3. **Construct `MicroSaasApp`** — nuova app = istanziare il construct, non infra bespoke
+3. **Modulo Terraform `microsaas_app`** — nuova app = istanziare il modulo, non infra bespoke
 4. **Logging strutturato** ovunque: ogni log porta `tenant_id`, `app_id`, `user_id`
 
 ## Workflow delle change
@@ -42,8 +42,8 @@ Usa la skill `/new-change`: requirement → implementazione → log, con gate es
 
 | Area | Stack | Test |
 |---|---|---|
-| `infra/` | AWS CDK (TypeScript) | `npm test` |
-| `frontend/` | React SPA | `npm test` |
+| `infra/` | Terraform (HCL) | `terraform validate` / `plan` |
+| `frontend/` | React SPA (Vite, workspace) | `npm test` |
 | `services/<app>/` | Quarkus (Java) | `mvn test` |
 
 Una change può toccare più aree in un singolo commit atomico (è il punto del monorepo);

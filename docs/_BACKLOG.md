@@ -20,6 +20,10 @@ Le decisioni di [03-frontend](03-frontend.md) (e affini) fissano stack/architett
 **progettare in dettaglio tutti gli use case** delle varie funzionalità (backoffice, moduli app, console admin):
 flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affrontare in sessioni dedicate per area/app.
 
+- **PRIORITARIO (richiesto 2026-06-16, ricordare a fine #06)**: casi d'uso di **autenticazione e registrazione** del
+  frontend — signup self-service (crea account+owner), verifica email, login, refresh/logout, reset password, accept-invite
+  (multi-utente), gestione errori. Allineati a #02 (auth Lambda, cookie, ruoli) e al design v1.
+
 ## Skill Claude Code da creare — richiesto 2026-06-14
 Es. **setup-nuova-applicazione** (scaffold servizio + modulo frontend + entry catalog/registry + schema/migration
-+ construct CDK). Dettaglio in memoria `skills-backlog`. Da affrontare con tooling/DX ([11-developer-experience](11-developer-experience.md)) o in sessione dedicata.
++ modulo Terraform). Dettaglio in memoria `skills-backlog`. Da affrontare con tooling/DX ([11-developer-experience](11-developer-experience.md)) o in sessione dedicata.

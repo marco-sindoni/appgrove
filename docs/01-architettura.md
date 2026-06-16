@@ -6,7 +6,7 @@
 ## Scope
 Forma architetturale del sistema: cos'è un tenant, cos'è un'app, come si attivano, e i confini/contratti
 tra shell, moduli app (microfrontend) e microservizi. NON copre i dettagli di Cognito/JWT (→
-[02-auth-sicurezza](02-auth-sicurezza.md)), i dettagli CDK/networking (→ [06-infra-iac](06-infra-iac.md))
+[02-auth-sicurezza](02-auth-sicurezza.md)), i dettagli IaC/networking (→ [06-infra-iac](06-infra-iac.md))
 né lo schema dati fisico (→ [05-persistenza-dati](05-persistenza-dati.md)).
 
 ## Topic dell'area (agenda)

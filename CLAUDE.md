@@ -11,7 +11,7 @@ popolato man mano che le scelte vengono dipanate (un argomento alla volta, per d
 
 1. **Tenant ID solo dal JWT verificato** — claim `tenant_id` (= account, iniettato dal Pre-Token-Gen Lambda); `sub` = user_id. Mai da request body/params
 2. **Filtro row-level** `WHERE tenant_id = :tid` su ogni query tenant-scoped
-3. **Construct `MicroSaasApp`** — nuova app = istanziare il construct, non infra bespoke
+3. **Modulo Terraform `microsaas_app`** — nuova app = istanziare il modulo, non infra bespoke
 4. **Logging strutturato** ovunque: ogni log porta `tenant_id`, `app_id`, `user_id`
 
 ## Documenti di decisione
@@ -25,7 +25,7 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 | 03 | Frontend | [docs/03-frontend.md](docs/03-frontend.md) | 🟢 |
 | 04 | Backend / services (Quarkus) | [docs/04-services-backend.md](docs/04-services-backend.md) | 🟢 |
 | 05 | Persistenza & dati | [docs/05-persistenza-dati.md](docs/05-persistenza-dati.md) | 🟢 |
-| 06 | Infrastruttura / IaC (CDK) | [docs/06-infra-iac.md](docs/06-infra-iac.md) | 🔴 |
+| 06 | Infrastruttura / IaC (Terraform) | [docs/06-infra-iac.md](docs/06-infra-iac.md) | 🟡 |
 | 07 | DevOps / CI-CD | [docs/07-devops-cicd.md](docs/07-devops-cicd.md) | 🔴 |
 | 08 | Observability | [docs/08-observability.md](docs/08-observability.md) | 🔴 |
 | 09 | Pagamenti (Paddle) | [docs/09-pagamenti.md](docs/09-pagamenti.md) | 🔴 |

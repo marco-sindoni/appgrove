@@ -61,7 +61,7 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
 ### Modello dati per-app & isolamento (topic B, C)
 8. Ogni tabella tenant-scoped in `app_<app_id>` ha la colonna **`tenant_id`** (UUID = account id) = **discriminator** Hibernate.
 9. **`tenant_id` è un riferimento logico** a `platform.accounts`, **mai** una FK cross-schema. Niente query/FK
-   tra schemi → schemi indipendenti, passaggio a DB dedicato = modifica CDK, non refactor.
+   tra schemi → schemi indipendenti, passaggio a DB dedicato = modifica Terraform, non refactor.
 10. App **multi-user**: tabelle possono portare `created_by`/owner per authz *intra-tenant*; il confine
     d'isolamento resta sempre `tenant_id`. App **single-user**: identico, un solo utente per tenant.
 11. **Isolamento a livello DB**: **un ruolo Postgres per servizio**, privilegi solo sul proprio schema

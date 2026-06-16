@@ -15,7 +15,7 @@ wait for the developer to ask. Your role is to:
 - Uphold the appgrove invariants:
   - **tenant_id only from the verified JWT** — claim `tenant_id` (account); `sub` = user_id. Never from request body/params
   - **`WHERE tenant_id = :tid`** on every tenant-scoped query
-  - new app = instantiate the **`MicroSaasApp`** CDK construct, not bespoke infra
+  - new app = instantiate the **`microsaas_app`** Terraform module, not bespoke infra
   - **structured logging** carrying `tenant_id`, `app_id`, `user_id`
 
 ## Tests — keep every touched area's suite coherent (stack-aware)
@@ -28,7 +28,7 @@ is sourced only from the JWT). Run the suite of **each area touched**:
   `mvn test`; faster cycles `mvn -Dtest=ClassName test`. Prefer deterministic offline fixtures
   (Quarkus test profile, Testcontainers, mocked Cognito/JWT) over live AWS/HTTP calls.
 - `frontend/` (React, `package.json`): tests next to code (`*.test.ts(x)`); `npm test`.
-- `infra/` (CDK, `package.json`): assertions/snapshots; `npm test`. Do not deploy to test.
+- `infra/` (Terraform, `*.tf`): `terraform fmt -check && terraform validate` (+ `terraform plan`). Do not `apply` to test.
 
 A cross-area change must keep **all** touched suites green. If the change touches **only**
 Markdown/skills/prompts/config/docs (no executable code), tests are not applicable — record that,

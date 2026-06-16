@@ -49,7 +49,7 @@ Then write `changes/NNN-brief-description/requirements.md`:
 ## appgrove Invariants Touched
 
 <List any of these the change must uphold, or "None": tenant_id only from JWT;
-WHERE tenant_id row-level filter; MicroSaasApp construct pattern; structured
+WHERE tenant_id row-level filter; microsaas_app Terraform module pattern; structured
 logging (tenant_id/app_id/user_id). Note how the change keeps each one true.>
 
 ## Test Requirements (optional)

@@ -21,8 +21,8 @@ Run the suite of **each area** the diff touches, and confirm all pass before goi
 ( cd services/<app> && mvn test )
 # frontend/ (React):
 ( cd frontend && npm test )
-# infra/ (CDK):
-( cd infra && npm test )
+# infra/ (Terraform):
+( cd infra && terraform fmt -check && terraform validate )
 ```
 
 If the change touched executable code, the relevant suites must include the tests added/updated in
@@ -57,7 +57,7 @@ Write `changes/NNN-brief-description/implementation-log.md`:
 ## appgrove Invariants
 
 <How the change keeps each touched invariant true (tenant_id-from-JWT, row-level filter,
-MicroSaasApp construct, structured logging), or "None touched">
+microsaas_app Terraform module, structured logging), or "None touched">
 
 ## Notes for Reviewer
 

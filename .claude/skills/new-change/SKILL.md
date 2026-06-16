@@ -20,7 +20,7 @@ You are the change workflow agent for the **appgrove** marketplace micro-SaaS.
 
 `/Users/msindoni/Projects/appgrove` is a **monorepo** (one git repository). Its areas:
 
-- `infra/` — AWS CDK (TypeScript)
+- `infra/` — Terraform (HCL)
 - `frontend/` — the single React SPA (shell + app UIs + admin)
 - `services/<app>/` — one Quarkus microservice per app
 
@@ -53,7 +53,7 @@ then log — never the other way around.
 
 The test command depends on **which area(s)** the change touches:
 
-- `infra/` (CDK, has `package.json`) → `npm test` (assertions/snapshots, do not deploy)
+- `infra/` (Terraform, has `*.tf`) → `terraform fmt -check && terraform validate` (+ `terraform plan`; do not apply)
 - `frontend/` (React, has `package.json`) → `npm test`; tests next to code (`*.test.ts(x)`)
 - `services/<app>/` (Quarkus, has `pom.xml`) → `mvn test`; JUnit under `src/test/java/...`
 
@@ -68,8 +68,8 @@ Carry these non-negotiable constraints through requirements, implementation, and
 
 - **Tenant ID only from the verified JWT** — claim `tenant_id` (account, injected by the Pre-Token-Gen Lambda); `sub` = user_id. Never from request params/body.
 - **Row-level tenant filter** (`WHERE tenant_id = :tid`) on every tenant-scoped query.
-- **`MicroSaasApp` CDK construct** is the building block — adding an app means instantiating the
-  construct (name, port, DB schema), not hand-rolling parallel infra.
+- **`microsaas_app` Terraform module** is the building block — adding an app means instantiating the
+  module (name, port, DB schema), not hand-rolling parallel infra.
 - **Structured logging everywhere** — every log carries `tenant_id`, `app_id`, `user_id`.
 
 ## Token budget

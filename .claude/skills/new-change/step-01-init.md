@@ -24,7 +24,7 @@ Example: "add Cognito authorizer to notes API" → `add-cognito-authorizer-notes
 Identify which monorepo areas the change is expected to touch — this drives the test suites in
 step-03/step-04. A change may span several:
 
-- `infra/` (CDK) → `npm test`
+- `infra/` (Terraform) → `terraform validate` / `plan`
 - `frontend/` (React) → `npm test`
 - `services/<app>/` (Quarkus) → `mvn test`
 

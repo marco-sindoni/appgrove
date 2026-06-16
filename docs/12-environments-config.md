@@ -14,7 +14,7 @@ locale), [06-infra-iac](06-infra-iac.md) (provisioning per env) e [07-devops-cic
 
 ## Principio guida
 **Cost-first**: in locale tutto ciò che può girare gratis (DB); su AWS solo il minimo (test microscopico + prod).
-Gli schemi/grant su AWS nascono da **CDK + Flyway/CI** (mai a mano); in locale possono essere creati via `psql`.
+Gli schemi/grant su AWS nascono da **Terraform + Flyway/CI** (mai a mano); in locale possono essere creati via `psql`.
 
 ## Topic dell'area (agenda)
 - **A. Tier di ambiente** — quanti e quali (local/test/prod); ambienti effimeri PR/CI?
@@ -61,7 +61,7 @@ Gli schemi/grant su AWS nascono da **CDK + Flyway/CI** (mai a mano); in locale p
     `api.local.appgrove.app` → `127.0.0.1` via `/etc/hosts`, **TLS locale via mkcert** (obbligatorio: `.app` è in HSTS preload, HTTPS forzato),
     reverse proxy locale (dettaglio → [11-developer-experience](11-developer-experience.md)). Parità totale cookie/same-site/CORS.
 12. **DNS/registrazione**: **un solo dominio** `appgrove.app` su **Route53** (una hosted zone); ACM/CloudFront via
-    CDK (→ #06). **Certificati ACM gratuiti** per livello: `*.appgrove.app` + apex (prod, copre anche `test.appgrove.app`)
+    Terraform (→ #06). **Certificati ACM gratuiti** per livello: `*.appgrove.app` + apex (prod, copre anche `test.appgrove.app`)
     e `*.test.appgrove.app` (test); local servito dalla CA locale mkcert.
 13. **`.app` = HSTS preload** → HTTPS obbligatorio ovunque, locale incluso (vincolo, non opzione).
 
