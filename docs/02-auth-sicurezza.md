@@ -86,8 +86,13 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
     registrable domain (`appgrove.app`) perché Lax lo invii nella fetch cross-sottodominio. Host-only →
     **isolamento automatico tra ambienti** (il cookie di prod non raggiunge test). Schema domini → [12-environments-config](12-environments-config.md).
 
+### 2FA & password policy (dettaglio dai casi d'uso, 2026-06-16)
+18. **2FA TOTP (authenticator) opzionale**, opt-in **dal profilo utente**, con **banner** di nudge nel backoffice (no MFA
+    obbligatoria al signup). L'**auth Lambda** gestisce la challenge MFA Cognito (`SOFTWARE_TOKEN_MFA`) al login.
+19. **Password policy** (default): min 10 caratteri, maiuscola+minuscola+numero. Flussi completi → [usecases/01-auth-registrazione](usecases/01-auth-registrazione.md).
+
 ## Questioni aperte
-_Nessuna — #02 chiuso._
+_Nessuna — #02 chiuso (dettaglio flussi auth in usecases/01)._
 
 ## Scope PoC (nota cross-area)
 - **Una delle due app demo deve essere B2B/multi-utente** (l'altra single-user) per validare end-to-end

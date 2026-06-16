@@ -31,8 +31,10 @@ Gli schemi/grant su AWS nascono da **Terraform + Flyway/CI** (mai a mano); in lo
 
 ### Stack locale (topic B)
 2. **DB in locale** (Postgres), per costo ~0 e iterazione veloce. Schemi/ruoli/grant locali creabili via `psql`.
-3. **Cognito = user pool `dev` su AWS** (free tier ~0€): in locale l'app ottiene **token veri**, niente mock,
-   niente drift. Nessun'altra dipendenza AWS necessaria in locale.
+3. **Locale 100% offline — ZERO AWS** (revisione 2026-06-16): si sviluppa interamente in locale senza toccare AWS;
+   gli ambienti AWS (test/prod) si creano **solo a sviluppo finito**. Conseguenza: **Cognito emulato in locale**
+   (emulatore/OIDC fittizio), DB Postgres locale, auth Lambda eseguita localmente. _Supera la precedente scelta
+   "pool Cognito dev su AWS". Modalità esatta (emulatore, setup script, seed) → [11-developer-experience](11-developer-experience.md)._
 
 ### DB di test su AWS (topic C)
 4. **Aurora Serverless v2 con scale-to-0** (min 0 ACU, auto-pause): **parità totale con prod** e costo ~0 da idle.

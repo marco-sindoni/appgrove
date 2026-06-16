@@ -24,6 +24,10 @@ flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affr
   frontend — signup self-service (crea account+owner), verifica email, login, refresh/logout, reset password, accept-invite
   (multi-utente), gestione errori. Allineati a #02 (auth Lambda, cookie, ruoli) e al design v1.
 
+## Script / tooling DevOps
+- **Start/stop servizi test** (scale 0↔1 task Fargate) — script semplice per riaccendere/spegnere l'ambiente test
+  on-demand (cost-min: test a 0 task da idle, #06 C). Da realizzare con #07 (DevOps/CI-CD).
+
 ## Skill Claude Code da creare — richiesto 2026-06-14
 Es. **setup-nuova-applicazione** (scaffold servizio + modulo frontend + entry catalog/registry + schema/migration
 + modulo Terraform). Dettaglio in memoria `skills-backlog`. Da affrontare con tooling/DX ([11-developer-experience](11-developer-experience.md)) o in sessione dedicata.
