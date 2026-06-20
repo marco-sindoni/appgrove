@@ -26,8 +26,8 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 | 04 | Backend / services (Quarkus) | [docs/04-services-backend.md](docs/04-services-backend.md) | 🟢 |
 | 05 | Persistenza & dati | [docs/05-persistenza-dati.md](docs/05-persistenza-dati.md) | 🟢 |
 | 06 | Infrastruttura / IaC (Terraform) | [docs/06-infra-iac.md](docs/06-infra-iac.md) | 🟢 |
-| 07 | DevOps / CI-CD | [docs/07-devops-cicd.md](docs/07-devops-cicd.md) | 🔴 |
-| 08 | Observability | [docs/08-observability.md](docs/08-observability.md) | 🔴 |
+| 07 | DevOps / CI-CD | [docs/07-devops-cicd.md](docs/07-devops-cicd.md) | 🟢 |
+| 08 | Observability | [docs/08-observability.md](docs/08-observability.md) | 🟢 |
 | 09 | Pagamenti (Paddle) | [docs/09-pagamenti.md](docs/09-pagamenti.md) | 🔴 |
 | 10 | Testing strategy | [docs/10-testing.md](docs/10-testing.md) | 🔴 |
 | 11 | Developer experience / local dev | [docs/11-developer-experience.md](docs/11-developer-experience.md) | 🟡 |

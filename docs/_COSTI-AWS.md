@@ -5,7 +5,7 @@
 (`local` = $0; pool Cognito `dev` ~$0 in free tier).
 
 **Assunzioni**: regione **`eu-west-1` (Irlanda)** — scelta cost-min (#06 topic A); traffico PoC basso;
-1 task per servizio (no HA nel PoC). Ultimo aggiornamento: 2026-06-16 (dopo #06 topic A).
+1 task per servizio (no HA nel PoC). Ultimo aggiornamento: 2026-06-19 (dopo #07 DevOps/CI-CD).
 
 ## Voci e stima
 
@@ -30,6 +30,8 @@
 | SES (email) | ~$0 | ~$0 | ~$0.10/1000 email; verifica/reset/invito EN+IT (usecases/01) |
 | SSM Parameter Store | $0 | $0 | parametri standard gratis |
 | CloudWatch Logs | ~$1–5 | ~$1–5 | dipende dal volume log |
+| CI/CD (GitHub Actions) | ~$0 | ~$0 | #07 A: free tier 2.000 min/mese (repo privato); OIDC (no costi); native GraalVM solo on-demand (`[graal]`/release) |
+| Observability (#08) | ~$2–6 | ~$0 | Log JSON CloudWatch (retention test 7gg/prod 30gg), metriche tecniche native (gratis) + business via EMF (no `PutMetricData`), dashboard ≤3 gratuiti, allarmi/SNS, canary EventBridge+Lambda (eu-central-1), errori FE→CW. **Tracce SPENTE (C) = $0**. Archivio audit S3+Glacier ~centesimi |
 
 ## Totale indicativo (stato attuale delle decisioni)
 Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **RDS Proxy (~$12)** + **VPC endpoints (~$14)** ≈ **~$26/mese/env**.
@@ -62,3 +64,5 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
 - **#06 E**: Aurora **scale-to-0 anche su prod** → DB ~$0 da idle (era ~$44 prod); **RDS Proxy** confermato test+prod (~$10-15/env, voce da monitorare). ECR ~$0.
 - **#06 F/G/H/I**: **VPC endpoints** per Lambda (~$14/env, conseguenza no-NAT); EventBridge/SQS, SSM/Secrets, S3+CloudFront già contati; **WAF** rimandato (E6).
 - **usecases/01 (auth)**: **SES** per email EN/IT (~$0); throttling API GW + lockout Cognito (gratis); **2FA TOTP** opzionale (gratis); Advanced Security = evoluzione E7.
+- **#07 (DevOps/CI-CD)**: **GitHub Actions** (free tier, ~$0); **OIDC** verso AWS (no chiavi, no costi); **native GraalVM solo on-demand** (`[graal]`/release) → minuti CI minimi; **cron `test-stop`** giornaliero → Fargate test a 0 task fuori orario (rafforza il ~$0 di test). Nessuna nuova voce AWS rilevante.
+- **#08 (Observability)**: backend AWS-native (CloudWatch Logs/Metrics) + strumentazione **OTel/Micrometer neutra** (porta aperta a Grafana, E11). **Tracce strumentate ma spente** (c1) → $0. Metriche business via **EMF** (no chiamate `PutMetricData`); dimensioni a bassa cardinalità (`tenant_id` nei log, non come dimensione). Dashboard ≤3 (gratis). **Retention esplicita** (test 7gg/prod 30gg) per non accumulare; archivio **audit→S3+Glacier** (12 mesi, #13). Uptime via **canary EventBridge+Lambda in eu-central-1** (~$0). **AWS Budgets $100/mese** (soglie 75/90/100% + forecast). Costo prod ~$2–6/mese, test ~$0.
