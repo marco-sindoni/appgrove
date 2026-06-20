@@ -1,11 +1,12 @@
 # Compliance & Privacy (GDPR) — Decisioni
 
-**Stato**: 🟡 in corso (A, B, C, D decisi; E–L da definire)
+**Stato**: 🟡 in corso (A, B, C, D, E, F, G, H decisi; I–L da definire)
 **Ultimo aggiornamento**: 2026-06-20
 
-> ⚠️ **Disclaimer**: questo documento NON è parere legale. Fissa le **scelte tecniche/architetturali** che rendono la
-> compliance possibile e una **postura di default ragionevole**, da **validare con un professionista** prima del go-live.
-> I punti che richiedono un legale sono segnalati.
+> ⚠️ **Disclaimer**: questo documento NON è parere legale. Tutte le decisioni (postura, retention, ruoli, testi) sono
+> prese **internamente** in questa fase. È prevista **un'unica revisione legale pre-go-live (consigliata, opzionale)**
+> — vedi "Revisione legale pre-go-live" in fondo — limitata ai documenti vincolanti (DPA, privacy policy, ToS) e ai
+> casi-limite. Nessun blocco prima del go-live (fase locale/test = nessun utente reale).
 
 ## Scope
 Trattamento dei dati personali conforme a GDPR (e norme collegate), lato **tecnico** (cosa deve poter fare il sistema)
@@ -17,10 +18,10 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
 - **B. Basi giuridiche & finalità** — 🟢 deciso
 - **C. Data mapping / Registro trattamenti (Art. 30)** — 🟢 deciso
 - **D. Diritti degli interessati** (accesso, rettifica, oblio, portabilità, opposizione) — 🟢 deciso
-- **E. Data retention** (politica complessiva) — 🔴
-- **F. Consenso, cookie & tracking** — 🔴
-- **G. Privacy Policy & T&C** (minimizzazione informativa; ripartizione con Paddle) — 🔴
-- **H. Sub-responsabili & DPA** — 🔴
+- **E. Data retention** (politica complessiva) — 🟢 deciso
+- **F. Consenso, cookie & tracking** — 🟢 deciso
+- **G. Privacy Policy & T&C** (minimizzazione informativa; ripartizione con Paddle) — 🟢 deciso
+- **H. Sub-responsabili & DPA** — 🟢 deciso
 - **I. Data residency & trasferimenti** — 🔴
 - **J. Data breach** (notifica 72h) — 🔴
 - **K. Privacy by design/default & DPIA** — 🔴
@@ -152,9 +153,117 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     4) **link solo in-app** all'utente autenticato (non via email). Refresh UI = polling dello stato/progress.
     Meccanica UX di dettaglio → use-case GDPR (backlog).
 
+### E. Data retention (politica complessiva)
+23. **Quadro di retention per categoria** (principio: minimizzazione art. 5.1.e — niente "per sempre"):
+
+    | Categoria | Retention | Meccanismo |
+    |---|---|---|
+    | Account/profilo (attivo) | finché attivo | base contratto; cancellato su richiesta (D) |
+    | Dati app (attivi) | finché l'app è attiva per il tenant | recesso per-app = cancellazione immediata post-export (D) |
+    | Backup / PITR | **7 giorni** (#06) | dati cancellati spariscono entro il ciclo backup (dichiarato in policy) |
+    | Export ZIP (S3) | **7 giorni** auto-delete | lifecycle S3 + presigned 7gg (#13 D) |
+    | Log applicativi/operativi | test **7gg** / prod **30gg** (#08) | poi scadono |
+    | Log audit/sicurezza | **12 mesi** | archivio S3/Glacier (#08); deciso internamente (copertura forense; detection incidenti ~200gg) |
+    | Ticket privacy (Jira) | **24 mesi** | prova evasione richieste (accountability/difesa), PII minimizzati |
+    | Consenso newsletter / prova | iscritto + **24 mesi** post-unsubscribe | prova consenso/revoca |
+    | Dati fiscali/pagamento | **in capo a Paddle (MoR)** | non conservati da appgrove |
+
+24. **Retention per-categoria, dichiarata e applicata as-code**: log via Terraform (#08), S3 via lifecycle, DB via purge
+    job/EventBridge (#06). Il **manifesto per-app** dichiara la retention dei dati di quell'app (→ RoPA).
+25. **(E.1) Grace sulla cancellazione TOTALE account = 14 giorni**: account **disattivato subito** (inaccessibile) +
+    **hard-purge dopo 14gg**, **annullabile** entro il periodo (tutela da errore/frode; GDPR-ok perché l'accesso è già
+    revocato). Il **recesso per-app resta immediato** (post-export, D).
+26. **(E.2) Auto-cancellazione account inattivi = 24 mesi**: dopo 24 mesi di inattività → **email di avviso** → nessuna
+    risposta in 30gg → cancellazione (minimizzazione, no accumulo di dati di utenti spariti).
+
+### F. Consenso, cookie & tracking
+27. **Inventario cookie**: solo **tecnici essenziali** (refresh token HttpOnly #02, eventuale CSRF/config); **Cloudflare
+    Web Analytics cookieless/aggregato** = trattato come tecnico (linee guida Garante); app loggata = **zero tracking**.
+    → **Nessun cookie consent banner ora, da nessuna parte.**
+28. **Disclosure cookie tecnici** nella privacy/cookie policy (trasparenza, non un banner) → G.
+29. **Cookie-consent ≠ newsletter-consent: NON si uniscono** (anti-pattern art. 7 "specifico/non impacchettato"; e nel
+    banner l'utente è anonimo, senza email). Newsletter (consenso 6.1.a) si raccoglie dove c'è l'email:
+    **subscribe box** sul vetrina + **checkbox non pre-spuntata al signup** + **toggle in impostazioni account**;
+    **double opt-in** + **disiscrizione facile**.
+30. **Consent log**: ogni consenso raccolto registrato con **prova** (chi/quando/testo-versione/come), art. 7.
+31. **Centro preferenze consensi** in impostazioni account = **hub unico** per il loggato (newsletter on/off, futuri
+    opt-in) con **revoca facile**. Diverso dal cookie banner (che serve all'anonimo alla prima visita).
+32. **Future-proofing con due strumenti distinti**: **consent gate** nel frontend (hook a costo ~0: ogni script non
+    essenziale passa da un check di consenso) per **tracker futuri**; **consent log** per newsletter/altri consensi. Se
+    in futuro si introducono tracker non essenziali (GA, RUM #08 H/E14, pixel) → **banner + CMP** con opt-in granulare e
+    **blocco preventivo** (evoluzione; aggiungere "Cookie policy/CMP" alla revisione legale).
+33. **Tutto srotolato negli use case** (`docs/usecases/` GDPR): subscribe box, checkbox signup, toggle/centro preferenze
+    in account, disclosure cookie, eventuale CMP → flussi/schermate in fase di dettaglio UX.
+
+### G. Privacy Policy & Terms & Conditions
+34. **Set documenti pubblici**: **Privacy Policy** (art. 13-14), **ToS**, **DPA** (incorporato nei ToS, A §3),
+    **disclosure cookie** (sezione della privacy policy, F — niente banner/documento separato).
+35. **Privacy policy a due livelli** (come il RoPA): sezione **piattaforma** (md a mano) + sezioni **per-app** generate
+    dal **manifesto dati**. Il manifesto = **fonte unica per TRE output**: RoPA (interno dettagliato), tool export/erasure,
+    **snippet privacy pubblico minimizzato**. `new-application` genera anche lo snippet pubblico → policy sempre allineata.
+36. **Minimizzazione nel testo pubblico** (cosa/perché/quanto; diritti) — niente dettagli architetturali (quelli solo nel RoPA).
+37. **Contenuti come Markdown = fonte unica** per **sito vetrina statico** + rendering **in-app** (stessi file `.md`,
+    versionati in git). Sezioni per-app assemblate in md dai manifesti.
+38. **Multilingua**: sito vetrina statico + **privacy policy & ToS in 5 lingue: EN, IT, FR, ES, DE**. **Versione facente
+    fede = IT** (clausola "in conflitto prevale l'italiano"); **FR/ES/DE = traduzioni fedeli** (generabili, poi revisione).
+    **RoPA interno resta IT+EN** (non pubblico). **Check CI**: ogni componente presente in tutte le 5 lingue.
+39. **Contenuto privacy policy (checklist art. 13)**: identità+contatti **titolare**, finalità+basi (B), destinatari/
+    sub-responsabili (H), trasferimenti extra-UE+garanzie (I), retention (E), **diritti e come esercitarli** (D, `privacy@`),
+    **diritto di reclamo al Garante**, fonte dati per gli **invitati**, **art. 22 = nessuna decisione automatizzata**.
+40. **ToS riflette Paddle MoR**: Paddle = Merchant of Record (vende lui, gestisce tax/fatturazione/rimborsi); appgrove
+    eroga il servizio; i ToS richiamano i termini Paddle per il pagamento (→ #09).
+41. **Accettazione, versioning per-componente, scoping** (privacy-by-design):
+    - **versioni indipendenti per componente** (piattaforma + ogni app): l'accettazione utente è un insieme (es.
+      "piattaforma v3 + app-A v1 + app-B v2");
+    - **accettazione contestuale**: termini **piattaforma** al **signup**; termini di un'**app** alla sua **attivazione**;
+    - **aggiungere una nuova app al catalogo NON forza riapprovazione** a chi non la usa (nessuna schermata bloccante
+      globale); la sezione dell'app si accetta solo all'attivazione;
+    - **schermata bloccante al login solo per cambi SOSTANZIALI** su un componente **a cui l'utente è già vincolato**, e
+      **solo per gli utenti interessati**: ToS/contratto o consenso → **ri-accettazione/re-consenso**; aggiornamento
+      puramente **informativo** → **notifica non bloccante**;
+    - **versioning leggibile**: ogni componente ha **versione + `effective_date`** nel front-matter del md, **git-backed**
+      (commit/tag = audit immutabile); il **log di accettazione** registra **componente+versione(+commit hash)** per utente.
+      Bump **major** = ri-accettazione; bump **minor** = notifica.
+42. **Redazione testi = deliverable, non ora**: redatti internamente allo stato dell'arte (come i template email) →
+    **revisione legale pre-go-live** ([_REVISIONE-LEGALE](_REVISIONE-LEGALE.md) L1-L3).
+43. **Prerequisito business**: la privacy policy richiede l'**identità del titolare = entità legale** (ditta/società)
+    con indirizzo/contatto; serve anche a Paddle (MoR). Non blocca ora; prerequisito pre-go-live (in _REVISIONE-LEGALE).
+44. **Tutto srotolato negli use case** (`docs/usecases/` GDPR): schermate di accettazione/versioning/re-consenso, hosting
+    md, rendering multilingua → fase di dettaglio UX.
+
+### H. Sub-responsabili (sub-processor) & DPA
+45. **Inventario sub-processor**: **AWS** (hosting/compute/DB/storage/SES, eu-west-1 + eu-central-1, UE), **Cloudflare**
+    (Web Analytics vetrina, cookieless/aggregato, USA), **Atlassian/Jira** (ticket privacy, USA, PII minimizzati). Le
+    questioni di trasferimento extra-UE → I. **Paddle = ruolo a sé** (Merchant of Record, titolare/indipendente per
+    pagamento/fiscale, suoi termini), **non** sub-processor classico.
+46. **Lista sub-processor pubblica e viva** in `content/subprocessors.md` (md, EN/IT min.): nome, finalità, regione,
+    categorie dati; **linkata** da privacy policy e DPA.
+47. **DPA con ciascun sub-processor**: adesione ai **DPA standard** dei fornitori (AWS/Cloudflare/Atlassian), una-tantum
+    pre-go-live (L9 in [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md)).
+48. **DPA verso i clienti** (incorporato nei ToS, A §3): uso di sub-processor, **notifica cambi**, **diritto di
+    opposizione**, sicurezza, assistenza breach/diritti, cancellazione/restituzione dati a fine rapporto.
+49. **Processo cambio sub-processor**: aggiorni la lista + **notifichi i clienti** con **preavviso 30 giorni** e finestra
+    di **opposizione**. Il **gate privacy di `new-change`** (#13 C) rileva le nuove integrazioni esterne → segnala
+    "potenziale nuovo sub-processor" → innesca aggiornamento lista + notifica.
+
+### Struttura contenuti: `content/` (pubblico) vs `docs/` (interno)
+50. **Separazione netta** (vale per tutti gli md legali/pubblici):
+    - **`content/`** (nuova): **md pubblici multilingua** (EN/IT/FR/ES/DE) consumati **sia dal sito statico sia
+      dall'app** — `content/legal/` (privacy, terms, cookie), `content/subprocessors.md`, `content/marketing/…`.
+      È il pattern "file nel repo = contenuto del sito (e dell'app)".
+    - **`docs/`**: **interno, mai pubblicato** (decisioni #NN, `_*`, **RoPA**). Il sito legge **solo `content/`**.
+    - **Fonte unica per-app**: il manifesto genera lo **snippet pubblico** in `content/legal/` **e** la voce dettagliata
+      nel **RoPA interno** (`docs/`). Stessa sorgente, due destinazioni.
+    - **Versioning**: git (storia completa) + `version`/`effective_date` nel front-matter dei legali pubblici (G §41) +
+      log di accettazione con commit hash.
+
+## Revisione legale pre-go-live
+Consolidata nel documento vivo dedicato → **[_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md)** (checklist L1–L10:
+DPA, privacy policy, ToS, ruoli, art. 9, retention, consenso, sub-processor, accessibilità). **Consigliata, opzionale**;
+nessun blocco prima del go-live.
+
 ## Questioni aperte
-E–L da definire. Punti per il **legale**: dicitura esatta titolare/responsabile sui contenuti, testo DPA, validità del
-modello "cancellazione immediata post-export", periodi di retention.
+F–L da definire.
 
 ## Impatti su altre aree
 - [05-persistenza-dati](05-persistenza-dati.md) (soft-delete/erasure), [06-infra-iac](06-infra-iac.md) (purge EventBridge),

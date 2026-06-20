@@ -56,7 +56,16 @@ flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affr
   dati"+download (accesso/portabilità), rettifica profilo, **elimina account** (totale) vs **recedi da app** (per-app,
   esporta→conferma→cancella), **unsubscribe** newsletter, opposizione a legittimo interesse, **tooling admin B2B**
   (export/cancellazione dati dei propri utenti = assistenza al titolare), canale `privacy@` + workflow tracciato (SLA 1
-  mese) + verifica identità. Da fare insieme al dettaglio UX backoffice/account e al contratto per-app export/erasure.
+  mese) + verifica identità. **Consenso (da #13 F)**: subscribe box newsletter (vetrina) + checkbox non pre-spuntata al
+  signup + **centro preferenze consensi** in impostazioni account (hub unico, revoca facile) + disclosure cookie tecnici.
+  Da fare insieme al dettaglio UX backoffice/account e al contratto per-app export/erasure.
+
+## Sito vetrina (marketing) — richiesto 2026-06-20
+Nuovo artefatto, distinto dalle 2 SPA (#03 backoffice+admin). **Statico**, **multilingua EN/IT/FR/ES/DE**, **contenuti
+come file `.md`** (fonte unica: gli stessi md servono sito + rendering in-app delle policy). Ospita **Privacy Policy, ToS,
+cookie disclosure** (5 lingue, IT facente fede), **subscribe newsletter** (#13 F), **Cloudflare Web Analytics cookieless**
+(#13 B/F). Build statica (SSG/Vite) su S3+CloudFront. Versioning policy: **versione + `effective_date`** nel front-matter,
+git-backed; **check CI** presenza di tutte le 5 lingue per componente. Da definire in area frontend/#03 (estensione) o doc dedicato.
 
 ## Script / tooling DevOps
 - **Start/stop servizi test** (scale 0↔1 task Fargate) — ✅ deciso in [07-devops-cicd](07-devops-cicd.md) §28

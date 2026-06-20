@@ -93,8 +93,9 @@ in [_EVOLUZIONI-DEVOPS](_EVOLUZIONI-DEVOPS.md)).
 27. **Contenere il volume alla fonte** (leva principale): `INFO` in prod, niente log rumorosi (health esclusi, no log per
     richiesta di routine ridondante con API GW).
 28. **Archivio audit/sicurezza implementato da subito** (attivo in prod): **subscription filter** sul log group
-    audit/sicurezza → **Kinesis Firehose → S3 → lifecycle Glacier → scadenza** a fine retention. Retention default
-    **12 mesi** (**da confermare legalmente in #13**). Volumi bassi → pochi centesimi/mese.
+    audit/sicurezza → **Kinesis Firehose → S3 → lifecycle Glacier → scadenza** a fine retention. Retention **12 mesi**
+    (decisa internamente, #13 E — copertura forense vs detection incidenti ~200gg). Volumi bassi → pochi centesimi/mese.
+    Eventuali aspetti legali → registro [_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md).
 29. **Solo audit/sicurezza** va archiviato a lungo (login/logout, falliti, cambio password/2FA, azioni admin, modifiche
     ruoli/entitlement, export/cancellazione GDPR). I **log operativi NON** si archiviano a lungo: **minimizzazione GDPR**
     + costo. Metriche basse per cardinalità; tracce $0 perché spente (C).

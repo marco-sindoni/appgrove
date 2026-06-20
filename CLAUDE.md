@@ -54,6 +54,11 @@ Stima costi viva (principio: costo minimo compatibile coi requisiti), aggiornata
 Registro vivo delle scelte cost-min con il relativo percorso di hardening/scaling (NAT, ALB, HA, …):
 [docs/_EVOLUZIONI-DEVOPS.md](docs/_EVOLUZIONI-DEVOPS.md).
 
+## Revisione legale pre-go-live
+
+Registro vivo dei punti da far rivedere a un legale prima del go-live (DPA, privacy policy, ToS, retention, sub-processor,
+accessibilità): [docs/_REVISIONE-LEGALE.md](docs/_REVISIONE-LEGALE.md). Consigliata/opzionale, nessun blocco pre-go-live.
+
 ## Come si decide (processo)
 
 Un argomento alla volta. Per ciascuno: si elencano i topic, si risolvono per domande e risposte,
