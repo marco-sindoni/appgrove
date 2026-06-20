@@ -95,6 +95,12 @@ git-backed; **check CI** presenza di tutte le 5 lingue per componente. Da defini
 - **Workflow GitHub Actions** (YAML) da implementare: verifica-PR (`plan`+test), deploy-test, release-prod (tag+gate),
   flyway task ECS one-shot, frontend, cron `test-stop`. Specifica → [07-devops-cicd](07-devops-cicd.md).
 
+## Dev locale — script `dev/` + README (#11)
+- Implementare gli script **`dev/`** (#11 C): `setup` (one-time idempotente), `up`/`down`, `seed`/`reset`/`migrate`,
+  `service <app_id>`, **`dev doctor`** (preflight). Orchestrazione **ibrida** (#11 A): Compose (Postgres, provider auth
+  locale, reverse proxy, Mailpit, **MinIO**, **ElasticMQ**) + Quarkus dev mode + Vite. **README estremamente chiaro**
+  (copia-incolla, output atteso, troubleshooting). Provider auth locale (#11 B): JWT/JWKS locali + claim dal DB.
+
 ## Skill Claude Code da creare — richiesto 2026-06-14
 - **`new-application`** (sostituisce il vecchio "setup-nuova-applicazione") — **decisa in [07-devops-cicd](07-devops-cicd.md) §G**:
   `/new-application <descrizione breve>` → scaffold **frontend + backend**, chiama **`service-add`** (modulo `microsaas_app`),

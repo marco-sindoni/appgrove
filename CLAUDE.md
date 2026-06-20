@@ -30,7 +30,7 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 | 08 | Observability | [docs/08-observability.md](docs/08-observability.md) | 🟢 |
 | 09 | Pagamenti (Paddle) | [docs/09-pagamenti.md](docs/09-pagamenti.md) | 🔴 |
 | 10 | Testing strategy | [docs/10-testing.md](docs/10-testing.md) | 🟢 |
-| 11 | Developer experience / local dev | [docs/11-developer-experience.md](docs/11-developer-experience.md) | 🟡 |
+| 11 | Developer experience / local dev | [docs/11-developer-experience.md](docs/11-developer-experience.md) | 🟢 |
 | 12 | Environments & config management | [docs/12-environments-config.md](docs/12-environments-config.md) | 🟢 |
 | 13 | Compliance & Privacy (GDPR) | [docs/13-compliance-privacy.md](docs/13-compliance-privacy.md) | 🟢 |
 
