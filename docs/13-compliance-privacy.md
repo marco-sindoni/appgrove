@@ -1,6 +1,6 @@
 # Compliance & Privacy (GDPR) — Decisioni
 
-**Stato**: 🟡 in corso (A, B, C, D, E, F, G, H decisi; I–L da definire)
+**Stato**: 🟢 deciso (A–L)
 **Ultimo aggiornamento**: 2026-06-20
 
 > ⚠️ **Disclaimer**: questo documento NON è parere legale. Tutte le decisioni (postura, retention, ruoli, testi) sono
@@ -22,10 +22,10 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
 - **F. Consenso, cookie & tracking** — 🟢 deciso
 - **G. Privacy Policy & T&C** (minimizzazione informativa; ripartizione con Paddle) — 🟢 deciso
 - **H. Sub-responsabili & DPA** — 🟢 deciso
-- **I. Data residency & trasferimenti** — 🔴
-- **J. Data breach** (notifica 72h) — 🔴
-- **K. Privacy by design/default & DPIA** — 🔴
-- **L. Funzionalità GDPR nelle app** (export/erasure per-app) — 🔴
+- **I. Data residency & trasferimenti** — 🟢 deciso
+- **J. Data breach** (notifica 72h) — 🟢 deciso
+- **K. Privacy by design/default & DPIA** — 🟢 deciso
+- **L. Funzionalità GDPR nelle app** (export/erasure per-app) — 🟢 deciso
 
 ## Decisioni prese
 
@@ -68,17 +68,18 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
    | Email transazionali (verifica/reset/invito/reminder) | Erogare il servizio | **Contratto** (6.1.b) |
    | **Product analytics aggregato** (uso app/funzioni) | Migliorare/espandere l'offerta | **Legittimo interesse** (6.1.f) |
    | **Newsletter** | Marketing diretto | **Consenso** (6.1.a) |
-   | **Web analytics sito vetrina** | Misurare uso del vetrina | cookieless → **legittimo interesse**/nessun consenso |
+   | **Web analytics sito vetrina** (Plausible Cloud, EU) | Misurare uso del vetrina | cookieless → **legittimo interesse**/nessun consenso |
 
 9. **Limitazione di finalità (art. 5.1.b)**: i dati raccolti per il servizio **non** si riusano per altri fini → il
    "no monetizzazione" diventa vincolo formale documentato.
 10. **Newsletter = consenso double opt-in**, **separata** dalle email transazionali (che restano su base contrattuale),
     disiscrizione facile in ogni email, **registrazione della prova del consenso**. (Meccaniche → F.)
-11. **Analytics = cookieless privacy-first (Cloudflare Web Analytics, $0)** sul **solo sito vetrina**; **app loggata =
-    ZERO tracking** (solo cookie tecnici). Niente cookie/PII → **nessun consent banner** (citazione in policy per
-    trasparenza, G). Alternativa EU-hosted = Plausible (~€/mese). GA scartato (banner obbligatorio + trasferimento USA
-    sensibile post-Schrems II, pur praticabile via EU-US DPF). Setup Cloudflare = una-tantum (account + snippet beacon
-    nel sito vetrina), da fare **quando si attiva il vetrina**.
+11. **Analytics = Plausible Cloud (cookieless privacy-first, EU-hosted Hetzner, €9/mese)** sul **solo sito vetrina**;
+    **app loggata = ZERO tracking** (solo cookie tecnici). Niente cookie/PII → **nessun consent banner** (citazione in
+    policy per trasparenza, G). **Scelta purista**: EU-hosted → nessun trasferimento USA (vs Cloudflare US, scartato). GA
+    scartato (banner + trasferimento USA). Self-host Plausible CE scartato (su AWS ~$30/mese + ClickHouse stateful
+    anti-pattern; su VPS UE ~€5 ma +ops → il Cloud €9 vince sul TCO). Setup una-tantum (account + snippet nel vetrina),
+    quando si attiva il vetrina.
 12. **Product analytics SOLO aggregato/non identificativo** via **metriche EMF** (#08 B, dimensioni `app_id`/`endpoint`/
     `feature`) + dashboard CloudWatch (#08 D) → "quali app/funzioni più usate". **Vietato il data-mining dei log
     per-utente** per questo scopo (limitazione di finalità: i log sono raccolti per sicurezza/stabilità). Disciplina:
@@ -135,14 +136,14 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
 20. **Chi gestisce (ruoli A)**: piattaforma + consumatori → appgrove **direttamente**; dati app **B2B** (appgrove
     responsabile) → la richiesta va al **tenant-titolare**, appgrove **assiste** fornendo **tooling admin** (export/
     cancellazione dei dati dei propri utenti).
-21. **Fallback manuale tracciato su Jira, ticket creato AUTOMATICAMENTE** (no creazione manuale): istanza Jira piano
-    **Free** (≤10 utenti, 2GB). Creazione via **REST API Jira** (token in Secrets Manager). **Trigger**: form privacy
-    **in-app** (canale strutturato preferito); email a `privacy@appgrove.app` via **SES→Lambda**; eventi di sistema
-    (es. export FAILED #13 D, escalation gate art. 9 #13 C). **Contenuto minimizzato**: tipo richiesta, `user_id`/
-    `tenant_id` **opachi**, timestamp, **SLA due date 1 mese** impostata auto, **link a vista admin interna** (i dati
-    personali veri restano nel sistema, NON in Jira). **Log delle richieste** (accountability, #08). **Verifica identità**
-    prima di evadere (nel self-service implicita: utente autenticato). **Atlassian = sub-responsabile** → sub-processor +
-    DPA (#13 H). Evoluzione: **Jira Service Management** (free ≤3 agenti) per SLA/automazioni help-desk.
+21. **Fallback manuale = TICKETING NATIVO IN-HOUSE** (scelta purista: niente Jira/Atlassian né help-desk SaaS → zero
+    sub-processor, PII in casa, EU). Entità `support_ticket` nel DB piattaforma + **vista nella console admin**. **Esteso
+    al supporto generico**, non solo privacy: i **ticket privacy sono un tipo speciale** (SLA legale 1 mese, auto-creati
+    da eventi), accanto al supporto best-effort. **MVP minimale, NO allegati per ora**. Modello: tipo/priorità/stato,
+    `tenant_id`/`user_id`, oggetto, **thread di messaggi** (utente↔admin), **notifiche email via SES**. **Trigger
+    auto-creazione**: form in-app, email a `privacy@`/`support@` via **SES→Lambda**, eventi di sistema (export FAILED
+    #13 D, escalation gate art. 9 #13 C). **Verifica identità** implicita (utente autenticato). **Log richieste**
+    (accountability #08). È **capability di piattaforma** (#04 core + #03 backoffice/admin) → use case dedicato.
 22. **Export asincrono (architettura)** — riusato sia per accesso/portabilità sia per export-prima-di-cancellazione:
     1) richiesta → record **export job** (id, tipo/app, `requested_at`, `status` QUEUED→RUNNING→COMPLETED/FAILED,
        `progress` step X/N);
@@ -177,8 +178,8 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     risposta in 30gg → cancellazione (minimizzazione, no accumulo di dati di utenti spariti).
 
 ### F. Consenso, cookie & tracking
-27. **Inventario cookie**: solo **tecnici essenziali** (refresh token HttpOnly #02, eventuale CSRF/config); **Cloudflare
-    Web Analytics cookieless/aggregato** = trattato come tecnico (linee guida Garante); app loggata = **zero tracking**.
+27. **Inventario cookie**: solo **tecnici essenziali** (refresh token HttpOnly #02, eventuale CSRF/config); **Plausible
+    (cookieless/aggregato, EU)** = trattato come tecnico (linee guida Garante/CNIL/ICO); app loggata = **zero tracking**.
     → **Nessun cookie consent banner ora, da nessuna parte.**
 28. **Disclosure cookie tecnici** nella privacy/cookie policy (trasparenza, non un banner) → G.
 29. **Cookie-consent ≠ newsletter-consent: NON si uniscono** (anti-pattern art. 7 "specifico/non impacchettato"; e nel
@@ -232,13 +233,13 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     md, rendering multilingua → fase di dettaglio UX.
 
 ### H. Sub-responsabili (sub-processor) & DPA
-45. **Inventario sub-processor**: **AWS** (hosting/compute/DB/storage/SES, eu-west-1 + eu-central-1, UE), **Cloudflare**
-    (Web Analytics vetrina, cookieless/aggregato, USA), **Atlassian/Jira** (ticket privacy, USA, PII minimizzati). Le
-    questioni di trasferimento extra-UE → I. **Paddle = ruolo a sé** (Merchant of Record, titolare/indipendente per
-    pagamento/fiscale, suoi termini), **non** sub-processor classico.
+45. **Inventario sub-processor** (ridotto dalla scelta purista): **AWS** (hosting/compute/DB/storage/SES, eu-west-1 +
+    eu-central-1, UE), **Plausible** (analytics vetrina, **EU-hosted Hetzner**, cookieless). **Atlassian e Cloudflare
+    RIMOSSI** (ticketing → in-house; analytics → Plausible EU). **Paddle = ruolo a sé** (Merchant of Record, titolare/
+    indipendente per pagamento/fiscale), **non** sub-processor classico. Trasferimenti → I.
 46. **Lista sub-processor pubblica e viva** in `content/subprocessors.md` (md, EN/IT min.): nome, finalità, regione,
     categorie dati; **linkata** da privacy policy e DPA.
-47. **DPA con ciascun sub-processor**: adesione ai **DPA standard** dei fornitori (AWS/Cloudflare/Atlassian), una-tantum
+47. **DPA con ciascun sub-processor**: adesione ai **DPA standard** dei fornitori (AWS, Plausible), una-tantum
     pre-go-live (L9 in [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md)).
 48. **DPA verso i clienti** (incorporato nei ToS, A §3): uso di sub-processor, **notifica cambi**, **diritto di
     opposizione**, sicurezza, assistenza breach/diritti, cancellazione/restituzione dati a fine rapporto.
@@ -257,13 +258,98 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     - **Versioning**: git (storia completa) + `version`/`effective_date` nel front-matter dei legali pubblici (G §41) +
       log di accettazione con commit hash.
 
+### I. Data residency & trasferimenti extra-UE
+51. **Residency UE by design**: tutti i dati personali a riposo **solo in regioni UE** — **eu-west-1 (Irlanda)** +
+    **eu-central-1 (Francoforte)** monitoring (#06/#08); Cognito/Aurora/S3/SES in regioni UE.
+52. **Postura PURISTA scelta**: minimizzare i fornitori extra-UE. Conseguenze già applicate: **analytics → Plausible
+    (EU)** invece di Cloudflare (US); **ticketing → in-house** invece di Jira/Atlassian (US). Restano:
+    - **AWS**: dati **a riposo in UE**, ma AWS Inc. è USA (CLOUD Act) → garanzie **DPF + SCC** (DPA AWS) + cifratura;
+    - **Plausible**: **EU-hosted (Hetzner, Germania)**, società UE → **nessun trasferimento extra-UE**;
+    - **Paddle**: ruolo MoR/titolare per pagamento, sue garanzie (DPF/SCC);
+    - (eventuale futuro) **API LLM/AI o altri servizi esterni** in una app → **nuovo trasferimento**, intercettato dal
+      gate `new-change` (#13 C) → valutazione garanzia prima del merge.
+53. **Garanzie**: dove resta un fornitore con casa-madre USA (AWS), ci si appoggia a **EU-US DPF** + **SCC** (nei DPA) +
+    **TIA leggero** (Transfer Impact Assessment) come nota di accountability (→ [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md)).
+54. **Documentazione**: sezione "trasferimenti" nella privacy policy (art. 13: destinatari, paesi, garanzia).
+55. La scelta purista **riduce drasticamente** la superficie di trasferimento: di fatto solo **AWS** (UE-region, parent
+    USA) + Paddle (pagamenti). Tutto il resto è UE/in-house.
+
+### J. Data breach (violazione dei dati)
+56. **Runbook di Incident Response interno** (`docs/compliance/breach-runbook.md`): **detect → assess → contain →
+    notify → document**, con **timeline 72h** e l'albero delle soglie (sotto). Pronto in anticipo (le 72h partono da
+    "quando vieni a conoscenza").
+57. **Albero delle soglie** (basato sul rischio per gli interessati):
+    - **rischio improbabile** → niente notifica; **solo registro** + motivazione del "no-rischio";
+    - **rischio (non elevato)** → **Garante entro 72h** (art. 33) + registro;
+    - **rischio ELEVATO** → **Garante (72h) + interessati** "senza ingiustificato ritardo" (art. 34) + registro;
+    - criteri (EDPB): tipo violazione, **natura/sensibilità/volume** (art. 9 = +rischio), identificabilità, **gravità
+      conseguenze**, vulnerabili, numero interessati.
+58. **Leva cifratura (art. 34.3)**: dati **cifrati/inintelligibili** → spesso **niente notifica agli interessati** (e può
+    rendere "improbabile il rischio"). Le misure di **encryption at rest + in transit ovunque** (#06 §20bis) **riducono
+    direttamente** l'obbligo di notifica.
+59. **Detection via #08** (allarmi anomalie, audit, error tracking) + scoperta esterna; **scoping rapido** via log
+    strutturati/audit (#08) + isolamento per-tenant + **manifesto dati** (#13 C) → chi/cosa colpito.
+60. **Registro breach interno** (art. 33.5, **obbligatorio**): registra **TUTTE** le violazioni (anche non notificate)
+    con fatti/effetti/azioni correttive. In `docs/` (interno, come il RoPA).
+61. **Notifiche per ruolo (A)**: **titolare** (piattaforma/consumatori) → Garante/interessati; **responsabile** (dati app
+    B2B) → **notifichi il tenant-titolare senza ritardo** (lui notifica autorità/interessati), tracciato nel ticketing in-house.
+62. **Template pronti** (Garante, interessati, controller B2B) IT/EN = **deliverable pre-go-live** → [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md).
+63. **Responsible disclosure**: **`security@appgrove.app`** + **`security.txt`** sul sito per le segnalazioni di vulnerabilità → alimenta il processo.
+64. **Skill `breach-response`** (da creare): co-pilota che, dato l'incidente, **guida la valutazione del rischio**
+    (albero §57), decide notifica/non-notifica, **redige la voce del registro** e i **draft delle notifiche** (Garante/
+    interessati/controller, IT/EN). Stesso spirito del gate privacy. → backlog skill.
+
+### K. Privacy by design/default (art. 25) & DPIA (art. 35)
+65. **Privacy by DESIGN = già incorporata** (consolidamento, accountability): isolamento per-tenant (#1/#2), **encryption
+    ovunque** (#06 §20bis), no-PII nei log (#08), minimizzazione (B/E), **residency UE + fornitori UE/in-house** (I),
+    RoPA+manifesto generati (C), **gate privacy in `new-change`** (C), diritti self-service (D), ticketing in-house (I),
+    consenso opt-in (F). Non è un'aggiunta: è costruita nel sistema.
+66. **Privacy by DEFAULT (principio)**: impostazioni predefinite **più protettive** — newsletter opt-in (checkbox non
+    pre-spuntata), **nessun tracking** di default, 2FA opt-in, **minimo dato** raccolto, nessun consenso pre-attivato,
+    retention minimizzata. Regola: *ogni nuova feature nasce con la minor raccolta/condivisione possibile*.
+67. **DPIA a screening**: baseline attuale (service-only, no profilazione, no categorie particolari, dati minimizzati) →
+    **DPIA NON richiesta ora** (motivazione dello screening documentata). **Screening per-change/per-app** innescato dal
+    **gate `new-change`** (estende l'escalation art. 9 di C): criteri art. 35 + 9 criteri EDPB (monitoraggio sistematico
+    su larga scala, art. 9 su larga scala, profilazione con effetti significativi) → se supera soglia, si **conduce la
+    DPIA** (rischi+mitigazioni; eventuale **consultazione preventiva** Garante se rischio residuo alto).
+68. **DPO (art. 37) NON obbligatorio ora** (scope non = monitoraggio/categorie particolari su larga scala) → basta un
+    **contatto privacy** (`privacy@`). Rivalutare con la crescita.
+
+### L. Funzionalità GDPR nelle app (contratto per-app)
+69. **Contratto GDPR per-app (interfaccia obbligatoria)**: ogni app del marketplace implementa **`exportData(scope)`**
+    (alimenta l'export job D, dichiarando i propri step per il progress) e **`purgeData(scope)`** (cancellazione completa);
+    `scope` = per-tenant o per-utente. Il **manifesto dati** (C) è la dichiarazione collegata. **Rettifica** = normale UI/CRUD
+    dell'app (non nel contratto).
+70. **Purge completa + audit**: cancellazione totale dei dati dell'app (`app_<id>`, inclusi cache/derivati) con **record
+    di audit** (prova). L'**EventBridge purge per-tenant** (#06 H) **è** l'invocazione di `purgeData` in offboarding.
+71. **Export strutturato** (JSON/CSV, portabilità D). **Orchestrazione account-level dalla piattaforma**: eliminazione
+    account (E) = purge piattaforma **+ invoca `purgeData` di ogni app attivata** dell'utente.
+72. **Opzione anonimizzazione (per-app, dichiarata nel manifesto)**: un'app può **anonimizzare** invece di cancellare
+    (default = cancellazione). **Guardrail legale nella skill `new-application`** (co-pilota): interroga e definisce
+    *cosa* anonimizzare, e **blocca** se la scelta è **pseudonimizzazione** (identificatori sostituiti ma dato
+    **ri-collegabile** → resta dato personale → **non** vale come erasure). Solo anonimizzazione **irreversibile** esce dal GDPR.
+73. **Retention enforcement per-app**: l'app implementa la **purga programmata** secondo la retention del manifesto (E).
+74. **Enforcement "no contratto = no produzione"**: scaffold `new-application` genera stub contratto+manifesto; **categoria
+    test di compliance** (#10) verifica che export/purge funzionino e **non lascino dati orfani**; ArchUnit-style: ogni
+    entità con dati personali **coperta** da export+purge.
+75. **Console "Diritti GDPR" nell'admin (single pane of glass)**: vista di **aggregazione** (read/ops, platform-admin)
+    che convoglia tutti gli "oggetti" da esercizio diritti — richieste **export** (stato/progress + **link file S3** +
+    scadenza), **recessi per-app**, **eliminazioni account** (stato grace 14gg), cambi **consenso**, ticket privacy —
+    ciascuno con stato/timeline e **puntatori all'accessorio**: deep-link a **CloudWatch Logs Insights** (pre-filtrato per
+    `correlation_id`/`user_id`), job export/oggetto S3, registro audit/breach. **Scoped alla retention** (E): i record
+    spariscono a fine finestra (minimizzazione), la prova di evasione resta nel registro audit per il periodo dovuto.
+    Vive nella console admin (#03) come capability core "compliance" (#04); si appoggia a ticketing in-house (I), export
+    job (D), audit (#08). **Non è un nuovo store**, è aggregazione. → use case + skill.
+
 ## Revisione legale pre-go-live
-Consolidata nel documento vivo dedicato → **[_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md)** (checklist L1–L10:
-DPA, privacy policy, ToS, ruoli, art. 9, retention, consenso, sub-processor, accessibilità). **Consigliata, opzionale**;
-nessun blocco prima del go-live.
+Consolidata nel documento vivo dedicato → **[_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md)** (checklist L1–L12:
+DPA, privacy policy, ToS, ruoli, art. 9, retention, consenso, sub-processor, accessibilità, entità legale, template breach).
+**Consigliata, opzionale**; nessun blocco prima del go-live.
 
 ## Questioni aperte
-F–L da definire.
+_Nessuna — #13 chiuso (A–L)._ Resta da **redigere i testi** (policy/ToS/DPA/template breach, deliverable) e da
+**progettare gli use case** (diritti GDPR, ticketing, console diritti) + le **skill** (`new-application` co-pilota
+anonimizzazione, `breach-response`). Validazione finale → [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md).
 
 ## Impatti su altre aree
 - [05-persistenza-dati](05-persistenza-dati.md) (soft-delete/erasure), [06-infra-iac](06-infra-iac.md) (purge EventBridge),

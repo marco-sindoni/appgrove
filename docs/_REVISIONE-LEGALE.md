@@ -22,9 +22,10 @@ Aggiornato a ogni decisione che tocca aspetti legali.
 | L6 | **Validità modello "cancellazione immediata post-export"** e periodi di retention scelti | #13 D/E | pre-go-live | ⏳ deciso internamente |
 | L7 | **Postura consenso/cookie** — da rivedere SOLO se si introduce tracking non essenziale (oggi: analytics cookieless, no banner) | #13 B/F | se cambia il tracking | ok attuale (no consenso) |
 | L8 | **Eventuali obblighi settoriali** di singole app (dati regolati) | per-app | alla creazione app | per-app |
-| L9 | **Lista sub-responsabili & DPA con i sub-processor** (AWS, Paddle, SES, Cloudflare, Atlassian/Jira) | #13 H | pre-go-live | ⏳ da compilare |
+| L9 | **Lista sub-responsabili & DPA con i sub-processor** (AWS incl. SES, Plausible; Paddle come MoR) — postura purista: niente Cloudflare/Atlassian | #13 H/I | pre-go-live | ⏳ da compilare |
 | L10 | **Accessibilità** — dichiarazione/conformità European Accessibility Act (in vigore da giugno 2025) | #10 K | pre-go-live | ⏳ |
 | L11 | **Entità legale titolare** (ditta/società) con indirizzo/contatto — richiesta da privacy policy e da Paddle (MoR) | #13 G | pre-go-live | ⏳ prerequisito business |
+| L12 | **Template notifiche data breach** (Garante art. 33, interessati art. 34, controller B2B) IT/EN | #13 J | pre-go-live | ⏳ deliverable |
 
 ## Note
 - I documenti **interni** (RoPA, manifesti-dati per-app) NON sono pubblici e non rientrano nella revisione "pubblica":

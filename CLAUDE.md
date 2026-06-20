@@ -32,7 +32,7 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 | 10 | Testing strategy | [docs/10-testing.md](docs/10-testing.md) | 🟢 |
 | 11 | Developer experience / local dev | [docs/11-developer-experience.md](docs/11-developer-experience.md) | 🟡 |
 | 12 | Environments & config management | [docs/12-environments-config.md](docs/12-environments-config.md) | 🟢 |
-| 13 | Compliance & Privacy (GDPR) | [docs/13-compliance-privacy.md](docs/13-compliance-privacy.md) | 🟡 |
+| 13 | Compliance & Privacy (GDPR) | [docs/13-compliance-privacy.md](docs/13-compliance-privacy.md) | 🟢 |
 
 ## Casi d'uso (use case)
 

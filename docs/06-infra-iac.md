@@ -94,6 +94,15 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 ### Secrets/config (topic I)
 20. **SSM Parameter Store** (config/secret app) + **Secrets Manager** (credenziali DB), per env; lettura a runtime.
 
+### Encryption ovunque (baseline di sicurezza esplicita, 2026-06-20)
+20bis. **Encryption at rest su TUTTE le risorse stateful**: Aurora (+ snapshot/PITR), **S3** (SSE — bucket export #13 D,
+    audit #08, state Terraform, asset), **EBS**, **SQS**, **CloudWatch Logs**, **ECR**; **Secrets Manager** (cifrato di
+    default) e **SSM SecureString** per i parametri sensibili. Chiavi: **KMS** (chiavi gestite AWS di default; valutare
+    CMK dove serve). **Encryption in transit ovunque (TLS)**: **HTTPS** su CloudFront/API Gateway (**HSTS** sul dominio
+    `.app`, #12), **cookie `Secure`** (#02), **TLS verso il DB** (Aurora/RDS Proxy), TLS su SES/SQS/chiamate interne.
+    Principio: *nessun dato personale in chiaro, né a riposo né in transito* — rafforza #13 (riduce l'obbligo di notifica
+    breach, art. 34.3) e gli invarianti di sicurezza.
+
 21. **WAF** (firewall applicativo) **rimandato** → evoluzione **E6**.
 
 ### Modulo `microsaas_app` (topic J — direttiva #3)

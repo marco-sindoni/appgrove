@@ -59,13 +59,34 @@ flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affr
   mese) + verifica identità. **Consenso (da #13 F)**: subscribe box newsletter (vetrina) + checkbox non pre-spuntata al
   signup + **centro preferenze consensi** in impostazioni account (hub unico, revoca facile) + disclosure cookie tecnici.
   Da fare insieme al dettaglio UX backoffice/account e al contratto per-app export/erasure.
+- **DA PROGETTARE — Console "Diritti GDPR" (admin, single pane of glass)** (richiesto 2026-06-20, #13 L): vista di
+  **aggregazione** read/ops per platform-admin che convoglia tutti gli "oggetti" da esercizio diritti (export con link
+  S3+scadenza, recessi per-app, eliminazioni account+stato grace, cambi consenso, ticket privacy), con stato/timeline e
+  **deep-link all'accessorio** (CloudWatch Logs Insights pre-filtrato, job export/oggetto S3, registro audit/breach).
+  **Scoped alla retention** (#13 E). NON è un nuovo store: aggrega ticketing in-house (I) + export job (D) + audit (#08).
+  Vive in console admin (#03) / capability core compliance (#04). Use case dedicato.
+- **DA PROGETTARE — Ticketing nativo in-house** (capability di piattaforma, richiesto 2026-06-20, #13 D/I): sostituisce
+  Jira (purismo: zero sub-processor, PII in casa, EU). Entità `support_ticket` (#04 core) + UI backoffice (utente) +
+  console admin (agente). Copre **privacy (tipo speciale, SLA legale 1 mese, auto-creato da eventi) + supporto generico
+  best-effort**. **MVP minimale, NO allegati**: tipo/priorità/stato, thread messaggi utente↔admin, notifiche email SES,
+  trigger auto (form in-app, `privacy@`/`support@` via SES→Lambda, eventi export FAILED / escalation art. 9). Use case dedicato.
+
+## Data breach — runbook, registro, security.txt (#13 J)
+- **Runbook IR interno** (`docs/compliance/breach-runbook.md`) + **registro breach interno** (art. 33.5) — da redigere.
+- **`security.txt`** + `security@appgrove.app` per responsible disclosure (al lancio vetrina).
+- **Template notifiche** (Garante/interessati/controller) → deliverable pre-go-live (L12).
+- Skill **`breach-response`** → memoria `skills-backlog`.
 
 ## Sito vetrina (marketing) — richiesto 2026-06-20
 Nuovo artefatto, distinto dalle 2 SPA (#03 backoffice+admin). **Statico**, **multilingua EN/IT/FR/ES/DE**, **contenuti
 come file `.md`** (fonte unica: gli stessi md servono sito + rendering in-app delle policy). Ospita **Privacy Policy, ToS,
-cookie disclosure** (5 lingue, IT facente fede), **subscribe newsletter** (#13 F), **Cloudflare Web Analytics cookieless**
-(#13 B/F). Build statica (SSG/Vite) su S3+CloudFront. Versioning policy: **versione + `effective_date`** nel front-matter,
+cookie disclosure** (5 lingue, IT facente fede), **subscribe newsletter** (#13 F), **Plausible Cloud analytics cookieless (EU)**
+(#13 B/F/I). Build statica (SSG/Vite) su S3+CloudFront. Versioning policy: **versione + `effective_date`** nel front-matter,
 git-backed; **check CI** presenza di tutte le 5 lingue per componente. Da definire in area frontend/#03 (estensione) o doc dedicato.
+- **NOTA MARKETING/POSIZIONAMENTO** (richiesto 2026-06-20): l'essere **"all-EU deployed" con garanzie privacy EU**
+  (residency UE, fornitori UE/in-house, postura purista #13 I) è un **elemento di vanto da valorizzare nel sito vetrina**,
+  anche per diffusione **worldwide**: *"appgrove offre a tutti le massime garanzie di privacy secondo le normative UE"*.
+  Trasformare la compliance in **proposta di valore** (badge/sezione dedicata, copy multilingua).
 
 ## Script / tooling DevOps
 - **Start/stop servizi test** (scale 0↔1 task Fargate) — ✅ deciso in [07-devops-cicd](07-devops-cicd.md) §28
