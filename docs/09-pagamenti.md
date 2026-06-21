@@ -26,7 +26,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **A. Modello di pricing per-app** ✅ — tipi supportati e come si modellano
 - **B. Catalogo & mapping dati** ✅ — catalog interno ↔ `product`/`price` Paddle; campi su entitlements (#05)
 - **C. Checkout** ✅ — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
-- **D. Webhook & source of truth** — firma HMAC, idempotenza, eventi → entitlement
+- **D. Webhook & source of truth** ✅ — firma HMAC, idempotenza, eventi → entitlement
 - **E. Ciclo di vita subscription** — stati, proration, upgrade/downgrade tier, dunning, grace
 - **F. Entitlement & attivazione/disattivazione** — entitlement per-tenant abilita l'app a runtime
 - **G. Customer portal & self-service** — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
@@ -103,12 +103,47 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     riuscito, attivazione in arrivo / avviso email), **mai un errore**. **Polling, non push** (no infra realtime → cost-min).
     Dettaglio schermate/copy/edge → **use case "Acquisto / checkout"** ([_BACKLOG](_BACKLOG.md)).
 
+### D. Webhook & source of truth
+18. **Non negoziabili** (best practice Paddle): (a) **verifica firma HMAC** dell'header `Paddle-Signature` con secret in
+    Secrets Manager — firma non valida → **401**, niente processing; (b) **idempotenza su `event_id`** (Paddle ri-invia →
+    dedup, evento applicato una volta sola); (c) **gestione out-of-order** via `occurred_at` (un evento più vecchio non
+    sovrascrive uno stato più recente).
+19. **Architettura di ricezione (opzione 1)**: API GW → **Lambda di ingest** (verifica firma + dedup + accoda su **SQS**)
+    → risponde `200` subito; poi un **consumer** legge da SQS e aggiorna `subscription` in modo **idempotente**, con
+    **retry + DLQ + allarme** (#08). Disaccoppia ricezione da elaborazione; la Lambda è sempre disponibile e leggera
+    (utile col servizio core **scale-to-0 in test**). Usa SQS già nello stack (#06). Costo trascurabile ai volumi webhook.
+20. **Strategia di test del flusso di pagamento (a 3 livelli)** — richiesto 2026-06-21; coerente con #10 e topic I.
+    **Principio: NON si guida l'iframe Paddle con Playwright** (dominio del terzo, fragile) → si mocka il confine e si
+    testa a fondo il nostro codice.
+    - **L1 — Integration test del processing webhook (esaustivo, per-PR, BLOCCANTE)** 🔑: payload webhook **sintetici
+      firmati** (HMAC con secret di test) → si verifica l'evoluzione di `subscription`. Copre firma valida/errata,
+      idempotenza, out-of-order, ogni tipo di evento, linkage tenant (custom_data), derivazione entitlement, enforcement
+      quota (#09 A). Testcontainers Postgres reale (#10 C). Deterministico, no rete esterna.
+    - **L2 — E2E Playwright dei nostri pezzi (per-PR, BLOCCANTE), Paddle.js MOCKATO**: schermata scelta tier (default
+      annuale+sconto), click acquisto → chiamata backend server-initiated, **UX post-checkout con polling** simulando
+      l'arrivo del webhook ("attivazione" → "attivato"). Testa la nostra UX/wiring, non l'iframe Paddle.
+    - **L3 — Smoke E2E reale contro Paddle Sandbox (PRE-RELEASE)**: vero Paddle.js + carte test + vero webhook → valida
+      il contratto d'integrazione reale. **Eseguito nel flusso di promozione a prod** (tag → prod, #07), **prima** del
+      go-live di una release, **non** nel gate per-PR (esterno/lento/flaky). L'esito **confluisce nel gate di approvazione
+      manuale** (#07 b1): un fallimento **ferma la release** in attesa di revisione umana. **Override manuale obbligatorio**:
+      poiché il sandbox è infrastruttura di terzi (può essere down per cause non nostre), chi approva può **forzare la
+      release** nonostante il fallimento L3 — con **motivazione esplicita registrata** (audit, es. "sandbox Paddle down").
+    - **Locale (#11)**: Paddle è esterno → **sandbox** o **stub Paddle.js**, mai pagamenti reali.
+
+21. **Set di eventi sottoscritti** (mapping su `subscription`): `subscription.created` (crea riga + linkage tenant/app via
+    custom_data), `subscription.activated` (trial→active/prima attivazione), **`subscription.updated`** (catch-all: status,
+    `paddle_price_id`/cambio tier, `current_period_end`, `cancel_at`, anche `past_due`), `subscription.canceled`
+    (status=canceled), `subscription.paused`/`.resumed`, `transaction.completed` (pagamento riuscito: attivazione **e
+    rinnovi**), `transaction.payment_failed` (→ dunning), `customer.created`/`.updated` (cattura `paddle_customer_id`,
+    creazione lazy C). **Non** sottoscriviamo eventi inutilizzati (meno rumore/superficie). Fatture/ricevute = gestite da
+    **Paddle MoR** (topic J), non come evento. Il *cosa fare* su cancel/pause/past_due (accesso fino a quando, grace) → **E**.
+
 ## Questioni aperte
 - **Upgrade/downgrade tra tier** (proration, effetto immediato vs a fine ciclo, comportamento della quota al cambio) →
   da dettagliare nel **topic E (ciclo di vita)**.
 - **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
   topic **H (config admin del pricing)**.
-- Topic **D–K** ancora da affrontare.
+- Topic **E–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
