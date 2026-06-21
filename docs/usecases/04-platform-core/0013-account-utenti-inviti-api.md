@@ -31,7 +31,7 @@ i flussi UI auth (UC 0017); il billing/webhook (UC 0025).
 4. **Catalogo** (struttura): `app` (`app_id`, `name`, `user_model`, `status`, `paddle_product_id`), `app_tier` (`limits` JSON
    metrica/finestra/tetto, `features`, `trial_days`), `app_price` (`billing_cycle`, `paddle_price_id`, importo, valuta);
    **subscription** (tenant↔app, status, period, cancel_at, trial_end) — definizione autorevole #09 B (popolata in UC 0022/0025).
-5. **API** `/api/platform/v1/*` (CRUD account/utenti/inviti secondo ruolo) con problem+json + **OpenAPI** generato e committato (#04 6/9).
+5. **API** `/api/platform/v1/*` (CRUD account/utenti/inviti secondo ruolo) con problem+json + **OpenAPI** generato e committato (#04 6/9). **Versioning**: la versione è nel path (`/v1/`); un eventuale `/v2/` coesisterà senza rompere i client (deprecazione graduale), con `oasdiff` a bloccare i breaking change non versionati (#01 dec.12, #10 G).
 
 ## 5. Flussi alternativi / edge / errori
 - **Invito scaduto/già usato** → problem+json (coerente UC 0017 UC7).

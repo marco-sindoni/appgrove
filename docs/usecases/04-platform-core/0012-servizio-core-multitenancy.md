@@ -56,10 +56,11 @@ UC 0013 (users/email) — qui si predispone solo l'infrastruttura (soft-delete, 
 ## 9. Requisiti di test
 - **Integration** (`@QuarkusTest` + Testcontainers Postgres 17 + Flyway reale, #10 6): schemi veri, migrazioni testate.
 - **Security/multi-tenancy** (#10 D, sempre eseguita): matrice cross-tenant (≥2 tenant), fail-closed, anti-override `tenant_id`, leak detector DB.
+- **Identità nei test** (#10 D14): iniezione tramite `@TestSecurity` + **smallrye-jwt** (token firmati reali con claim `tenant_id`/`roles`); l'harness firma i JWT di test → copre fail-closed e matrice ruoli senza dipendere da Cognito.
 - **ArchUnit** guardia statica degli invarianti (#10 16). Harness di isolamento riusabile (#10 15) ereditato dalle app.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #04 1/2/3/4/5/6, #01 (invarianti 1/2/3/4), #05 1/3/4/5/6/8/9, #02 11/12.
+- **Decisioni**: #04 1/2/3/4/5/6, #01 (invarianti 1/2/3/4), #05 1/3/4/5/6/8/9, #02 11/12, #10 D14/15/16.
 - **DoD**:
   1. `commons` + `core` Maven multi-module con TenantResolver + discriminator + base entity + problem+json + MDC.
   2. Flyway su `platform` (migrate-at-start off) eseguito in CI.

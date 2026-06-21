@@ -26,7 +26,7 @@ risponde 200 subito); **consumer** idempotente che aggiorna `subscription` con g
 2. **Dedup su `event_id`**: Paddle ri-invia → applicato una volta sola (#09 D18b).
 3. Accoda su **SQS** e risponde **200** subito (disaccoppia ricezione da elaborazione; utile col core scale-to-0 in test) (#09 D19).
 4. **Consumer** legge da SQS → aggiorna `subscription` in modo **idempotente**, con **out-of-order** via `occurred_at` (un evento più vecchio non sovrascrive uno più recente) (#09 D18c/D19).
-5. **Set eventi** → `subscription`: created (linkage tenant/app via custom_data), activated, **updated** (catch-all: status/price/period/cancel_at/past_due), canceled, paused/resumed, transaction.completed (attivazione+rinnovi), payment_failed (→dunning), customer.created/updated (paddle_customer_id) (#09 D21).
+5. **Set eventi** → `subscription`: created (linkage tenant/app via custom_data), activated, **updated** (catch-all: status/price/period/cancel_at/past_due), canceled, paused/resumed, transaction.completed (attivazione+rinnovi), payment_failed (→dunning), **chargeback/dispute** (`transaction.payment_failed`/dispute → reagiamo via webhook: stato subscription `past_due`/sospeso, divisione responsabilità MoR #09 J42), customer.created/updated (paddle_customer_id) (#09 D21).
 6. **Retry + DLQ + allarme** sui fallimenti (#09 D19, #08).
 
 ## 5. Flussi alternativi / edge / errori
@@ -56,7 +56,7 @@ dato carta (MoR). Manifest: trattamento billing/abbonamento (base contratto); fi
 - **Security**: firma errata → 401; nessun cross-tenant. **DLQ/allarme** verificati.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #09 D18/D19/D20/D21, B12, I38, #06 19bis, #08.
+- **Decisioni**: #09 D18/D19/D20/D21, J42 (chargeback/dispute via webhook), B12, I38, #06 19bis, #08.
 - **DoD**:
   1. Lambda ingest (HMAC + dedup `event_id` → SQS, 200 subito).
   2. Consumer idempotente con out-of-order (`occurred_at`); set eventi mappato su `subscription`.

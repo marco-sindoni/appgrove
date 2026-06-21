@@ -25,7 +25,7 @@ audit/sicurezza** (Firehose→S3→Glacier, 12 mesi); **health/uptime**.
 
 ## 4. Flusso principale
 1. **Logging**: `quarkus-logging-json` → CloudWatch; **MDC popolato dal JWT** all'inizio richiesta (`tenant_id`/`app_id`/`user_id`/
-   `correlation_id`) → invariante #4 automatica; **no-PII** (identificativi opachi) (#08 1/2/3/5).
+   `correlation_id`) → invariante #4 automatica; **no-PII** (identificativi opachi) (#08 1/2/3/5). **Livelli**: INFO in test/prod, DEBUG attivabile via **SSM Parameter Store senza rebuild** (config a runtime), DEBUG di default in locale (#08 dec.6).
 2. **Correlation id** all'**edge** (API GW) → propagato authorizer→servizio→SQS (#08 4).
 3. **Metriche**: tecniche native AWS; business via **Micrometer → EMF** (dentro i log JSON, niente PutMetricData); dimensioni
    **bassa cardinalità** (`app_id`/`env`/`endpoint`/`status`/`service`) — `tenant_id`/`user_id` **solo nei log** (regola dei due piani, #08 J).
@@ -39,7 +39,7 @@ audit/sicurezza** (Firehose→S3→Glacier, 12 mesi); **health/uptime**.
 ## 5. Flussi alternativi / edge / errori
 - **Scale-to-0/spegnimento notturno**: non deve generare falsi allarmi (allarmi test minimi/silenziati, #08 18).
 - **Error tracking**: eccezioni come ERROR JSON + metric filter → metrica → allarme; triage via Logs Insights (#08 19).
-- **Frontend errori**: `window.onerror` → ingest API GW→Lambda→CloudWatch, **solo errori** (legittimo interesse, no tracking comportamentale) (#08 23).
+- **Frontend errori**: `window.onerror`/`onunhandledrejection` → ingest API GW→Lambda→CloudWatch, **solo errori** (legittimo interesse, no tracking comportamentale); contesto `app_id`/route/**build SHA**/`user_id`/`tenant_id`; le **source map** restano **artifact privato CI** (de-minificazione offline, #08 24, generato in UC 0005). L'handler è **incluso nello scaffold `new-application`** (UC 0046) (#08 23).
 - **Drill-down per-tenant**: Logs Insights pre-salvate linkate dai dashboard, **non** widget per-tenant (#08 32).
 
 ## 6. Risorse & runbook
@@ -62,7 +62,7 @@ mesi (#08 29, #13 E). I log operativi **non** si archiviano a lungo (minimizzazi
 - Nessun PII nei log (controllo). Allarmi as-code creati/distrutti con l'ambiente; budget configurato. Health endpoint esclusi dall'authorizer.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #08 1–33 (baseline), #06 §20bis (encryption), #13 E (retention/audit).
+- **Decisioni**: #08 1–33 (baseline, incl. dec.6 livelli/SSM, dec.23 frontend error ingest, dec.24 source map CI), #06 §20bis (encryption), #13 E (retention/audit).
 - **DoD**:
   1. Log JSON con MDC dal JWT (no-PII) → CloudWatch; correlation id propagato.
   2. Metriche business via EMF a bassa cardinalità; tracce strumentate ma spente.

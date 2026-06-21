@@ -10,7 +10,7 @@
 Produrre e gestire i **documenti legali pubblici reali** richiesti da Paddle e dal GDPR, come **md single-source multilingua**
 con versioning e accettazione scoped.
 **Incluso**: **Privacy Policy** (art. 13-14), **Terms & Conditions** (Paddle MoR), **Refund Policy** (3° doc Paddle), **cookie
-disclosure** (sezione, non banner); **5 lingue** EN/IT/FR/ES/DE, **IT facente fede** sui legali; md in **`content/legal/`**
+disclosure** (sezione, non banner); **lista sub-processor pubblica** `content/legal/subprocessors.{en,it,fr,es,de}.md` (nome/finalità/regione/categorie dati, vivo, **linkato da Privacy Policy e DPA**, #13 H45/H46); **5 lingue** EN/IT/FR/ES/DE, **IT facente fede** sui legali; md in **`content/legal/`**
 (fonte unica sito + rendering in-app); frontmatter `version`/`effective_date`/`lang`; **check CI 5 lingue**; modello di
 **accettazione/versioning scoped** (piattaforma + per-app, major→re-accept / minor→notifica).
 **Escluso**: i manifesti-dati per-app e il RoPA interno (UC 0030); gli snippet privacy per-app (generati da `new-application`, UC 0046);
@@ -29,6 +29,7 @@ l'implementazione UI dell'accettazione (UC 0033); la revisione legale (opzionale
 1. **Redazione interna AI-assistita** dei 4 documenti (PP, ToS, Refund, cookie disclosure), **IT facente fede** + EN sorgente, poi FR/ES/DE traduzioni fedeli (#14 C16, #13 G38).
 2. Salvataggio in **`content/legal/`** come md multilingua con frontmatter `version`/`effective_date`/`lang` (git-backed) (#13 §50, G41).
 3. **Privacy policy modulare**: nucleo piattaforma (md a mano) + moduli per-app (snippet generati dai manifesti, UC 0046/0030) (#13 G35, #14 C17).
+   - **Lista sub-processor**: inventario iniziale (AWS, Plausible; Paddle = ruolo MoR a sé) in `content/legal/subprocessors.*.md`, linkato da PP/DPA; il **mantenimento incrementale** (nuovo sub-processor → notifica 30gg) è guidato dal gate `new-change` (UC 0031, #13 H46/H49).
 4. **ToS** riflette Paddle MoR; **Refund** = "vendite finali/no refund salvo legge + Buyer Terms Paddle" (#09 J43, #14 A2).
 5. **Versioning/accettazione scoped**: piattaforma al signup, app all'attivazione; **major** (materiale) → ri-accettazione scoped; **minor** → notifica; classificazione pilotata dal **gate privacy di `new-change`** (UC 0031, #13 G41/#14 C18).
 6. **Check CI**: ogni componente presente in **tutte le 5 lingue** (build rossa se manca) (#14 C13, #13 G38).
@@ -58,9 +59,9 @@ I documenti **descrivono** i trattamenti (non contengono dati utente). Il **log 
 - Coerenza testo pubblico minimizzato vs RoPA dettagliato (UC 0030) — stessa fonte (manifesto) per gli snippet per-app.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #13 G34–G44, §50, #14 C16/C17/C18/C19/C20/C10, #09 J43, _REVISIONE-LEGALE L2/L3/L13.
+- **Decisioni**: #13 G34–G44, H45/H46/H49, §50, #14 C16/C17/C18/C19/C20/C10, #09 J43, _REVISIONE-LEGALE L2/L3/L13.
 - **DoD**:
-  1. PP+ToS+Refund+cookie in 5 lingue (IT facente fede) in `content/legal/`, md single-source sito+app.
+  1. PP+ToS+Refund+cookie **+ lista sub-processor** in 5 lingue (IT facente fede) in `content/legal/`, md single-source sito+app; subprocessors linkato da PP/DPA.
   2. Versioning frontmatter + accettazione scoped (major/minor) wired al gate privacy.
   3. Check CI 5 lingue verde; documenti linkati da menu/footer (requisito Paddle).
   4. Resta 🟡 finché i **testi** non sono redatti (revisione legale opzionale).

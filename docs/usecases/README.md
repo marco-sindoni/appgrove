@@ -13,8 +13,9 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 - **Stato**: 🔴 da scrivere · 🟡 in corso · 🟢 scritto/deciso.
 - Skill di gestione: **`new-usecase`** (crea/numerа/indicizza), **`new-change`** (implementa; folder
   `NNNN-use-case-YYYY-…` quando la change nasce da uno use case YYYY).
-- Consolidamento: i 54 use case sotto consolidano i ~209 task atomici dell'inventario (ogni UC, nel suo file, elenca gli
-  item che copre).
+- Consolidamento: i 57 use case sotto consolidano i ~209 task atomici dell'inventario (ogni UC, nel suo file, elenca gli
+  item che copre). Gli UC **0055–0057** sono stati aggiunti dopo una revisione di copertura requisiti→use case (gap infra
+  condivisa, ri-accettazione legali runtime, skill `finalize-landing`).
 
 ## Fasi (ordine di implementazione)
 0 Tooling & local dev · 1 Infra & CI/CD · 2 Core & Auth · 3 Vetrina + legale (prereq Paddle) · 4 Prima app + new-application ·
@@ -32,10 +33,11 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 | UC | Fase | Titolo | Dipendenze | Stato |
 |---|---|---|---|---|
 | 0003 | 1 | Terraform foundation (state, global Route53/ACM/OIDC, VPC no-NAT, KMS/secrets baseline) | — | 🟢 |
-| 0004 | 1 | Modulo `microsaas_app` + wrapper scripts (bootstrap/plan/up/down/service-add\|remove/test-start\|stop) | 0003 | 🟢 |
+| 0004 | 1 | Modulo `microsaas_app` + wrapper scripts (bootstrap/plan/up/down/service-add\|remove/test-start\|stop) | 0003, 0055 | 🟢 |
 | 0005 | 1 | Pipeline CI/CD (OIDC, terraform, backend build/test+`[graal]`, frontend, Flyway one-shot, prod gate, path-filter, Infracost) | 0003, 0004 | 🟢 |
 | 0006 | 1 | Observability baseline (log JSON+correlation, Micrometer/EMF, dashboard/alarm/SNS/Budgets, retention/archivio) | 0003 | 🟢 |
 | 0007 | 7 | Observability hardening (canary eu-central-1 prod, tuning Budgets) | 0006 | 🟢 |
+| 0055 | 1 | Risorse condivise per-env (Aurora SsV2+RDS Proxy/PITR, ECS cluster, API GW HTTP+VPC Link+Cloud Map, EventBridge bus, 2 CloudFront SPA) | 0003 | 🟡 |
 
 ### 03-local-dev
 | UC | Fase | Titolo | Dipendenze | Stato |
@@ -51,6 +53,7 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 | 0012 | 2 | Core service + multitenancy (Quarkus, TenantResolver, discriminator, schema `platform`, Flyway, audit/soft-delete) | 0004 | 🟢 |
 | 0013 | 2 | Accounts/Users/Invitations + core REST API (problem+json, OpenAPI) | 0012 | 🟢 |
 | 0014 | 2 | Custom Lambda authorizer (app-abilitata + entitlement grossolano derivato; catena gate) | 0013, 0016 | 🟢 |
+| 0056 | 3 | Ri-accettazione ToU/PP a runtime (derivazione al login + schermata bloccante + log accettazione) | 0002, 0013, 0020 | 🟡 |
 
 ### 05-auth
 | UC | Fase | Titolo | Dipendenze | Stato |
@@ -111,6 +114,7 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 | 0048 | 6 | skill `drop-application` | 0004, 0046 | 🟢 |
 | 0049 | 6 | skill `breach-response` + runbook/registro/`security.txt` | — | 🟢 |
 | 0050 | 7 | skill `campaign-guide` | — | 🟢 |
+| 0057 | 3 | skill `finalize-landing` (bozza → landing pubblicata: rifinitura 5 lingue + flag `published` + CI deploy) | 0038, 0046 | 🟡 |
 
 ### 11-apps
 | UC | Fase | Titolo | Dipendenze | Stato |
@@ -121,7 +125,8 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 | 0054 | 4 | App #2 (B2B multi-user, es. mini-CRM) via `new-application` (valida skill + inviti/seat) | 0046 | 🟢 |
 
 ---
-**Numerazione**: segue l'ordine delle aree (`01` → `11`), sequenziale `0001`–`0054`. **Ordine di implementazione**: dato
-dalla colonna **Fase** + **Dipendenze** (non dal numero). **Stato**: tutti i drill-down sono **scritti** (🟢) tranne **0044**
-(`new-change`: hook privacy/RoPA + snapshot da wire-are in UC 0031) e **0002** (documenti legali: impianto deciso, testi ancora
-da redigere). Implementazione successiva: una `new-change` per use case (folder `NNNN-use-case-YYYY-…`).
+**Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0057** sono appesi col prossimo `NNNN` libero
+(ID stabili, non riflettono l'area). **Ordine di implementazione**: dato dalla colonna **Fase** + **Dipendenze** (non dal numero).
+**Stato**: i drill-down sono **scritti** (🟢) tranne **0044** (`new-change`: hook privacy/RoPA + snapshot da wire-are in UC 0031),
+**0002** (documenti legali: impianto deciso, testi ancora da redigere) e i nuovi **0055/0056/0057** (🟡, drill-down scritto,
+implementazione da avviare). Implementazione successiva: una `new-change` per use case (folder `NNNN-use-case-YYYY-…`).

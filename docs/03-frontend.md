@@ -4,11 +4,16 @@
 **Ultimo aggiornamento**: 2026-06-14
 
 ## Scope
-Stack e organizzazione della singola SPA React (shell + moduli app + admin + vetrina pubblica): build tool,
+Stack e organizzazione delle SPA React (shell + moduli app + admin): build tool,
 routing, state, data fetching, design system/UX, App Registry, integrazione auth, config runtime, build/deploy.
-Copre **due** app frontend: il **backoffice cliente** (+ vetrina pubblica) e la **console admin separata**
+Copre **due** app frontend React: il **backoffice cliente** e la **console admin separata**
 (`platform-admin`). Non copre la meccanica auth lato server (→ [02-auth-sicurezza](02-auth-sicurezza.md)) né
 hosting/CDN provisioning (→ [06-infra-iac](06-infra-iac.md)).
+
+> **Nota (aggiornamento)**: la **vetrina pubblica** è stata **estratta** dalla SPA React in un **progetto Astro separato**
+> (SSG, i18n subpath) — decisa in [14-sito-vetrina-legale](14-sito-vetrina-legale.md) e implementata in
+> [docs/usecases/09-marketing-site/0036](usecases/09-marketing-site/0036-vetrina-astro-scheletro.md). I riferimenti qui sotto
+> alla "vetrina pubblica all'apex" vanno letti come **rimando a #14/UC 0036**, non più come parte della SPA React.
 
 ## Vincoli ereditati (già decisi)
 - **Backoffice cliente = una SPA React modular monolith**; microfrontend rimandati; moduli app come **componenti React lazy**.
@@ -17,7 +22,8 @@ hosting/CDN provisioning (→ [06-infra-iac](06-infra-iac.md)).
   `user_id`, ruoli, theme, nav API); il modulo non gestisce auth né legge `tenant_id` fuori dal contesto.
 - **Login custom** → auth Lambda: `POST /api/auth/login`; access/id token **in memoria**, refresh via **cookie HttpOnly**;
   al reload `POST /api/auth/refresh`.
-- **Runtime `config.json`** per ambiente (un solo build). Build → **S3/CloudFront**. Vetrina pubblica all'apex `appgrove.app`.
+- **Runtime `config.json`** per ambiente (un solo build). Build → **S3/CloudFront**. Vetrina pubblica all'apex `appgrove.app` → **progetto Astro separato** (#14/UC 0036), non parte della SPA React.
+- **Form & validation**: **React Hook Form + Zod**; gli schemi Zod rispecchiano le regole Bean Validation del backend (validazione coerente client/server) → implementato in [docs/usecases/06-frontend/0020](usecases/06-frontend/0020-shell-spa-backoffice.md).
 - API: base `/api/<app_id>/v1/`, errori **problem+json**, `Authorization: Bearer`. Swagger admin via backoffice (→ #04 §9).
 
 ## Da discutere (richiesto dall'utente, 2026-06-14)

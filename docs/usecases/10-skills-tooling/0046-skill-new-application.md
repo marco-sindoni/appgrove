@@ -14,7 +14,7 @@ così l'utente si concentra **solo sul business**.
 + **seed-base** + **test** (unit/integration/security/E2E + harness isolamento) + **co-pilota pricing/quota** (tier, prezzi
 mensile/annuale+sconto, freemium, trial, **flow/stock** per metrica, fee effettiva) + **manifesto dati + contratto GDPR**
 (export/purge, anonimizzazione guardrail) + **bozza landing** 5 lingue (+SEO/GEO). Segue il workflow `new-change` (branch + PR).
-**Escluso**: la pubblicazione landing (è `finalize-landing`, UC 0053); il sync prezzi a Paddle (pipeline, UC 0022); l'implementazione del business specifico dell'app.
+**Escluso**: la pubblicazione landing (è la skill `finalize-landing`, UC 0057); il sync prezzi a Paddle (pipeline, UC 0022); l'implementazione del business specifico dell'app.
 
 ## 2. Attori & ruoli
 - **Developer**: invoca `/new-application <descrizione>`, risponde al co-pilota (pricing/quota/GDPR), rivede la PR.
@@ -27,7 +27,7 @@ mensile/annuale+sconto, freemium, trial, **flow/stock** per metrica, fee effetti
 ## 4. Flusso principale
 1. `/new-application <descrizione>` → la skill chiede `app_id`/`user_model` (single/multi) + icona/colore-categoria.
 2. **Scaffold BE**: modulo Maven su `commons`, schema `app_<app_id>` (via `service-add`), Flyway, logging by-default, contratto quota+GDPR stub.
-3. **Scaffold FE**: modulo React lazy + manifest registry; **bozza landing** 5 lingue (copy AI on-brand + placeholder) + SEO/GEO per-app (#14 9/25).
+3. **Scaffold FE**: modulo React lazy + manifest registry; **handler error-ingest** (`window.onerror`/`onunhandledrejection` → ingest, contesto `app_id`/route/build-SHA, #08 23) by-default; **bozza landing** 5 lingue (copy AI on-brand + placeholder) + SEO/GEO per-app (#14 9/25).
 4. **Co-pilota pricing/quota** (#09 A7/E23/K47): guida tier/prezzi (mensile+annuale, sconto ~17%), freemium, trial (default 14gg disattivabile), **flow vs stock** per ogni metrica, mostra **fee effettiva** + warning soft >10%.
 5. **Co-pilota GDPR** (#13 C/L72): compila il **manifesto dati** (IT+EN), genera lo snippet privacy pubblico, definisce export/purge; guardrail anonimizzazione (blocca pseudonimizzazione spacciata per erasure).
 6. **CI/seed/test**: genera workflow, seed-base, suite (incl. harness isolamento #10 15). Segue `new-change` → branch + **PR** all'utente (#07 91).
@@ -40,7 +40,7 @@ mensile/annuale+sconto, freemium, trial, **flow/stock** per metrica, fee effetti
 
 ## 6. Risorse & runbook
 **File skill** `.claude/skills/new-application/`. **Output per invocazione**: branch + PR con BE+FE+modulo infra+CI+manifest+
-contratto GDPR+pricing-as-code+bozza landing+seed+test. **Runbook**: `/new-application` → rispondere ai co-piloti → rivedere/mergiare la PR; poi `finalize-landing` quando l'app è MVP.
+contratto GDPR+pricing-as-code+bozza landing+seed+test. **Runbook**: `/new-application` → rispondere ai co-piloti → rivedere/mergiare la PR; poi `finalize-landing` (UC 0057) quando l'app è MVP.
 
 ## 7. Dati toccati
 Genera **codice e dichiarazioni** (manifesto dati, pricing-as-code), non dati runtime. Il manifesto dichiara i dati personali

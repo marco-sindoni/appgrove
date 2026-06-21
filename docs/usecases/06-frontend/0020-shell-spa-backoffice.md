@@ -11,8 +11,8 @@ Realizzare la **shell del backoffice cliente** (SPA React) che ospita i moduli a
 routing, auth store, API client, i18n, theming.
 **Incluso**: **Vite+React+TS**; **React Router** (lazy + nested); **TanStack Query** (server state) + **Zustand** (auth/theme/UI);
 **design system** (UC 0019); **App Registry ibrido** (manifest moduli ∩ entitlement → sidebar = intersezione); **API client**
-da OpenAPI (inietta Bearer, **401→refresh→retry**, problem+json); **route guard** (requireAuth/requireRole/requireEntitlement);
-**i18n EN+IT**; light/dark + accent; responsive.
+da OpenAPI (inietta Bearer, **401→refresh→retry**, problem+json; il client TS rigenerato + `tsc` **rompe la build** sul drift, #10 G25); **route guard** (requireAuth/requireRole/requireEntitlement);
+**form & validation** (**React Hook Form + Zod**, schemi allineati alle regole Bean Validation del backend, #03 dec.7); **i18n EN+IT**; light/dark + accent; responsive.
 **Escluso**: i moduli app concreti (UC 0052/0054); l'admin SPA (UC 0021); i flussi auth UI (UC 0017, che vivono nella shell).
 
 ## 2. Attori & ruoli
@@ -28,6 +28,7 @@ da OpenAPI (inietta Bearer, **401→refresh→retry**, problem+json); **route gu
 3. **App Registry**: manifest co-locati dei moduli (`{id, sezioni, route, metadata}` + componente lazy) ∩ **entitlement** dal core → sidebar = intersezione (#03 6, #01 10).
 4. **Routing**: vetrina/auth/shell+app nested; moduli **lazy**; **route guard** `requireAuth`/`requireRole('platform-admin')`/`requireEntitlement(app_id)` (difesa in profondità UX, oltre al gate edge) (#03 8).
 5. **Contratto shell↔modulo**: React Context con token getter, `tenant_id`, `user_id`, ruoli, theme, nav API; il modulo **non** gestisce auth né legge `tenant_id` fuori dal contesto (#01 11).
+   - **Form**: i form della shell (login/onboarding/settings/inviti) usano **React Hook Form + Zod**; gli schemi Zod rispecchiano le regole Bean Validation del backend (validazione coerente client/server, #03 dec.7); i moduli app riusano lo stesso pattern.
 6. **Config runtime** `config.json` (un solo build promosso per env) (#03/#12).
 
 ## 5. Flussi alternativi / edge / errori
@@ -56,9 +57,9 @@ Nessuna persistenza client oltre lo stato in memoria; legge dati dal core via AP
 - **a11y** (axe) sulle schermate chiave; aria-snapshot come rete primaria (#10 20/39).
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #03 1/2/3/4/5/6/8/9/10/11/12, #01 10/11.
+- **Decisioni**: #03 1/2/3/4/5/6/7/8/9/10/11/12, #01 10/11, #10 G25.
 - **DoD**:
   1. Shell con chrome, App Registry (∩ entitlement), routing lazy, route guard.
-  2. Auth store + refresh-on-load + interceptor 401→refresh→retry; client da OpenAPI.
-  3. i18n EN+IT, light/dark+accent, responsive; design system condiviso (UC 0019).
+  2. Auth store + refresh-on-load + interceptor 401→refresh→retry; client da OpenAPI (drift → `tsc` rompe la build, #10 G25).
+  3. i18n EN+IT, light/dark+accent, responsive; form via React Hook Form + Zod (schemi ↔ Bean Validation, #03 dec.7); design system condiviso (UC 0019).
   4. Component + E2E + a11y verdi; frontend = solo UX (enforcement nel backend).

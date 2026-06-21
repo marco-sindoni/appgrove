@@ -34,6 +34,7 @@ entità nei documenti (persona fisica → ditta individuale).
 ## 5. Flussi alternativi / edge / errori
 - **Sito non live** → Domain Review **non avviabile** (vale anche per sandbox: no sito, nessun account nemmeno di test) → unica via = **stub locale** (#09 I, #14 ⛔).
 - **Saldo Paddle < €100** → payout si accumula (non cambia l'obbligo P.IVA, che precede il payout) (_COMMERCIALISTA 2/5).
+- **Riconciliazione netto** (#09 K51): Paddle paga al **netto** delle fee su schedule di payout; il netto incassato va riconciliato col fatturato (revenue) ai fini contabili/fiscali — attività **ops/contabile** ricorrente (non blocco), in capo al titolare/commercialista (report payout Paddle vs estratto bancario).
 - **Operare a pagamento senza P.IVA** → fattispecie non conforme (no "periodo di prova" legale); rischi sanzioni/arretrati/ravvedimento (_COMMERCIALISTA 6) — **da evitare**.
 - **Pricing non finale per Paddle**: screenshot ok in Domain Review (#14 11).
 
@@ -56,7 +57,7 @@ Nessun test software. **Verifica di completamento**: sito live con 3 legali link
 entità legale corretta nei documenti; checklist commercialista evasa (F1–F9). Aggiornare gli stati in _COMMERCIALISTA/_REVISIONE-LEGALE.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #14 A1/A3/D21/D22/D23/11, _COMMERCIALISTA 1–8, #09 J, _REVISIONE-LEGALE L11.
+- **Decisioni**: #14 A1/A3/D21/D22/D23/11, _COMMERCIALISTA 1–8, #09 J/K51 (riconciliazione netto), _REVISIONE-LEGALE L11.
 - **DoD**:
   1. Inquadramento fiscale chiarito col commercialista (F1–F9); P.IVA forfettaria aperta alla monetizzazione.
   2. Domiciliazione attiva; entità legale aggiornata nei documenti.
