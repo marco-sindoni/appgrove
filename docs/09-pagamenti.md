@@ -1,7 +1,7 @@
 # Pagamenti (Paddle) — Decisioni
 
-**Stato**: 🔴 da definire
-**Ultimo aggiornamento**: 2026-06-14
+**Stato**: 🟡 in corso
+**Ultimo aggiornamento**: 2026-06-21
 
 ## Scope
 Integrazione Paddle (Merchant of Record), webhook, entitlement/attivazione app per tenant, e **modello di
@@ -22,11 +22,75 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
   (~5–6% effettivo) → margine migliore + cassa anticipata. Mapping: due `price` Paddle (monthly/yearly) per ogni `product`
   app. Da dettagliare in: topic A (modello pricing), K (fee/business) e nello **use case di acquisto/checkout**.
 
+## Agenda topic (A–K)
+- **A. Modello di pricing per-app** ✅ — tipi supportati e come si modellano
+- **B. Catalogo & mapping dati** ✅ — catalog interno ↔ `product`/`price` Paddle; campi su entitlements (#05)
+- **C. Checkout** — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
+- **D. Webhook & source of truth** — firma HMAC, idempotenza, eventi → entitlement
+- **E. Ciclo di vita subscription** — stati, proration, upgrade/downgrade tier, dunning, grace
+- **F. Entitlement & attivazione/disattivazione** — entitlement per-tenant abilita l'app a runtime
+- **G. Customer portal & self-service** — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
+- **H. Configurazione admin del pricing** — il platform-admin definisce i tier dal pannello admin
+- **I. Sandbox & ambienti** — sandbox Paddle in locale/test, secret per ambiente, test webhook
+- **J. Compliance & fatturazione (MoR)** — cosa copre Paddle, cosa resta a noi (border #13)
+- **K. Fee & impatto sul business** — modello fee, prezzo minimo sostenibile, leve annuale/bundling
+
 ## Decisioni prese
-_Nessuna ancora._
+
+### A. Modello di pricing per-app
+1. **Solo subscription** (ricorrente) al lancio. **One-time escluso** (nessun caso lo richiede; evoluzione futura).
+   **Niente metered/usage-based con sforamento addebitato** (evoluzione futura).
+2. **Doppio billing mensile/annuale**, **default ANNUALE** in checkout, con **sconto annuale esplicito** (es. "2 mesi
+   gratis"). Razionale: la quota fissa Paddle (~$0.50/transazione) penalizza le app cheap a fatturazione mensile;
+   l'annuale riduce le transazioni a 1/anno → margine migliore + cassa anticipata (vedi K).
+3. **Modello unificato "lista di tier" per-app**: ogni app ha **1..N tier**; ogni tier =
+   `{ prezzo: 0 | {mensile, annuale}, limiti: <vettore quote>, feature: <flag> }`. Un unico schema copre tutti i casi:
+   - **App gratis** = 1 tier a prezzo `0`;
+   - **Subscription semplice** = 1 tier a pagamento;
+   - **Tiered** (es. fatture 10/100/1000, CRM seat 5/20/100) = N tier a pagamento con limiti crescenti;
+   - **Freemium** = tier 0 gratis + tier superiori a pagamento (✅ supportato — è solo "tier con prezzo 0");
+   - **Trial** = flag "trial N giorni" sul tier a pagamento.
+4. **"Usage" e "seat/quantity" collassano nel modello a tier+quota**: l'utente sceglie un **tier a prezzo fisso** che
+   porta un **limite**. Non è metering: Paddle vede solo subscription, la quota è applicativa.
+5. **Quota disaccoppiata dal billing**, **metrica E finestra definite per-app** (opzione c). Ogni app dichiara la propria
+   metrica (n. fatture, n. documenti, n. seat, …) e la finestra (mensile/annuale/…). Serve un **contratto/interfaccia
+   generico di quota** che ogni servizio implementa (stesso spirito del contratto GDPR `exportData`/`purgeData`, #13).
+6. **Hard limit** al raggiungimento della quota: l'azione è **bloccata**; il tenant può **aspettare il reset della
+   finestra** (riazzera il conteggio) **oppure fare upgrade** a un tier superiore. Nessuna bolletta a sorpresa.
+7. **`new-application` = co-pilota pricing/quota** (richiesto 2026-06-21): la skill **guida passo-passo** la definizione
+   del modello (tier, prezzi mensile/annuale+sconto, freemium, trial, metrica+finestra+limiti per tier) e genera lo stub
+   del **contratto di quota** + wiring catalog/entitlements/Paddle. Tracciato in memoria `skills-backlog` e in [_BACKLOG](_BACKLOG.md).
+
+### B. Catalogo & mapping dati
+8. **Mapping minimale Paddle**: **1 app = 1 Paddle Product**; **ogni (tier × ciclo) = 1 Paddle Price** sotto quel product
+   (es. app con 3 tier → 1 product + 6 price: 3 tier × mensile/annuale). **Limiti e feature NON stanno in Paddle**:
+   vivono nel nostro DB, legati al `paddle_price_id`. Coerente con A (quote applicative): a Paddle interessa solo
+   importo + ciclo. **Upgrade/downgrade** = la subscription cambia Price **dentro lo stesso Product**.
+9. **Split fonte di verità**:
+   - **Nostro DB = verità del "cosa si vende"** (definizione app/tier/prezzi + mapping ID Paddle);
+   - **Paddle = verità dello "stato di billing"** (status subscription, prezzo corrente, fine periodo, stato pagamenti),
+     sincronizzato via **webhook** (topic D).
+10. **Modello dati** — lato **catalogo** (platform-level, non tenant-scoped):
+    - `app`: `app_id`, nome, stato (enabled/disabled #03), **`paddle_product_id`**;
+    - `app_tier`: `tier_id`, `app_id`, nome, **`limits`** (JSON metrica→tetto+finestra), **`features`** (JSON flag), `trial_days`;
+    - `app_price`: `price_id`, `tier_id`, `billing_cycle` (monthly/annual), **`paddle_price_id`**, importo, valuta.
+11. **Modello dati** — lato **tenant** (tenant-scoped, `WHERE tenant_id`):
+    - `account` (esistente) **+ `paddle_customer_id`** → **un customer Paddle per account**;
+    - `subscription`: `tenant_id`, `app_id`, **`paddle_subscription_id`**, `paddle_price_id` corrente (→ risolve il tier),
+      **`status`** (trialing/active/past_due/paused/canceled), `current_period_start/end`, `cancel_at`, `trial_end`.
+    - Le **subscription sono per (tenant, app)** → un tenant può avere N subscription (una per app acquistata).
+12. **Entitlement DERIVATO** (opzione 1, non materializzato): non esiste tabella `entitlement`; "app X attiva per tenant T
+    al tier Y con limiti Z" si **calcola al volo** da `subscription` (status) + `app_price`/`app_tier` (definizioni).
+    **Unica fonte di verità = `subscription`**; i webhook toccano **solo** `subscription`, zero rischio di disallineamento.
+    Materializzazione/cache resta **ottimizzazione futura** se le letture diventassero un collo di bottiglia.
 
 ## Questioni aperte
-_Da elencare all'avvio dell'argomento._
+- **Upgrade/downgrade tra tier** (proration, effetto immediato vs a fine ciclo, comportamento della quota al cambio) →
+  da dettagliare nel **topic E (ciclo di vita)**.
+- **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
+  topic **H (config admin del pricing)**.
+- **Quando si crea il `paddle_customer_id`** (a signup vs al primo acquisto) → topic **C/E**.
+- Topic **C–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
