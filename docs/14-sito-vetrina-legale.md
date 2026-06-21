@@ -1,6 +1,6 @@
 # Sito vetrina & testi legali (ToU/PP) — Decisioni
 
-**Stato**: 🔴 da definire
+**Stato**: 🟡 in corso
 **Ultimo aggiornamento**: 2026-06-21
 
 > ⛔ **PREREQUISITO BLOCCANTE PER PADDLE** (richiesto 2026-06-21): Paddle **non attiva l'account** senza un **sito di
@@ -22,21 +22,61 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - [09-pagamenti](09-pagamenti.md) J (cosa copre Paddle come MoR vs cosa resta a noi).
 
 ## Topic dell'area (agenda, da discutere)
-- **A. Requisiti Paddle per l'attivazione** — checklist esatta di cosa Paddle pretende sul sito (pagine, contenuti, ToU,
-  PP, contatti, descrizione prodotto/prezzi, refund policy) → ricerca puntuale sui requisiti merchant Paddle.
-- **B. Architettura del sito** — SSG/Vite statico, S3+CloudFront, multilingua EN/IT/FR/ES/DE, contenuti `.md` come fonte
-  unica (sito + rendering in-app delle policy), versioning (`effective_date`/commit), check CI 5 lingue.
-- **C. Testi legali** — ToU/ToS, Privacy Policy, cookie disclosure (IT facente fede); coordinamento con #13 e revisione
-  legale pre-go-live (L2/L3); minimizzazione informativa (#13/_BACKLOG).
-- **D. Entità legale titolare (L11)** — prerequisito business: ditta/società, indirizzo, contatti (serve a PP e a Paddle MoR).
-- **E. Marketing/posizionamento** — valorizzazione "all-EU deployed / garanzie privacy UE" (#13 I, nota _BACKLOG); newsletter (#13 F).
-- **F. Contenuti di prodotto** — descrizione marketplace/app, prezzi, FAQ, supporto, `security.txt` (#13 J).
+- **A. Requisiti Paddle per l'attivazione** ✅ — checklist merchant Paddle (3 doc legali, prodotto/prezzi/feature, SSL, entità legale)
+- **B. Architettura del sito & rollout** — SSG statico, S3+CloudFront, multilingua, `.md` fonte unica, versioning; **sequenza di accensione prod parziale**
+- **C. Testi legali** — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
+- **D. Entità legale titolare (L11)** — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
+- **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
+- **F. Brand & identità visiva** — logo, palette, tipografia, tono, stile dei contenuti visuali
+- **G. Contenuti & struttura del sito (IA)** — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
+- **H. SEO** — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
+- **I. GEO (Generative Engine Optimization)** — essere citati dagli assistenti AI/LLM; contenuti machine-readable
+- **J. Paid & social & launch** — Meta/Facebook + altri social, organico vs paid, strategia di lancio
 
 ## Decisioni prese
-_Nessuna ancora._
+
+### A. Requisiti Paddle per l'attivazione
+1. **Baseline adottata = checklist Domain Review di Paddle**. Il sito deve esporre, **accessibili dalla navigazione**:
+   (a) descrizione chiara del prodotto/servizio; (b) **pricing**; (c) **feature/deliverable** inclusi; (d) **tre documenti
+   legali** — **Terms & Conditions + Refund Policy + Privacy Policy**; (e) **nome legale** (o brand ditta individuale)
+   **dentro i T&C**; (f) **SSL/HTTPS**, sito **live**. Verifica in 3 fasi: Domain Review (5–7 gg se manuale) → Business
+   Verification (2–4 gg) → Identity Verification (>25% owner). Fonti in cronologia ricerca 2026-06-21.
+2. **Refund Policy = TERZO documento legale richiesto** (oltre T&C + PP): pagina pubblica con contenuto #09 J43 ("vendite
+   finali / no refund salvo legge e Buyer Terms Paddle"). I **Buyer Terms Paddle** concedono già il **recesso 14 gg**
+   (rinunciabile se uso immediato) → la nostra "no refund" convive con la tutela statutaria gestita da Paddle (L3/L6).
+3. **Domini da sottomettere a Paddle**: **sito vetrina** + **dominio backoffice** (`app.appgrove.app`, dove gira il
+   Checkout overlay). Le info legali possono stare sul vetrina ma devono essere linkate/raggiungibili.
+
+### B. Architettura del sito & rollout (parziale)
+4. **Rollout prod "a fette" — il sito statico è il PRIMO artefatto prod** (richiesto 2026-06-21): per la Domain Review
+   serve un sito **live in HTTPS**, quindi si accende **solo** l'infra del sito vetrina (S3+CloudFront+Route53+ACM,
+   **~$0–1** free tier), **senza** backend/DB/Fargate. **Backoffice = pagina statica "coming soon"** su `app.appgrove.app`
+   (dominio live e sottomettibile a Paddle, app non ancora esistente). **Raffina (non viola)** `phased-env-activation`:
+   resta "niente infra costosa early"; il sito statico (≈gratis) precede il backend. Resto di B → da discutere.
+
+### E. Posizionamento & ICP
+5. **Modello a due livelli**: acquisizione a livello **APP** (landing dedicate per *job*/keyword, è dove entra il
+   traffico — SEO long-tail, ads mirate, intento alto) + **brand appgrove** come **ombrello** (fiducia, **cross-sell**
+   "un account, tanti strumenti", **garanzia privacy EU**). L'app porta il cliente; il brand trattiene e moltiplica.
+6. **ICP**: micro-business **europei** — freelance, professionisti con P.IVA, ditte individuali, **micro-team (1–10)**.
+   Sensibili al prezzo, vogliono strumenti **semplici e focalizzati** (no suite gonfie), poco tempo/non tecnici,
+   diffidenti del lock-in e dei dati USA. Ogni app ha la **sua** sotto-nicchia di ICP; il brand le unisce.
+7. **Gerarchia del messaggio = (a) JOB-LED + privacy come wedge**: headline sul *lavoro da fare* + semplicità/prezzo;
+   **"all-EU/GDPR" come firma di fiducia del brand** (badge, sezione dedicata, riprova nei contenuti, leva PR/GEO), **non**
+   come headline principale. Razionale: la privacy da sola converte poco sugli SMB (comprano per fare un lavoro), ma come
+   wedge differenzia, dà fiducia ed è una storia "citabile" (ottima per GEO). Scartate: (b) privacy-led (di nicchia,
+   converte meno), (c) ibrido per livello (tenuto come opzione, ma evitato per non gestire due toni).
+8. **Strati di value prop** (ordine di forza d'acquisto): job/funzionale → semplicità/focus → prezzo → EU-privacy →
+   marketplace ("un account, tanti strumenti che crescono con te").
+9. **`new-application` genera la landing di prodotto** (richiesto 2026-06-21): la skill crea la **pagina di prodotto
+   specifica dell'app** per il sito vetrina, **in tutte le 5 lingue** (IT facente fede), con **contenuti testuali**
+   (headline job-led + value prop + feature + pricing/tier + CTA + badge privacy EU, secondo E7) **e visivi**
+   (hero/illustrazioni/mockup/icone, coerenti con la brand identity F). Output come **file `.md` multilingua** (fonte
+   unica del sito statico, con `effective_date`/versioning + **check CI 5 lingue**). Dettaglio in `skills-backlog` e
+   topic **G** (contenuti). Dipendenza: la parte visiva richiede **F (brand & identità visiva)** definito.
 
 ## Questioni aperte
-_Da elencare all'avvio dell'argomento._
+- Topic **B (resto: architettura sito), C (testi legali), D (entità legale), F–J (brand, contenuti, SEO, GEO, paid/social)** da affrontare.
 
 ## Impatti su altre aree
 - **Sblocca #09 (Pagamenti)**: l'attivazione dell'account Paddle dipende da quest'area.

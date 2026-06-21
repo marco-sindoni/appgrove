@@ -55,6 +55,12 @@ Stima costi viva (principio: costo minimo compatibile coi requisiti), aggiornata
 Registro vivo delle scelte cost-min con il relativo percorso di hardening/scaling (NAT, ALB, HA, …):
 [docs/_EVOLUZIONI-DEVOPS.md](docs/_EVOLUZIONI-DEVOPS.md).
 
+## Inquadramento fiscale (commercialista)
+
+Note fiscali/contributive per l'avvio come **persona fisica senza società** con Paddle MoR (P.IVA forfettaria, abitualità,
+rischi, vie compliant) + checklist da verificare con un commercialista: [docs/_COMMERCIALISTA.md](docs/_COMMERCIALISTA.md).
+Regola chiave: l'obbligo P.IVA nasce dall'**attività abituale**, non dal payout.
+
 ## Revisione legale pre-go-live
 
 Registro vivo dei punti da far rivedere a un legale prima del go-live (DPA, privacy policy, ToS, retention, sub-processor,
