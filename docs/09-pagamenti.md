@@ -29,7 +29,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **D. Webhook & source of truth** ✅ — firma HMAC, idempotenza, eventi → entitlement
 - **E. Ciclo di vita subscription** ✅ — stati, proration, upgrade/downgrade tier, dunning, grace
 - **F. Entitlement & attivazione/disattivazione** ✅ — entitlement per-tenant abilita l'app a runtime
-- **G. Customer portal & self-service** — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
+- **G. Customer portal & self-service** ✅ — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
 - **H. Configurazione admin del pricing** — il platform-admin definisce i tier dal pannello admin
 - **I. Sandbox & ambienti** — sandbox Paddle in locale/test, secret per ambiente, test webhook
 - **J. Compliance & fatturazione (MoR)** — cosa copre Paddle, cosa resta a noi (border #13)
@@ -200,10 +200,23 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     queste impostazioni (**A7**/**E23**, memoria `skills-backlog`): guida tier/prezzi/freemium/trial e per ogni metrica
     chiede `flow` vs `stock`, generando lo stub del contratto.
 
+### G. Customer portal & self-service
+33. **Approccio ibrido**: nel **nostro backoffice** ciò che controlliamo e si lega a tier/quota; **delega a Paddle** ciò
+    che è **PCI/finanziario**.
+    - **Nostra UI**: vedi abbonamenti (status, tier, fine periodo, cambi programmati — legge `subscription`);
+      **upgrade/downgrade** (rispetta gating `flow`/`stock` E23 + semantica tier che solo noi conosciamo);
+      **disdici/riattiva** (E25); **uso quota** (consumo/banner).
+    - **Paddle**: **aggiorna metodo di pagamento** (PCI, mai dati carta) e **fatture/ricevute** (Paddle è **MoR**: genera
+      lui fatture+tasse). Un pulsante **"Gestisci pagamento e fatture"** apre la **sessione Customer Portal** Paddle
+      generata **server-side** (API).
+    - **Nota EU-purista**: il portal è hosted da Paddle (UK, MoR) → coerente con #13 I/L9 (sub-processor necessario e già
+      accettato); si delega **solo** ciò che è intrinsecamente suo (carte, fatture fiscali), il resto resta in casa.
+    - Le operazioni self-service → **use case "Gestione abbonamento"** ([_BACKLOG](_BACKLOG.md)).
+
 ## Questioni aperte
 - **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
   topic **H (config admin del pricing)**.
-- Topic **G–K** ancora da affrontare.
+- Topic **H–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_

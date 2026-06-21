@@ -54,6 +54,10 @@ flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affr
 - **DA PROGETTARE (priorità BASSISSIMA) — use case "Pausa subscription self-service"** (richiesto 2026-06-21, da #09 E):
   sospensione/ripresa di un abbonamento da parte dell'utente (Paddle pause/resume). **Non al lancio**; lo status `paused`
   è comunque gestito (= no accesso). Evoluzione futura.
+- **DA PROGETTARE — use case "Gestione abbonamento self-service"** (richiesto 2026-06-21, da #09 G): sezione backoffice
+  "Abbonamenti" — vista status/tier/fine periodo/cambi programmati; **upgrade/downgrade** (con gating `flow`/`stock` E23 e
+  UX downgrade programmato E22); **disdici/riattiva** (E25); display uso quota/banner; pulsante **"Gestisci pagamento e
+  fatture"** che apre la sessione Customer Portal Paddle (generata server-side). Edge: dunning/`past_due` banner, scaduto.
 - **DA PROGETTARE — use case "Acquisto / checkout"** (richiesto 2026-06-21, da #09 A/C): schermata di **scelta tier**
   con doppio billing mensile/annuale e **default annuale + sconto** (#09 A); **checkout overlay** Paddle.js iniziato
   lato server (token, custom_data `tenant_id` dal JWT + `app_id`); **UX post-checkout a stati con polling** (spinner
