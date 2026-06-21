@@ -14,7 +14,7 @@ disclosure** (sezione, non banner); **lista sub-processor pubblica** `content/le
 (fonte unica sito + rendering in-app); frontmatter `version`/`effective_date`/`lang`; **check CI 5 lingue**; modello di
 **accettazione/versioning scoped** (piattaforma + per-app, major→re-accept / minor→notifica).
 **Escluso**: i manifesti-dati per-app e il RoPA interno (UC 0030); gli snippet privacy per-app (generati da `new-application`, UC 0046);
-l'implementazione UI dell'accettazione (UC 0033); la revisione legale (opzionale, [_REVISIONE-LEGALE](../../_REVISIONE-LEGALE.md)).
+l'implementazione runtime dell'accettazione/ri-accettazione (derivazione + schermata bloccante + log + tabella `legal_version`, UC 0056); la revisione legale (opzionale, [_REVISIONE-LEGALE](../../_REVISIONE-LEGALE.md)).
 
 ## 2. Attori & ruoli
 - **Founder/titolare**: pubblica i documenti (responsabilità).
@@ -41,8 +41,8 @@ l'implementazione UI dell'accettazione (UC 0033); la revisione legale (opzionale
 - **Cookie**: nessun banner (solo tecnici + Plausible cookieless) → disclosure come sezione (#13 F27/28).
 
 ## 6. Risorse & runbook
-**Artefatti**: `content/legal/{privacy,terms,refund,cookie}.{en,it,fr,es,de}.md` con frontmatter; **log di accettazione**
-(componente+versione+commit hash) lato core (UC 0033). **Runbook**: redigere/aggiornare via `new-change` (il gate privacy
+**Artefatti**: `content/legal/{privacy,terms,refund,cookie,subprocessors}.{en,it,fr,es,de}.md` con frontmatter; al deploy la CI
+popola la tabella **`legal_version`** e il **log di accettazione** vive lato core (UC 0056). **Runbook**: redigere/aggiornare via `new-change` (il gate privacy
 classifica major/minor) → CI verifica 5 lingue → deploy sito (UC 0036) + rendering in-app (stessi md).
 
 ## 7. Dati toccati

@@ -33,7 +33,7 @@ keyword strategy a due livelli (app/brand) + nicchia EU/GDPR; misurazione (Plaus
 ## 5. Flussi alternativi / edge / errori
 - **Pre-go-live**: `noindex` su prod (Paddle vede, motori no); al lancio si rimuove (#14 54).
 - **Lingua/slug mancante** → check CI SEO + 5 lingue rompe la build (#14 34).
-- **OG image mancante** su una landing → segnalata dal check; generata in `finalize-landing` (UC 0038).
+- **OG image mancante** su una landing → segnalata dal check; generata in `finalize-landing` (UC 0057).
 
 ## 6. Risorse & runbook
 **Artefatti**: integrazioni Astro per sitemap/hreflang/schema/meta; OG image pipeline; robots.txt. **Check CI SEO** (#14 34):

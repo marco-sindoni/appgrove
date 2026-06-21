@@ -12,11 +12,11 @@ finalizzazione/pubblicazione da `finalize-landing`).
 **Incluso**: struttura a **8 sezioni** (Hero job-led + screenshot; Problema→soluzione; Feature 3-6 con icone Material Symbols;
 Come funziona 2-3 step; Pricing/tier mensile/annuale default annuale + trial; Badge/sezione privacy EU; FAQ; CTA finale);
 base **brand kit** (UC 0019), 5 lingue; due stati **draft/published**; gate di pubblicazione (build renderizza solo `published`).
-**Escluso**: la skill `new-application` (UC 0046) e `finalize-landing` (UC 0053/skill) in sé; il SEO per-app (UC 0040); la landing concreta dell'app #1 (UC 0053).
+**Escluso**: la skill `new-application` (UC 0046) e la skill `finalize-landing` (UC 0057) in sé; il SEO per-app (UC 0040); la landing concreta dell'app #1 (UC 0053).
 
 ## 2. Attori & ruoli
 - **`new-application`** (UC 0046): genera la **bozza** della landing (copy AI + placeholder screenshot) → `status: draft`.
-- **`finalize-landing`** (skill, UC 0053): cattura screenshot reali + rifinisce + `draft→published` con review utente.
+- **`finalize-landing`** (skill, UC 0057): cattura screenshot reali + rifinisce + `draft→published` con review utente.
 - **CI**: pubblica solo `published` (UC 0036).
 
 ## 3. Precondizioni

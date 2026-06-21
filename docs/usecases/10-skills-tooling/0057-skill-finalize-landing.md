@@ -12,9 +12,9 @@ Creare la skill **`finalize-landing`** che porta la **bozza** di landing (genera
 che abilita il deploy (la CI pubblica al merge, UC 0036). È il **secondo momento** della landing (#14 dec.51).
 **Incluso**: file skill `.claude/skills/finalize-landing/`; rifinitura copy/visual (sostituisce i placeholder della bozza),
 parità **5 lingue** (EN sorgente marketing), completamento meta/OG/hreflang/Schema.org (UC 0040) e materiale GEO (UC 0041);
-impostazione **`published: true`** nel frontmatter del content; segue `new-change` → branch + **PR**.
+impostazione **`published: true`** nel frontmatter del content; **flusso content-PR leggero** — branch + **PR** per la review umana, **senza** il gate test/snapshot di `new-change` (una landing non ha test applicativi): il merge fa partire la CI (check 5 lingue + SEO) e pubblica.
 **Escluso**: il **deploy** (lo fa la CI al merge, UC 0036 — la skill scrive content, non pubblica, #14 dec.53); il template/struttura
-(UC 0038); la bozza iniziale (UC 0046); i testi legali (UC 0002).
+(UC 0038); la bozza iniziale (UC 0046); i testi legali (UC 0002); l'**homepage e le pagine non-app** del sito (UC 0037) — la skill copre **solo le landing per-app**.
 
 ## 2. Attori & ruoli
 - **Developer/Founder**: invoca `/finalize-landing <app_id>` quando l'app è MVP; rivede testi/visual; mergia la PR.
@@ -30,7 +30,7 @@ impostazione **`published: true`** nel frontmatter del content; segue `new-chang
 3. **Rifinitura visual**: asset on-brand (icona/colore-categoria, immagini), coerenti col brand kit (UC 0019).
 4. **SEO/GEO**: completa meta/OG, hreflang, Schema.org (UC 0040) e statement/FAQ machine-readable + `llms.txt`/entità (UC 0041).
 5. **Gate pubblicazione**: imposta `published: true` nel frontmatter → la CI includerà la pagina nel build (#14 dec.52).
-6. Segue `new-change`: branch + **PR**; al merge la CI pubblica (UC 0036) (#14 dec.53).
+6. Apre un **content-PR leggero** (branch + PR, niente gate test/snapshot di `new-change`); al merge la CI valida 5 lingue + SEO e pubblica (UC 0036) (#14 dec.53).
 
 ## 5. Flussi alternativi / edge / errori
 - **Check CI 5 lingue** rosso se manca una lingua o un campo SEO obbligatorio (#14 C13, H34).
@@ -56,5 +56,5 @@ Verifica: bozza → published con placeholder risolti, hreflang/Schema.org compl
 - **DoD**:
   1. `finalize-landing` rifinisce copy+visual 5 lingue e completa SEO/GEO.
   2. Imposta `published: true`; non fa deploy (CI al merge).
-  3. Segue `new-change` (branch+PR); check CI 5 lingue + SEO verde.
+  3. Flusso content-PR leggero (branch+PR, **no** gate test/snapshot); check CI 5 lingue + SEO verde.
   4. Gestisce il caso "landing stale" segnalato da `new-change`.

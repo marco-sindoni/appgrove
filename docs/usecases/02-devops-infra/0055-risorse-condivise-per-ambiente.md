@@ -27,8 +27,8 @@ tabelle (Flyway, UC 0005/0012); la distribuzione CloudFront della **vetrina** As
 - Foundation attiva (UC 0003): VPC no-NAT + endpoints, Route53/ACM, KMS/secrets baseline, state, OIDC.
 
 ## 4. Flusso principale
-1. **Aurora Serverless v2**: 1 cluster writer per env nelle subnet (SG stretto), **min 0 ACU** (auto-pause/scale-to-0, #12 4), **RDS Proxy**
-   davanti (usato da Lambda auth/pre-token-gen/authorizer e dai task Flyway, #05 3), **PITR ~7gg**; **prod**: deletion protection + snapshot finale; **test**: `force_destroy` (#06 K).
+1. **Aurora Serverless v2**: 1 cluster writer per env nelle subnet (SG stretto), **min 0 ACU** (auto-pause/scale-to-0, #12 4) / **max ACU basso ≈2** (#06 dec.13),
+   **RDS Proxy** davanti **solo per le Lambda** auth/pre-token-gen/authorizer (#05 dec.3); i task **Fargate** — incluso il **Flyway one-shot** — si connettono **diretti** (Agroal), non via Proxy (#05 dec.3); **PITR ~7gg**; **prod**: deletion protection + snapshot finale; **test**: `force_destroy` (#06 K).
 2. **Cluster ECS** per env (Fargate; on-demand prod, Spot in test), su cui il modulo registra i service/task (#06 9/10).
 3. **Ingress**: **API Gateway HTTP API v2** + **VPC Link** verso un **Cloud Map namespace** per env; l'authorizer (UC 0014) e le route `/api/<app_id>/v1/*` (UC 0004) vi si agganciano (#06 8).
 4. **Bus EventBridge** dedicato per env: riceve `tenant.offboarded` e lo instrada alle code SQS purge per-servizio (UC 0004/0032/0035) (#06 19).
@@ -40,8 +40,8 @@ tabelle (Flyway, UC 0005/0012); la distribuzione CloudFront della **vetrina** As
 - **Teardown completo**: queste risorse vanno prima di `global` e dopo gli `module "app_*"` (ordine UC 0003 §5).
 
 ## 6. Risorse & runbook
-**Risorse Terraform** (in `infra/envs/{test,prod}/`, o modulo dedicato `infra/modules/platform_shared/`): Aurora cluster + RDS Proxy,
-ECS cluster, API GW HTTP + VPC Link + Cloud Map namespace, EventBridge bus, 2 CloudFront + bucket S3 OAC. **Runbook**: create da
+**Risorse Terraform** — modulo `infra/modules/platform_shared/` **istanziato per env** (parità test/prod, un input per ambiente):
+Aurora cluster + RDS Proxy, ECS cluster, API GW HTTP + VPC Link + Cloud Map namespace, EventBridge bus, 2 CloudFront + bucket S3 OAC. **Runbook**: create da
 `up <env>` insieme alla foundation; il modulo per-app (UC 0004) le referenzia via output/data source. **Rollback**: `down <env>` con le safety #06 K (snapshot prod).
 
 ## 7. Dati toccati
@@ -56,7 +56,7 @@ Nessun dato applicativo/personale: risorse infra. Aurora/S3/EBS/SQS/log **cifrat
 - Verifica: il modulo per-app (UC 0004) `terraform plan` risolve correttamente cluster ECS, VPC Link/Cloud Map, RDS Proxy e bus EventBridge condivisi.
 
 ## 10. Riferimenti & Definition of Done
-- **Decisioni**: #06 8/9/13/14/15/16/17/19, #05 3, #12 4, #13 I51.
+- **Decisioni**: #06 8/9/13/14/15/16/17/19, #05 dec.3 (RDS Proxy solo Lambda; Fargate/Flyway diretti), #12 4, #13 I51.
 - **DoD**:
   1. Aurora SsV2 per env (scale-to-0, RDS Proxy, PITR; prod con deletion protection+snapshot).
   2. Cluster ECS, API GW HTTP + VPC Link + Cloud Map namespace, bus EventBridge per env.

@@ -28,7 +28,7 @@ già su ECR); **Infracost** sulle PR.
    component+**E2E**, contract+drift+**oasdiff**, infra fmt/validate/tflint/checkov/terraform test/**Infracost**) con **path-filter**
    (#10 34; security/E2E/oasdiff **sempre** bloccanti, #10 35). Nessuna risorsa AWS toccata.
 2. **Merge su `main`** (squash): deploy **automatico in test** — `apply` su `envs/test`, `mvn test` → build immagine (JVM, o
-   native se `[graal]`) → push **ECR taggata SHA** → **Flyway migrate** (task ECS one-shot in VPC via RDS Proxy) → **deploy ECS** rolling → health check (#07 10/14/15).
+   native se `[graal]`) → push **ECR taggata SHA** → **Flyway migrate** (task ECS one-shot in VPC, connessione **diretta** Agroal — il Proxy è solo per le Lambda, #05 dec.3) → **deploy ECS** rolling → health check (#07 10/14/15).
 3. Frontend: build Vite → sync S3 (asset immutable, `index.html`/`config.json` no-cache) → **invalidation CloudFront** mirata;
    **`config.json` generato come output Terraform** (#07 11/12). Le **source map** sono prodotte ma **non pubblicate**: caricate come **artifact privato CI** per la de-minificazione offline degli errori frontend (#08 24, UC 0006 §5). Una modifica al `design-system` (path-filter) **ripubblica entrambe le SPA** (#07 dec.3).
 4. **Tag `v*`** → prod: `plan` salvato → **approvazione** → `apply` del plan salvato; promozione **stesso SHA** (frontend

@@ -11,8 +11,8 @@ Produrre la **landing pubblica della prima app** seguendo il flusso bozza→fina
 "seme del grove") prima di sottomettere a Paddle.
 **Incluso**: **bozza** generata dal template (UC 0038) con copy AI on-brand + placeholder; **finalizzazione** con screenshot
 reali (Playwright + seed), copy rifinito, OG image, review utente 5 lingue, `draft→published`; SEO/GEO per-app coerenti.
-**Escluso**: il template in sé (UC 0038), la skill `new-application` (UC 0046), la skill `finalize-landing` (skill dedicata,
-qui se ne descrive l'uso sull'app #1); il deploy (CI, UC 0005).
+**Escluso**: il template in sé (UC 0038), la skill `new-application` (UC 0046), la skill `finalize-landing` (UC 0057;
+qui se ne descrive l'**uso** sull'app #1, come 0054 valida `new-application`); il deploy (CI, UC 0005).
 
 ## 2. Attori & ruoli
 - **`new-application`/template** (UC 0038/0046): genera la bozza.

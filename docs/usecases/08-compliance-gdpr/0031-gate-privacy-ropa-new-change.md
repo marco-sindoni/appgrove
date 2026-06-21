@@ -14,12 +14,12 @@ personali viene intercettato, classificato e applicato a manifesto/RoPA, con enf
 elicita lo scopo, deduce/propone natura/finalità/base/retention con motivazione, domande solo se ambiguo, fa confermare);
 **escalation art. 9** (avviso forte + DPIA); **enforcement CI bloccante** (campo `@PersonalData` non dichiarato → build rossa);
 **classificazione MAJOR/MINOR** che pilota il **bump versione PP/ToS** → re-accept scoped / notifica.
-**Escluso**: i manifesti/RoPA in sé (UC 0030), l'UI di re-accept (UC 0033), i testi legali (UC 0002).
+**Escluso**: i manifesti/RoPA in sé (UC 0030), l'UI/derivazione di re-accept (UC 0056), i testi legali (UC 0002).
 
 ## 2. Attori & ruoli
 - **Developer + skill `new-change`**: il co-pilota classifica insieme all'utente.
 - **CI**: enforcement bloccante (ArchUnit-style).
-- **Utenti vincolati**: ricevono re-accept (major) o notifica (minor) (UC 0033).
+- **Utenti vincolati**: ricevono re-accept (major) o notifica (minor) (UC 0056).
 
 ## 3. Precondizioni
 - `new-change` (UC 0044) con hook predisposto; manifesti/RoPA (UC 0030); annotazione/tag `@PersonalData` nel codice.
@@ -44,7 +44,7 @@ lista sub-processor + log re-accept. **Runbook**: durante un `new-change` che to
 classificazione → CI verifica → bump versione PP se major.
 
 ## 7. Dati toccati
-Aggiorna **dichiarazioni** (manifesto/RoPA/sub-processor/versione PP), non dati utente. Innesca il log re-accept (UC 0033).
+Aggiorna **dichiarazioni** (manifesto/RoPA/sub-processor/versione PP), non dati utente. Innesca il re-accept (UC 0056).
 Manifest: **è** il meccanismo che lo mantiene aggiornato (accountability).
 
 ## 8. Permessi & gate
