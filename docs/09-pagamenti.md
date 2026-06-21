@@ -28,7 +28,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **C. Checkout** ✅ — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
 - **D. Webhook & source of truth** ✅ — firma HMAC, idempotenza, eventi → entitlement
 - **E. Ciclo di vita subscription** ✅ — stati, proration, upgrade/downgrade tier, dunning, grace
-- **F. Entitlement & attivazione/disattivazione** — entitlement per-tenant abilita l'app a runtime
+- **F. Entitlement & attivazione/disattivazione** ✅ — entitlement per-tenant abilita l'app a runtime
 - **G. Customer portal & self-service** — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
 - **H. Configurazione admin del pricing** — il platform-admin definisce i tier dal pannello admin
 - **I. Sandbox & ambienti** — sandbox Paddle in locale/test, secret per ambiente, test webhook
@@ -174,10 +174,36 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     **no accesso se `status ∈ {paused, canceled}`**. L'"accesso fino a fine periodo" dopo disdetta o in attesa di downgrade
     è automatico: lo status resta `active` (con cambio programmato) finché il periodo non scade.
 
+### F. Entitlement & attivazione/disattivazione a runtime
+30. **Enforcement a livelli** — ogni richiesta a `/api/<app_id>/...` attraversa una catena di gate, in gran parte
+    **centralizzata nel layer di piattaforma** (come `TenantResolver`/`@RolesAllowed`, #01/#04), così le app non li reimplementano:
+    1. **AuthN** (JWT, `tenant_id`) — piattaforma (esistente) → 401;
+    2. **App abilitata?** (disable admin) — piattaforma → 403; **ha precedenza** sull'entitlement, rende l'app indisponibile
+       a tutti **senza toccare dati/subscription** (reversibile, #03/backlog);
+    3. **Tenant entitled?** (accesso: `status ∈ {trialing,active,past_due}`, dec. 29) — **gate centralizzato** di piattaforma,
+       legge l'entitlement **derivato** → **402** "abbonamento richiesto/scaduto";
+    4. **Ruolo permesso?** (`@RolesAllowed`) — piattaforma (esistente) → 403;
+    5. **Entro quota?** (limiti `flow`/`stock` del tier) — **app**, via **contratto/SPI di quota** (la faccia runtime del
+       contratto generico di **A5**/**E23**): la piattaforma fornisce l'SPI (es. `quota.checkAndReserve(metric)`), l'app lo
+       chiama **prima** dell'azione che consuma quota → hard-limit → **429** "limite raggiunto, fai upgrade".
+    - **Frontend = solo UX** (mostra le app entitled + banner quota), ma il **confine di enforcement è il backend**.
+    - **Accesso off ≠ dati cancellati**: a entitlement decaduto i **dati restano** secondo retention (#13 E); UX "abbonamento
+      scaduto, riattiva".
+31. **Diritti GDPR ESENTI dai gate (2) e (3)** (requisito legale, richiesto 2026-06-21): export e cancellazione dati **non**
+    sono mai bloccati da disable-app né da entitlement scaduto. Sono **capability di piattaforma** (#13 D: job async
+    EventBridge/SQS) che invocano **internamente** il contratto per-app `exportData`/`purgeData` — **non** passano dall'API
+    di business gateata. Restano disponibili (solo authN + ownership) **per tutta la finestra di retention** (#13 E), anche
+    con subscription `canceled` o app disabilitata, perché i dati esistono ancora. La schermata "abbonamento scaduto" offre
+    **sia** "riattiva" **sia** "esporta/elimina i tuoi dati". Senza questo, cade la portabilità (art. 20).
+32. **Contratto quota = quello già definito** (no meccanismo nuovo): lo SPI del gate (5) è la faccia runtime del contratto
+    generico di quota (**A5**, raffinato in **E23** con natura `flow`/`stock`). **`new-application` è già co-pilota** per
+    queste impostazioni (**A7**/**E23**, memoria `skills-backlog`): guida tier/prezzi/freemium/trial e per ogni metrica
+    chiede `flow` vs `stock`, generando lo stub del contratto.
+
 ## Questioni aperte
 - **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
   topic **H (config admin del pricing)**.
-- Topic **F–K** ancora da affrontare.
+- Topic **G–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
