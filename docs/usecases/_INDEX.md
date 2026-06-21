@@ -24,7 +24,7 @@ dipendenze sopra di sé.
 ## Fase 0 — Tooling & local dev
 | # | UC | Titolo | Dipendenze | Stato |
 |---|---|---|---|---|
-| 1 | [0044](10-skills-tooling/0044-aggiornamento-skill-new-change.md) | `new-change` update (use-case variant + gate test/snapshot + hook privacy/RoPA) | — | ⬜ |
+| 1 | [0044](10-skills-tooling/0044-aggiornamento-skill-new-change.md) | `new-change` update (use-case variant + gate test/snapshot + hook privacy/RoPA) | — | ✅ |
 | 2 | [0045](10-skills-tooling/0045-skill-new-usecase.md) | skill `new-usecase` (numerazione/scaffolding/indice) | — | ✅ |
 | 3 | [0008](03-local-dev/0008-stack-sviluppo-locale.md) | Stack dev locale (Compose: Postgres, proxy, Mailpit, MinIO, ElasticMQ) | — | ⬜ |
 | 4 | [0009](03-local-dev/0009-script-dev.md) | Script `dev/` (setup, up/down, seed, reset, migrate, service, doctor) | 0008 | ⬜ |

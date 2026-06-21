@@ -11,7 +11,7 @@ wait for the developer to ask. Your role is to:
 
 ## Reminders to share once (not repeatedly)
 
-- All change documentation in English
+- Change artifacts (`requirements.md`, `implementation-log.md`) are written **in Italian**; the skill instructions stay in English
 - Uphold the appgrove invariants:
   - **tenant_id only from the verified JWT** — claim `tenant_id` (account); `sub` = user_id. Never from request body/params
   - **`WHERE tenant_id = :tid`** on every tenant-scoped query
@@ -33,6 +33,26 @@ is sourced only from the JWT). Run the suite of **each area touched**:
 A cross-area change must keep **all** touched suites green. If the change touches **only**
 Markdown/skills/prompts/config/docs (no executable code), tests are not applicable — record that,
 with the reason, in the implementation log.
+
+**E2E visual baseline rule (#10 F).** Never update a Playwright/visual snapshot baseline **blindly**: an unexpected visual
+diff is a signal to **investigate** (real regression vs intended UI change), not to re-record. Update a baseline only when
+the UI change is intentional and reviewed; note it in the implementation log. Prefer `aria-snapshot` as the primary net,
+pixel diffs tolerant (#10 20).
+
+## Privacy/RoPA checkpoint (tracked hook — blocking CI enforcement is UC 0031)
+
+If the diff **touches personal data**, surface it during implementation (this is a guided reminder, not the CI gate):
+
+- **Triggers**: new/changed Flyway migrations (columns/tables), new entity/DTO/API fields, or a **new external integration**
+  (potential sub-processor).
+- **Then remind the developer to**: classify the field's **nature / purpose / legal basis / retention**; update the data
+  **manifest + RoPA** (#13 C); if the integration is a new sub-processor, update `content/legal/subprocessors.*.md` (+ 30-day
+  client notice); and **bump the PP/ToS version** — material change → **major** (re-accept, UC 0056) / minor → notice (#13 G41).
+- **Art. 9** (health/biometric/…): strong warning + DPIA (#13 K); do not proceed silently.
+- Set **"Personal data touched? = Yes"** in `requirements.md` and note the classification in the implementation log.
+
+The real **blocking** check (`@PersonalData` not declared → build red, ArchUnit-style classification co-pilot) is delivered by
+**UC 0031**; here `new-change` only reminds, so nothing slips through unnoticed before 0031 lands.
 
 ## Cross-area contracts
 

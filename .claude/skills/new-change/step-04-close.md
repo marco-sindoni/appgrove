@@ -29,50 +29,55 @@ If the change touched executable code, the relevant suites must include the test
 step-03. If any suite fails, fix it before the commit gate. If the change touched no executable
 code, no suite run is required — note that in the log.
 
+**E2E visual baseline rule (#10 F).** For frontend/E2E suites with visual snapshots: an unexpected visual diff is
+**investigated**, not silently re-recorded. Update a baseline only for an intentional, reviewed UI change, and record that
+update (and why) in the implementation log. Never `--update-snapshots` blindly to make a red suite green.
+
 ## Write implementation-log.md
 
-Write `changes/NNNN-brief-description/implementation-log.md`:
+Write `changes/NNNN-brief-description/implementation-log.md` **in Italian** (the artifact is in Italian; the skill
+instructions stay in English):
 
 ```markdown
-# Implementation Log — Change NNNN: Brief Description
+# Implementation Log — Change NNNN: Titolo breve
 
-**Branch**: `change/NNNN-brief-description`
-**Areas**: <infra | frontend | services/<app>, …>
-**Completed**: YYYY-MM-DD
+**Branch**: `change/NNNN-descrizione-breve`
+**Aree**: <infra | frontend | services/<app>, …>
+**Completata**: AAAA-MM-GG
 
-## Files Changed
+## File modificati
 
-| File | Action |
+| File | Azione |
 |---|---|
-| <path> | Created / Modified / Deleted |
+| <path> | Creato / Modificato / Eliminato |
 
-## What Was Done
+## Cosa è stato fatto
 
-<2-3 sentences describing what was implemented and how>
+<2-3 frasi che descrivono cosa è stato implementato e come>
 
-## Decisions Made
+## Decisioni prese
 
-<any decisions made during implementation, or "None — implemented as specified">
+<eventuali decisioni prese durante l'implementazione, o "Nessuna — implementato come da specifica">
 
-## appgrove Invariants
+## Invarianti appgrove
 
-<How the change keeps each touched invariant true (tenant_id-from-JWT, row-level filter,
-microsaas_app Terraform module, structured logging), or "None touched">
+<Come la change mantiene vero ciascun invariante toccato (tenant_id dal JWT, filtro row-level,
+modulo Terraform microsaas_app, logging strutturato), o "Nessuno toccato">
 
-## Notes for Reviewer
+## Note per il revisore
 
-<anything the Platform Engineer should know before merge, incl. cross-area contract impact
-(frontend ↔ service API, service ↔ infra), or "None">
+<qualsiasi cosa il Platform Engineer debba sapere prima del merge, incl. impatto su contratti cross-area
+(frontend ↔ API servizio, servizio ↔ infra), o "Nessuna">
 
-## Tests
+## Test
 
-<tests added/updated and what they cover, per area, and each suite result (`mvn test` /
-`npm test`) — OR "Not applicable — no executable code changed (only <docs/skills/config>)">
+<test aggiunti/aggiornati e cosa coprono, per area, ed esito di ogni suite (`mvn test` /
+`npm test`) — OPPURE "Non applicabile — nessun codice eseguibile modificato (solo <docs/skill/config>)">
 
-## Acceptance Criteria Status
+## Stato criteri di accettazione
 
-- [x] <criterion from requirements.md>
-- [x] <criterion from requirements.md>
+- [x] <criterio da requirements.md>
+- [x] <criterio da requirements.md>
 ```
 
 ## Aggiorna l'indice di esecuzione (solo use-case change)

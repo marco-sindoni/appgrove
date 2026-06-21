@@ -36,6 +36,10 @@ monorepo. Change documentation lives in `changes/NNNN-*/` at the repo root.
 `docs/usecases/_INDEX.md` in sync: set `YYYY` → 🟡 (in corso) at step-01 and → ✅ (implementato) at step-04. The edit is
 bundled into the change commit, so `main` reflects completion only on merge. Normal changes skip this.
 
+**Tracked hooks (reminders, not the CI gate).** (1) **Privacy/RoPA** — when a diff touches personal data, step-03 surfaces a
+guided checkpoint (classify → manifest/RoPA → PP/ToS bump); the blocking CI enforcement is **UC 0031**. (2) **E2E visual
+baseline** (#10 F) — never re-record a snapshot baseline blindly; investigate unexpected diffs (steps 03/04).
+
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
 then log — never the other way around.
 
@@ -57,6 +61,21 @@ then log — never the other way around.
   until the developer explicitly consents.
 - **After committing (step-04): STOP for merge consent.** Leave the branch unmerged and never
   merge to the default branch without the developer's separate explicit go-ahead.
+
+## Questioning style — one at a time, verbose, with dialogue
+
+When you need input from the developer (clarification gate, requirements questions, design choices):
+
+- Ask **one question at a time**. Never batch multiple questions, and never use a compact multiple-choice
+  "wizard" with terse one-line options.
+- Be **verbose and explanatory**: give the context, why the question matters, the trade-offs, and any options you
+  see (with your reasoning/recommendation) — in prose.
+- After each question, **STOP and wait** for the developer's answer. Do not move on or assume.
+- Treat answers as a **dialogue**: if the reply opens follow-ups or needs deepening, keep discussing until the
+  point is genuinely settled, *then* record the definitive answer and move to the next question.
+
+This applies to all steps (the simple step-01 prompts inherit the same spirit; the real back-and-forth is at the
+step-02 clarification gate).
 
 ## Stack-aware testing — by area touched
 
@@ -83,6 +102,6 @@ Carry these non-negotiable constraints through requirements, implementation, and
 
 ## Token budget
 
-Target < 600 output tokens total across all steps.
-Be concise — the artifacts (requirements.md, implementation-log.md) are the deliverable,
-not the chat messages.
+Keep the **artifacts** (requirements.md, implementation-log.md) and routine status messages concise — they are the
+deliverable, not the chat. **Exception**: the clarification/requirements dialogue is deliberately verbose — there, explain
+fully and ask one question at a time (see "Questioning style"); do not compress it to save tokens.
