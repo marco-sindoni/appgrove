@@ -132,6 +132,13 @@ F3. **Stile contenuti visivi & brand kit**:
       identità per-app riconoscibile dentro il brand ombrello.
 
 ## Questioni aperte
+- **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
+  pagina web dell'app (dec. 9), ma **gli screenshot dell'app non esistono al momento di `new-application`** (l'app va
+  ancora costruita). Quindi la landing nasce **bozza** (testi + placeholder visivi). Serve definire un **gate di
+  finalizzazione** — contenuti + screenshot reali completati con una **mia review interattiva** prima della pubblicazione.
+  Da decidere: chi/come scatta il gate (step finale di `new-application`? skill separata `finalize-landing`? parte di
+  `new-change`?), quali asset richiede (screenshot reali, copy definitivo, OG image), e il check "landing pubblicabile".
+  Collegato a dec. 9 e topic **G**.
 - Topic **C (testi legali), D (entità legale), G–J (contenuti, SEO, GEO, paid/social)** da affrontare.
 
 ## Impatti su altre aree
