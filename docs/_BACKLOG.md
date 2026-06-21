@@ -45,6 +45,18 @@ Già parcheggiato negli scope di [03-frontend](03-frontend.md) (pannello admin i
   (catalog/entitlements), operazione **reversibile** che **NON** tocca dati/infra. Distinta dalla skill distruttiva
   `drop-application` (vedi sotto). Da progettare nel pannello admin (#03) + modello dati (#05 apps/entitlements).
 
+## Brand kit & design system (#14 F)
+- **Pacchetto token condiviso nel monorepo** (#14 F2/F3): estrarre i token dai mockup [docs/frontend-design/](frontend-design/)
+  in un brand kit unico (colori light/dark, type scale Plus Jakarta Sans/JetBrains Mono, radii/ombre/spacing, logo
+  light/dark, Material Symbols, nota stile illustrazioni). Fonte unica per backoffice SPA + admin SPA + sito vetrina +
+  landing generate da `new-application`. Base del design system #03. **Artwork logo finale** (foglia-in-quadrato) = task
+  di produzione (anche AI). **Illustrazioni custom AI-assistite** dentro uno stile definito (poche, on-style).
+
+## Feature deprioritizzate (note)
+- **Search globale dal menu del workspace** (sidebar backoffice, presente nei mockup #03) — **NON prioritaria** (richiesto
+  2026-06-21): l'utente non è particolarmente interessato a questo use case al lancio. Resta nei mockup ma a bassa priorità
+  di implementazione; rivalutare quando il numero di app/sezioni per tenant lo rende davvero utile.
+
 ## Dettaglio funzionalità / use case — richiesto 2026-06-14
 Le decisioni di [03-frontend](03-frontend.md) (e affini) fissano stack/architettura/UX a grandi linee. Resta da
 **progettare in dettaglio tutti gli use case** delle varie funzionalità (backoffice, moduli app, console admin):

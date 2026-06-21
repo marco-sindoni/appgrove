@@ -27,7 +27,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - **C. Testi legali** — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
 - **D. Entità legale titolare (L11)** — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
 - **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
-- **F. Brand & identità visiva** — logo, palette, tipografia, tono, stile dei contenuti visuali
+- **F. Brand & identità visiva** ✅ — logo, palette, tipografia, tono, stile dei contenuti visuali
 - **G. Contenuti & struttura del sito (IA)** — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
 - **H. SEO** — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
 - **I. GEO (Generative Engine Optimization)** — essere citati dagli assistenti AI/LLM; contenuti machine-readable
@@ -75,8 +75,53 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
    unica del sito statico, con `effective_date`/versioning + **check CI 5 lingue**). Dettaglio in `skills-backlog` e
    topic **G** (contenuti). Dipendenza: la parte visiva richiede **F (brand & identità visiva)** definito.
 
+10. **Modello linguistico a due assi** (richiesto 2026-06-21, chiarito):
+    - **Documenti LEGALI** (ToS, Privacy Policy, Refund Policy): **IT facente fede** — in caso di difformità tra versioni
+      prevale l'italiano (certezza giuridica, giurisdizione italiana del titolare; coerente #13 G).
+    - **Contenuti MARKETING** (homepage, landing app): **EN lingua sorgente/master** da cui si adattano le altre (mercato
+      ampio, SEO/LLM forti in EN); "facente fede" non si applica (non è testo legale).
+    - Entrambi resi nelle **5 lingue** EN/IT/FR/ES/DE con **check CI presenza di tutte le lingue**. Le traduzioni mantengono
+      il **tono di voce** (F1), non parola-per-parola.
+
+11. **Sequenza go-to-market (uovo-gallina sito↔app, richiesto 2026-06-21)**: il sito **non** è "solo homepage" né serve un
+    catalogo pieno — serve **UNA prima app reale** (il "seme" del grove). Ordine: (1) **costruisci la prima app** ad almeno
+    **MVP/beta** (`new-application`); (2) genera la sua **landing** (dec. 9) + **homepage + pricing + 3 legali**;
+    (3) **pubblica il sito statico** (rollout statico-first B4), backoffice "coming soon"; (4) **sottometti a Paddle** con
+    un'app concreta (Paddle può chiedere account di test; pricing screenshot ok se non finale). L'uovo-gallina si scioglie
+    ricordando che **Paddle serve solo alla monetizzazione**: prima app (beta) → sito che la mostra → Paddle quando è
+    pronta a vendere. In fase free, la landing (anche "coming soon"/waitlist) + newsletter girano **senza Paddle**.
+    Homepage con **una sola app forte** = normale e onesto ("altri strumenti in arrivo"); non fingere un catalogo vuoto.
+
+### F. Brand & identità visiva
+F1. **Brand essence**: *"Strumenti semplici che crescono con te — radicati in Europa."* Metafora del nome (app**grove** =
+    boschetto **curato** di strumenti che **crescono**, **radicati in Europa** = privacy/EU). **Personalità**: chiaro,
+    pratico, affidabile, umano. **Tono di voce**: linguaggio semplice, seconda persona, benefit-first, privacy rassicurante
+    (non allarmista), concretezza > superlativi; coerente nelle 5 lingue (EN sorgente marketing, dec. 10).
+F2. **Identità visiva = quella GIÀ definita nei mockup Claude Design** ([docs/frontend-design/](frontend-design/), v1
+    backoffice + admin/v1, **token coerenti tra loro**) → adottata come **baseline brand** e **set di design token**
+    (supera la proposta "verde-primario", scartata perché meno distintiva):
+    - **Logo (combination mark)**: **foglia** (Material Symbols `eco`, riempita) in **quadrato ad angoli morbidi**
+      (`border-radius ~11px`) colorato d'accent + **wordmark** "appgrove" (peso 800). La foglia porta la semantica grove/crescita/EU.
+    - **Palette**: **accent/brand `#ec5a72`** (rosa/corallo caldo); **bg `#f4f4f1`**, surface `#ffffff`/`#fafaf8`/`#f0efeb`;
+      **testo `#262420`** + `#6e6b63`/`#a5a199`; bordi `#e9e7e1`/`#dcd9d1`. **Colori-categoria per-app**: green `#3aae73`,
+      amber `#dd9b34`, red `#e3654f`, blue `#5b8def`, violet `#8a76f0`, teal `#1fb6a6`. (Neutri caldi + corallo = distintivo
+      e umano, coerente con F1; il verde è colore-categoria, non brand.)
+    - **Tipografia**: **Plus Jakarta Sans** (corpo/titoli) + **JetBrains Mono** (numeri/conteggi).
+    - **I token (variabili CSS del mockup) sono la base diretta del design system #03** e dei token che `new-application`
+      usa per generare le landing on-brand (dec. 9). Artwork finale del logo = task di produzione (anche AI-generabile).
+F3. **Stile contenuti visivi & brand kit**:
+    - **Gerarchia visiva**: **screenshot/mockup UI reali** (primario, on-brand per costruzione, visual più credibile) +
+      **icone Material Symbols** (sistema icone ufficiale, già nei mockup) + **illustrazioni minimali custom AI-assistite**
+      (dentro uno stile semplice e coerente, secondarie). **No foto stock** (cliché/fuori-brand/licenze).
+    - **Brand kit = fonte unica dei token**, condiviso tra backoffice SPA + admin SPA + sito vetrina + landing generate:
+      logo (light/dark), color token (accent corallo + neutri caldi + colori-categoria, **tema chiaro e scuro**), type
+      scale (Plus Jakarta Sans/JetBrains Mono), radii/ombre/spacing, sistema icone (Material Symbols), nota stile
+      illustrazioni. Vive come **pacchetto token condiviso nel monorepo** (base del design system #03).
+    - **Per-app**: ogni app ha **icona (Material Symbol) + colore-categoria**, assegnati/chiesti da `new-application` →
+      identità per-app riconoscibile dentro il brand ombrello.
+
 ## Questioni aperte
-- Topic **B (resto: architettura sito), C (testi legali), D (entità legale), F–J (brand, contenuti, SEO, GEO, paid/social)** da affrontare.
+- Topic **B (resto: architettura sito), C (testi legali), D (entità legale), G–J (contenuti, SEO, GEO, paid/social)** da affrontare.
 
 ## Impatti su altre aree
 - **Sblocca #09 (Pagamenti)**: l'attivazione dell'account Paddle dipende da quest'area.
