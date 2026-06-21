@@ -23,7 +23,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 
 ## Topic dell'area (agenda, da discutere)
 - **A. Requisiti Paddle per l'attivazione** ✅ — checklist merchant Paddle (3 doc legali, prodotto/prezzi/feature, SSL, entità legale)
-- **B. Architettura del sito & rollout** — SSG statico, S3+CloudFront, multilingua, `.md` fonte unica, versioning; **sequenza di accensione prod parziale**
+- **B. Architettura del sito & rollout** ✅ — SSG statico, S3+CloudFront, multilingua, `.md` fonte unica, versioning; **sequenza di accensione prod parziale**
 - **C. Testi legali** — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
 - **D. Entità legale titolare (L11)** — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
 - **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
@@ -91,6 +91,17 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
     ricordando che **Paddle serve solo alla monetizzazione**: prima app (beta) → sito che la mostra → Paddle quando è
     pronta a vendere. In fase free, la landing (anche "coming soon"/waitlist) + newsletter girano **senza Paddle**.
     Homepage con **una sola app forte** = normale e onesto ("altri strumenti in arrivo"); non fingere un catalogo vuoto.
+12. **SSG = Astro** (con **islands React** per riusare i componenti del design system #03 dove serve interattività, es.
+    selettore lingua, form newsletter). Scelto per md/MDX nativo, **SEO/perf top** (zero JS di default → cruciale per
+    ranking e GEO), **i18n integrato**. Le 2 SPA restano Vite/React (#03); il sito è artefatto **separato**. Scartato:
+    Vite+React SSG (più lavoro su md/SEO/i18n) — accettato il costo di "un framework in più".
+13. **Modello contenuti**: **`.md`/MDX = fonte unica**, multilingua; gli **stessi md** servono **sito + rendering in-app**
+    delle policy (#13 G). Frontmatter `version`/`effective_date`/`lang` (versioning git-backed). **Check CI: presenza di
+    tutte le 5 lingue** per pagina/componente (build rossa se ne manca una).
+14. **i18n / routing**: **subpath per lingua** (`appgrove.app/en|it|fr|es|de/…`) + tag **`hreflang`** (standard SEO, più
+    semplice/economico di sottodomini/ccTLD). **Default EN**; root `/` → redirect per `Accept-Language` o fallback EN.
+15. **Hosting** (conferma B4): **S3 + CloudFront + Route53 + ACM** (~$0–1 free tier); build in **GitHub Actions** (#07) →
+    deploy S3 → invalidazione CloudFront. Domini: **`appgrove.app`** (vetrina) + **`app.appgrove.app`** (backoffice).
 
 ### F. Brand & identità visiva
 F1. **Brand essence**: *"Strumenti semplici che crescono con te — radicati in Europa."* Metafora del nome (app**grove** =
@@ -121,7 +132,7 @@ F3. **Stile contenuti visivi & brand kit**:
       identità per-app riconoscibile dentro il brand ombrello.
 
 ## Questioni aperte
-- Topic **B (resto: architettura sito), C (testi legali), D (entità legale), G–J (contenuti, SEO, GEO, paid/social)** da affrontare.
+- Topic **C (testi legali), D (entità legale), G–J (contenuti, SEO, GEO, paid/social)** da affrontare.
 
 ## Impatti su altre aree
 - **Sblocca #09 (Pagamenti)**: l'attivazione dell'account Paddle dipende da quest'area.
