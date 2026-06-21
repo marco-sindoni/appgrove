@@ -27,7 +27,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **B. Catalogo & mapping dati** ✅ — catalog interno ↔ `product`/`price` Paddle; campi su entitlements (#05)
 - **C. Checkout** ✅ — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
 - **D. Webhook & source of truth** ✅ — firma HMAC, idempotenza, eventi → entitlement
-- **E. Ciclo di vita subscription** — stati, proration, upgrade/downgrade tier, dunning, grace
+- **E. Ciclo di vita subscription** ✅ — stati, proration, upgrade/downgrade tier, dunning, grace
 - **F. Entitlement & attivazione/disattivazione** — entitlement per-tenant abilita l'app a runtime
 - **G. Customer portal & self-service** — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
 - **H. Configurazione admin del pricing** — il platform-admin definisce i tier dal pannello admin
@@ -138,12 +138,46 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     creazione lazy C). **Non** sottoscriviamo eventi inutilizzati (meno rumore/superficie). Fatture/ricevute = gestite da
     **Paddle MoR** (topic J), non come evento. Il *cosa fare* su cancel/pause/past_due (accesso fino a quando, grace) → **E**.
 
+### E. Ciclo di vita subscription
+22. **Upgrade/downgrade tra tier**:
+    - **Upgrade** (tier superiore) = **immediato**, Paddle addebita subito la **differenza proporzionale** (proration);
+      il limite superiore è **subito disponibile**. Vale per ogni natura di metrica.
+    - **Downgrade** (tier inferiore) = **a fine periodo** corrente; nessun rimborso (il tenant usa il tier pagato fino a
+      scadenza), il limite inferiore vale **dal prossimo periodo**.
+    - **UX downgrade programmato**: la UI indica **chiaramente** che il downgrade è **schedulato e attivo dal giorno X**,
+      e che **fino al giorno X si resta sul tier attuale** (coi limiti attuali).
+23. **Natura della metrica di quota: `flow` vs `stock`** (raffina A5/A6 — il contratto di quota la dichiara per ogni metrica):
+    - **`flow`** (consumo: fatture/mese, documenti/mese) → si **accumula in una finestra** e **resetta**; il conflitto col
+      tier inferiore si esprime **in futuro** → **downgrade sempre permesso** (il prossimo periodo riparte sotto il nuovo limite).
+    - **`stock`** (stato corrente persistente: utenti/seat, contatti salvati) → **nessuna finestra**, è un **tetto sullo
+      stato attuale**; il conflitto è **già noto adesso** → **downgrade GATED**: se lo stato corrente **eccede** il limite
+      target, **blocco + messaggio di remediation** ("rientra nel limite, es. max 10 utenti, poi potrai scendere"). Una
+      volta rientrati (≤ target), il downgrade si **programma a fine periodo** come per il `flow`.
+    - Da `flow` discende finestra/reset; da `stock` discende il gating del downgrade. Il **co-pilota `new-application`**
+      deve **chiedere esplicitamente la natura** di ogni metrica (flow/stock).
+24. **Caso "dati oltre il nuovo limite" (downgrade `stock`)**: gestito a monte dal gating (23) — non si arriva al
+    downgrade finché lo stato non rientra. Resta responsabilità della **singola app** gestire eventuali stati "sopra
+    capacità" residui (es. sola lettura sopra soglia), come parte del **contratto quota** (#09 A).
+
+25. **Cancellazione = accesso fino a fine periodo** (standard SaaS): la disdetta imposta `cancel_at = fine periodo`; il
+    tenant **usa l'app fino alla scadenza** (no rimborso del periodo in corso), poi `status=canceled` → entitlement off.
+    Possibilità di **riattivare** (annullare la disdetta) prima della scadenza. UX: "attivo fino al giorno X, poi non rinnovato".
+26. **Dunning (rinnovo fallito) = grace con accesso mantenuto**: in `past_due` si **mantiene l'accesso**; grace = durata
+    dei retry Paddle, configurata a **2 settimane**. Solleciti via **email Paddle** (MoR) + **banner warning in-app** (link
+    al portale, G). Solo all'**esito finale negativo** (Paddle → canceled/paused) l'accesso viene tagliato. Nessun dunning
+    custom: ci appoggiamo a Paddle.
+27. **Trial = con carta upfront** (modello a): la carta si inserisce al checkout, periodo di prova gratis, poi **conversione
+    automatica** a pagamento (Paddle, trial sul price). Meno abusi, end-to-end semplice. Trial senza carta = evoluzione futura.
+28. **Pause/resume**: **nessuna pause self-service al lancio** (bassissima priorità → use case futuro in [_BACKLOG](_BACKLOG.md)).
+    Lo status `paused`, se compare (azione admin/Paddle), è trattato come **no accesso**.
+29. **Mappa status → accesso** (regola entitlement consolidata): **accesso se `status ∈ {trialing, active, past_due}`**;
+    **no accesso se `status ∈ {paused, canceled}`**. L'"accesso fino a fine periodo" dopo disdetta o in attesa di downgrade
+    è automatico: lo status resta `active` (con cambio programmato) finché il periodo non scade.
+
 ## Questioni aperte
-- **Upgrade/downgrade tra tier** (proration, effetto immediato vs a fine ciclo, comportamento della quota al cambio) →
-  da dettagliare nel **topic E (ciclo di vita)**.
 - **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
   topic **H (config admin del pricing)**.
-- Topic **E–K** ancora da affrontare.
+- Topic **F–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
