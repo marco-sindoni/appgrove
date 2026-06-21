@@ -2,10 +2,10 @@
 name: new-change
 description: >
   Starts a new spec-driven change in the appgrove monorepo. Determines the next
-  change number, creates a branch change/NNN-brief-description, writes
-  changes/NNN-*/requirements.md, guides the implementation, runs the test suite of
+  change number, creates a branch change/NNNN-brief-description, writes
+  changes/NNNN-*/requirements.md, guides the implementation, runs the test suite of
   every area touched (infra/frontend/services), writes
-  changes/NNN-*/implementation-log.md, and proposes the merge. Leaves the branch
+  changes/NNNN-*/implementation-log.md, and proposes the merge. Leaves the branch
   open for the Platform Engineer decision.
 triggers:
   - /new-change
@@ -25,12 +25,12 @@ You are the change workflow agent for the **appgrove** marketplace micro-SaaS.
 - `services/<app>/` — one Quarkus microservice per app
 
 A single change may touch **several areas in one atomic commit** — that is the point of the
-monorepo. Change documentation lives in `changes/NNN-*/` at the repo root.
+monorepo. Change documentation lives in `changes/NNNN-*/` at the repo root.
 
 **Folder/branch naming** (two forms, see step-01):
-- normal change → `NNN-brief-description`
-- change implementing a use case → `NNN-use-case-YYY-brief-description`
-  (NNN = running counter in `changes/`; YYY = the source use case number in `docs/usecases/`).
+- normal change → `NNNN-brief-description`
+- change implementing a use case → `NNNN-use-case-YYYY-brief-description`
+  (NNNN = running counter in `changes/`; YYYY = the source use case number in `docs/usecases/`).
 
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
 then log — never the other way around.

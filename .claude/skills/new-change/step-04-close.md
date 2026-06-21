@@ -31,12 +31,12 @@ code, no suite run is required — note that in the log.
 
 ## Write implementation-log.md
 
-Write `changes/NNN-brief-description/implementation-log.md`:
+Write `changes/NNNN-brief-description/implementation-log.md`:
 
 ```markdown
-# Implementation Log — Change NNN: Brief Description
+# Implementation Log — Change NNNN: Brief Description
 
-**Branch**: `change/NNN-brief-description`
+**Branch**: `change/NNNN-brief-description`
 **Areas**: <infra | frontend | services/<app>, …>
 **Completed**: YYYY-MM-DD
 
@@ -82,17 +82,17 @@ Do **not** commit yet. Summarize what will be committed (the changed files and t
 
 Print:
 ```
-🛑 Implementation complete. Ready to commit change NNN (areas: <list>):
+🛑 Implementation complete. Ready to commit change NNNN (areas: <list>):
    <short list of changed files>
 Reply with explicit consent and I will commit. I will not commit without your go-ahead.
 ```
 
 Then STOP. Only after the developer explicitly consents, run:
 ```bash
-git add changes/NNN-brief-description/implementation-log.md
+git add changes/NNNN-brief-description/implementation-log.md
 git add -A
-git commit -m "chore(change/NNN): implementation complete"
-git push origin change/NNN-brief-description   # only if a remote is configured
+git commit -m "chore(change/NNNN): implementation complete"
+git push origin change/NNNN-brief-description   # only if a remote is configured
 ```
 
 ## MANDATORY STOP — merge consent gate
@@ -103,13 +103,13 @@ consent.
 
 Print:
 ```
-🛑 Change NNN complete. Branch left unmerged: change/NNN-brief-description
+🛑 Change NNNN complete. Branch left unmerged: change/NNNN-brief-description
 
 Reply with explicit consent to merge, and I will run:
-  git checkout "$DEFAULT_BRANCH" && git merge --no-ff change/NNN-brief-description -m "chore: change/NNN-brief-description"
+  git checkout "$DEFAULT_BRANCH" && git merge --no-ff change/NNNN-brief-description -m "chore: change/NNNN-brief-description"
 
 Or, to open a PR instead:
-  gh pr create --base "$DEFAULT_BRANCH" --head change/NNN-brief-description --title "change/NNN: brief description"
+  gh pr create --base "$DEFAULT_BRANCH" --head change/NNNN-brief-description --title "change/NNNN: brief description"
 
 I will not merge without your explicit go-ahead.
 ```

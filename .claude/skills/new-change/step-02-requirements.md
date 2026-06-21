@@ -20,15 +20,16 @@ Ask them all at once, not one by one:
 > 2. What is in scope? (which areas — infra/frontend/services/<app> — files, behaviors)
 > 3. What is explicitly out of scope or should not change?
 
-Then write `changes/NNN-brief-description/requirements.md`:
+Then write `changes/NNNN-brief-description/requirements.md`:
 
 ```markdown
-# Change NNN: Brief Description
+# Change NNNN: Brief Description
 
-**Branch**: `change/NNN-brief-description`
+**Branch**: `change/NNNN-brief-description`
 **Areas**: <infra | frontend | services/<app>, … — one or more>
 **Date**: YYYY-MM-DD
 **Author**: (developer's name or "Platform Engineering")
+**Source use case**: <`docs/usecases/<area>/YYYY-*.md` if this change implements a catalog use case, else "None (ad-hoc change)">
 
 ## Problem / Goal
 
@@ -69,8 +70,8 @@ Otherwise omit. step-03 must satisfy whatever is listed here.>
 
 Commit the file:
 ```bash
-git add changes/NNN-brief-description/requirements.md
-git commit -m "chore(change/NNN): write requirements"
+git add changes/NNNN-brief-description/requirements.md
+git commit -m "chore(change/NNNN): write requirements"
 ```
 
 ## MANDATORY STOP — requirements review gate
@@ -85,5 +86,5 @@ Print:
 ```
 
 Wait for the developer's explicit approval. If they request changes, update `requirements.md`,
-re-commit (`chore(change/NNN): revise requirements`), and ask again. Only once they approve do
+re-commit (`chore(change/NNNN): revise requirements`), and ask again. Only once they approve do
 you proceed to step-03-implement.md.

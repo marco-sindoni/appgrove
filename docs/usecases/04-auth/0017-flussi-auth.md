@@ -1,8 +1,12 @@
-# Casi d'uso — Autenticazione & Registrazione
+# UC 0017 — Flussi auth UI (signup/verify/login/reset/invite/2FA/onboarding)
 
-**Stato**: 🟢 deciso (flussi UC1–UC10 definiti; restano solo i testi dei template email)
-**Ultimo aggiornamento**: 2026-06-16
-**Aree collegate**: [02-auth-sicurezza](../02-auth-sicurezza.md), [03-frontend](../03-frontend.md), [05-persistenza-dati](../05-persistenza-dati.md)
+**Area**: 04-auth · **Fase**: 2 · **Stato**: 🟢 deciso (flussi UC1–UC10 definiti; restano solo i testi dei template email)
+**Dipendenze**: UC 0014 (Cognito + auth BFF), UC 0015 (Pre-Token-Gen + JWT), UC 0019 (backoffice shell)
+**Fonte decisioni**: #02, #03, #05 · **Ultimo aggiornamento**: 2026-06-16
+**Aree collegate**: [02-auth-sicurezza](../../02-auth-sicurezza.md), [03-frontend](../../03-frontend.md), [05-persistenza-dati](../../05-persistenza-dati.md)
+
+> Storia: migrato da `docs/usecases/01-auth-registrazione.md`, rinumerato a **0017** nel catalogo per-area. I "flussi"
+> dettagliati UC1–UC10 qui sotto sono i **sotto-flussi** di questo use case.
 
 Specifica dei flussi utente di auth/registrazione (backoffice cliente). Per ogni caso d'uso: attori, precondizioni,
 flusso principale, varianti/errori, postcondizioni, mappatura tecnica.
@@ -49,7 +53,7 @@ flusso principale, varianti/errori, postcondizioni, mappatura tecnica.
 3. **Verifica email (gate intermedio, UC2)**: l'utente inserisce il codice (o clicca il link) → utente **confirmed**. Non si prosegue finché non verificato. (resend disponibile)
 4. Post-verifica la Lambda **logga** l'utente (token in memoria + cookie refresh): gli step seguenti sono autenticati.
 5. **Workspace**: nome account → il **core** crea `account` (tenant) + `users` (owner, legato a `cognito_sub`).
-6. **Pick apps**: selezione app iniziali → `entitlements` (trial/active); billing/Paddle → #09.
+6. **Pick apps**: selezione app iniziali → crea `subscription` (trialing/active) → **entitlement derivato** (#09 dec.12); billing/Paddle → #09.
 7. **Done** → dashboard. Mostra **banner "Imposta 2FA"** (UC10).
 **Post**: account+owner creati, sessione attiva. **Errori**: email già registrata → UC9; codice scaduto → resend.
 
@@ -85,7 +89,7 @@ Email già registrata (signup) → suggerisci login/reset; codice/token scaduto 
 **Dal profilo** → "Abilita 2FA" → Cognito `AssociateSoftwareToken` → mostra **QR/secret** → l'utente scansiona nell'app authenticator → inserisce codice → `VerifySoftwareToken` → `SetUserMFAPreference` (TOTP). **Banner** nel backoffice finché non attivata. **Disattivazione** dal profilo (richiede ri-autenticazione). Una volta attiva → UC3 chiede il codice TOTP.
 
 ## Mappatura tecnica
-Cognito (login custom via **auth Lambda**), **core DB** (`accounts`/`users`/`invitations`/`entitlements`), **Pre-Token-Gen** inietta `tenant_id`+`roles`, errori **problem+json**, **template email Cognito in EN+IT** (localizzazione). 2FA via Cognito TOTP MFA.
+Cognito (login custom via **auth Lambda**), **core DB** (`accounts`/`users`/`invitations`/`subscription`; **entitlement derivato**, #09 dec.12), **Pre-Token-Gen** inietta `tenant_id`+`roles`, errori **problem+json**, **template email Cognito in EN+IT** (localizzazione). 2FA via Cognito TOTP MFA.
 
 ## Questioni aperte
 _Nessuna — blocco chiuso. Resta solo la stesura dei **testi** dei template email EN/IT (contenuto, non decisione)._
