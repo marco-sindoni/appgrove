@@ -165,7 +165,7 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     | Export ZIP (S3) | **7 giorni** auto-delete | lifecycle S3 + presigned 7gg (#13 D) |
     | Log applicativi/operativi | test **7gg** / prod **30gg** (#08) | poi scadono |
     | Log audit/sicurezza | **12 mesi** | archivio S3/Glacier (#08); deciso internamente (copertura forense; detection incidenti ~200gg) |
-    | Ticket privacy (Jira) | **24 mesi** | prova evasione richieste (accountability/difesa), PII minimizzati |
+    | Ticket privacy (ticketing in-house) | **24 mesi** | prova evasione richieste (accountability/difesa), PII minimizzati |
     | Consenso newsletter / prova | iscritto + **24 mesi** post-unsubscribe | prova consenso/revoca |
     | Dati fiscali/pagamento | **in capo a Paddle (MoR)** | non conservati da appgrove |
 
@@ -350,8 +350,8 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     job (D), audit (#08). **Non è un nuovo store**, è aggregazione. → use case + skill.
 
 ## Revisione legale pre-go-live
-Consolidata nel documento vivo dedicato → **[_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md)** (checklist L1–L12:
-DPA, privacy policy, ToS, ruoli, art. 9, retention, consenso, sub-processor, accessibilità, entità legale, template breach).
+Consolidata nel documento vivo dedicato → **[_REVISIONE-LEGALE.md](_REVISIONE-LEGALE.md)** (checklist L1–L13:
+DPA, privacy policy, ToS, ruoli, art. 9, retention, consenso, sub-processor, accessibilità, entità legale, template breach, **Refund Policy**).
 **Consigliata, opzionale**; nessun blocco prima del go-live.
 
 ## Questioni aperte

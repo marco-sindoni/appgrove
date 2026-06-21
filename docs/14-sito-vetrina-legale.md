@@ -17,8 +17,8 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
   subscribe newsletter #13 F, Plausible Cloud cookieless EU, build S3+CloudFront, versioning `effective_date`, check CI
   presenza 5 lingue, **nota marketing "all-EU deployed"** come proposta di valore);
 - [13-compliance-privacy](13-compliance-privacy.md) G (privacy policy/ToS multilingua, IT facente fede) e F (consenso/newsletter);
-- [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md) → **L2** (Privacy Policy), **L3** (ToS, Paddle MoR), **L11** (entità legale
-  titolare, richiesta da privacy policy e da Paddle MoR);
+- [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md) → **L2** (Privacy Policy), **L3** (ToS, Paddle MoR), **L13** (Refund Policy,
+  terzo documento richiesto da Paddle), **L11** (entità legale titolare, richiesta da privacy policy e da Paddle MoR);
 - [09-pagamenti](09-pagamenti.md) J (cosa copre Paddle come MoR vs cosa resta a noi).
 
 ## Topic dell'area (agenda, da discutere)
@@ -52,7 +52,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
    serve un sito **live in HTTPS**, quindi si accende **solo** l'infra del sito vetrina (S3+CloudFront+Route53+ACM,
    **~$0–1** free tier), **senza** backend/DB/Fargate. **Backoffice = pagina statica "coming soon"** su `app.appgrove.app`
    (dominio live e sottomettibile a Paddle, app non ancora esistente). **Raffina (non viola)** `phased-env-activation`:
-   resta "niente infra costosa early"; il sito statico (≈gratis) precede il backend. Resto di B → da discutere.
+   resta "niente infra costosa early"; il sito statico (≈gratis) precede il backend. (Architettura di B completata in dec. 12-15.)
 
 ### E. Posizionamento & ICP
 5. **Modello a due livelli**: acquisizione a livello **APP** (landing dedicate per *job*/keyword, è dove entra il
@@ -179,7 +179,7 @@ F3. **Stile contenuti visivi & brand kit**:
     (headline job + sub-benefit + CTA + screenshot UI); (2) Problema→soluzione; (3) Feature chiave (3–6, icone Material
     Symbols + mini-screenshot); (4) Come funziona (2–3 step); (5) Pricing/tier (mensile/annuale default annuale, trial);
     (6) Badge/sezione privacy EU; (7) FAQ; (8) CTA finale. Base = brand kit (F); multilingua (dec. 9); soggetto al **gate
-    di finalizzazione** (screenshot/copy reali, dubbio in Questioni aperte).
+    di finalizzazione** (screenshot/copy reali → dec. 51-55).
 26. **Homepage (brand)**: hero (promessa "strumenti semplici che crescono con te") → vetrina app (anche 1, "altri in
     arrivo", onesta col catalogo piccolo dec. 11) → "un account, tanti strumenti" (cross-sell) → sezione privacy/EU (wedge)
     → newsletter → CTA (registrati/esplora).

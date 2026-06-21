@@ -55,11 +55,15 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
    centralizzati** in `commons` → **problem+json**. **Correlation id** (`X-Request-Id`/`traceparent`) propagato in MDC
    (→ [08-observability](08-observability.md)). **Paginazione offset-based** (`page`/`size` + total) per il PoC.
 
-### Enforcement entitlement (topic G — aggiorna #01/#02)
-7. **Custom Lambda authorizer** su API Gateway: verifica il **JWT** *e* controlla che il tenant abbia **attivo
-   l'`app_id` del path** (legge `platform.entitlements` via RDS Proxy, con **caching** dell'authorizer; revoca con
-   lag = TTL cache). Sostituisce l'authorizer Cognito nativo. Il servizio (Quarkus OIDC) **ri-valida il JWT** e fa
-   l'**authz sui ruoli** (`@RolesAllowed`) — difesa in profondità.
+### Enforcement entitlement (topic G — aggiorna #01/#02; allineato a #09 dec.30)
+7. **Enforcement a livelli** (difesa in profondità):
+   - **Custom Lambda authorizer** su API Gateway: verifica il **JWT** *e* fa un **check d'accesso grossolano** ("il tenant
+     ha accesso all'`app_id` del path?") sull'**entitlement DERIVATO** da `platform.subscription` (status nell'access-set
+     `trialing/active/past_due`), via RDS Proxy, con **caching** dell'authorizer (revoca con lag = TTL). **NON** legge una
+     tabella `entitlements` (abolita, #09 dec.12): la deriva da `subscription`. Sostituisce l'authorizer Cognito nativo.
+   - Il **servizio** (Quarkus OIDC) **ri-valida il JWT** e applica i **gate fini** (#09 dec.30): stato esatto/grace →
+     **402**, ruoli (`@RolesAllowed`) → 403, **quota** (SPI flow/stock) → 429. I **diritti GDPR** restano **esenti** dai
+     gate (#09 F31).
 
 ### Orchestrazione purge (topic H — aggiorna #05)
 8. **Eventi async (EventBridge)**: il core emette `tenant.offboarded`; ogni servizio **consuma e purga** i dati del

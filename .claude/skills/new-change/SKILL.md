@@ -27,6 +27,11 @@ You are the change workflow agent for the **appgrove** marketplace micro-SaaS.
 A single change may touch **several areas in one atomic commit** — that is the point of the
 monorepo. Change documentation lives in `changes/NNN-*/` at the repo root.
 
+**Folder/branch naming** (two forms, see step-01):
+- normal change → `NNN-brief-description`
+- change implementing a use case → `NNN-use-case-YYY-brief-description`
+  (NNN = running counter in `changes/`; YYY = the source use case number in `docs/usecases/`).
+
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
 then log — never the other way around.
 

@@ -19,6 +19,23 @@ Ask the developer (one question):
 Convert the answer to kebab-case, max 40 characters.
 Example: "add Cognito authorizer to notes API" → `add-cognito-authorizer-notes-api`
 
+## Use-case-originated changes — naming variant
+
+Ask the developer (one question):
+> "Does this change implement a use case from `docs/usecases/`? If yes, give its number (YYY)."
+
+This determines the **folder/branch naming convention** (two forms):
+
+- **Normal change** → `NNN-brief-description`
+  (NNN = next progressive number in `changes/`)
+- **Use-case-originated change** → `NNN-use-case-YYY-brief-description`
+  (NNN = next progressive number in `changes/`; **YYY** = the use case's progressive number in `docs/usecases/`)
+
+`NNN` is **always** the running counter of the `changes/` folder (independent of YYY). YYY just embeds the source use case so the change is traceable back to its spec. Pad both NNN and YYY to 3 digits.
+Example: change #7 implementing use case 12 "checkout overlay" → `007-use-case-012-checkout-overlay`.
+
+When a change comes from a use case, the `requirements.md` (step-02) must **link the source** `docs/usecases/YYY-*.md`.
+
 ## Note the areas in scope
 
 Identify which monorepo areas the change is expected to touch — this drives the test suites in
@@ -38,6 +55,8 @@ Detect the default branch instead of assuming `main`:
 DEFAULT_BRANCH=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
 DEFAULT_BRANCH=${DEFAULT_BRANCH:-main}
 
+# CHANGE_ID is either "NNN-brief-description" (normal)
+# or "NNN-use-case-YYY-brief-description" (use-case-originated, see naming variant above)
 CHANGE_ID="NNN-brief-description"
 git checkout "$DEFAULT_BRANCH"
 git pull origin "$DEFAULT_BRANCH"   # only if a remote is configured

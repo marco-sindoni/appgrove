@@ -5,7 +5,7 @@
 (`local` = $0; pool Cognito `dev` ~$0 in free tier).
 
 **Assunzioni**: regione **`eu-west-1` (Irlanda)** — scelta cost-min (#06 topic A); traffico PoC basso;
-1 task per servizio (no HA nel PoC). Ultimo aggiornamento: 2026-06-19 (dopo #07 DevOps/CI-CD).
+1 task per servizio (no HA nel PoC). Ultimo aggiornamento: 2026-06-21 (dopo #08/#10/#13/#09/#14).
 
 ## Voci e stima
 
@@ -38,7 +38,10 @@ Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **R
 
 - **test ≈ $25–30/mese** — floor always-on (RDS Proxy + endpoints) + misc; Fargate/Aurora ~$0 da idle.
 - **prod ≈ $55–70/mese** — Fargate ~$30 + floor ~$26 + misc (~$8: Route53/dominio, Secrets, CloudWatch, ecc.).
-- **TOTALE ≈ $80–100/mese.**
+- **TOTALE AWS ≈ $80–100/mese.** (Il budget AWS $100, #08, è **solo-AWS**.)
+- **Costi ricorrenti NON-AWS** (fuori dal budget AWS): **Plausible Cloud €9/mese** (analytics EU, #13); **fee Paddle** =
+  revenue-based ~5%+$0.50/transazione (#09 K, non un costo fisso); **domiciliazione/virtual office** per la sede ditta
+  individuale (#14 D, poche centinaia €/anno, prerequisito business).
 
 ⚠️ **Variabile critica = RDS Proxy**: per Aurora Serverless v2 ha un **minimo di fatturazione** (da verificare): se elevato,
 i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda dirette) — vale la pena riconsiderare.

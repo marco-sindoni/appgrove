@@ -118,6 +118,13 @@ senso compliance/legale (→ #13).
     Trova le violazioni comuni senza lavoro manuale. **Audit manuale completo** (screen reader, WCAG) = pre-go-live/#13
     (rilevanza European Accessibility Act, in vigore da giugno 2025).
 
+### L. Test del flusso pagamenti (Paddle) — rimando a #09 D20
+40. La **strategia di test dei pagamenti** è definita in [09-pagamenti](09-pagamenti.md) dec.20, a **3 livelli**, coerente
+    con questa filosofia: **L1** integration esaustivo del processing webhook (payload sintetici firmati, Testcontainers,
+    per-PR **bloccante**); **L2** E2E Playwright dei nostri pezzi con **Paddle.js mockato** (per-PR bloccante); **L3** smoke
+    reale su **Paddle sandbox** (**pre-release**, override manuale se sandbox down). Principio: **non si guida l'iframe
+    Paddle** con Playwright (si mocka il confine). Lo stub Paddle locale (#11) abilita L1/L2 offline.
+
 ## Questioni aperte
 _Nessuna — #10 chiuso._ Dipendenze: lo scaffold `new-application` deve generare unit/integration/security/E2E/seed di
 base e encodare la regola "mai update baseline alla cieca"; lo stack locale offline (#11) è prerequisito degli E2E.

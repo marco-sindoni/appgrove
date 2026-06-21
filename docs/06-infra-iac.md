@@ -90,6 +90,8 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 
 ### Messaging (topic H)
 19. **Bus EventBridge dedicato** + **una coda SQS per servizio** per la purge (`tenant.offboarded`): il servizio consuma e purga il proprio schema.
+19bis. **Coda SQS webhook Paddle + DLQ** (#09 D19): la **Lambda di ingest** webhook verifica firma/dedup e accoda; un
+    **consumer** (capability billing core, #04) processa idempotente; **DLQ + allarme** (#08). Distinta dalla coda purge.
 
 ### Secrets/config (topic I)
 20. **SSM Parameter Store** (config/secret app) + **Secrets Manager** (credenziali DB), per env; lettura a runtime.

@@ -34,8 +34,9 @@ né lo schema dati fisico (→ [05-persistenza-dati](05-persistenza-dati.md)).
 
 ### Core/platform service (topic C, B)
 5. **Esiste UN core/platform service** che è la source of truth della piattaforma. Possiede (DB proprio):
-   `accounts`, `memberships` (utente↔tenant + ruolo), `invitations`, `catalog` (app + capability
-   single/multi-user), `entitlements` (tenant↔app attive), gestione **webhook billing Paddle**.
+   `accounts` (+ `paddle_customer_id`), `users` (membership foldata su users, **niente tabella memberships** — #05 dec.7),
+   `invitations`, **catalogo** (`app`/`app_tier`/`app_price` — #09 B), **`subscription`** (tenant↔app; **entitlement
+   DERIVATO**, niente tabella entitlements — #09 dec.12), gestione **webhook billing Paddle**.
    Cognito fa **solo autenticazione** (identity provider). I servizi per-app restano verticali puri.
 
 ### Identità & token (topic A, → dettaglio in 02)

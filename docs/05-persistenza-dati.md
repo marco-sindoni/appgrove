@@ -13,11 +13,11 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
 - **Aurora Serverless v2 PostgreSQL**, istanza **condivisa**; **schema-per-app** (`app_<app_id>`), core su schema `platform`.
 - **Hibernate multitenancy `DISCRIMINATOR`** + `TenantResolver` da JWT; filtro `tenant_id` automatico, **fail-closed**.
 - `tenant_id` = account id; `user_id` = `sub` Cognito. **1 utente → 1 tenant**.
-- Il **core** possiede: `accounts`, `memberships` (utente↔tenant + ruolo), `invitations`, `catalog` (app + capability single/multi-user), `entitlements` (tenant↔app).
+- Il **core** possiede: `accounts` (+ `paddle_customer_id`, #09 B), `users` (**membership foldata su users**, niente tabella `memberships`), `invitations`, **catalogo** (`app`/`app_tier`/`app_price`, modello autorevole in [09-pagamenti](09-pagamenti.md) B), e **`subscription`** (tenant↔app). **L'entitlement è DERIVATO** da `subscription` (niente tabella `entitlements`, #09 dec.12).
 - La **Pre-Token-Gen Lambda** legge `platform` in **DB diretto**.
 
 ## Topic dell'area (agenda)
-- **A. Data model del core (`platform`)** — tabelle, chiavi, relazioni (accounts/memberships/invitations/catalog/entitlements).
+- **A. Data model del core (`platform`)** — tabelle, chiavi, relazioni (accounts/users/invitations/catalogo `app`+`app_tier`+`app_price`/`subscription`; entitlement derivato).
 - **B. Modello dati per-app & discriminator** — colonna `tenant_id` su ogni tabella tenant-scoped; implicazioni single vs multi-user.
 - **C. Strategia schema & isolamento** — schema-per-app sull'istanza condivisa; divieto cross-schema; path verso DB dedicato.
 - **D. Migrations** — Flyway vs Liquibase; per-schema; chi le esegue (startup servizio / CI/CD); versioning.
@@ -48,15 +48,20 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
 
 ### Data model del core — schema `platform` (topic A)
 7. Tabelle (tutte con audit + `deleted_at`; PK UUID v7 salvo `apps`):
-   - **accounts**: `id` (= `tenant_id`), `name`, `status` (active/suspended). Il tenant.
+   - **accounts**: `id` (= `tenant_id`), `name`, `status` (active/suspended), **`paddle_customer_id`** (un customer Paddle per account, #09 B). Il tenant.
    - **users**: `id`, `cognito_sub` (unique), `email`, `display_name`, `tenant_id`→accounts, `role`
      (owner/admin/member), `status`. **La membership è foldata su `users`** (1 utente→1 tenant): nessuna tabella memberships.
    - **invitations**: `id`, `tenant_id`→accounts, `email`, `role`, `token_hash` (single-use), `status`
      (pending/accepted/expired/revoked), `expires_at`, `invited_by`, `accepted_user_id`.
-   - **apps** (catalog): `app_id` (PK varchar kebab), `name`, `description`, `user_model` (single/multi),
-     `status`, `paddle_product_id`.
-   - **entitlements**: `id`, `tenant_id`→accounts, `app_id`→apps, `status` (active/trial/suspended/cancelled),
-     `activated_at`, `expires_at`, `paddle_subscription_id`, UNIQUE(`tenant_id`,`app_id`).
+   - **Catalogo** (modello autorevole in [09-pagamenti](09-pagamenti.md) B, dec.10): **`app`** (`app_id` PK varchar kebab,
+     `name`, `description`, `user_model` single/multi, `status`, **`paddle_product_id`**) + **`app_tier`** (tier, `limits`
+     JSON con metrica/finestra/tetto, `features`, `trial_days`) + **`app_price`** (`billing_cycle` monthly/annual,
+     **`paddle_price_id`**, importo, valuta). _Supera la singola tabella `apps` originaria._
+   - **subscription** (tenant-scoped): `tenant_id`→accounts, `app_id`, **`paddle_subscription_id`**, `paddle_price_id`
+     corrente (→ risolve il tier), **`status`** (`trialing/active/past_due/paused/canceled`), `current_period_start/end`,
+     `cancel_at`, `trial_end`. Una per (tenant, app). _**L'entitlement NON è una tabella**: è **derivato** da `subscription`
+     (status nell'access-set) + `app_price`/`app_tier`, fonte unica `subscription` — #09 dec.12. Sostituisce la vecchia
+     tabella materializzata `entitlements`._
 
 ### Modello dati per-app & isolamento (topic B, C)
 8. Ogni tabella tenant-scoped in `app_<app_id>` ha la colonna **`tenant_id`** (UUID = account id) = **discriminator** Hibernate.
