@@ -30,7 +30,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - **F. Brand & identità visiva** ✅ — logo, palette, tipografia, tono, stile dei contenuti visuali
 - **G. Contenuti & struttura del sito (IA)** ✅ — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
 - **H. SEO** ✅ — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
-- **I. GEO (Generative Engine Optimization)** — essere citati dagli assistenti AI/LLM; contenuti machine-readable
+- **I. GEO (Generative Engine Optimization)** ✅ — essere citati dagli assistenti AI/LLM; contenuti machine-readable
 - **J. Paid & social & launch** — Meta/Facebook + altri social, organico vs paid, strategia di lancio
 
 ## Decisioni prese
@@ -208,6 +208,26 @@ F3. **Stile contenuti visivi & brand kit**:
     (Claude)**, non scritti dall'utente (non è la sua competenza). **On-brand** col tono **"lean"/semplice** (F1) e lo
     **stile visivo** (F3 screenshot-first + Material Symbols + illustrazioni AI). L'utente **rivede e approva** (review
     interattiva / gate di finalizzazione). Vale per **tutto il sito**, non solo le landing app (estende dec. 9/C16/F3).
+
+### I. GEO (Generative Engine Optimization)
+36. **Obiettivo GEO**: farsi **citare/raccomandare dagli assistenti AI** (ChatGPT, Claude, Perplexity, Gemini, AI Overviews)
+    su query tipo "miglior gestionale fatture GDPR per freelance EU". Carta forte: l'angolo **all-EU/GDPR + micro-tool
+    focalizzati** è un **fatto distintivo e citabile**.
+37. **Contenuti machine-readable**: Schema.org (H), **HTML semantico pulito** (Astro statico), formati estraibili (**FAQ
+    Q&A**, **tabelle di confronto**, liste feature, statement fattuali). Fonte **md** già ideale.
+38. **`llms.txt`** adottato (riassunto markdown curato del prodotto/sito per gli LLM, come robots.txt per le AI); costo ~0.
+39. **Consentire i crawler AI** in `robots.txt` (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, …): è lo **scopo** della
+    GEO. Nota EU-purista: è **contenuto marketing** ad essere crawlato, non dati utenti → ok.
+40. **Entità canonica / boilerplate**: descrizione canonica del prodotto (nome, categoria, fatti chiave, angolo EU/GDPR)
+    usata **identica ovunque** (sito, directory, social) → gli LLM formano un'entità chiara. Generata/mantenuta da noi.
+41. **Presenza off-site (corroborazione)**: directory/review (G2, Capterra, **AlternativeTo**), **Product Hunt**, community
+    dev/indie, Reddit → più fonti = più citabilità/fiducia. Dettaglio nel topic **J** (lancio).
+42. **Contenuti question-based**: articoli che rispondono come si chiede a un'AI ("best [tool] for [ICP] GDPR/EU", confronti,
+    how-to). Stesso impianto pillar-cluster di H, formattato per le risposte AI.
+43. **Misurazione**: referral dai motori AI via **Plausible** (referrer chatgpt.com/perplexity.ai/…) + **check periodici
+    manuali** (interrogare gli LLM e verificare le citazioni).
+44. **Generazione**: `new-application` e la generazione contenuti producono materiale **GEO-friendly** (FAQ strutturate,
+    fatti chiari, descrizione entità coerente), coerente col principio dec. 35 (tutto AI-generato on-brand).
 
 ## Questioni aperte
 - **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
