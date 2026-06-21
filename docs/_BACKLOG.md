@@ -146,6 +146,13 @@ del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via n
 - **L3** smoke reale su **Paddle sandbox** (**pre-release**, nel flusso tag→prod, confluisce nel gate; **override manuale**
   con motivazione se sandbox down). Richiede #14 + account.
 
+### Leve di business (#09 K)
+- **Bundling (BASSISSIMA priorità, #09 K50)**: più app in un unico abbonamento = una transazione → quota fissa Paddle
+  ($0.50) diluita. Leva futura per migliorare il margine su pacchetti di app economiche. Richiede modellare un "bundle"
+  sopra i tier per-app. Non al lancio.
+- **Riconciliazione netto/revenue** (#09 K51): Paddle paga al netto delle fee su schedule di payout; osservabilità del
+  netto incassato (non un blocco). Nota ops.
+
 ### Use case (già tracciati sopra)
 "Acquisto / checkout", "Gestione abbonamento self-service", "Pausa subscription" (bassissima priorità).
 

@@ -1,6 +1,6 @@
 # Pagamenti (Paddle) — Decisioni
 
-**Stato**: 🟡 in corso
+**Stato**: 🟢 deciso (A–K)
 **Ultimo aggiornamento**: 2026-06-21
 
 ## Scope
@@ -41,7 +41,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **H. Configurazione admin del pricing** ✅ — il platform-admin definisce i tier dal pannello admin
 - **I. Sandbox & ambienti** ✅ — sandbox Paddle in locale/test, secret per ambiente, test webhook
 - **J. Compliance & fatturazione (MoR)** ✅ — cosa copre Paddle, cosa resta a noi (border #13)
-- **K. Fee & impatto sul business** — modello fee, prezzo minimo sostenibile, leve annuale/bundling
+- **K. Fee & impatto sul business** ✅ — modello fee, prezzo minimo sostenibile, leve annuale/bundling
 
 ## Decisioni prese
 
@@ -282,8 +282,24 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     (decide le finalità di compliance fiscale), **non** nostro responsabile; per i **dati dell'app** restiamo **noi**
     titolare. Va riflesso in **privacy policy** + lista sub-processor → **revisione legale** (L3/L9, #13 H/I).
 
+### K. Fee & impatto sul business
+46. **Realtà fee**: Paddle **~5% + $0.50/transazione** (effettiva ~7% con FX). La quota fissa pesa sulle app **cheap e
+    mensili** (es. €5/mese → ~15% effettivo) e si **abbatte con l'annuale** (1 transazione/anno → ~5-6%).
+47. **Co-pilota mostra la fee effettiva (arma principale)**: `new-application`/`pricing-change`, per ogni prezzo proposto
+    (mensile **e** annuale), **calcola e mostra % fee effettiva + netto incassato** prima della conferma. **Warning soft**
+    se la fee effettiva supera **~10%** (capita sotto i ~€5-6/mese in mensile). **Non un blocco** — è una guida.
+48. **Floor di prezzo come guida, non regola rigida**: nessun hard-limit; il warning (47) indirizza verso prezzi
+    sostenibili e spinge verso l'**annuale** (default A2).
+49. **Sconto annuale di default ~"2 mesi gratis" (~17%)**: annuale = **10× il mensile** (configurabile per-app). Incentiva
+    l'annuale (taglia le fee) ed è attraente per il cliente.
+50. **Bundling = leva futura, BASSISSIMA priorità** (richiesto 2026-06-21): più app in un unico abbonamento = una
+    transazione, quota fissa diluita → [_BACKLOG](_BACKLOG.md).
+51. **Riconciliazione netto** (ops/observability, non blocco): Paddle paga al **netto** delle fee su schedule di payout;
+    il netto incassato va riconciliato (revenue) → nota implementativa.
+
 ## Questioni aperte
-- Topic **K** ancora da affrontare.
+_Nessuna — #09 chiuso (A–K)._ Implementazione → [_BACKLOG](_BACKLOG.md) (sezione "Pagamenti (Paddle, #09)") + prerequisito
+[#14 sito vetrina](14-sito-vetrina-legale.md).
 
 ## Alternative valutate / scartate
 _—_

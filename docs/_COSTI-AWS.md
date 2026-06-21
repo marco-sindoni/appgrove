@@ -73,4 +73,9 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
   (unico costo SaaS non-AWS ricorrente, oltre alle fee Paddle); Cloudflare (free) scartato per residency US. **Ticketing
   nativo in-house** (no Jira) = ~$0 extra (righe DB + UI admin, infra già presente). Export ZIP su S3 + auto-delete 7gg
   = centesimi. Nessun altro impatto AWS rilevante.
+- **#09 (Pagamenti, Paddle)**: **nessuna nuova voce AWS rilevante** (Lambda ingest webhook + SQS/ElasticMQ già contati,
+  ~$0 al volume webhook). Il costo dei pagamenti è una **fee di revenue, non AWS**: **~5% + $0.50/transazione** (effettiva
+  ~7% con FX). La quota fissa $0.50 pesa sulle app cheap/mensili (€5/mese → ~15%); **mitigata dall'annuale di default**
+  (1 transazione/anno → ~5-6%) e dal **bundling** (leva futura, K50). Paddle MoR copre tasse/fatturazione (nessun costo
+  tax compliance a nostro carico). Lo **stub locale** (#09 I) = $0 (sviluppo/test senza Paddle).
 - **#08 (Observability)**: backend AWS-native (CloudWatch Logs/Metrics) + strumentazione **OTel/Micrometer neutra** (porta aperta a Grafana, E11). **Tracce strumentate ma spente** (c1) → $0. Metriche business via **EMF** (no chiamate `PutMetricData`); dimensioni a bassa cardinalità (`tenant_id` nei log, non come dimensione). Dashboard ≤3 (gratis). **Retention esplicita** (test 7gg/prod 30gg) per non accumulare; archivio **audit→S3+Glacier** (12 mesi, #13). Uptime via **canary EventBridge+Lambda in eu-central-1** (~$0). **AWS Budgets $100/mese** (soglie 75/90/100% + forecast). Costo prod ~$2–6/mese, test ~$0.
