@@ -131,6 +131,12 @@ git-backed; **check CI** presenza di tutte le 5 lingue per componente. Da defini
   fa domande di approfondimento solo se ambiguo, propone-e-fa-confermare. **Escalation forte per categorie particolari art. 9** (DPIA #13 K);
   **enforcement CI bloccante** (campo `@PersonalData` non dichiarato nel manifesto → build rossa, stile ArchUnit #10 D).
 - **RoPA versionato** `docs/compliance/ropa.md` (#13 C): sezione piattaforma + sezione per-app assemblata dai manifesti.
+- **`pricing-change`** (richiesto 2026-06-21, #09 H) — co-pilota per i **cambi di pricing successivi** di un'app esistente
+  (`new-application` scrive il pricing iniziale): aggiungi/rimuovi tier, cambia prezzo, cambia limiti (metrica `flow`/`stock`
+  #09 E23), aggiungi mensile/annuale. **Env-agnostica**, scrive solo il **pricing-as-code** nel repo, **segue `new-change`**
+  (branch+PR), **nessun dialogo diretto con Paddle**. Gestisce **immutabilità prezzi Paddle** (cambio importo = nuovo Price
+  + archivia vecchio) e **grandfathering** (esistenti restano vs migrazione). Il **sync a Paddle** è nella **pipeline di
+  deploy** (test→sandbox, tag→production), `paddle_*_id` per-ambiente nel DB catalogo riempiti dal sync. Memoria `skills-backlog`.
 - **`drop-application`** (richiesto 2026-06-20) — **inverso** di `new-application`: **decommissioning DevOps completo e
   irreversibile** di un'app. Cancella **tutte** le risorse AWS create per quell'app (ECS service/task, ECR repo, route API,
   schema `app_<id>` + ruolo DB, coda SQS, SSM/Secrets, log group, dashboard/allarmi, ecc.) via `service-remove` /

@@ -14,6 +14,12 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **Configurazione admin del costo**: come un `platform-admin` definisce/edita il modello di costo di ogni app
   dal pannello admin, e come si lega a catalog/entitlements. Vedi anche nota admin in [03-frontend](03-frontend.md).
 
+## ⛔ Prerequisito bloccante (richiesto 2026-06-21)
+- **Attivazione account Paddle = richiede il sito di prodotto pubblico con ToU + Privacy Policy.** Senza, Paddle non
+  attiva l'account → l'integrazione #09 **non si può sbloccare**. → **L'analisi/implementazione di [#14 Sito vetrina &
+  testi legali](14-sito-vetrina-legale.md) va affrontata PER PRIMA** rispetto all'implementazione di #09. Vincolo di
+  **sequenza implementativa** (le decisioni #09 possono comunque proseguire ora).
+
 ## Requisiti già fissati (da approfondire/dettagliare negli use case)
 - **Doppia proposta billing mensile/annuale** (richiesto 2026-06-21): per ogni app con abbonamento, la schermata di
   acquisto **propone sia il piano mensile sia quello annuale**, con **default impostato su ANNUALE** e uno **sconto
@@ -30,7 +36,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **E. Ciclo di vita subscription** ✅ — stati, proration, upgrade/downgrade tier, dunning, grace
 - **F. Entitlement & attivazione/disattivazione** ✅ — entitlement per-tenant abilita l'app a runtime
 - **G. Customer portal & self-service** ✅ — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
-- **H. Configurazione admin del pricing** — il platform-admin definisce i tier dal pannello admin
+- **H. Configurazione admin del pricing** ✅ — il platform-admin definisce i tier dal pannello admin
 - **I. Sandbox & ambienti** — sandbox Paddle in locale/test, secret per ambiente, test webhook
 - **J. Compliance & fatturazione (MoR)** — cosa copre Paddle, cosa resta a noi (border #13)
 - **K. Fee & impatto sul business** — modello fee, prezzo minimo sostenibile, leve annuale/bundling
@@ -213,10 +219,32 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
       accettato); si delega **solo** ciò che è intrinsecamente suo (carte, fatture fiscali), il resto resta in casa.
     - Le operazioni self-service → **use case "Gestione abbonamento"** ([_BACKLOG](_BACKLOG.md)).
 
+### H. Configurazione admin del pricing
+34. **Pricing-as-code** (opzione a): la **definizione** del pricing (importi, tier, limiti, ciclo) vive **nel repo**
+    (config versionata, fonte di verità del "cosa si vende", coerente con B), prodotta dal co-pilota `new-application`.
+    Il **pannello admin è read-only/observability** (vedi catalogo, prezzi, subscription, drift vs Paddle) + le sole
+    **operazioni runtime sicure** già previste (es. **disabilita app**, #03/backlog). **Niente editor di prezzi free-form** a runtime.
+35. **Vincolo immutabilità prezzi Paddle**: un Price con subscription attive **non si modifica nell'importo**. Cambiare
+    prezzo = **creare un nuovo Price** + **archiviare il vecchio**; le subscription esistenti **restano sul vecchio**
+    (grandfathering) salvo migrazione esplicita. Operazione rara e ad alto impatto → passa da PR (review/audit/rollback).
+36. **Due skill** (env-agnostiche, seguono il workflow `new-change` → branch + PR, niente dialogo diretto con Paddle):
+    - **`new-application`** → scrive il **pricing iniziale** (A7/E23);
+    - **`pricing-change`** (NUOVA) → gestisce i **cambi successivi** (aggiungi tier, cambia prezzo, cambia limiti,
+      aggiungi mensile/annuale). Co-pilota che gestisce immutabilità (nuovo price + archivia) e fa **decidere il
+      grandfathering** (esistenti restano vs migrazione). Tracciata in memoria `skills-backlog` e [_BACKLOG](_BACKLOG.md).
+37. **Sync a Paddle agganciato al flusso di deploy** (non skill per-ambiente, risolve la questione aperta):
+    - **deploy su test → sync verso Paddle SANDBOX**; **promozione a prod (tag) → sync verso Paddle PRODUCTION** (#07).
+      → il cambio prezzo si **testa in sandbox** automaticamente arrivando in test, poi va in prod col tag: **stesso
+      flusso PR→test→tag→prod** di tutto il resto.
+    - **ID Paddle per-ambiente, prezzo no**: la definizione (importi/tier/limiti) è uguale in codice per tutti gli env; il
+      `paddle_product_id`/`paddle_price_id` è **diverso per ambiente** e vive nel **DB catalogo di quell'env**
+      (`app_price.paddle_price_id`, B), **riempito dallo step di sync** contro l'account Paddle dell'ambiente. Il codice ha
+      una **chiave interna stabile** (`price_id`); il sync mappa chiave interna → ID Paddle dell'env.
+    - Il **sync è idempotente** e **fa rispettare l'immutabilità**: crea i mancanti, **archivia** i rimossi, **mai** muta
+      l'importo di un price vivo, **non cancella** price con subscription attive (grandfathering).
+
 ## Questioni aperte
-- **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
-  topic **H (config admin del pricing)**.
-- Topic **H–K** ancora da affrontare.
+- Topic **I–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
