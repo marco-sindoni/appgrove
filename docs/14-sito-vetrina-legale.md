@@ -4,9 +4,11 @@
 **Ultimo aggiornamento**: 2026-06-21
 
 > ⛔ **PREREQUISITO BLOCCANTE PER PADDLE** (richiesto 2026-06-21): Paddle **non attiva l'account** senza un **sito di
-> prodotto pubblico** che includa **Terms of Use/Service** e **Privacy Policy**. Senza attivazione Paddle → niente
-> pagamenti → niente go-live. Quindi **l'analisi e l'implementazione di quest'area vanno affrontate PER PRIME** rispetto
-> all'implementazione effettiva di #09 (Pagamenti). È un vincolo di **sequenza implementativa**, non di sole decisioni.
+> prodotto pubblico** che includa **Terms of Use/Service** e **Privacy Policy** — **vale anche per il SANDBOX** (no sito,
+> nessun account nemmeno di test). Senza attivazione → **qualsiasi uso del vero Paddle** (sandbox + production) è bloccato
+> → niente pagamenti, niente go-live. Quindi **l'analisi e l'implementazione di quest'area vanno affrontate PER PRIME**
+> rispetto a ogni interazione con il vero Paddle. **Unica via non bloccata = lo stub Paddle locale** (#09 I): si
+> sviluppa/testa il grosso di #09 senza account Paddle. È un vincolo di **sequenza implementativa**, non di sole decisioni.
 
 ## Scope
 Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Policy, cookie disclosure). Artefatto

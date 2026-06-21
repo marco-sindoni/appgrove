@@ -100,6 +100,55 @@ git-backed; **check CI** presenza di tutte le 5 lingue per componente. Da defini
   anche per diffusione **worldwide**: *"appgrove offre a tutti le massime garanzie di privacy secondo le normative UE"*.
   Trasformare la compliance in **proposta di valore** (badge/sezione dedicata, copy multilingua).
 
+## Pagamenti (Paddle, #09) — story di implementazione (richiesto 2026-06-21)
+Story emergenti dalle decisioni #09 (tracciare con accuratezza). **Prerequisito**: vedi blocker #14 (sito) per ogni uso
+del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via non bloccata.
+
+### Sviluppo locale — Stub Paddle (ESSENZIALE, #09 I) 🔑
+- **Port `PaymentProvider`** (interfaccia di astrazione, come il provider auth locale #11 B) con due adattatori:
+  **`StubPaymentProvider`** (profilo dev) e **`PaddlePaymentProvider`** reale (test/prod). Selezione per profilo.
+- **Paddle.js finto** (frontend, profilo dev): stessa interfaccia del vero (`Paddle.Checkout.open(...)` + event callback),
+  mostra una mini-UI finta / auto-conferma ed emette l'evento sintetico `checkout.completed`.
+- **API Paddle finta** (`StubPaymentProvider`): `createTransaction`/`createCustomer`/`createPortalSession`/`syncPrices`
+  ritornano ID plausibili (transaction/customer/price id finti), zero rete esterna.
+- **Emettitore di webhook sintetici firmati**: genera eventi Paddle (firma HMAC col secret di test) e li invia
+  all'endpoint locale → passano per la **pipeline reale** (Lambda ingest → SQS via **ElasticMQ** #11 → consumer →
+  `subscription`). Tutto il nostro flusso gira davvero in locale; finto è solo Paddle.
+- **Scenari ciclo di vita** (comando `dev` / pannellino): far scattare a comando happy path, `payment_failed`/`past_due`
+  (dunning), `canceled`, **upgrade/downgrade** → simula tutto #09 E in locale. Integrare nei **script `dev/`** (#11 C).
+- **Tunnel opt-in** (es. cloudflared) per webhook reali dal sandbox in locale (debug occasionale, richiede #14+account).
+
+### Backend billing (capability core #04)
+- **Checkout server-initiated** (#09 C14): endpoint che legge `tenant_id` dal JWT, risolve `paddle_price_id`, crea la
+  transazione Paddle (custom_data `{tenant_id, app_id}` + customer lazy C15), ritorna il checkout token.
+- **Pipeline webhook** (#09 D19): **Lambda ingest** (verifica firma HMAC, dedup `event_id`, accoda) + **consumer** SQS
+  idempotente (out-of-order via `occurred_at`) + **DLQ + allarme** (#08). Mapping eventi → `subscription` (D21).
+- **Modello dati** (#09 B): tabelle `app`/`app_tier`/`app_price` (catalogo) + `subscription` (tenant) + `paddle_customer_id`
+  su account; **entitlement derivato** (B12). Migrazioni Flyway.
+- **Contratto/SPI di quota** (#09 A5/E23/F32): interfaccia generica che ogni app implementa; metrica `flow`/`stock`,
+  finestra, tetto; enforcement **hard-limit** + gestione "sopra capacità" su downgrade `stock`.
+- **Catena di gate enforcement** (#09 F30): app-abilitata → entitled (402) → ruolo → quota (429), centralizzata nel layer
+  di piattaforma; **diritti GDPR esenti** dai gate (F31).
+- **Endpoint stato entitlement** per il **polling post-checkout** (#09 C17).
+
+### Pricing-as-code & sync (#09 H)
+- **Definizione pricing nel repo** (config versionata, fonte di verità importi/tier/limiti/ciclo) + **chiave interna
+  stabile `price_id`**.
+- **Step di sync in pipeline** (test→Paddle sandbox, tag→Paddle production): idempotente, crea i mancanti, **archivia** i
+  rimossi, **mai** muta l'importo di un price vivo, non cancella price con subscription attive (grandfathering); riempie
+  `app_price.paddle_price_id` **per ambiente**.
+- Skill **`new-application`** (pricing iniziale + co-pilota flow/stock) e **`pricing-change`** (cambi successivi) →
+  memoria `skills-backlog`.
+
+### Test del flusso pagamento (#09 D20) — 3 livelli
+- **L1** integration webhook esaustivo (per-PR, bloccante): payload sintetici firmati, Testcontainers Postgres.
+- **L2** E2E Playwright dei nostri pezzi (per-PR, bloccante) con **Paddle.js mockato**.
+- **L3** smoke reale su **Paddle sandbox** (**pre-release**, nel flusso tag→prod, confluisce nel gate; **override manuale**
+  con motivazione se sandbox down). Richiede #14 + account.
+
+### Use case (già tracciati sopra)
+"Acquisto / checkout", "Gestione abbonamento self-service", "Pausa subscription" (bassissima priorità).
+
 ## Script / tooling DevOps
 - **Start/stop servizi test** (scale 0↔1 task Fargate) — ✅ deciso in [07-devops-cicd](07-devops-cicd.md) §28
   (avvio manuale `test-start`; spegnimento via **cron giornaliero `test-stop`**, idempotente, orario UTC fisso).

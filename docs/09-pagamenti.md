@@ -15,10 +15,12 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
   dal pannello admin, e come si lega a catalog/entitlements. Vedi anche nota admin in [03-frontend](03-frontend.md).
 
 ## ⛔ Prerequisito bloccante (richiesto 2026-06-21)
-- **Attivazione account Paddle = richiede il sito di prodotto pubblico con ToU + Privacy Policy.** Senza, Paddle non
-  attiva l'account → l'integrazione #09 **non si può sbloccare**. → **L'analisi/implementazione di [#14 Sito vetrina &
-  testi legali](14-sito-vetrina-legale.md) va affrontata PER PRIMA** rispetto all'implementazione di #09. Vincolo di
-  **sequenza implementativa** (le decisioni #09 possono comunque proseguire ora).
+- **Attivazione account Paddle = richiede il sito di prodotto pubblico con ToU + Privacy Policy** — **vale anche per il
+  SANDBOX** (no sito, nessun account nemmeno di test). Senza, Paddle non attiva l'account → **qualsiasi uso del vero
+  Paddle** (sandbox + production) è bloccato. → **L'analisi/implementazione di [#14 Sito vetrina & testi legali](14-sito-vetrina-legale.md)
+  va affrontata PER PRIMA** rispetto a ogni interazione con il vero Paddle. **Unica via non bloccata = lo STUB locale**
+  (vedi topic I): si sviluppa/testa il grosso di #09 senza alcun account Paddle. Le **decisioni** #09 possono comunque
+  proseguire ora.
 
 ## Requisiti già fissati (da approfondire/dettagliare negli use case)
 - **Doppia proposta billing mensile/annuale** (richiesto 2026-06-21): per ogni app con abbonamento, la schermata di
@@ -37,7 +39,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **F. Entitlement & attivazione/disattivazione** ✅ — entitlement per-tenant abilita l'app a runtime
 - **G. Customer portal & self-service** ✅ — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
 - **H. Configurazione admin del pricing** ✅ — il platform-admin definisce i tier dal pannello admin
-- **I. Sandbox & ambienti** — sandbox Paddle in locale/test, secret per ambiente, test webhook
+- **I. Sandbox & ambienti** ✅ — sandbox Paddle in locale/test, secret per ambiente, test webhook
 - **J. Compliance & fatturazione (MoR)** — cosa copre Paddle, cosa resta a noi (border #13)
 - **K. Fee & impatto sul business** — modello fee, prezzo minimo sostenibile, leve annuale/bundling
 
@@ -243,8 +245,27 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     - Il **sync è idempotente** e **fa rispettare l'immutabilità**: crea i mancanti, **archivia** i rimossi, **mai** muta
       l'importo di un price vivo, **non cancella** price con subscription attive (grandfathering).
 
+### I. Sandbox & ambienti
+38. **Secret Paddle per ambiente** (Secrets Manager, #06/#12), mai in codice: **API key** (transazioni/sync) + **webhook
+    signing secret** (verifica firma, D18). **Chiavi sandbox** in **test**, **chiavi production** in **prod**. In locale:
+    solo chiavi sandbox (opt-in) o nessuna; **mai chiavi prod**.
+39. **Paddle dietro un'interfaccia (port)**, stesso pattern del provider auth locale (#11 B): **`StubPaymentProvider`**
+    (dev/locale) vs **`PaddlePaymentProvider`** reale (test/prod). **Default locale = stub** (deterministico, offline,
+    nessun account Paddle); **sandbox opt-in** solo quando attivabile. **Mai pagamenti reali in locale.** Lo stub simula
+    **due metà**: (A) **Paddle.js finto** sul frontend (stessa interfaccia, emette `checkout.completed` sintetico);
+    (B) **API Paddle finta** (ritorna ID plausibili) + **emettitore di webhook sintetici firmati** verso l'endpoint
+    locale, che passano per la **pipeline reale** (Lambda ingest → SQS via **ElasticMQ** #11 → consumer → `subscription`).
+    Così **tutto il nostro flusso gira davvero in locale; finto è solo Paddle**. Lo stub espone **scenari** del ciclo di
+    vita (happy path, `payment_failed`/`past_due`, `canceled`, upgrade/downgrade) per simulare tutto E in locale.
+40. **Test webhook**: **default = eventi sintetici firmati** verso il nostro endpoint (= L1, D20), offline/deterministico;
+    **tunnel opt-in** (es. cloudflared) per ricevere webhook **reali** dal sandbox in locale (debug occasionale).
+41. **Mapping ambienti**: **test ↔ Paddle sandbox**, **prod ↔ Paddle production** (#07; attivazione a fasi,
+    `phased-env-activation`). **#14 (sito) gating su QUALSIASI uso del vero Paddle, sandbox incluso** (no sito → nessun
+    account, nemmeno di test): l'unica via non bloccata è lo **stub locale** (39). L2 opt-in su sandbox, **L3 smoke**
+    (D20) e prod richiedono #14 + account attivato.
+
 ## Questioni aperte
-- Topic **I–K** ancora da affrontare.
+- Topic **J–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
