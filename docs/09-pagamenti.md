@@ -40,7 +40,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 - **G. Customer portal & self-service** ✅ — portale Paddle vs UI nostra; cosa esponiamo nel backoffice
 - **H. Configurazione admin del pricing** ✅ — il platform-admin definisce i tier dal pannello admin
 - **I. Sandbox & ambienti** ✅ — sandbox Paddle in locale/test, secret per ambiente, test webhook
-- **J. Compliance & fatturazione (MoR)** — cosa copre Paddle, cosa resta a noi (border #13)
+- **J. Compliance & fatturazione (MoR)** ✅ — cosa copre Paddle, cosa resta a noi (border #13)
 - **K. Fee & impatto sul business** — modello fee, prezzo minimo sostenibile, leve annuale/bundling
 
 ## Decisioni prese
@@ -264,8 +264,26 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     account, nemmeno di test): l'unica via non bloccata è lo **stub locale** (39). L2 opt-in su sandbox, **L3 smoke**
     (D20) e prod richiedono #14 + account attivato.
 
+### J. Compliance & fatturazione (Merchant of Record)
+42. **Divisione di responsabilità MoR** — **Paddle** (venditore legale; il cliente compra da Paddle, che ci paga al netto
+    delle fee): IVA/sales tax/GST worldwide (calcolo/riscossione/versamento), **fatture/ricevute fiscali**, processing
+    pagamenti, antifrode, **chargeback/dispute**, **esecuzione rimborsi**, conversione valuta, nome sull'estratto conto,
+    **supporto billing/pagamenti/fatture/tax**. **Noi**: erogazione del servizio (le app), **privacy/protezione dati
+    dell'app** (titolare, #13), **ToS + Privacy Policy** (#13 G/#14), **policy di rimborso** (la regola; Paddle esegue),
+    **supporto prodotto** (ticketing in-house #13 I). Su chargeback noi **reagiamo via webhook** (stato `subscription`).
+43. **Policy di rimborso = (a) nessun rimborso** (vendite finali, salvo obblighi di legge), coerente con E25 (disdetta =
+    accesso fino a scadenza, no rimborso del periodo). Il **trial** (carta upfront, A/E27) è il meccanismo "prova prima di
+    pagare" → **niente money-back ridondante**. Recesso UE servizi digitali = rinuncia gestita nel **checkout/termini
+    Paddle** (MoR) → punto di **revisione legale** (L3).
+44. **Default raccomandato: trial 14 giorni su TUTTE le app** (richiesto 2026-06-21) — generoso e "quasi inattaccabile"
+    legalmente (ogni cliente valuta a rischio zero prima di ogni addebito → minimizza dispute/chargeback). Il co-pilota
+    `new-application` propone **trial=14gg attivo, disattivabile** per la singola app. Decisione finale rimandata all'utente.
+45. **Caratterizzazione protezione dati Paddle**: per i dati pagamento/fiscali Paddle è tipicamente **titolare autonomo**
+    (decide le finalità di compliance fiscale), **non** nostro responsabile; per i **dati dell'app** restiamo **noi**
+    titolare. Va riflesso in **privacy policy** + lista sub-processor → **revisione legale** (L3/L9, #13 H/I).
+
 ## Questioni aperte
-- Topic **J–K** ancora da affrontare.
+- Topic **K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
