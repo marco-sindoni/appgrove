@@ -25,7 +25,7 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
 ## Agenda topic (A–K)
 - **A. Modello di pricing per-app** ✅ — tipi supportati e come si modellano
 - **B. Catalogo & mapping dati** ✅ — catalog interno ↔ `product`/`price` Paddle; campi su entitlements (#05)
-- **C. Checkout** — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
+- **C. Checkout** ✅ — overlay/inline/hosted (Paddle.js); passthrough `tenant_id`/`app_id`
 - **D. Webhook & source of truth** — firma HMAC, idempotenza, eventi → entitlement
 - **E. Ciclo di vita subscription** — stati, proration, upgrade/downgrade tier, dunning, grace
 - **F. Entitlement & attivazione/disattivazione** — entitlement per-tenant abilita l'app a runtime
@@ -84,13 +84,31 @@ costo per singola applicazione**. Border con [02-auth-sicurezza](02-auth-sicurez
     **Unica fonte di verità = `subscription`**; i webhook toccano **solo** `subscription`, zero rischio di disallineamento.
     Materializzazione/cache resta **ottimizzazione futura** se le letture diventassero un collo di bottiglia.
 
+### C. Checkout
+13. **Modalità overlay** (Paddle.js): finestra modale Paddle sopra la SPA. **Inline** = evoluzione futura; **hosted/redirect**
+    scartato (porta l'utente fuori dall'app). Paddle gestisce carte/3DS/tasse/valute/antifrode (MoR): noi non tocchiamo
+    mai dati di pagamento.
+14. **Checkout iniziato lato server** (coerente con **invariante #1**): il frontend chiede al **nostro backend** (capability
+    "billing" core #04) di iniziare l'acquisto; il backend legge **`tenant_id` dal JWT verificato**, risolve il
+    `paddle_price_id` dal catalogo, **crea la transazione su Paddle (API)** con `custom_data = {tenant_id, app_id}` +
+    `customer`, e restituisce un **checkout token**; il frontend apre l'overlay passando **solo** il token. I `custom_data`
+    (incluso `tenant_id`) sono impostati **lato server** → fidati; il client non può manometterli.
+15. **Customer Paddle creato lazy al primo acquisto**: si passa l'email al primo checkout, Paddle crea il customer, si
+    salva `paddle_customer_id` sull'account; dai checkout successivi si passa l'ID salvato. (Niente customer per chi non
+    compra → cost-min + minimizzazione dati, postura EU-purista.)
+16. **Attivazione SOLO via webhook** (fonte di verità): l'entitlement si attiva quando il **webhook** Paddle aggiorna
+    `subscription` (topic D), **mai** sull'evento client. L'evento client `checkout.completed` serve **solo per la UX**.
+17. **UX post-checkout a stati con polling**: dopo l'overlay, la SPA mostra "attivazione in corso" (spinner) e fa **poll**
+    del backend ogni 1–2 s finché `status=active` → "attivato". Oltre ~30–60 s: messaggio **rassicurante** (pagamento già
+    riuscito, attivazione in arrivo / avviso email), **mai un errore**. **Polling, non push** (no infra realtime → cost-min).
+    Dettaglio schermate/copy/edge → **use case "Acquisto / checkout"** ([_BACKLOG](_BACKLOG.md)).
+
 ## Questioni aperte
 - **Upgrade/downgrade tra tier** (proration, effetto immediato vs a fine ciclo, comportamento della quota al cambio) →
   da dettagliare nel **topic E (ciclo di vita)**.
 - **Creazione/sync di Product e Price su Paddle** (manuale da dashboard Paddle vs via API da `new-application`/admin) →
   topic **H (config admin del pricing)**.
-- **Quando si crea il `paddle_customer_id`** (a signup vs al primo acquisto) → topic **C/E**.
-- Topic **C–K** ancora da affrontare.
+- Topic **D–K** ancora da affrontare.
 
 ## Alternative valutate / scartate
 _—_
