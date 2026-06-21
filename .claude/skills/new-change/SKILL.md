@@ -32,6 +32,10 @@ monorepo. Change documentation lives in `changes/NNNN-*/` at the repo root.
 - change implementing a use case → `NNNN-use-case-YYYY-brief-description`
   (NNNN = running counter in `changes/`; YYYY = the source use case number in `docs/usecases/`).
 
+**Use-case execution index.** When a change implements a use case (`YYYY`), keep the execution-order index
+`docs/usecases/_INDEX.md` in sync: set `YYYY` → 🟡 (in corso) at step-01 and → ✅ (implementato) at step-04. The edit is
+bundled into the change commit, so `main` reflects completion only on merge. Normal changes skip this.
+
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
 then log — never the other way around.
 

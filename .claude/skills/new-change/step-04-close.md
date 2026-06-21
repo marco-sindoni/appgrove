@@ -75,6 +75,19 @@ microsaas_app Terraform module, structured logging), or "None touched">
 - [x] <criterion from requirements.md>
 ```
 
+## Aggiorna l'indice di esecuzione (solo use-case change)
+
+If this change implements a use case (`YYYY`), set it **implementato** in `docs/usecases/_INDEX.md` (the `git add -A`
+below includes it in the change commit, so `main` shows ✅ on merge):
+
+```bash
+YYYY="0044"   # the source use case number (4 digits)
+sed -i '' -E "/\[$YYYY\]\(/ s/\| (⬜|🟡|✅) \|$/| ✅ |/" docs/usecases/_INDEX.md
+```
+
+If you also added **new** use cases as part of this change, re-run the Fase+Dipendenze ordering so `_INDEX.md` stays a
+valid topological order. For a **normal** change (no `YYYY`), skip.
+
 ## MANDATORY STOP — commit consent gate
 
 Do **not** commit yet. Summarize what will be committed (the changed files and the

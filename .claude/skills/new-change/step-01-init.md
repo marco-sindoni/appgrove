@@ -67,6 +67,19 @@ git checkout -b "change/$CHANGE_ID"
 mkdir -p "changes/$CHANGE_ID"
 ```
 
+## Aggiorna l'indice di esecuzione (solo use-case change)
+
+If this is a **use-case-originated** change (you captured a `YYYY`), mark the use case **in corso** in the execution index
+`docs/usecases/_INDEX.md`. The row is identified by its `[YYYY](…)` link; flip **only the last status cell**:
+
+```bash
+YYYY="0044"   # the source use case number (4 digits)
+sed -i '' -E "/\[$YYYY\]\(/ s/\| (⬜|🟡|✅) \|$/| 🟡 |/" docs/usecases/_INDEX.md
+```
+
+(macOS `sed -i ''`.) This edit stays in the working tree and is committed with the change at step-04, where it is flipped
+to ✅. For a **normal** change (no `YYYY`), skip this.
+
 ## Output
 
 ```json

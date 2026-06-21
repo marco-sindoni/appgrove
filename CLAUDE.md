@@ -38,8 +38,9 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 ## Casi d'uso (use case)
 
 Catalogo unico di specifiche implementative dettagliate, organizzato **per area in sottocartelle numerate** con
-**numerazione assoluta a 4 cifre** (`NNNN`): indice → [docs/usecases/README.md](docs/usecases/README.md) · template →
-[docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `01-business-legal … 11-apps`.
+**numerazione assoluta a 4 cifre** (`NNNN`): indice per area → [docs/usecases/README.md](docs/usecases/README.md) ·
+**ordine di esecuzione + stato implementazione** → [docs/usecases/_INDEX.md](docs/usecases/_INDEX.md) (sync da `new-change`) ·
+template → [docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `01-business-legal … 11-apps`.
 - Creazione/numerazione/scaffolding: skill **`new-usecase`**; implementazione: **`new-change`** (folder
   `NNNN-use-case-YYYY-…` quando nasce da uno use case).
 - Catalogo: **57 use case** (0001–0057), drill-down scritti (🟢) salvo 0002/0044/0055/0056/0057 in corso (🟡). Esempio

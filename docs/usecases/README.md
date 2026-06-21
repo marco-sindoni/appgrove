@@ -1,7 +1,10 @@
 # Catalogo Use Case — appgrove
 
-Indice master degli use case implementativi. Ogni use case è una specifica di dettaglio (drill-down) e corrisponde
-~1:1 a una `new-change`. Template: [_TEMPLATE.md](_TEMPLATE.md).
+Indice master degli use case implementativi (organizzato **per area**). Ogni use case è una specifica di dettaglio
+(drill-down) e corrisponde ~1:1 a una `new-change`. Template: [_TEMPLATE.md](_TEMPLATE.md).
+
+> **Per implementare seguendo l'ordine ottimale** (topologico su Fase + Dipendenze) e seguire lo **stato di
+> implementazione**, usa [**_INDEX.md**](_INDEX.md) — tenuto in sync automaticamente da `new-change`.
 
 ## Convenzioni
 - **Numerazione `NNNN` a 4 cifre, assoluta/globale**: ID **stabile**, assegnato seguendo **l'ordine delle cartelle area
@@ -114,7 +117,7 @@ Indice master degli use case implementativi. Ogni use case è una specifica di d
 | 0048 | 6 | skill `drop-application` | 0004, 0046 | 🟢 |
 | 0049 | 6 | skill `breach-response` + runbook/registro/`security.txt` | — | 🟢 |
 | 0050 | 7 | skill `campaign-guide` | — | 🟢 |
-| 0057 | 3 | skill `finalize-landing` (bozza → landing pubblicata: rifinitura 5 lingue + flag `published` + CI deploy) | 0038, 0046 | 🟡 |
+| 0057 | 4 | skill `finalize-landing` (bozza → landing pubblicata: rifinitura 5 lingue + flag `published` + CI deploy) | 0038, 0046 | 🟡 |
 
 ### 11-apps
 | UC | Fase | Titolo | Dipendenze | Stato |

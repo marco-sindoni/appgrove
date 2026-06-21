@@ -1,6 +1,6 @@
 # UC 0057 — skill `finalize-landing` (bozza → landing pubblicata: rifinitura testi/visual 5 lingue + flag `published` + CI deploy)
 
-**Area**: 10-skills-tooling · **Fase**: 3 · **Stato**: 🟡 in corso
+**Area**: 10-skills-tooling · **Fase**: 4 · **Stato**: 🟡 in corso
 **Dipendenze**: UC [0038](../09-marketing-site/0038-template-landing-per-app.md) (template landing + wiring), UC [0046](0046-skill-new-application.md) (genera la bozza)
 **Fonte decisioni**: #14 dec.51/52/53 (due momenti landing, gate pubblicazione, skill non-deploy)
 **Ultimo aggiornamento**: 2026-06-21
