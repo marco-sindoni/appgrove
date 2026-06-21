@@ -198,6 +198,9 @@ del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via n
   la skill ragiona con l'utente, elicita lo scopo del campo, **propone con motivazione** natura/finalità/base/retention,
   fa domande di approfondimento solo se ambiguo, propone-e-fa-confermare. **Escalation forte per categorie particolari art. 9** (DPIA #13 K);
   **enforcement CI bloccante** (campo `@PersonalData` non dichiarato nel manifesto → build rossa, stile ArchUnit #10 D).
+  **Anello versioning/re-accept (#14 C18, richiesto 2026-06-21)**: la classificazione del gate **pilota il bump di
+  versione** del componente Privacy/ToS interessato (#13 G41) — cambio **materiale** (finalità/basi/categorie/retention) →
+  **bump major** → **ri-accettazione scoped** ai soli utenti vincolati; non materiale → **bump minor** → notifica.
 - **RoPA versionato** `docs/compliance/ropa.md` (#13 C): sezione piattaforma + sezione per-app assemblata dai manifesti.
 - **`pricing-change`** (richiesto 2026-06-21, #09 H) — co-pilota per i **cambi di pricing successivi** di un'app esistente
   (`new-application` scrive il pricing iniziale): aggiungi/rimuovi tier, cambia prezzo, cambia limiti (metrica `flow`/`stock`

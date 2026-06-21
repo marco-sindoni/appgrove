@@ -225,6 +225,14 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     - **versioning leggibile**: ogni componente ha **versione + `effective_date`** nel front-matter del md, **git-backed**
       (commit/tag = audit immutabile); il **log di accettazione** registra **componente+versione(+commit hash)** per utente.
       Bump **major** = ri-accettazione; bump **minor** = notifica.
+    - **chi decide major vs minor**: lo **pilota il gate privacy di `new-change`** (dec. 16): se classifica un cambio come
+      **materiale** (finalità/basi/categorie/retention) → **bump major** del componente interessato → **ri-accettazione
+      scoped** ai soli utenti vincolati; cambio non materiale → **bump minor** → notifica. (Reso esplicito 2026-06-21, #14 C18.)
+    - **granularità + meccanismo** (#14 C20): ri-accettazione **per-UTENTE** (soggetto interessato; in tenant multi-utente
+      ognuno prende atto) per **tutti gli utenti dei tenant vincolati** al componente. **Derivata all'accesso** (non
+      marcatura di massa, coerente con #09 B12): a ogni login/refresh si confronta **versione-accettata vs versione-corrente
+      richiesta**; se `accettata < major` → schermata bloccante. Nessun flag da sincronizzare; chi adotta dopo il bump
+      prende già la versione corrente.
 42. **Redazione testi = deliverable, non ora**: redatti internamente allo stato dell'arte (come i template email) →
     **revisione legale pre-go-live** ([_REVISIONE-LEGALE](_REVISIONE-LEGALE.md) L1-L3).
 43. **Prerequisito business**: la privacy policy richiede l'**identità del titolare = entità legale** (ditta/società)

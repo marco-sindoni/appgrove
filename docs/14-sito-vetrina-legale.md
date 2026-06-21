@@ -24,7 +24,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 ## Topic dell'area (agenda, da discutere)
 - **A. Requisiti Paddle per l'attivazione** ✅ — checklist merchant Paddle (3 doc legali, prodotto/prezzi/feature, SSL, entità legale)
 - **B. Architettura del sito & rollout** ✅ — SSG statico, S3+CloudFront, multilingua, `.md` fonte unica, versioning; **sequenza di accensione prod parziale**
-- **C. Testi legali** — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
+- **C. Testi legali** ✅ — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
 - **D. Entità legale titolare (L11)** — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
 - **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
 - **F. Brand & identità visiva** ✅ — logo, palette, tipografia, tono, stile dei contenuti visuali
@@ -130,6 +130,34 @@ F3. **Stile contenuti visivi & brand kit**:
       illustrazioni. Vive come **pacchetto token condiviso nel monorepo** (base del design system #03).
     - **Per-app**: ogni app ha **icona (Material Symbol) + colore-categoria**, assegnati/chiesti da `new-application` →
       identità per-app riconoscibile dentro il brand ombrello.
+
+### C. Testi legali
+16. **Redazione interna AI-assistita** dei tre documenti (T&C, Refund Policy, Privacy Policy + cookie disclosure come
+    sezione, non banner — #13 F). Output **md multilingua** (5 lingue), **IT facente fede** sui legali, **EN default sito +
+    sorgente marketing** (dec. 10). **Revisione legale solo opzionale pre-go-live** (L2/L3/L13). Tutti **linkati da
+    menu/footer** del sito (requisito Paddle A1) e raggiungibili dal backoffice.
+17. **Privacy policy modulare + accettazione scoped** (riafferma #13 G dec. 41 — già corretto lì; era imprecisa solo la
+    sintesi a voce): **nucleo piattaforma** + **moduli per-app** (generati dai manifesti, #13 C); l'accettazione segue
+    **chi è toccato**: piattaforma al signup, modulo app **alla sua attivazione**. **Pubblicare una nuova app Y NON forza
+    ri-accettazione** a chi ha solo X. Cambi **materiali** → schermata bloccante **solo agli utenti vincolati** a quel
+    componente; cambi minori → **notifica**. T&C = contratto (accettazione esplicita); Privacy = informativa (presa d'atto).
+18. **Anello reso esplicito (richiesto 2026-06-21) — rilevazione cambio materiale → versioning → re-accept**: il **gate
+    privacy di `new-change`** (#13 C dec. 16) **classifica** un cambio come **MAJOR** (materiale: finalità/basi/categorie/
+    retention) vs **MINOR**, e questa classificazione **pilota il bump di versione** del componente PP/ToS interessato
+    (#13 G dec. 41) → **ri-accettazione scoped** (major) o **notifica** (minor). Prima il gate aggiornava manifesto/RoPA ma
+    il legame col versioning/re-accept non era scritto. Tracciato anche in #13 G41 + [_BACKLOG](_BACKLOG.md) (gate `new-change`).
+19. **Privacy alimentata dai manifesti-dati** (#13 C: snippet pubblico minimizzato per-app, fonte unica con RoPA+export);
+    **T&C e Refund** = testi base più stabili (+ entità legale, topic D). Coerenza Paddle MoR (#09 J).
+20. **Meccanismo di ri-accettazione (richiesto 2026-06-21)**:
+    - **Granularità per-UTENTE** (non solo per-tenant): la PP è informativa verso il **soggetto interessato** → in un
+      tenant B2B con più utenti, **ciascun utente** prende atto al proprio accesso. Set interessato da un bump major di
+      un'app = **tutti gli utenti dei tenant vincolati a quell'app**. (I T&C/contratto possono avere logica per-owner a
+      livello account; per la PP è per-utente.)
+    - **Meccanismo DERIVATO, non "marcatura di massa"** (coerente con #09 B12, entitlement derivato): ad ogni login/refresh,
+      per ogni componente a cui l'utente è vincolato (piattaforma + app del suo tenant) si **confronta versione-accettata
+      (dal log di accettazione #13 G41) vs versione-corrente richiesta (major)**; se `accettata < major` → **schermata
+      bloccante**. Nessun flag/job di massa da mantenere in sync; chi adotta l'app **dopo** il bump prende già la versione
+      corrente all'attivazione. Stesso effetto del "marcare tutti", ma **calcolato** da un'unica fonte di verità.
 
 ## Questioni aperte
 - **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
