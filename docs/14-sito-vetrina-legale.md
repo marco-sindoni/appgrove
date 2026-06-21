@@ -31,7 +31,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - **G. Contenuti & struttura del sito (IA)** ✅ — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
 - **H. SEO** ✅ — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
 - **I. GEO (Generative Engine Optimization)** ✅ — essere citati dagli assistenti AI/LLM; contenuti machine-readable
-- **J. Paid & social & launch** — Meta/Facebook + altri social, organico vs paid, strategia di lancio
+- **J. Paid & social & launch** ✅ — Meta/Facebook + altri social, organico vs paid, strategia di lancio
 
 ## Decisioni prese
 
@@ -228,6 +228,27 @@ F3. **Stile contenuti visivi & brand kit**:
     manuali** (interrogare gli LLM e verificare le citazioni).
 44. **Generazione**: `new-application` e la generazione contenuti producono materiale **GEO-friendly** (FAQ strutturate,
     fatti chiari, descrizione entità coerente), coerente col principio dec. 35 (tutto AI-generato on-brand).
+
+### J. Paid, social & launch
+45. **Lancio lean a due livelli**: per-app (community della sua ICP) + brand. Canali: **Product Hunt**, **directory**
+    (AlternativeTo/G2/Capterra/SaaSHub — anche GEO dec. 41), **community indie/dev** (Indie Hackers, subreddit, eventuale HN).
+46. **Social organico — pochi canali, account BRAND**: **LinkedIn** (pagina brand, ICP professionisti/SMB EU) primario,
+    **X** opzionale (nicchia indie/dev). **NON personale / no build-in-public** (coerente con no-founder-story, D). Contenuti
+    **riusati dal blog** (H/I), AI-generati on-brand (dec. 35).
+47. **Paid — Google Search primario + Meta dopo, budget piccoli di validazione** (cost-min, coerente con valida-prima-di-
+    monetizzare): Google Search intercetta l'intento alto; Meta per discovery/retargeting in seconda battuta.
+48. **Coerenza privacy/tracking (nodo chiave) — postura cookieless DIFESA**: **niente pixel Meta/Google** e **niente CAPI
+    con PII** (richiederebbero consenso/banner → contraddirebbero il pilastro privacy). Le ads **si fanno comunque senza
+    pixel**: obiettivo **Traffico** (+ eventuali **Lead Form native** di Meta per newsletter/waitlist, lead raccolti sulla
+    piattaforma, zero tracking sul sito). **Attribuzione cookieless**: UTM + goal **Plausible** + click delle piattaforme.
+    Trade-off accettato: ottimizzazione/attribuzione più deboli in cambio di **coerenza di brand** (anche on-message).
+49. **Owned & misura**: **newsletter** (#13 F) come nurture; misura via **UTM + Plausible goals + click piattaforme +
+    referral AI** (dec. 43).
+50. **NUOVA skill `campaign-guide`** (richiesto 2026-06-21): **guida passo-passo** alla creazione di campagne (Meta/Google)
+    che **non violano alcun punto della postura** (cookieless, no-pixel/CAPI-PII, no-banner, EU-purista), con **convenzioni
+    UTM** coerenti (così Plausible attribuisce), obiettivi ammessi (Traffico/Lead Form) e **copy/creatività AI on-brand**
+    (tono F1, dec. 35). **Checklist di conformità** ad ogni step. **Evoluzione futura**: assistente **Playwright non-headless**
+    che guida/pilota la UI di creazione campagna. Tracciata in memoria `skills-backlog` e [_BACKLOG](_BACKLOG.md).
 
 ## Questioni aperte
 - **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
