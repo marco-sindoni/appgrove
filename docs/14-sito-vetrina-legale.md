@@ -29,7 +29,7 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
 - **F. Brand & identità visiva** ✅ — logo, palette, tipografia, tono, stile dei contenuti visuali
 - **G. Contenuti & struttura del sito (IA)** ✅ — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
-- **H. SEO** — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
+- **H. SEO** ✅ — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
 - **I. GEO (Generative Engine Optimization)** — essere citati dagli assistenti AI/LLM; contenuti machine-readable
 - **J. Paid & social & launch** — Meta/Facebook + altri social, organico vs paid, strategia di lancio
 
@@ -187,6 +187,27 @@ F3. **Stile contenuti visivi & brand kit**:
     legali · Support · `security.txt` · newsletter · **selettore lingua** · social.
 28. **Blog/Risorse**: **struttura presente dal lancio** (base di SEO/GEO), **contenuti che crescono** nel tempo (guide,
     confronti, how-to su keyword long-tail). Dettaglio editoriale → topic H/I.
+
+### H. SEO
+29. **SEO tecnico (base Astro statico)**: performance/Core Web Vitals nativi; **hreflang** (5 lingue subpath) + **`x-default`**;
+    **sitemap.xml** multilingua + **robots.txt**; **canonical** puliti; **Schema.org** (`SoftwareApplication`/`Product`+`Offer`,
+    `Organization`, `BreadcrumbList`, **`FAQPage`**, `Article`); **meta** per pagina/lingua + **Open Graph/Twitter card** (OG image).
+30. **Keyword strategy a due livelli + localizzata**: livello **app** = keyword di job/intento long-tail per cluster;
+    livello **brand** = "appgrove" + categoria/privacy; **nicchia EU/GDPR** ("…GDPR/dati in Europa") come cluster
+    differenziante; **localizzata per mercato/lingua** (non traduzione meccanica).
+31. **Slug localizzati per lingua** (`/it/fatture` vs `/en/invoicing`), legati da hreflang.
+32. **Contenuti/blog SEO**: modello **pillar + cluster** (pilastri per tema + long-tail how-to/confronti con internal
+    linking alle landing app). Coordinato con G (blog dal lancio).
+33. **Misurazione**: **Plausible** (analytics cookieless EU, già scelto) + **Google Search Console** + **Bing Webmaster**
+    (performance di ricerca). Nota EU-purista: GSC/Bing = **dati di ricerca/indicizzazione tuoi**, non tracking PII utenti
+    sul sito → compatibile.
+34. **Generazione & CI**: `new-application` genera il **SEO per-app** (meta/OG/structured data/keyword) come parte della
+    landing (dec. 9/25); **check CI SEO** (meta/title/description, hreflang, link non rotti) oltre al check 5 lingue.
+35. **PRINCIPIO TRASVERSALE — tutti i contenuti generati con AI (richiesto 2026-06-21)**: **tutti** i contenuti del sito —
+    **testuali** (copy homepage/landing/blog/meta/SEO) **e visivi** (immagini/illustrazioni/OG) — sono **generati con AI
+    (Claude)**, non scritti dall'utente (non è la sua competenza). **On-brand** col tono **"lean"/semplice** (F1) e lo
+    **stile visivo** (F3 screenshot-first + Material Symbols + illustrazioni AI). L'utente **rivede e approva** (review
+    interattiva / gate di finalizzazione). Vale per **tutto il sito**, non solo le landing app (estende dec. 9/C16/F3).
 
 ## Questioni aperte
 - **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
