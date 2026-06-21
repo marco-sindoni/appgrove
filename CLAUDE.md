@@ -39,10 +39,10 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 
 Catalogo unico di specifiche implementative dettagliate, organizzato **per area in sottocartelle numerate** con
 **numerazione assoluta a 4 cifre** (`NNNN`): indice → [docs/usecases/README.md](docs/usecases/README.md) · template →
-[docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `00-business-legal … 10-apps`.
+[docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `01-business-legal … 11-apps`.
 - Creazione/numerazione/scaffolding: skill **`new-usecase`**; implementazione: **`new-change`** (folder
   `NNNN-use-case-YYYY-…` quando nasce da uno use case).
-- Scritti: [0017 — Flussi auth](docs/usecases/04-auth/0017-flussi-auth.md) 🟢 (UC1–UC10, migrato). Restanti ~53 in catalogo (🔴 da scrivere).
+- Scritti: [0017 — Flussi auth](docs/usecases/05-auth/0017-flussi-auth.md) 🟢 (UC1–UC10, migrato). Restanti ~53 in catalogo (🔴 da scrivere).
 
 ## Backlog trasversale
 

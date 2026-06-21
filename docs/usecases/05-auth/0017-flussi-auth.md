@@ -1,7 +1,7 @@
 # UC 0017 — Flussi auth UI (signup/verify/login/reset/invite/2FA/onboarding)
 
-**Area**: 04-auth · **Fase**: 2 · **Stato**: 🟢 deciso (flussi UC1–UC10 definiti; restano solo i testi dei template email)
-**Dipendenze**: UC 0014 (Cognito + auth BFF), UC 0015 (Pre-Token-Gen + JWT), UC 0019 (backoffice shell)
+**Area**: 05-auth · **Fase**: 2 · **Stato**: 🟢 deciso (flussi UC1–UC10 definiti; restano solo i testi dei template email)
+**Dipendenze**: UC 0015 (Cognito + auth BFF), UC 0016 (Pre-Token-Gen + JWT), UC 0020 (backoffice shell)
 **Fonte decisioni**: #02, #03, #05 · **Ultimo aggiornamento**: 2026-06-16
 **Aree collegate**: [02-auth-sicurezza](../../02-auth-sicurezza.md), [03-frontend](../../03-frontend.md), [05-persistenza-dati](../../05-persistenza-dati.md)
 

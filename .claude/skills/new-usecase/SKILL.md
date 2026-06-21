@@ -23,8 +23,8 @@ data, permissions/gates, test requirements, decision references.
 
 - **Numbering**: `NNNN` = **absolute, global, 4-digit** ID — unique across ALL area subfolders, never relative to a folder.
   Assigned as the next free number; it is a **stable ID** (do not renumber existing ones).
-- **Areas** (subfolders `XX-area/`): `00-business-legal`, `01-devops-infra`, `02-local-dev`, `03-platform-core`,
-  `04-auth`, `05-frontend`, `06-payments`, `07-compliance-gdpr`, `08-marketing-site`, `09-skills-tooling`, `10-apps`.
+- **Areas** (subfolders `XX-area/`): `01-business-legal`, `02-devops-infra`, `03-local-dev`, `04-platform-core`,
+  `05-auth`, `06-frontend`, `07-payments`, `08-compliance-gdpr`, `09-marketing-site`, `10-skills-tooling`, `11-apps`.
 - **File**: `docs/usecases/<area>/NNNN-slug.md`. **Index**: `docs/usecases/README.md` (authoritative order = Phase + Dependencies).
 - **Template**: `docs/usecases/_TEMPLATE.md`.
 

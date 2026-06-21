@@ -20,8 +20,8 @@ new entry to the catalog under the right phase.
 ## Pick the area
 
 Ask the developer (one question), offering the area list:
-> "Which area subfolder? 00-business-legal · 01-devops-infra · 02-local-dev · 03-platform-core · 04-auth · 05-frontend ·
-> 06-payments · 07-compliance-gdpr · 08-marketing-site · 09-skills-tooling · 10-apps"
+> "Which area subfolder? 01-business-legal · 02-devops-infra · 03-local-dev · 04-platform-core · 05-auth · 06-frontend ·
+> 07-payments · 08-compliance-gdpr · 09-marketing-site · 10-skills-tooling · 11-apps"
 
 ## Ask for the title
 
@@ -33,7 +33,7 @@ Convert to kebab-case, max 40 chars → `slug`.
 ## Create the file from the template
 
 ```bash
-AREA="<chosen area, e.g. 06-payments>"
+AREA="<chosen area, e.g. 07-payments>"
 NNNN="<computed number>"
 SLUG="<kebab-slug>"
 cp docs/usecases/_TEMPLATE.md "docs/usecases/$AREA/$NNNN-$SLUG.md"
