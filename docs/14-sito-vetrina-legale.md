@@ -25,10 +25,10 @@ Sito vetrina (marketing) pubblico + testi legali pubblici (ToU/ToS, Privacy Poli
 - **A. Requisiti Paddle per l'attivazione** ✅ — checklist merchant Paddle (3 doc legali, prodotto/prezzi/feature, SSL, entità legale)
 - **B. Architettura del sito & rollout** ✅ — SSG statico, S3+CloudFront, multilingua, `.md` fonte unica, versioning; **sequenza di accensione prod parziale**
 - **C. Testi legali** ✅ — T&C, **Refund Policy**, Privacy Policy, cookie disclosure (IT facente fede); coord. #13 + revisione legale (L2/L3)
-- **D. Entità legale titolare (L11)** — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
+- **D. Entità legale titolare (L11)** ✅ — **persona fisica / ditta individuale** (no società), indirizzo, contatti (serve a PP e a Paddle MoR); inquadramento fiscale in [_COMMERCIALISTA](_COMMERCIALISTA.md)
 - **E. Posizionamento & ICP** ✅ — cosa vendiamo (brand marketplace vs singole app), a chi, value prop, ruolo del wedge "EU-privacy"
 - **F. Brand & identità visiva** ✅ — logo, palette, tipografia, tono, stile dei contenuti visuali
-- **G. Contenuti & struttura del sito (IA)** — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
+- **G. Contenuti & struttura del sito (IA)** ✅ — homepage, pagine app, pricing, blog/risorse, FAQ, supporto, `security.txt`
 - **H. SEO** — keyword strategy, SEO tecnico statico, **hreflang 5 lingue**, structured data, performance
 - **I. GEO (Generative Engine Optimization)** — essere citati dagli assistenti AI/LLM; contenuti machine-readable
 - **J. Paid & social & launch** — Meta/Facebook + altri social, organico vs paid, strategia di lancio
@@ -158,6 +158,35 @@ F3. **Stile contenuti visivi & brand kit**:
       (dal log di accettazione #13 G41) vs versione-corrente richiesta (major)**; se `accettata < major` → **schermata
       bloccante**. Nessun flag/job di massa da mantenere in sync; chi adotta l'app **dopo** il bump prende già la versione
       corrente all'attivazione. Stesso effetto del "marcare tutti", ma **calcolato** da un'unica fonte di verità.
+
+### D. Entità legale titolare (L11)
+21. **Titolare = persona fisica → ditta individuale**: in **fase free** (sito pubblicato, tratti dati → sei già **titolare
+    del trattamento** anche senza P.IVA) il titolare è la **persona fisica** (nome legale + indirizzo + email); **alla
+    monetizzazione** diventa **ditta individuale con P.IVA** (stessa persona, si aggiunge la P.IVA) → si aggiornano i documenti.
+22. **Dati pubblicati** (legali + footer): **nome legale**, **indirizzo (sede)**, **email** (`privacy@`/`support@`/`security@`,
+    #13/#13 J), **P.IVA** quando attiva.
+23. **Indirizzo/sede = (b) domiciliazione / virtual office** (scelto): indirizzo commerciale a pagamento (poche centinaia
+    di €/anno) per **tenere privato l'indirizzo di casa** ed essere più professionale. Da confermare/impostare col
+    commercialista (sede ditta individuale) → note in [_COMMERCIALISTA](_COMMERCIALISTA.md).
+
+### G. Contenuti & architettura informativa (IA)
+24. **Sitemap + scope MVP di lancio**: **Homepage** + **≥1 landing per-app** + **"Perché appgrove / Privacy & EU"** (storia
+    del wedge, forte per GEO/PR) + **"Prezzi — come funziona la fatturazione"** (mensile/annuale, trial, no-refund; il
+    prezzo vero sta sulle landing app) + **legali** (Privacy/Terms/Refund/Cookie) + **Support/Contatti** (+ `security.txt`,
+    ticketing #13 I) + **Blog/Risorse** (struttura al lancio). **NIENTE founder story / About personale** (scelta utente):
+    eventuali mission/valori confluiscono in "Perché appgrove" **senza narrativa personale** (coerente con privacy del founder).
+25. **Template landing per-app** (unità ripetibile generata da `new-application`, job-led + privacy wedge E7): (1) Hero
+    (headline job + sub-benefit + CTA + screenshot UI); (2) Problema→soluzione; (3) Feature chiave (3–6, icone Material
+    Symbols + mini-screenshot); (4) Come funziona (2–3 step); (5) Pricing/tier (mensile/annuale default annuale, trial);
+    (6) Badge/sezione privacy EU; (7) FAQ; (8) CTA finale. Base = brand kit (F); multilingua (dec. 9); soggetto al **gate
+    di finalizzazione** (screenshot/copy reali, dubbio in Questioni aperte).
+26. **Homepage (brand)**: hero (promessa "strumenti semplici che crescono con te") → vetrina app (anche 1, "altri in
+    arrivo", onesta col catalogo piccolo dec. 11) → "un account, tanti strumenti" (cross-sell) → sezione privacy/EU (wedge)
+    → newsletter → CTA (registrati/esplora).
+27. **Navigazione & footer**: top nav = App · Perché appgrove · Prezzi · Blog · **Login** + CTA "Registrati". Footer =
+    legali · Support · `security.txt` · newsletter · **selettore lingua** · social.
+28. **Blog/Risorse**: **struttura presente dal lancio** (base di SEO/GEO), **contenuti che crescono** nel tempo (guide,
+    confronti, how-to su keyword long-tail). Dettaglio editoriale → topic H/I.
 
 ## Questioni aperte
 - **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la

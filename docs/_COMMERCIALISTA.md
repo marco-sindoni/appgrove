@@ -79,6 +79,8 @@ Origine: discussione #14, 2026-06-21.
 | F5 | **Timing esatto** di apertura P.IVA rispetto all'avvio del pagato | ⏳ |
 | F6 | Imputazione fiscale del **saldo trattenuto da Paddle** (competenza vs cassa nel forfettario) | ⏳ |
 | F7 | Eventuale **ravvedimento** se si è già operato prima dell'apertura | ⏳ (solo se applicabile) |
+| F8 | **Sede ditta individuale = domiciliazione / virtual office** (scelta #14 D23): impostare un **indirizzo commerciale** (poche centinaia €/anno) per non pubblicare l'indirizzo di casa su privacy policy/T&C/Paddle. Verificare implicazioni (sede legale vs operativa, costi, provider) | ⏳ |
+| F9 | **Identità titolare già in fase free**: pubblicando il sito si tratta dati → si è **titolari del trattamento** anche prima della P.IVA. In fase free il titolare è la **persona fisica** (nome+indirizzo+email); alla monetizzazione si aggiunge la **P.IVA (ditta individuale)** e si aggiornano i documenti | ⏳ |
 
 ## Impatti su altre aree
 - [#14 Sito vetrina & legale](14-sito-vetrina-legale.md) (entità legale L11 = persona fisica/ditta individuale),

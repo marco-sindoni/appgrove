@@ -24,7 +24,7 @@ Aggiornato a ogni decisione che tocca aspetti legali.
 | L8 | **Eventuali obblighi settoriali** di singole app (dati regolati) | per-app | alla creazione app | per-app |
 | L9 | **Lista sub-responsabili & DPA con i sub-processor** (AWS incl. SES, Plausible; **Paddle come MoR = titolare autonomo** per dati pagamento/fiscali, #09 J45, non semplice responsabile) — postura purista: niente Cloudflare/Atlassian | #13 H/I / #09 J | pre-go-live | ⏳ da compilare |
 | L10 | **Accessibilità** — dichiarazione/conformità European Accessibility Act (in vigore da giugno 2025) | #10 K | pre-go-live | ⏳ |
-| L11 | **Entità legale titolare** (ditta/società) con indirizzo/contatto — richiesta da privacy policy e da Paddle (MoR) | #13 G | pre-go-live | ⏳ prerequisito business |
+| L11 | **Entità legale titolare = persona fisica → ditta individuale** (no società), nome legale + **indirizzo via domiciliazione/virtual office** (#14 D23, no indirizzo di casa) + contatto — richiesta da privacy policy e da Paddle (MoR); inquadramento in [_COMMERCIALISTA](_COMMERCIALISTA.md) | #13 G / #14 D | pre-go-live | ⏳ prerequisito business |
 | L12 | **Template notifiche data breach** (Garante art. 33, interessati art. 34, controller B2B) IT/EN | #13 J | pre-go-live | ⏳ deliverable |
 | L13 | **Refund Policy** — pagina pubblica **separata**, accessibile dal menu (**requisito Paddle Domain Review**, #14 A2); contenuto "vendite finali/no refund salvo legge + Buyer Terms Paddle" (#09 J43); 5 lingue, IT facente fede | #09 J / #14 A | **prerequisito Paddle** | ⏳ da redigere |
 
