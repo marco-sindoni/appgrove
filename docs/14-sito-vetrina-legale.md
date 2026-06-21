@@ -1,6 +1,6 @@
 # Sito vetrina & testi legali (ToU/PP) — Decisioni
 
-**Stato**: 🟡 in corso
+**Stato**: 🟢 deciso (A–J + gate finalizzazione landing)
 **Ultimo aggiornamento**: 2026-06-21
 
 > ⛔ **PREREQUISITO BLOCCANTE PER PADDLE** (richiesto 2026-06-21): Paddle **non attiva l'account** senza un **sito di
@@ -250,15 +250,29 @@ F3. **Stile contenuti visivi & brand kit**:
     (tono F1, dec. 35). **Checklist di conformità** ad ogni step. **Evoluzione futura**: assistente **Playwright non-headless**
     che guida/pilota la UI di creazione campagna. Tracciata in memoria `skills-backlog` e [_BACKLOG](_BACKLOG.md).
 
+### Gate di finalizzazione landing & ambienti del sito (risoluzione dubbio, 2026-06-21)
+51. **Due momenti distinti** per la landing di un'app:
+    - **`new-application` (scaffold) → BOZZA**: genera copy (8 sezioni, AI on-brand), struttura, SEO/meta/structured data,
+      **placeholder** al posto degli screenshot (l'app non esiste ancora). **Stato `draft`, NON pubblicata.**
+    - **`finalize-landing` (NUOVA skill, quando l'app è MVP/beta) → FINALIZZA + pubblica**: (1) **cattura screenshot reali
+      via Playwright** contro l'app in esecuzione + **seed** (#10 I), **una per lingua**; (2) **rifinisce il copy** sulle
+      feature reali; (3) genera **OG image**; (4) **review interattiva dell'utente** nelle 5 lingue (dec. 35: AI genera,
+      utente approva); (5) all'approvazione **`draft → published`**.
+52. **Gate di pubblicazione**: il build Astro renderizza **solo le landing `published`**; le bozze restano nel repo ma
+    **non vanno online** (check CI: `status: published`). Niente pubblicazioni accidentali di pagine incomplete.
+53. **Le skill creano CONTENUTI, non fanno deploy**: producono file (md + asset) nel repo dentro il workflow `new-change`
+    (branch + PR); la **pubblicazione = pipeline CI (#07) al merge**. Sotto controllo dell'utente.
+54. **Ambienti del sito & preview**:
+    - **Locale** (`astro dev`/`preview`) = **loop di review primario**, istantaneo (è qui che l'utente vede le pagine
+      aggiornate durante `finalize-landing`);
+    - **Test (hostato)** = sito statico di test, protetto da **basic auth (CloudFront Function)** + **`noindex`**;
+    - **Prod** (`appgrove.app`) = **pubblico** (Paddle deve vederlo → niente basic auth), protetto da **gate `published`**
+      + **`noindex` fino al go-live** (Paddle lo vede, motori/AI non indicizzano prima del tempo; al lancio si rimuove `noindex`).
+55. **Manutenzione**: il gate qualità di **`new-change`** segnala quando una modifica rilevante all'app può rendere la
+    landing **stale** → propone di **ri-eseguire `finalize-landing`** (screenshot/copy riallineati).
+
 ## Questioni aperte
-- **DUBBIO da riprendere (richiesto 2026-06-21) — gate di finalizzazione della landing**: `new-application` genera la
-  pagina web dell'app (dec. 9), ma **gli screenshot dell'app non esistono al momento di `new-application`** (l'app va
-  ancora costruita). Quindi la landing nasce **bozza** (testi + placeholder visivi). Serve definire un **gate di
-  finalizzazione** — contenuti + screenshot reali completati con una **mia review interattiva** prima della pubblicazione.
-  Da decidere: chi/come scatta il gate (step finale di `new-application`? skill separata `finalize-landing`? parte di
-  `new-change`?), quali asset richiede (screenshot reali, copy definitivo, OG image), e il check "landing pubblicabile".
-  Collegato a dec. 9 e topic **G**.
-- Topic **C (testi legali), D (entità legale), G–J (contenuti, SEO, GEO, paid/social)** da affrontare.
+_Nessuna — #14 chiuso (A–J + gate finalizzazione). Implementazione → [_BACKLOG](_BACKLOG.md)._
 
 ## Impatti su altre aree
 - **Sblocca #09 (Pagamenti)**: l'attivazione dell'account Paddle dipende da quest'area.

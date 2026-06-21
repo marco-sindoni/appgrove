@@ -75,7 +75,10 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
   = centesimi. Nessun altro impatto AWS rilevante.
 - **#14 (Sito vetrina & legale)**: sito statico **Astro** su **S3+CloudFront+Route53+ACM** (~**$0–1**, free tier CloudFront)
   → **primo artefatto prod** acceso "a fette" (rollout statico-first), prima del backend. Nessun costo nuovo rilevante
-  (rientra nella voce CloudFront+S3 già presente). Build su GitHub Actions (#07, free tier).
+  (rientra nella voce CloudFront+S3 già presente). Build su GitHub Actions (#07, free tier). **Ambiente di test** del sito
+  statico = altra distribuzione S3+CloudFront (~$0) protetta da **basic auth via CloudFront Function** (Functions ~gratis a
+  questi volumi) + `noindex`. **Prod** pubblico (Paddle) con gate `published` + `noindex` pre-lancio. Review = **locale**
+  (astro dev/preview, $0).
 - **#09 (Pagamenti, Paddle)**: **nessuna nuova voce AWS rilevante** (Lambda ingest webhook + SQS/ElasticMQ già contati,
   ~$0 al volume webhook). Il costo dei pagamenti è una **fee di revenue, non AWS**: **~5% + $0.50/transazione** (effettiva
   ~7% con FX). La quota fissa $0.50 pesa sulle app cheap/mensili (€5/mese → ~15%); **mitigata dall'annuale di default**

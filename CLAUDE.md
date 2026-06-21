@@ -33,7 +33,7 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 | 11 | Developer experience / local dev | [docs/11-developer-experience.md](docs/11-developer-experience.md) | 🟢 |
 | 12 | Environments & config management | [docs/12-environments-config.md](docs/12-environments-config.md) | 🟢 |
 | 13 | Compliance & Privacy (GDPR) | [docs/13-compliance-privacy.md](docs/13-compliance-privacy.md) | 🟢 |
-| 14 | Sito vetrina & testi legali (ToU/PP) — **prerequisito attivazione Paddle** | [docs/14-sito-vetrina-legale.md](docs/14-sito-vetrina-legale.md) | 🔴 |
+| 14 | Sito vetrina & testi legali (ToU/PP) — **prerequisito attivazione Paddle** | [docs/14-sito-vetrina-legale.md](docs/14-sito-vetrina-legale.md) | 🟢 |
 
 ## Casi d'uso (use case)
 

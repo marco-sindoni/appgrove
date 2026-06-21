@@ -208,6 +208,12 @@ del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via n
   (branch+PR), **nessun dialogo diretto con Paddle**. Gestisce **immutabilità prezzi Paddle** (cambio importo = nuovo Price
   + archivia vecchio) e **grandfathering** (esistenti restano vs migrazione). Il **sync a Paddle** è nella **pipeline di
   deploy** (test→sandbox, tag→production), `paddle_*_id` per-ambiente nel DB catalogo riempiti dal sync. Memoria `skills-backlog`.
+- **`finalize-landing`** (richiesto 2026-06-21, #14 gate finalizzazione) — finalizza/pubblica la **landing** di un'app
+  quando è MVP/beta (`new-application` crea la bozza `draft`): **screenshot reali via Playwright** + seed (#10 I) per lingua,
+  **copy rifinito** AI on-brand, **OG image**, **review interattiva** 5 lingue, poi `draft → published`. Build Astro
+  renderizza solo `published`. Crea contenuti via `new-change` (deploy = CI). `new-change` segnala landing stale →
+  propone re-run. Ambienti sito: **locale** (preview), **test** (basic auth + noindex), **prod** (pubblico, gate published +
+  noindex pre-lancio). Memoria `skills-backlog`.
 - **`campaign-guide`** (richiesto 2026-06-21, #14 J) — **guida passo-passo** per creare campagne ads (Meta/Google)
   **rispettando la postura privacy** (cookieless, **no pixel/CAPI-PII**, no banner, EU-purista): obiettivi ammessi
   (Traffico/Lead Form native), **convenzioni UTM** per attribuzione **Plausible** cookieless, **copy/creatività AI
