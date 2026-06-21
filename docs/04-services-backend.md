@@ -55,14 +55,18 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
    centralizzati** in `commons` → **problem+json**. **Correlation id** (`X-Request-Id`/`traceparent`) propagato in MDC
    (→ [08-observability](08-observability.md)). **Paginazione offset-based** (`page`/`size` + total) per il PoC.
 
-### Enforcement entitlement (topic G — aggiorna #01/#02; allineato a #09 dec.30)
-7. **Enforcement a livelli** (difesa in profondità):
-   - **Custom Lambda authorizer** su API Gateway: verifica il **JWT** *e* fa un **check d'accesso grossolano** ("il tenant
-     ha accesso all'`app_id` del path?") sull'**entitlement DERIVATO** da `platform.subscription` (status nell'access-set
-     `trialing/active/past_due`), via RDS Proxy, con **caching** dell'authorizer (revoca con lag = TTL). **NON** legge una
-     tabella `entitlements` (abolita, #09 dec.12): la deriva da `subscription`. Sostituisce l'authorizer Cognito nativo.
-   - Il **servizio** (Quarkus OIDC) **ri-valida il JWT** e applica i **gate fini** (#09 dec.30): stato esatto/grace →
-     **402**, ruoli (`@RolesAllowed`) → 403, **quota** (SPI flow/stock) → 429. I **diritti GDPR** restano **esenti** dai
+### Enforcement entitlement (topic G — aggiorna #01/#02; **catena completa in #09 dec.30**)
+7. **Enforcement a livelli** (difesa in profondità). La catena autorevole è in **#09 dec.30** (authN → app abilitata →
+   entitled → ruolo → quota); qui la mappatura edge/servizio:
+   - **Custom Lambda authorizer** (edge): verifica il **JWT**, poi due check **grossolani** di piattaforma —
+     **(a) app abilitata?** (flag disable-admin, **ha precedenza**, → **403**, #09 dec.30 gate 2) e **(b) il tenant ha
+     accesso all'app?** (entitlement **DERIVATO** da `platform.subscription`, status ∈ `{trialing,active,past_due}`,
+     → **402**/deny). **NON** legge una tabella `entitlements` (abolita, #09 dec.12): la **deriva** da `subscription`.
+     La derivazione è **economica** (tabelle piccole, #09 dec.12) → **nessuna cache attiva**; cache dell'authorizer =
+     **opzionale/futura** (solo se le letture diventano un collo di bottiglia; eventuale revoca con lag = TTL).
+     Sostituisce l'authorizer Cognito nativo.
+   - Il **servizio** (Quarkus OIDC) **ri-valida il JWT** e applica i **gate fini**: **ruolo** (`@RolesAllowed`) → 403,
+     **quota** (SPI flow/stock) → 429, e le **sfumature di stato/grace** → 402. I **diritti GDPR** restano **esenti** dai
      gate (#09 F31).
 
 ### Orchestrazione purge (topic H — aggiorna #05)
