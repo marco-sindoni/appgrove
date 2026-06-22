@@ -26,7 +26,7 @@ dipendenze sopra di sé.
 |---|---|---|---|---|
 | 1 | [0044](10-skills-tooling/0044-aggiornamento-skill-new-change.md) | `new-change` update (use-case variant + gate test/snapshot + hook privacy/RoPA) | — | ✅ |
 | 2 | [0045](10-skills-tooling/0045-skill-new-usecase.md) | skill `new-usecase` (numerazione/scaffolding/indice) | — | ✅ |
-| 3 | [0008](03-local-dev/0008-stack-sviluppo-locale.md) | Stack dev locale (Compose: Postgres, proxy, Mailpit, MinIO, ElasticMQ) | — | ⬜ |
+| 3 | [0008](03-local-dev/0008-stack-sviluppo-locale.md) | Stack dev locale (Compose: Postgres, proxy, Mailpit, MinIO, ElasticMQ) | — | 🟡 |
 | 4 | [0009](03-local-dev/0009-script-dev.md) | Script `dev/` (setup, up/down, seed, reset, migrate, service, doctor) | 0008 | ⬜ |
 | 5 | [0010](03-local-dev/0010-provider-auth-locale.md) | Auth provider locale (JWT/JWKS, claim dal DB, refresh, TOTP, Mailpit) | 0008 | ⬜ |
 | 6 | [0011](03-local-dev/0011-dati-seed.md) | Seed data deterministico (dev↔E2E) | 0008 | ⬜ |
