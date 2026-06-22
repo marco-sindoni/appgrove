@@ -6,6 +6,11 @@
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [11-developer-experience](../../11-developer-experience.md), [02-auth-sicurezza](../../02-auth-sicurezza.md), [05-auth/0017-flussi-auth](../05-auth/0017-flussi-auth.md)
 
+> **Aggancio da change 0002 (UC 0008).** Il provider auth locale è già predisposto come **placeholder**: servizio
+> `auth-local` **commentato** in `dev/docker-compose.yml` (con env Postgres e porta `9100`) e route `/api/auth/*`
+> **commentata** in `dev/Caddyfile` (snippet `(api_routes)` + per-host). Questo UC deve **scommentarli e riempirli**
+> (immagine/build, firma JWT/JWKS, claim dal DB, refresh cookie, TOTP, email su Mailpit) — non reinventare lo stack.
+
 ## 1. Obiettivo / Scope
 Definire il **provider auth locale** che sostituisce Cognito + auth Lambda in dev, così che l'**intero flusso auth**
 (signup/verify/login/refresh/logout/invite/2FA) giri **offline** con **lo stesso shape di JWT** di prod (#11 B6/B7).

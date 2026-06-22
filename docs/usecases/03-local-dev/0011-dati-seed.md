@@ -6,6 +6,10 @@
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [11-developer-experience](../../11-developer-experience.md), [10-testing](../../10-testing.md), [05-persistenza-dati](../../05-persistenza-dati.md)
 
+> **Aggancio da change 0002 (UC 0008).** Il seed gira contro le dipendenze già definite in `dev/docker-compose.yml`:
+> **Postgres** (`postgres:17`) per il cast multi-tenant/catalogo e **MinIO** per eventuali asset/export. Nessun blocco da
+> scommentare qui; il seed è invocato dagli script `dev seed`/`dev reset` (UC 0009) sul DB di questo stack.
+
 ## 1. Obiettivo / Scope
 Definire un **unico set di seed deterministico, idempotente, versionato** (ID stabili) condiviso tra **dev locale** ed
 **E2E Playwright**, così i flussi sono riproducibili (#11 D12, #10 I32/33).

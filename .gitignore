@@ -30,3 +30,7 @@ target/
 .env.*
 !.env.example
 *.local
+
+# --- local dev stack (UC 0008) ---
+dev/certs/*
+!dev/certs/.gitkeep

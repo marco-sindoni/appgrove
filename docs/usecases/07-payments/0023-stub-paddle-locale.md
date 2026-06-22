@@ -6,6 +6,9 @@
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [09-pagamenti](../../09-pagamenti.md), [11-developer-experience](../../11-developer-experience.md), [10-testing](../../10-testing.md)
 
+> **Aggancio da change 0002 (UC 0008).** Le code per i **webhook Paddle** sono già predisposte in `dev/elasticmq.conf`
+> (`paddle-webhooks` + DLQ `paddle-webhooks-dlq`). Lo stub qui produce/consuma su quelle code, senza ridefinire ElasticMQ.
+
 ## 1. Obiettivo / Scope
 Implementare lo **stub Paddle locale** dietro la stessa interfaccia (port) del provider reale, così l'intero flusso pagamenti
 gira **offline/deterministico** senza account Paddle (unica via non bloccata da #14).
