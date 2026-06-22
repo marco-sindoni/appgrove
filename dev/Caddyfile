@@ -1,0 +1,72 @@
+# appgrove — reverse proxy locale (UC 0008)  ≈ API Gateway v2
+#
+# Obiettivo: UN SOLO ORIGIN per ciascuna SPA + path-routing fedele a prod
+# (#11 §3, #12 §11). Le app girano come PROCESSI host → upstream via
+# host.docker.internal. TLS con certificati mkcert (`.app` è HSTS-preload → HTTPS
+# obbligatorio, #12 §13); l'ACME è disabilitato perché in locale siamo offline.
+#
+# I certificati li genera `dev setup` (UC 0009) con nomi stabili:
+#   mkcert -cert-file dev/certs/local.appgrove.app.pem \
+#          -key-file  dev/certs/local.appgrove.app-key.pem \
+#          "local.appgrove.app" "*.local.appgrove.app"
+#
+# ── Convenzione porte processi host (consumata da UC 0009 + new-application #11 §11) ──
+#   auth-local ............... 9100   (UC 0010)
+#   <app_id> backend Quarkus . 8081+  (assegnazione in UC 0009)
+#   backoffice SPA (Vite) .... 5173   (UC 0009)
+#   admin SPA (Vite) ......... 5174   (UC 0009)
+
+{
+	# niente Let's Encrypt/ACME in locale: usiamo i certificati mkcert (tls espliciti per-site).
+	auto_https disable_redirects
+	admin off
+}
+
+# (snippet riusabile dalle SPA quando le app gireranno — UC 0009/0010)
+# Tiene il routing /api/* in un unico punto: stesso origin della SPA.
+(api_routes) {
+	# /api/auth/* → provider auth locale (UC 0010)
+	# handle /api/auth/* {
+	#	reverse_proxy host.docker.internal:9100
+	# }
+	# /api/<app_id>/v1/* → backend del servizio (UC 0009 assegna la porta)
+	# handle /api/notes/v1/* {
+	#	reverse_proxy host.docker.internal:8081
+	# }
+}
+
+# ── Backoffice cliente (un solo origin: SPA + /api/*) ────────────────────────
+app.local.appgrove.app {
+	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
+	# import api_routes                          # (UC 0010 attiva /api/auth/*, UC 0009 i servizi)
+	# reverse_proxy host.docker.internal:5173    # SPA backoffice (Vite) — tutto il resto (UC 0009)
+	respond "appgrove dev — backoffice non avviato. Avvia le app con `dev up` (UC 0009)." 200
+}
+
+# ── Vetrina pubblica (apex locale, servita da apps/backoffice) ───────────────
+local.appgrove.app {
+	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
+	# reverse_proxy host.docker.internal:5173    # vetrina (UC 0009)
+	respond "appgrove dev — vetrina non avviata (UC 0009)." 200
+}
+
+# ── Console admin (app separata) ─────────────────────────────────────────────
+admin.local.appgrove.app {
+	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
+	# import api_routes
+	# reverse_proxy host.docker.internal:5174    # admin SPA (Vite) — UC 0009
+	respond "appgrove dev — console admin non avviata (UC 0009)." 200
+}
+
+# ── Host API/auth canonico (≈ api.appgrove.app) ──────────────────────────────
+api.local.appgrove.app {
+	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
+	# import api_routes
+	respond "appgrove dev — API non avviata (UC 0009/0010)." 200
+}
+
+# ── Health del proxy (HTTP semplice, per smoke test e `dev doctor` UC 0009) ──
+:80 {
+	respond /healthz "appgrove-dev proxy ok" 200
+	respond "appgrove dev — usa gli host *.local.appgrove.app in HTTPS" 200
+}

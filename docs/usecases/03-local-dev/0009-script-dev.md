@@ -6,6 +6,14 @@
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [11-developer-experience](../../11-developer-experience.md), [06-infra-iac](../../06-infra-iac.md)
 
+> **Aggancio da change 0002 (UC 0008).** Lo stack Compose è già in `dev/` (`docker-compose.yml`, `Caddyfile`,
+> `.env.example`, `elasticmq.conf`, `certs/`). Gli script qui devono **consumare** quei file, non riscriverli:
+> `dev setup` → `mkcert -install` + genera i certificati in `dev/certs/` coi **nomi stabili** attesi dal `Caddyfile`
+> (`local.appgrove.app.pem` / `-key.pem`), scrive `/etc/hosts`, copia `dev/.env.example`→`dev/.env`, avvia l'engine
+> (`colima start`); `dev up/down` → `docker compose -f dev/docker-compose.yml --env-file dev/.env up/down`; `dev doctor`
+> → verifica engine/mkcert/hosts/porte. **Routing servizi**: assegna le porte secondo la convenzione documentata nel
+> `Caddyfile` e scommenta i blocchi `handle /api/<app_id>/v1/*` (auto-wiring `new-application`, #11 §11).
+
 ## 1. Obiettivo / Scope
 Definire l'insieme di **shell script documentati** sotto `dev/` che rendono lo sviluppo locale **senza intoppi** (#11 C),
 con uno **stile wrapper** speculare a `infra/scripts/` (#06 §25): nomi espliciti, `--help` ciascuno, idempotenti/auto-riparanti,
