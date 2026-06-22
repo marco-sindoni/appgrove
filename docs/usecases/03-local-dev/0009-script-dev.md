@@ -14,6 +14,10 @@
 > → verifica engine/mkcert/hosts/porte. **Routing servizi**: assegna le porte secondo la convenzione documentata nel
 > `Caddyfile` e scommenta i blocchi `handle /api/<app_id>/v1/*` (auto-wiring `new-application`, #11 §11).
 
+> **Interim da change 0003.** In root esistono già due wrapper provvisori — `dev-start.sh` (≈`dev up`) e `dev-stop.sh`
+> (≈`dev down`, con `-v` per il reset volumi) — versionati come comodità. Gli script ufficiali `dev/` di questo UC li
+> **sostituiscono**: a quel punto i due wrapper root vanno rimossi.
+
 ## 1. Obiettivo / Scope
 Definire l'insieme di **shell script documentati** sotto `dev/` che rendono lo sviluppo locale **senza intoppi** (#11 C),
 con uno **stile wrapper** speculare a `infra/scripts/` (#06 §25): nomi espliciti, `--help` ciascuno, idempotenti/auto-riparanti,
