@@ -21,43 +21,38 @@ Dipendenze infrastrutturali in **Docker Compose**, 100% offline (**zero AWS**), 
 - **Seed data** deterministico → **UC 0011**. **Stub Paddle** → **UC 0023**.
 - Routing `/api/<app_id>/v1/*` verso i servizi → template commentato nel Caddyfile (le porte le assegna UC 0009 / `new-application`).
 
-## Avvio manuale (finché non arriva UC 0009)
+## Quickstart — gli script `dev` (UC 0009)
 
-Prerequisiti una tantum:
-
-```bash
-# 1) container engine attivo (qui: Colima)
-colima start
-
-# 2) CA locale mkcert fidata nel sistema (chiede la password del Mac)
-mkcert -install
-
-# 3) certificati per i domini locali → dev/certs/ (nomi stabili usati dal Caddyfile)
-mkcert -cert-file dev/certs/local.appgrove.app.pem \
-       -key-file  dev/certs/local.appgrove.app-key.pem \
-       "local.appgrove.app" "*.local.appgrove.app"
-
-# 4) /etc/hosts → 127.0.0.1 per i domini locali (richiede sudo)
-#    app.local.appgrove.app  admin.local.appgrove.app  api.local.appgrove.app  local.appgrove.app
-
-# 5) config locale
-cp dev/.env.example dev/.env
-```
-
-Su/giù:
+Tutto passa per il **dispatcher** `dev/dev`, lanciabile dalla root con `./dev.sh <comando>`
+(per digitare `dev <comando>` senza `./dev.sh`: `alias dev="$(pwd)/dev/dev"`).
 
 ```bash
-docker compose -f dev/docker-compose.yml --env-file dev/.env up -d
-docker compose -f dev/docker-compose.yml --env-file dev/.env down
+./dev.sh doctor     # preflight read-only: engine, mkcert, hosts, porte, prerequisiti
+./dev.sh setup      # bootstrap one-time idempotente (CA mkcert, certs, /etc/hosts, .env, stack su)
+./dev.sh up         # avvia lo stack (Postgres, proxy, Mailpit, MinIO, ElasticMQ)
+./dev.sh down       # ferma lo stack            (./dev.sh down -v  → reset volumi)
+./dev.sh reset      # wipe volumi + riavvio (+ reseed quando disponibile)
 ```
 
-Smoke test rapido:
+Comodità storiche (alias): `./dev-start.sh` = `./dev.sh up`, `./dev-stop.sh` = `./dev.sh down`.
+
+`./dev.sh <comando> --help` per i dettagli. **Stub** in attesa dei rispettivi UC: `seed` (UC 0011),
+`migrate` / `service <app_id>` (servizi/UC 0046), e dentro `setup` i passi chiavi-JWT (UC 0010) e `config.json` (frontend).
+
+Smoke test rapido (a stack su):
 
 ```bash
-curl -s http://localhost/healthz                 # → "appgrove-dev proxy ok"
-open http://localhost:8025                        # Mailpit UI
-open http://localhost:9001                        # MinIO console
-curl -s "http://localhost:9324/?Action=ListQueues" # ElasticMQ: elenca le code
+curl -s http://localhost/healthz                   # → "appgrove-dev proxy ok"
+open http://localhost:8025                          # Mailpit UI
+open http://localhost:9001                          # MinIO console
+curl -s "http://localhost:9324/?Action=ListQueues"  # ElasticMQ: elenca le code
 ```
 
-> `dev/.env` e `dev/certs/*` **non sono committati** (`.gitignore`). Reset dati = `docker compose ... down -v`.
+### Troubleshooting
+
+- **Docker daemon non attivo** → `colima start` (o lascia che `./dev.sh up`/`setup` lo avvii). Persistente al login: `brew services start colima`.
+- **Browser non si fida del certificato** → `mkcert -install` (chiede la password del Mac).
+- **Porta occupata** (es. 5432 da un Postgres locale che ombreggia il container) → `./dev.sh doctor` la segnala; ferma il processo o cambia porta in `dev/.env`.
+- **`JAVA_HOME` / keytool** durante la generazione certificati → `dev` usa già il workaround (`env -u JAVA_HOME`); per `mkcert -install` nello store Java serve `JAVA_HOME` corretta.
+
+> `dev/.env` e `dev/certs/*` **non sono committati** (`.gitignore`). Reset dati = `./dev.sh down -v`.

@@ -11,6 +11,11 @@
 > **commentata** in `dev/Caddyfile` (snippet `(api_routes)` + per-host). Questo UC deve **scommentarli e riempirli**
 > (immagine/build, firma JWT/JWKS, claim dal DB, refresh cookie, TOTP, email su Mailpit) — non reinventare lo stack.
 
+> **Open point da change 0004 (UC 0009).** Negli script `dev/` ci sono due agganci da riempire qui:
+> (1) `dev/lib/setup.sh` passo **"6/8 Chiavi JWT locali"** è uno **stub** — generare/persistere le chiavi JWT locali;
+> (2) `dev/lib/up.sh` ha un **hook "processi-app"** vuoto — avviare `auth-local` (scommentando il servizio in
+> `dev/docker-compose.yml`) e la route `/api/auth/*` nel `Caddyfile`. Sostituire i `warn` di stub con la logica reale.
+
 ## 1. Obiettivo / Scope
 Definire il **provider auth locale** che sostituisce Cognito + auth Lambda in dev, così che l'**intero flusso auth**
 (signup/verify/login/refresh/logout/invite/2FA) giri **offline** con **lo stesso shape di JWT** di prod (#11 B6/B7).
