@@ -6,6 +6,11 @@
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [07-devops-cicd](../../07-devops-cicd.md), [09-pagamenti](../../09-pagamenti.md), [13-compliance-privacy](../../13-compliance-privacy.md), [14-sito-vetrina-legale](../../14-sito-vetrina-legale.md), [10-testing](../../10-testing.md)
 
+> **Open point da change 0004 (UC 0009).** Gli script `dev/` lasciano tre agganci che l'auto-wiring di questa skill (e i
+> primi servizi) devono riempire: `dev/lib/migrate.sh` (**stub** → Flyway sul Postgres locale), `dev/lib/service.sh`
+> (**stub** → avvio selettivo core + `<app_id>`), e l'**hook "processi-app"** in `dev/lib/up.sh`. Una nuova app deve
+> agganciarsi così che `./dev.sh up`/`migrate`/`service <app_id>` la prendano automaticamente (#11 §11).
+
 ## 1. Obiettivo / Scope
 Creare la skill **`new-application`** che **codifica il pattern** della prima app (UC 0051-0030) in uno scaffolding automatico,
 così l'utente si concentra **solo sul business**.

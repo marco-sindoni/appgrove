@@ -10,6 +10,10 @@
 > **Postgres** (`postgres:17`) per il cast multi-tenant/catalogo e **MinIO** per eventuali asset/export. Nessun blocco da
 > scommentare qui; il seed è invocato dagli script `dev seed`/`dev reset` (UC 0009) sul DB di questo stack.
 
+> **Open point da change 0004 (UC 0009).** `dev/lib/seed.sh` è uno **stub** (`cmd_seed` stampa solo un rimando) e
+> `dev/lib/reset.sh` lo richiama al passo "3/3 reseed". Questo UC deve implementare il caricamento reale del seed in
+> `dev/lib/seed.sh` (idempotente, ID stabili), così `./dev.sh seed` e `./dev.sh reset` popolano davvero il DB.
+
 ## 1. Obiettivo / Scope
 Definire un **unico set di seed deterministico, idempotente, versionato** (ID stabili) condiviso tra **dev locale** ed
 **E2E Playwright**, così i flussi sono riproducibili (#11 D12, #10 I32/33).

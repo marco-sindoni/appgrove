@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# appgrove — dispatcher orchestrazione sviluppo locale (UC 0009).
+# Entrypoint reale: dev/dev. In root usa il launcher ./dev.sh, oppure imposta:
+#   alias dev="$(pwd)/dev/dev"   (poi: dev up, dev doctor, ...)
+set -euo pipefail
+
+DEV_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$DEV_DIR/.." && pwd)"
+export DEV_DIR REPO_ROOT
+# shellcheck source=dev/lib/common.sh
+source "$DEV_DIR/lib/common.sh"
+
+usage() {
+  cat <<'EOF'
+appgrove — orchestrazione sviluppo locale (UC 0009)
+
+Uso: ./dev.sh <comando> [argomenti]     (oppure: dev <comando>, con alias)
+
+Comandi:
+  doctor              Preflight ambiente (read-only): prerequisiti, mkcert, hosts, porte
+  setup               Bootstrap one-time idempotente (engine, mkcert, hosts, .env, stack)
+  up [args]           Avvia lo stack locale (Postgres, proxy, Mailpit, MinIO, ElasticMQ)
+  down [-v]           Ferma lo stack (-v: cancella i volumi = reset dati)
+  reset               Wipe volumi + riavvio stack (+ reseed quando disponibile)
+  seed                Carica il seed deterministico            [stub → UC 0011]
+  migrate             Flyway sul Postgres locale               [stub → servizi/UC 0046]
+  service <app_id>    Avvio selettivo core + app               [stub → servizi/UC 0046]
+
+Dettagli di un comando:  ./dev.sh <comando> --help
+EOF
+}
+
+main() {
+  local cmd="${1:-}"
+  case "$cmd" in
+    ''|-h|--help|help) usage; exit 0 ;;
+  esac
+  shift
+  case "$cmd" in
+    doctor|setup|up|down|seed|reset|migrate|service)
+      # shellcheck source=/dev/null
+      source "$DEV_DIR/lib/$cmd.sh"
+      "cmd_$cmd" "$@"
+      ;;
+    *)
+      err "comando sconosciuto: $cmd"
+      usage
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"
