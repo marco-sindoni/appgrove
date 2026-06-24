@@ -66,3 +66,19 @@ UC 0013 (users/email) — qui si predispone solo l'infrastruttura (soft-delete, 
   2. Flyway su `platform` (migrate-at-start off) eseguito in CI.
   3. Suite security/multi-tenancy + ArchUnit verdi (fail-closed, anti-override, leak detector).
   4. Build JVM (dev) / native (test+prod).
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0006-use-case-0012-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Verifica JWT: smallrye-jwt (public key) ora, OIDC poi.** Il core verifica i JWT via MicroProfile JWT
+  (smallrye-jwt) con chiave pubblica e issuer placeholder `https://local.appgrove.app`, così è testabile senza un
+  issuer attivo. La decisione #04 prevede **Quarkus OIDC**: va confermato/sostituito quando l'issuer esiste — dev
+  = auth locale (**UC 0010**), prod = Cognito/Pre-Token-Gen (**UC 0015/0016**).
+- **Build native non eseguita.** Profilo configurato per JVM; la build **native GraalVM** (test/prod) gira in
+  CI (**UC 0005**) — non eseguita in questo change.
+- **Entity/endpoint harness `example.Widget`.** Entity tenant-scoped + endpoint `/api/_demo/widgets` + migration
+  di test servono solo a esercitare il multitenancy. **Da rimuovere** quando **UC 0013** introduce le entità reali.
+- **`created_by`/`updated_by` non popolati automaticamente.** Le colonne audit-attore esistono ma non vengono
+  valorizzate dal `sub` del JWT (manca un AuditListener). Completare con l'integrazione auth (**UC 0013/0015**).
+- **Datasource di produzione** (URL/credenziali, RDS Proxy) non configurato: arriva con l'infra (**UC 0004/0055**, ☁).
