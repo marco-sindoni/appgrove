@@ -61,6 +61,13 @@ then log — never the other way around.
   until the developer explicitly consents.
 - **After committing (step-04): STOP for merge consent.** Leave the branch unmerged and never
   merge to the default branch without the developer's separate explicit go-ahead.
+- **Throughout (steps 02-04): deferred-decision tracking gate.** Whenever you encounter an
+  architectural decision, drift, or open point that belongs to a *different* use case (or isn't ripe
+  to decide now), you MUST record it in that use case's file
+  (`docs/usecases/<area>/NNNN-*.md`, section **"## Punti aperti / decisioni differite"**, created if
+  missing) — or in `docs/_BACKLOG.md` if cross-cutting — **before closing the change**. Tracking ≠
+  resolving: note *what*, *why deferred*, *which UC owns it*; do not force a premature decision. This
+  is the CLAUDE.md constitution rule ("Tracciamento delle decisioni differite"); step-04 verifies it.
 
 ## Questioning style — one at a time, verbose, with dialogue
 

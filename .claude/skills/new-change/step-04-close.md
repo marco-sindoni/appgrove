@@ -93,6 +93,17 @@ sed -i '' -E "/\[$YYYY\]\(/ s/\| (⬜|🟡|✅) \|$/| ✅ |/" docs/usecases/_IND
 If you also added **new** use cases as part of this change, re-run the Fase+Dipendenze ordering so `_INDEX.md` stays a
 valid topological order. For a **normal** change (no `YYYY`), skip.
 
+## Traccia le decisioni differite (non-negoziabile)
+
+Before the commit gate, confirm that **every** architectural decision, drift, or open point you
+encountered during this change that belongs to a *different* use case (or isn't ripe to decide) has
+been written into the right place — that use case's file (`docs/usecases/<area>/NNNN-*.md`, section
+**"## Punti aperti / decisioni differite"**) or `docs/_BACKLOG.md` if cross-cutting — capturing *what*,
+*why deferred*, *which UC owns it*. List these tracked points in the implementation log's
+"Note per il revisore" (or state "Nessuna decisione differita"). This is the CLAUDE.md constitution
+rule ("Tracciamento delle decisioni differite"): **never** close a change with such points living
+only in chat.
+
 ## MANDATORY STOP — commit consent gate
 
 Do **not** commit yet. Summarize what will be committed (the changed files and the

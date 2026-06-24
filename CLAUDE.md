@@ -14,6 +14,21 @@ popolato man mano che le scelte vengono dipanate (un argomento alla volta, per d
 3. **Modulo Terraform `microsaas_app`** — nuova app = istanziare il modulo, non infra bespoke
 4. **Logging strutturato** ovunque: ogni log porta `tenant_id`, `app_id`, `user_id`
 
+## Tracciamento delle decisioni differite (non-negoziabile)
+
+Quando, durante **qualsiasi** attività (implementazione, analisi, ricerca, discussione), riscontri una
+**decisione architetturale, un drift o un punto aperto che NON appartiene al task corrente** ma a un
+altro use case — o non ancora maturo per essere deciso — **DEVI tracciarlo subito**, prima di chiudere
+il task:
+
+- se riguarda **uno** use case → nel suo file `docs/usecases/<area>/NNNN-*.md`, sezione
+  **"## Punti aperti / decisioni differite"** (creala in coda se manca): annota *cosa*, *perché è
+  differito*, *quale UC lo possiede*;
+- se è **trasversale** → in [docs/_BACKLOG.md](docs/_BACKLOG.md).
+
+Non lasciare questi punti solo nella conversazione: **si perdono**, ed è un problema grave.
+Tracciare ≠ risolvere: le decisioni premature si annotano, **non** si forzano fuori dal loro contesto.
+
 ## Documenti di decisione
 
 Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
