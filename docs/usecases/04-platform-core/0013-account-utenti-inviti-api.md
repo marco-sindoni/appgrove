@@ -66,3 +66,14 @@ retention "finché attivo" + grace 14gg cancellazione (#13 E25). `@PersonalData`
   2. API core `/api/platform/v1/*` problem+json + OpenAPI committato + Swagger gated.
   3. Suite security/multi-tenancy + ruoli + contract verdi.
   4. Nessuna tabella entitlements (derivato); membership foldata su users.
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0006-use-case-0012-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Rimuovere l'harness multitenancy di UC 0012.** Il core contiene un'entity/endpoint demo (`example.Widget`,
+  `/api/_demo/widgets`) con tabella creata solo da una migration di test, usata per validare il multitenancy in
+  assenza di entità di dominio. Quando si implementano `accounts`/`users`/`invitations` qui, **rimuovere l'harness**
+  e spostare la suite multi-tenancy sulle entità reali.
+- **Audit-attore (`created_by`/`updated_by`).** Valorizzarli dal `sub` del JWT (es. AuditListener) quando arrivano
+  le entità con scrittura utente.

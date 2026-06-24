@@ -83,3 +83,13 @@ prerequisito d'esecuzione delle suite E2E in locale.
   2. `dev setup` è one-time, idempotente e porta a un ambiente funzionante senza intoppi.
   3. `seed`/`reset`/`migrate`/`service` funzionano e sono idempotenti.
   4. Una nuova app creata da `new-application` viene presa automaticamente da `dev up`.
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0006-use-case-0012-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **`DOCKER_HOST` per i test backend (Testcontainers + colima).** I test d'integrazione dei servizi (Quarkus Dev
+  Services) richiedono un Docker daemon; con **colima** il socket non è in `/var/run/docker.sock`, quindi serve
+  esportare `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock` (+ `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`).
+  Valutare che `dev doctor`/`dev setup` rilevino il socket colima e lo esportino/segnalino, così `mvn test` gira
+  senza configurazione manuale.
