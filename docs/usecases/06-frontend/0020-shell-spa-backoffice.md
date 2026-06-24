@@ -63,3 +63,13 @@ Nessuna persistenza client oltre lo stato in memoria; legge dati dal core via AP
   2. Auth store + refresh-on-load + interceptor 401→refresh→retry; client da OpenAPI (drift → `tsc` rompe la build, #10 G25).
   3. i18n EN+IT, light/dark+accent, responsive; form via React Hook Form + Zod (schemi ↔ Bean Validation, #03 dec.7); design system condiviso (UC 0019).
   4. Component + E2E + a11y verdi; frontend = solo UX (enforcement nel backend).
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Table + stati composti (loading/empty/error/success)** — il design-system (UC 0019) fornisce solo i
+  **primitivi**; questi pattern compositi vanno implementati **qui** (shell + tabelle del backoffice) sopra
+  i primitivi. Valutare se estrarne una base condivisa da promuovere in UC 0019.
+- **Package condivisi `api-client` / `i18n`** — da introdurre come package del workspace `frontend/`
+  (separati da `packages/design-system`) quando si implementa la shell. *Origine:* confine definito in UC 0019.

@@ -1,0 +1,17 @@
+/*
+ * appgrove design system — font & icone (UC 0019).
+ * Self-hosted via @fontsource (niente dipendenza da Google Fonts a runtime) + Material Symbols Rounded.
+ * I consumer importano questo file una volta (es. nell'entry della SPA o nella vetrina).
+ */
+
+/* Plus Jakarta Sans — UI (400 regular, 600 semibold, 800 per i titoli) */
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/800.css";
+
+/* JetBrains Mono — numeri, importi, ID */
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+/* Material Symbols Rounded — iconografia (asse FILL per gli stati attivi) */
+@import "material-symbols/rounded.css";

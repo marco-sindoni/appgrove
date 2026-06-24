@@ -14,7 +14,7 @@ appgrove/
 ├── frontend/     # workspace React (npm workspaces)
 │   ├── apps/backoffice/      # SPA cliente + vetrina pubblica (modular monolith) → app.appgrove.app
 │   ├── apps/admin/           # console platform-admin separata → admin.appgrove.app
-│   └── packages/design-system/  # token/componenti/i18n/auth client condivisi
+│   └── packages/design-system/  # token, theming, primitivi UI condivisi (api-client/i18n → package a parte)
 ├── services/     # N microservizi Quarkus (uno per app) + core → ECS Fargate
 │   └── <app>/
 ├── changes/      # documentazione spec-driven delle change (skill new-change)
@@ -24,7 +24,9 @@ appgrove/
 Asimmetrie volute: **N backend** (isolamento reale: deploy, schema DB, scaling separati); il
 **backoffice cliente** è un modular monolith (microfrontend rimandati — sono distribuzione, non
 architettura; la cucitura App Registry consente di estrarne uno in futuro senza riscrivere shell/auth/routing);
-la **console admin è un'app separata** (i tenant non scaricano mai il codice admin).
+la **console admin è un'app separata** (i tenant non scaricano mai il codice admin). La **vetrina pubblica**
+è un **progetto Astro separato** (consumatore esterno di `packages/design-system`; posizione nel monorepo
+definita in UC 0036).
 
 ## Invarianti architetturali (non negoziabili)
 

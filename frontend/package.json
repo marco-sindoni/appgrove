@@ -1,0 +1,17 @@
+{
+  "name": "appgrove-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Workspace frontend appgrove (npm workspaces): packages condivisi + SPA",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "storybook": "npm run storybook --workspace @appgrove/design-system",
+    "build-storybook": "npm run build-storybook --workspace @appgrove/design-system"
+  }
+}

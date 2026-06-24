@@ -1,0 +1,81 @@
+/*
+ * appgrove design system — token (UC 0019).
+ * Estratti dai mockup v1 (docs/frontend-design/). Fonte unica condivisa da SPA e vetrina Astro.
+ * Estetica n8n: neutri caldi, raggi generosi, ombre soffici. Tema e accent cambiano a runtime
+ * scrivendo gli attributi `data-theme` / `data-accent` sul nodo radice (vedi ThemeProvider).
+ *
+ * I colori sono triplette RGB ("R G B") così il preset Tailwind può applicare l'opacità
+ * (es. bg-accent/10) via `rgb(var(--ag-...) / <alpha-value>)` — pattern per le tinte trasparenti.
+ */
+
+:root {
+  /* ── Neutri caldi — light ──────────────────────────────────────────── */
+  --ag-bg: 244 244 241;
+  --ag-surface: 255 255 255;
+  --ag-surface-2: 250 249 246;
+  --ag-border: 231 229 224;
+  --ag-text: 38 36 32;
+  --ag-text-muted: 107 103 96;
+
+  /* ── Accent (default: corallo, stile n8n) ──────────────────────────── */
+  --ag-accent: 236 90 114;
+  --ag-accent-contrast: 255 255 255;
+
+  /* ── Colori funzionali ─────────────────────────────────────────────── */
+  --ag-success: 47 163 107;
+  --ag-warning: 217 147 17;
+  --ag-danger: 224 83 61;
+
+  /* ── Colori-categoria per-app (assegnati da new-application, UC 0046) ─ */
+  --ag-cat-green: 47 163 107;
+  --ag-cat-amber: 217 147 17;
+  --ag-cat-red: 224 83 61;
+  --ag-cat-blue: 79 134 224;
+  --ag-cat-violet: 123 110 240;
+  --ag-cat-teal: 22 182 164;
+
+  /* ── Raggi (card 16–20, bottoni/input 10–12, pill) ─────────────────── */
+  --ag-radius-sm: 10px;
+  --ag-radius-md: 12px;
+  --ag-radius-lg: 16px;
+  --ag-radius-xl: 20px;
+  --ag-radius-pill: 999px;
+
+  /* ── Ombre soffici e diffuse ───────────────────────────────────────── */
+  --ag-shadow-sm: 0 1px 2px rgba(38, 36, 32, 0.06), 0 1px 3px rgba(38, 36, 32, 0.04);
+  --ag-shadow: 0 4px 12px rgba(38, 36, 32, 0.08);
+  --ag-shadow-lg: 0 12px 32px rgba(38, 36, 32, 0.12);
+
+  /* ── Tipografia ────────────────────────────────────────────────────── */
+  --ag-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ag-font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* ── Tema scuro: tonalità calde scure ─────────────────────────────────── */
+[data-theme="dark"],
+.dark {
+  --ag-bg: 22 21 18;
+  --ag-surface: 33 31 27;
+  --ag-surface-2: 27 26 22;
+  --ag-border: 52 50 44;
+  --ag-text: 241 239 233;
+  --ag-text-muted: 168 163 153;
+
+  --ag-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --ag-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --ag-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Accent configurabile (stessa luminosità/croma, varia la tinta) ───── */
+[data-accent="coral"] {
+  --ag-accent: 236 90 114;
+}
+[data-accent="violet"] {
+  --ag-accent: 123 110 240;
+}
+[data-accent="teal"] {
+  --ag-accent: 22 182 164;
+}
+[data-accent="blue"] {
+  --ag-accent: 79 134 224;
+}
