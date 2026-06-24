@@ -58,3 +58,11 @@ base contratto/legittimo interesse (gestione piattaforma); **audit** delle azion
   2. Overview/Accounts/Users/matrice Entitlements (derivata)/Billing read-only/danger zone (disable-app).
   3. Nessuna impersonation; azioni admin auditate; pricing read-only.
   4. E2E + security + a11y verdi.
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Table + stati composti (loading/empty/error/success)** — il design-system (UC 0019) fornisce solo i
+  **primitivi**; le tabelle della console admin (accounts/users/matrice entitlement/billing) vanno composte
+  **qui** sopra i primitivi. Valutare l'estrazione di una base condivisa verso UC 0019 se il riuso lo giustifica.

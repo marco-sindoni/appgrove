@@ -42,7 +42,7 @@ AWS finché il prodotto non gira offline.
 | 2  | [0045](10-skills-tooling/0045-skill-new-usecase.md) | skill `new-usecase` | Skills & Tooling | — | ✅ |
 | 3  | [0008](03-local-dev/0008-stack-sviluppo-locale.md) | Stack dev locale (Compose) | Local Dev | — | ✅ |
 | 4  | [0009](03-local-dev/0009-script-dev.md) | Script `dev/` (setup/up/seed/migrate/doctor) | Local Dev | 0008 | ✅ |
-| 5  | [0019](06-frontend/0019-design-system-brand-kit.md) | Design system & brand kit | Frontend | — | ⬜ |
+| 5  | [0019](06-frontend/0019-design-system-brand-kit.md) | Design system & brand kit | Frontend | — | ✅ |
 | 6  | [0012](04-platform-core/0012-servizio-core-multitenancy.md) | Core service + multitenancy + schema `platform` (Flyway) | Platform Core | 0008, 0009 · ☁0004 | ⬜ |
 | 7  | [0011](03-local-dev/0011-dati-seed.md) | Seed data deterministico | Local Dev | 0012 | ⬜ |
 | 8  | [0010](03-local-dev/0010-provider-auth-locale.md) | Auth provider locale (JWT/JWKS, claim DB, refresh, TOTP, Mailpit) | Local Dev | 0009, 0011, 0012 | ⬜ |

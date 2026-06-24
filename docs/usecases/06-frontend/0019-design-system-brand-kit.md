@@ -60,3 +60,18 @@ Nessun dato applicativo/personale: token, asset (logo, font), componenti. Manife
   2. Backoffice, admin e sito Astro consumano gli **stessi** token (zero drift).
   3. Showcase + component/a11y test verdi.
   4. `new-application` può assegnare icona + colore-categoria per-app dai token condivisi.
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Table + stati composti (loading/empty/error/success) come componenti riusabili** — *non* inclusi nel
+  package in questa iterazione: il set 0019 si ferma ai primitivi (`Button`, `Input`, `Card`, `Badge`,
+  `Switch`, `SegmentedControl`) + token. Table/stati composti sono **composizioni** che vivranno nelle
+  SPA (**UC 0020/0021**) e nei moduli app sopra i primitivi. *Differito perché:* sono pattern applicativi,
+  non primitivi. *Da rivalutare:* se emerge riuso trasversale, promuoverli nel design-system (qui).
+- **Posizione del progetto Astro nel monorepo** — non definita; Astro è **consumatore esterno** del
+  design-system. *Possiede:* **UC 0036**. Vincolo che 0019 deve rispettare ora: export consumabile
+  cross-progetto (token come **CSS custom properties + Tailwind preset + asset**, non solo componenti React).
+- **Package condivisi `api-client` / `i18n`** — il root README li cita accanto al design-system, ma sono
+  concerni distinti. *Possiede:* **UC 0020**. In 0019 `packages/design-system` = solo token/componenti/icone/logo.
