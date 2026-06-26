@@ -7,6 +7,13 @@ popolato man mano che le scelte vengono dipanate (un argomento alla volta, per d
 - Contesto di prodotto: [recap_marketplace_microsaas.md](recap_marketplace_microsaas.md)
 - Struttura del repo: [README.md](README.md)
 
+## Lingua (non negoziabile)
+
+**Tutta la comunicazione è in italiano.** Documenti, chat, messaggi di stato, requirements, log di
+implementazione, commenti di PR e ogni testo rivolto all'utente vanno **sempre scritti in italiano**.
+Restano in inglese solo gli identificatori tecnici intrinseci: codice, nomi di simboli/file/branch,
+comandi, chiavi di config e citazioni letterali di output di tool.
+
 ## Invarianti architetturali (non negoziabili)
 
 1. **Tenant ID solo dal JWT verificato** — claim `tenant_id` (= account, iniettato dal Pre-Token-Gen Lambda); `sub` = user_id. Mai da request body/params

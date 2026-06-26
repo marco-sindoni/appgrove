@@ -62,3 +62,12 @@ dato carta (MoR). Manifest: trattamento billing/abbonamento (base contratto); fi
   2. Consumer idempotente con out-of-order (`occurred_at`); set eventi mappato su `subscription`.
   3. Retry+DLQ+allarme; `subscription` unica fonte di verità (entitlement derivato).
   4. L1 esaustivo verde (firma/idempotenza/out-of-order/eventi/linkage).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Entità JPA `subscription`.** UC 0013 crea solo il **DDL Flyway** della tabella `subscription` (scope change 0007:
+  niente mapping speculativo; la subscription è scritta dal consumer webhook, non da editor runtime). L'**entità JPA +
+  repository** di `subscription` va modellata **qui** (UC 0025), primo consumatore che la scrive; UC 0027 la legge per
+  l'entitlement derivato. **Proprietario**: UC 0025 (lettura entitlement: UC 0027).

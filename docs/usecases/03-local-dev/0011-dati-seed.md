@@ -77,3 +77,13 @@ entitlement derivato; dati sintetici senza PII.
   2. Copre il cast multi-tenant + catalogo + subscription in stati vari (entitlement derivato).
   3. Dati 100% sintetici (no PII).
   4. `new-application` genera il seed-base della nuova app.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Ordinamento indice: UC 0011 deve seguire UC 0013.** L'indice di esecuzione [_INDEX.md](../_INDEX.md) colloca
+  UC 0011 (seed, riga 7) **prima** di UC 0013 (riga 9), ma il seed popola le tabelle `accounts`/`users`/`invitations`/
+  catalogo/`subscription` il cui DDL Flyway è di proprietà di UC 0013. Un seed non può precedere il DDL delle tabelle
+  che popola: la dipendenza hard di 0011 è **0013**, non solo 0012. **Fix differito**: ri-ordinare l'indice (0011 dopo
+  0013) — da applicare quando si apre la change del seed (UC 0011). **Proprietario**: UC 0011 (indice local-first).

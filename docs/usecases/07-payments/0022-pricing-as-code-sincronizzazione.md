@@ -62,3 +62,12 @@ Catalogo `app`/`app_tier`/`app_price` (+ ID Paddle per env). Nessun dato persona
   2. Sync idempotente test→sandbox, tag→prod; riempie ID Paddle per env nel catalogo.
   3. Immutabilità prezzi + grandfathering rispettati; mai mutare importo vivo.
   4. Test sync (idempotenza/immutabilità) verdi (anche via stub locale).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Entità JPA del catalogo (`app`/`app_tier`/`app_price`).** UC 0013 crea solo il **DDL Flyway** delle tabelle di
+  catalogo (decisione di scope della change 0007: niente mapping speculativo, #09 H34 = nessun editor runtime). Le
+  **entità JPA + repository** del catalogo vanno modellate **qui** (UC 0022), che è il primo consumatore reale (sync
+  pricing-as-code le scrive). **Proprietario**: UC 0022.
