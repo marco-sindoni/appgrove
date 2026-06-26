@@ -46,6 +46,15 @@ public class TokenService {
     @ConfigProperty(name = "auth.local.refresh-ttl-seconds", defaultValue = "86400")
     long refreshTtl;
 
+    @ConfigProperty(name = "auth.local.verify-ttl-seconds", defaultValue = "86400")
+    long verifyTtl;
+
+    @ConfigProperty(name = "auth.local.reset-ttl-seconds", defaultValue = "3600")
+    long resetTtl;
+
+    @ConfigProperty(name = "auth.local.mfa-challenge-ttl-seconds", defaultValue = "300")
+    long mfaChallengeTtl;
+
     @ConfigProperty(name = "auth.local.platform-admin-subjects", defaultValue = "seed-platform-admin")
     List<String> platformAdminSubjects;
 
@@ -58,7 +67,7 @@ public class TokenService {
     private PrivateKey privateKey;
     private PublicKey publicKey;
     private String jwksJson;
-    private JwtConsumer refreshConsumer;
+    private JwtConsumer consumer;
 
     @PostConstruct
     void init() {
@@ -66,7 +75,7 @@ public class TokenService {
             this.privateKey = decodePrivate(readPem(privateKeyLocation));
             this.publicKey = decodePublic(readPem(publicKeyLocation));
             this.jwksJson = buildJwks(publicKey, kid);
-            this.refreshConsumer = new JwtConsumerBuilder()
+            this.consumer = new JwtConsumerBuilder()
                     .setVerificationKey(publicKey)
                     .setExpectedIssuer(issuer)
                     .setRequireExpirationTime()
@@ -108,21 +117,39 @@ public class TokenService {
     }
 
     public String idToken(AuthUser user) {
+        // smallrye-jwt rifiuta claim null → fallback per displayName mancante (signup senza nome).
+        String name = user.displayName() != null ? user.displayName() : user.email();
         return Jwt.issuer(issuer)
                 .subject(user.sub())
                 .upn(user.email())
                 .claim("email", user.email())
-                .claim("name", user.displayName())
+                .claim("name", name)
                 .claim("token_use", "id")
                 .expiresIn(accessTtl)
                 .jws().keyId(kid).sign(privateKey);
     }
 
     public String refreshToken(AuthUser user) {
+        return signTyped(user.sub(), "refresh", refreshTtl);
+    }
+
+    public String emailVerifyToken(String sub) {
+        return signTyped(sub, "email_verify", verifyTtl);
+    }
+
+    public String passwordResetToken(String sub) {
+        return signTyped(sub, "pwd_reset", resetTtl);
+    }
+
+    public String mfaChallengeToken(String sub) {
+        return signTyped(sub, "mfa_challenge", mfaChallengeTtl);
+    }
+
+    private String signTyped(String sub, String use, long ttl) {
         return Jwt.issuer(issuer)
-                .subject(user.sub())
-                .claim("token_use", "refresh")
-                .expiresIn(refreshTtl)
+                .subject(sub)
+                .claim("token_use", use)
+                .expiresIn(ttl)
                 .jws().keyId(kid).sign(privateKey);
     }
 
@@ -134,16 +161,20 @@ public class TokenService {
         return refreshTtl;
     }
 
-    /** Verifica firma/issuer/scadenza del refresh token e ne restituisce il subject. Lancia se non valido. */
     public String verifyRefreshSubject(String token) {
+        return verifyTokenSubject(token, "refresh");
+    }
+
+    /** Verifica firma/issuer/scadenza + {@code token_use} atteso, e ritorna il subject. Lancia se non valido. */
+    public String verifyTokenSubject(String token, String expectedUse) {
         try {
-            JwtClaims claims = refreshConsumer.processToClaims(token);
-            if (!"refresh".equals(claims.getClaimValueAsString("token_use"))) {
-                throw new IllegalArgumentException("token_use non è refresh");
+            JwtClaims claims = consumer.processToClaims(token);
+            if (!expectedUse.equals(claims.getClaimValueAsString("token_use"))) {
+                throw new IllegalArgumentException("token_use atteso: " + expectedUse);
             }
             return claims.getSubject();
         } catch (Exception e) {
-            throw new InvalidRefreshTokenException();
+            throw new InvalidTokenException();
         }
     }
 
