@@ -54,3 +54,12 @@ Email dell'utente (destinatario) + codice/link temporaneo. **Dati personali**: e
   2. Template verifica/reset/invito in EN+IT, tono brand, invio da `noreply@appgrove.app` (DKIM).
   3. Email transazionali su base contrattuale (separate dalla newsletter).
   4. Verificabili in locale via Mailpit. (Resta la stesura dei **testi** definitivi.)
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0010-use-case-0058-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Template email localizzati EN/IT.** UC 0058 (provider locale) invia email **funzionali** verso Mailpit (portano
+  link/codice di verifica/reset/invito), senza il copy localizzato definitivo. I **template EN/IT** (lingua dal `locale`
+  utente, mittente `noreply@appgrove.app`) sono materia di questo UC (in prod: Custom Message Lambda su Cognito; in
+  locale: rendering dei template nel provider). **Proprietario**: UC 0018.
