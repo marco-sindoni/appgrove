@@ -1,0 +1,38 @@
+{
+  "name": "@appgrove/i18n",
+  "version": "0.1.0",
+  "description": "appgrove i18n — setup react-i18next + cataloghi EN/IT (UC 0020)",
+  "type": "module",
+  "license": "UNLICENSED",
+  "files": ["dist", "src"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "i18next": "^24.2.1",
+    "react-i18next": "^15.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "react": "^19.2.7",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.1.9"
+  }
+}

@@ -168,6 +168,25 @@ del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via n
 ### Use case (già tracciati sopra)
 "Acquisto / checkout", "Gestione abbonamento self-service", "Pausa subscription" (bassissima priorità).
 
+## Backoffice shell (UC 0020) — rinvii cross-area (richiesto 2026-06-26)
+
+Emersi implementando la shell SPA (change `0011-use-case-0020-…`). Gli item **solo-frontend** sono nei "Punti aperti"
+di [usecases/06-frontend/0020](usecases/06-frontend/0020-shell-spa-backoffice.md); qui i **trasversali**:
+
+- **Endpoint entitlement nel core (contratto frontend↔core)** 🔑 — la sidebar "YOUR APPS" è *manifest ∩ entitlement del
+  tenant* (#01 dec.10), ma il core (UC 0013) **non espone** un endpoint che serva gli entitlement (derivati da
+  `platform.subscription`, #09 dec.12). La shell usa per ora un **provider stub** (`StubEntitlementsProvider`, set
+  statico). **Serve un endpoint core** (es. `GET /api/platform/v1/entitlements` → `app_id[]` del tenant dal JWT) da
+  consumare via api-client + TanStack Query; la sostituzione tocca **solo** quel provider. **Owner**: area core/billing
+  (probabilmente lo stesso UC che materializza `subscription` via pipeline webhook #09 D, o un piccolo UC core dedicato).
+  Allineare con la "catena di gate enforcement" #09 F30 (402) e l'**endpoint stato entitlement per polling post-checkout
+  #09 C17** (vedi sopra): valutare se è lo **stesso** endpoint.
+- **`legacy-peer-deps` nel frontend** (DevX/tooling) — `frontend/.npmrc` imposta `legacy-peer-deps=true` perché il
+  monorepo usa **TypeScript 6** (ultima major) mentre alcune librerie (es. `react-i18next`, `openapi-typescript`)
+  dichiarano ancora un peer **opzionale** `typescript@^5` non aggiornato → npm strict lo tratta come conflitto. Solo
+  rilassamento del check peer in install (nessun effetto a runtime). **Follow-up**: rimuovere quando l'ecosistema
+  aggiorna i peer a TS6.
+
 ## Script / tooling DevOps
 - **Start/stop servizi test** (scale 0↔1 task Fargate) — ✅ deciso in [07-devops-cicd](07-devops-cicd.md) §28
   (avvio manuale `test-start`; spegnimento via **cron giornaliero `test-stop`**, idempotente, orario UTC fisso).

@@ -71,5 +71,35 @@ _Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento
 - **Table + stati composti (loading/empty/error/success)** — il design-system (UC 0019) fornisce solo i
   **primitivi**; questi pattern compositi vanno implementati **qui** (shell + tabelle del backoffice) sopra
   i primitivi. Valutare se estrarne una base condivisa da promuovere in UC 0019.
-- **Package condivisi `api-client` / `i18n`** — da introdurre come package del workspace `frontend/`
-  (separati da `packages/design-system`) quando si implementa la shell. *Origine:* confine definito in UC 0019.
+  - *Stato (change 0011):* implementato il componente base `QueryState` (loading/empty/error+retry) in
+    `apps/backoffice/src/shell/QueryState.tsx`. **Resta aperto**: estrarne una base condivisa in UC 0019 e i pattern
+    **tabella** veri (non ancora necessari: nessuna lista densa nella shell skeleton).
+- **Package condivisi `api-client` / `i18n`** — ✅ **fatti (change 0011)**: creati `frontend/packages/api-client`
+  (`openapi-typescript` + `openapi-fetch`, middleware Bearer/401→refresh→retry/problem+json) e `frontend/packages/i18n`
+  (react-i18next + cataloghi EN/IT). **Resta aperto**: `packages/i18n` ospita per ora i cataloghi del **solo backoffice**;
+  la separazione common/per-app (e l'eventuale catalogo admin) si decide col **secondo consumatore = console admin
+  UC 0021**, che possiede questo rinvio.
+
+_Aggiunti dalla change `0011-use-case-0020-…` (implementazione shell skeleton):_
+
+- **Endpoint entitlement reale (core)** 🔑 — la sidebar usa un **provider stub** (`StubEntitlementsProvider`): il core non
+  espone ancora gli entitlement del tenant. **Trasversale → tracciato in [_BACKLOG.md](../../_BACKLOG.md)** ("Backoffice
+  shell — rinvii cross-area"). Sostituzione = solo quel provider (+ una query TanStack).
+- **Modulo demo temporaneo** — `apps/backoffice/src/modules/demo/` esercita l'App Registry finché non arriva la **prima
+  app reale** (UC 0052 B2C / 0054 B2B): rimuoverlo allora. *Owner:* 0052/0054.
+- **Schermate auth reali** (login/signup/verify/reset/invite/2FA) — la shell fornisce solo la *plumbing* (auth store,
+  refresh-on-load, interceptor, logout) e una **route `/login` segnaposto**; le UI sono di **UC 0017**.
+- **Schermate funzionali** (catalog, app detail, billing/manage, onboarding, settings completo) e **notifiche topbar** —
+  oggi chrome/route/segnaposto; il contenuto reale è di UC dedicati (checkout 0024, portale 0028, GDPR self-service 0033,
+  moduli app). La topbar ha un'icona notifiche **non funzionale** (nessun backend notifiche).
+- **Guard `requireRole('platform-admin')`** — implementata e testata, ma la **console admin è app separata (UC 0021)**:
+  qui non esiste route admin.
+- **Condivisione schemi Zod ↔ Bean Validation** — gli schemi Zod dei form **rispecchiano a mano** le regole Bean
+  Validation del backend (#03 dec.7 "possibile condivisione tipi"): come **generarli/condividerli** automaticamente resta
+  aperto.
+- **Wiring del proxy dev (Caddy) per servire la SPA** — `dev/Caddyfile` ha i `reverse_proxy` verso la SPA (`:5173`)
+  **commentati**; attivarli è di competenza dell'orchestrazione dev (**UC 0009**). La change 0011 non ha toccato `dev/`.
+- **Config Cognito cloud in `config.json`** — i campi `cognito.userPoolId/clientId` sono **placeholder** (in locale si usa
+  auth-local); valorizzarli è degli UC auth cloud (☁0015/0016) + config per-env (#12).
+- **Code-splitting bundle** — il chunk principale supera 500 kB (warning Vite); valutare split di vendor/route quando il
+  peso conta. Non bloccante per la shell skeleton.
