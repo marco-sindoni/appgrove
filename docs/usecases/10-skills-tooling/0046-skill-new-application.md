@@ -67,3 +67,13 @@ Skill di tooling: l'app generata deve nascere con suite verde (unit/integration/
   2. Co-pilota pricing/quota (flow/stock, fee effettiva) e GDPR (manifesto IT+EN, anonimizzazione guardrail).
   3. Segue `new-change` (branch+PR); app generata con suite verde e invarianti by-default.
   4. UC 0054 valida la skill creando l'app #2 (B2B).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Industrializzazione di `dev migrate` multi-servizio.** La change 0008 rende `dev migrate` reale ma **solo per
+  `services/core`** (one-shot del container `flyway/flyway` sulle migrazioni di core), perché è l'unico servizio con
+  migrazioni e il seed (UC 0011) ne ha bisogno. La versione **multi-servizio** — scoperta di tutti i `services/<app>`
+  con `db/migration`, ordinamento, e l'aggancio automatico quando `new-application` genera una nuova app — va
+  industrializzata **qui**. **Proprietario**: UC 0046 (comando `dev migrate` di base: UC 0009).

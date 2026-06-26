@@ -77,3 +77,13 @@ di sicurezza (fail-closed, no override `tenant_id`).
   2. Il provider Local emette JWT con claim dal DB e JWKS locale; i servizi validano con lo stesso code path di prod.
   3. Refresh cookie, 2FA TOTP e email (Mailpit) funzionano offline.
   4. Gli E2E auth girano in locale senza alcun servizio AWS.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Assegnazione gruppo `platform-admin` e claim dei JWT locali sui subject del seed.** Il seed (UC 0011) crea utenti
+  con `cognito_sub` **stabili** (cast Acme/Bob + un utente piattaforma), ma `users.role` modella solo i ruoli tenant
+  (owner/admin/member): il ruolo **`platform-admin`** è un gruppo JWT, non una colonna. Il provider auth locale deve
+  mintare i token leggendo i subject del seed e **assegnare il gruppo `platform-admin`** all'utente piattaforma seedato
+  (subject documentato in `dev/seed/README.md`), oltre a `tenant_id`/`roles` dal DB. **Proprietario**: UC 0010.
