@@ -1,11 +1,12 @@
 import type { RouteObject } from 'react-router-dom'
 import { ShellLayout } from '../shell/ShellLayout'
-import { ProtectedRoute, AppModuleHost, requireAuth } from './guards'
+import { ProtectedRoute, AppModuleHost, requireAuth, requireAnyRole } from './guards'
 import { Dashboard } from '../pages/Dashboard'
 import { Account } from '../pages/Account'
 import { Billing } from '../pages/Billing'
 import { Settings } from '../pages/Settings'
 import { SecurityPage } from '../pages/SecurityPage'
+import { MembersPage } from '../pages/members/MembersPage'
 import { Forbidden } from '../pages/Forbidden'
 import { NotFound } from '../pages/NotFound'
 import { LoginPage } from '../pages/auth/LoginPage'
@@ -39,6 +40,10 @@ export const routes: RouteObject[] = [
           { path: 'billing', element: <Billing /> },
           { path: 'settings', element: <Settings /> },
           { path: 'security', element: <SecurityPage /> },
+          {
+            element: <ProtectedRoute guard={requireAnyRole(['owner', 'admin'])} />,
+            children: [{ path: 'members', element: <MembersPage /> }],
+          },
           { path: 'app/:appId/*', element: <AppModuleHost /> },
         ],
       },

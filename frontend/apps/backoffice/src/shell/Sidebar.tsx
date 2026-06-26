@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { Icon, Logo, cn } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useVisibleModules } from '../registry/registry'
+import { useAuthStore } from '../auth/authStore'
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   cn(
@@ -21,6 +22,11 @@ function SectionLabel({ children }: { children: string }) {
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
   const modules = useVisibleModules()
+  // selettore che ritorna un booleano (primitivo, ref stabile): evita il loop di render di un `[]` nuovo a ogni giro.
+  const canManageMembers = useAuthStore((s) => {
+    const roles = s.claims?.roles
+    return !!roles && (roles.includes('owner') || roles.includes('admin'))
+  })
 
   return (
     <nav aria-label={t('nav.platform')} className="flex h-full flex-col gap-1 p-3">
@@ -41,6 +47,12 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Icon name="credit_card" size={20} />
         {t('nav.billing')}
       </NavLink>
+      {canManageMembers && (
+        <NavLink to="/members" className={linkClass} onClick={onNavigate}>
+          <Icon name="group" size={20} />
+          {t('nav.members')}
+        </NavLink>
+      )}
       <NavLink to="/settings" className={linkClass} onClick={onNavigate}>
         <Icon name="settings" size={20} />
         {t('nav.settings')}

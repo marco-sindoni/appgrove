@@ -1,6 +1,6 @@
 # UC 0059 — Gestione membri & inviti (UI backoffice)
 
-**Area**: 06-frontend · **Fase**: 2 · **Stato**: 🟡 in corso
+**Area**: 06-frontend · **Fase**: 2 · **Stato**: 🟢 deciso
 **Dipendenze**: UC [0020](0020-shell-spa-backoffice.md) (shell), UC [0013](../04-platform-core/0013-account-utenti-inviti-api.md) (API core users/invitations), UC [0017](../05-auth/0017-flussi-auth.md) (accept-invite, lato invitato)
 **Fonte decisioni**: #03, #02 · **Ultimo aggiornamento**: 2026-06-26
 
@@ -55,7 +55,12 @@ solo dal JWT; filtro row-level lato core.
   3. Component + E2E + a11y verdi; EN/IT.
 
 ## Punti aperti / decisioni differite
-- **Invio email invito locale vs cloud**: in locale `POST /api/auth/invitations/send` (auth-local) dato il token del core;
-  in cloud l'orchestrazione (creazione invito core + email) potrebbe stare lato auth BFF. Definire il confine in fase di
-  implementazione (allineare con UC 0015/0017).
+- **Invio email invito — locale FATTO, cloud da fare** (change `0013-…`): in locale la SPA chiama
+  `POST /api/auth/invitations/send` (auth-local) col token del core (Opzione A). In **cloud** lo stesso path deve essere
+  servito dall'**auth BFF** (stessa `authBaseUrl`): l'endpoint `/api/auth/invitations/send` va implementato lì
+  (allineare con UC 0015/0017). La SPA non cambia.
+- **Paginazione membri/inviti**: la UI carica una pagina ampia (`size=100`) senza controlli di paginazione (fuori scope).
+  Aggiungere paginazione/ricerca se un tenant supera ~100 membri o inviti.
+- **Lacune backend (tracciate in UC 0013)**: guard "ultimo owner" assente lato core (qui solo protezione UX); OpenAPI di
+  `POST /invitations` senza body di risposta (client costretto a cast manuale). Vedi UC 0013 "Punti aperti".
 - **Seat limits / billing**: eventuali limiti al numero di membri per tier sono di #09 (non qui).

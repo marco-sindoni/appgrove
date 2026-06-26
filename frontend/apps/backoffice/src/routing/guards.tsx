@@ -23,6 +23,16 @@ export const requireRole =
   (ctx) =>
     ctx.status !== 'authenticated' ? '/login' : ctx.roles.includes(role) ? true : '/forbidden'
 
+/** Richiede **almeno uno** dei ruoli indicati (es. `['owner','admin']` per la gestione membri). */
+export const requireAnyRole =
+  (roles: string[]): Guard =>
+  (ctx) =>
+    ctx.status !== 'authenticated'
+      ? '/login'
+      : roles.some((r) => ctx.roles.includes(r))
+        ? true
+        : '/forbidden'
+
 /** Richiede l'entitlement a un'app (sidebar lo nasconde; questa è la difesa in profondità sulla route). */
 export const requireEntitlement =
   (appId: string): Guard =>

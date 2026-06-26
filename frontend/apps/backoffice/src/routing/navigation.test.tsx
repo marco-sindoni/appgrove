@@ -25,4 +25,10 @@ describe('navigazione + route guard (app intera)', () => {
     // la pagina di login reale mostra il form (email) — non più il placeholder
     expect(await screen.findByLabelText('Email')).toBeInTheDocument()
   })
+
+  it('ruolo member: /members è bloccato dalla guard di ruolo → /forbidden', async () => {
+    useAuthStore.getState().setSession({ accessToken: fakeAccessToken({ roles: ['member'] }) })
+    renderApp({ route: '/members' })
+    expect(await screen.findByText('You don’t have access to this app')).toBeInTheDocument()
+  })
 })

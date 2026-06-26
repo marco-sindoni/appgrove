@@ -148,6 +148,17 @@ export async function acceptInvitation(
   return toSession((await res.json()) as TokenResponse)
 }
 
+/**
+ * `POST /api/auth/invitations/send` — invia l'email d'invito dato il token grezzo del core (UC 0059).
+ * In locale auth-local manda la mail a Mailpit; in cloud l'orchestrazione passa dal BFF (stesso path).
+ */
+export async function sendInvitation(
+  authBaseUrl: string,
+  body: { email: string; token: string; role?: string },
+): Promise<void> {
+  await post(authBaseUrl, '/invitations/send', body)
+}
+
 /** `POST /api/auth/2fa/enroll` (Bearer) → secret + otpauth URI per l'app authenticator. */
 export async function enroll2fa(authBaseUrl: string, accessToken: string): Promise<EnrollResult> {
   const res = await post(authBaseUrl, '/2fa/enroll', undefined, accessToken)
