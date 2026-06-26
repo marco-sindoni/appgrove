@@ -1,6 +1,7 @@
 package app.appgrove.commons.persistence;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
@@ -13,8 +14,10 @@ import org.hibernate.annotations.UuidGenerator;
 /**
  * Base di ogni entity appgrove: PK UUID v7 (time-ordered), colonne di audit e soft-delete.
  * Le entity di business estendono {@link BaseTenantEntity} (che aggiunge il discriminator tenant).
+ * {@link AuditListener} valorizza {@code created_by}/{@code updated_by} dal {@code sub} del JWT.
  */
 @MappedSuperclass
+@EntityListeners(AuditListener.class)
 public abstract class BaseEntity {
 
     @Id
