@@ -60,3 +60,12 @@ I claim contengono `tenant_id`/`roles` (no PII sensibile; `sub` opaco). Cred DB 
   2. Servizi validano JWT via Quarkus OIDC (issuer/JWKS/audience), authz su `roles`.
   3. Suite security verde (fail-closed, anti-override, token invalidi).
   4. Parità di claim col provider locale (UC 0010).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0009-use-case-0010-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Claim ruoli: `groups` vs `roles`.** Il `core` (UC 0013) mappa `@RolesAllowed` sul claim **`groups`** (default
+  smallrye-jwt), mentre #02 dec.10 prevede il claim **`roles`** con `quarkus.oidc.roles.role-claim-path=roles`. Il
+  provider locale (UC 0010) emette **entrambi** per compatibilità. Quando atterra il Pre-Token-Gen reale + Quarkus OIDC,
+  **riconciliare** su un unico claim (`roles`) e allineare il `core`. **Proprietario**: UC 0016.

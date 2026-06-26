@@ -1,7 +1,14 @@
-# UC 0010 — Local auth provider (JWT/JWKS, claim dal DB, refresh cookie, TOTP, Mailpit)
+# UC 0010 — Local auth provider — security-core (JWT/JWKS, claim dal DB, refresh cookie, fail-closed)
+
+> **Scope ristretto (change `0009-use-case-0010-…`).** Questo UC è ora il **security-core** del provider auth locale:
+> login/refresh/logout, firma JWT + JWKS, claim dal DB, validazione servizi via JWKS locale, fail-closed. I **flussi
+> rimanenti** (signup+verifica email, accept invito, reset password, 2FA TOTP+bypass, email Mailpit) sono scorporati in
+> **UC [0058](0058-flussi-auth-locali-completi.md)** (riga successiva nell'indice di esecuzione), da implementare quando
+> atterrano le UI auth (UC 0017) e gli E2E. Le sezioni sotto che citano 2FA/signup/reset/Mailpit valgono come contesto
+> ma sono **realizzate in UC 0058**.
 
 **Area**: 03-local-dev · **Fase**: 0 · **Stato**: 🟢 deciso
-**Dipendenze**: UC [0008](0008-stack-sviluppo-locale.md) (stack Compose)
+**Dipendenze**: UC [0008](0008-stack-sviluppo-locale.md) (stack Compose), UC [0013](../04-platform-core/0013-account-utenti-inviti-api.md) (users/accounts per i claim), UC [0011](0011-dati-seed.md) (seed)
 **Fonte decisioni**: #11 B (emulazione auth), #02 (meccanica auth/claim/cookie)
 **Ultimo aggiornamento**: 2026-06-21
 **Aree collegate**: [11-developer-experience](../../11-developer-experience.md), [02-auth-sicurezza](../../02-auth-sicurezza.md), [05-auth/0017-flussi-auth](../05-auth/0017-flussi-auth.md)
@@ -72,11 +79,11 @@ di sicurezza (fail-closed, no override `tenant_id`).
 
 ## 10. Riferimenti & Definition of Done
 - **Decisioni**: #11 6/7, #02 2/3/9/10/11/18/19.
-- **DoD**:
-  1. Il BFF auth seleziona provider per profilo (Local in `%dev`).
-  2. Il provider Local emette JWT con claim dal DB e JWKS locale; i servizi validano con lo stesso code path di prod.
-  3. Refresh cookie, 2FA TOTP e email (Mailpit) funzionano offline.
-  4. Gli E2E auth girano in locale senza alcun servizio AWS.
+- **DoD** (security-core; signup/verifica/invito/reset/2FA/Mailpit → UC [0058](0058-flussi-auth-locali-completi.md)):
+  1. `services/auth-local` su `:9100` agganciato a compose + Caddyfile `/api/auth/*` + `up.sh` + chiavi JWT in `setup.sh`.
+  2. Il provider Local emette JWT (access/id) con claim **dal DB** (`sub`/`tenant_id`/`roles` + gruppo `platform-admin`) e **JWKS** locale; i servizi (`core`) validano in `%dev` con lo stesso code path di prod (cambia solo l'issuer).
+  3. **Refresh cookie** HttpOnly (rotazione su `/refresh`, clear su `/logout`) e **fail-closed** (token assente/scaduto/forgiato, utente senza tenant → negato).
+  4. Suite integration verdi (claim corretti, validazione via JWKS, refresh, fail-closed), senza alcun servizio AWS.
 
 ## Punti aperti / decisioni differite
 
