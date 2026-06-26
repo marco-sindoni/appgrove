@@ -55,12 +55,17 @@ EOF
   step "6/8 Chiavi JWT locali  [stub → UC 0010]"
   warn "provider auth locale non ancora implementato: chiavi JWT/JWKS e claim dal DB arriveranno con UC 0010."
 
-  step "7/8 DB init + migrazioni + seed  [stub → servizi/UC 0046, seed UC 0011]"
-  warn "nessun servizio/migrazione Flyway ancora; seed deterministico in UC 0011. (Postgres dello stack è comunque pronto.)"
-
-  step "8/8 Avvio stack locale"
+  step "7/8 Avvio stack locale"
   ensure_env
   compose up -d
+
+  step "8/8 Migrazioni + seed deterministico (UC 0011)"
+  # In subshell: un eventuale errore (es. psql assente) non aborta il setup auto-riparante.
+  if ( source "$DEV_DIR/lib/seed.sh"; cmd_seed ); then
+    ok "schema migrato e seed caricato."
+  else
+    warn "migrazioni/seed non completati: rieseguibili con ./dev.sh seed (richiede psql + container engine)."
+  fi
   echo
-  ok "setup completato. Stack su. Prossimi passi: ./dev.sh doctor per il preflight, ./dev.sh down per fermare."
+  ok "setup completato. Prossimi passi: ./dev.sh doctor per il preflight, ./dev.sh down per fermare."
 }
