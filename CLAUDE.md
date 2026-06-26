@@ -95,6 +95,21 @@ Regola chiave: l'obbligo P.IVA nasce dall'**attività abituale**, non dal payout
 Registro vivo dei punti da far rivedere a un legale prima del go-live (DPA, privacy policy, ToS, retention, sub-processor,
 accessibilità): [docs/_REVISIONE-LEGALE.md](docs/_REVISIONE-LEGALE.md). Consigliata/opzionale, nessun blocco pre-go-live.
 
+## Git: account personale vs lavoro (EMU)
+
+Il repo `marco-sindoni/appgrove` va pushato con l'account **personale** `marco-sindoni`. Se il push
+fallisce con `403 — Permission denied to Marco-Sindoni_ElGhEmu`, è attivo per sbaglio l'account di
+lavoro (EMU) e `osxkeychain` ne ha cachato il token per `github.com`. Fix:
+
+```bash
+gh auth switch -u marco-sindoni
+printf "protocol=https\nhost=github.com\n\n" | git credential-osxkeychain erase
+git push origin main
+```
+
+Lo switch di `gh` è persistente; verificare l'identità con `gh api user --jq .login` (dev'essere
+`marco-sindoni`). Non serve riautenticarsi: entrambi i token sono già nel keyring di `gh`.
+
 ## Come si decide (processo)
 
 Un argomento alla volta. Per ciascuno: si elencano i topic, si risolvono per domande e risposte,
