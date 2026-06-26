@@ -1,0 +1,20 @@
+/* Token e font dalla fonte unica (design-system, UC 0019) + utilities Tailwind. */
+@import '@appgrove/design-system/tokens.css';
+@import '@appgrove/design-system/fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: rgb(var(--ag-bg));
+  color: rgb(var(--ag-text));
+  font-family: var(--ag-font-sans);
+}
