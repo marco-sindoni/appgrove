@@ -65,9 +65,10 @@ Catalogo unico di specifiche implementative dettagliate, organizzato **per area 
 template → [docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `01-business-legal … 11-apps`.
 - Creazione/numerazione/scaffolding: skill **`new-usecase`**; implementazione: **`new-change`** (folder
   `NNNN-use-case-YYYY-…` quando nasce da uno use case).
-- Catalogo: **57 use case** (0001–0057), drill-down scritti (🟢) salvo 0002/0044/0055/0056/0057 in corso (🟡). Esempio
+- Catalogo: **58 use case** (0001–0058), drill-down scritti (🟢) salvo 0002/0044/0055/0056/0057 in corso (🟡). Esempio
   migrato: [0017 — Flussi auth](docs/usecases/05-auth/0017-flussi-auth.md) (UC1–UC10). 0055–0057 aggiunti dopo la revisione
-  di copertura requisiti→use case (infra condivisa per-env, ri-accettazione legali runtime, skill `finalize-landing`).
+  di copertura requisiti→use case (infra condivisa per-env, ri-accettazione legali runtime, skill `finalize-landing`);
+  **0058** scorporato da UC 0010 (flussi auth locali completi) nella change `0009-use-case-0010-…`.
 
 ## Backlog trasversale
 

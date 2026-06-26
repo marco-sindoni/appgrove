@@ -47,8 +47,9 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 |---|---|---|---|---|
 | 0008 | 0 | Local dev stack (Compose: Postgres, reverse proxy, Mailpit, MinIO, ElasticMQ) | — | 🟢 |
 | 0009 | 0 | Script `dev/` (setup, up/down, seed, reset, migrate, service, doctor) + README | 0008 | 🟢 |
-| 0010 | 0 | Local auth provider (JWT/JWKS, claim dal DB, refresh cookie, TOTP, Mailpit) | 0008 | 🟢 |
+| 0010 | 0 | Local auth provider — security-core (JWT/JWKS, claim dal DB, refresh cookie, fail-closed) | 0008, 0011, 0013 | 🟢 |
 | 0011 | 0 | Seed data deterministico (condiviso dev↔E2E) | 0008 | 🟢 |
+| 0058 | 0 | Flussi auth locali completi (signup/verifica, accept invito, reset password, 2FA TOTP, Mailpit) | 0010, 0013, 0011 | 🟢 |
 
 ### 04-platform-core
 | UC | Fase | Titolo | Dipendenze | Stato |

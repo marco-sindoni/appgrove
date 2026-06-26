@@ -25,10 +25,10 @@
 # (snippet riusabile dalle SPA quando le app gireranno — UC 0009/0010)
 # Tiene il routing /api/* in un unico punto: stesso origin della SPA.
 (api_routes) {
-	# /api/auth/* → provider auth locale (UC 0010)
-	# handle /api/auth/* {
-	#	reverse_proxy host.docker.internal:9100
-	# }
+	# /api/auth/* → provider auth locale (UC 0010), processo host su :9100
+	handle /api/auth/* {
+		reverse_proxy host.docker.internal:9100
+	}
 	# /api/<app_id>/v1/* → backend del servizio (UC 0009 assegna la porta)
 	# handle /api/notes/v1/* {
 	#	reverse_proxy host.docker.internal:8081
@@ -61,7 +61,7 @@ admin.local.appgrove.app {
 # ── Host API/auth canonico (≈ api.appgrove.app) ──────────────────────────────
 api.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	# import api_routes
+	import api_routes                          # /api/auth/* → auth-local :9100 (UC 0010)
 	respond "appgrove dev — API non avviata (UC 0009/0010)." 200
 }
 
