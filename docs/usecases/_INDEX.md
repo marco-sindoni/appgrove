@@ -46,7 +46,7 @@ AWS finché il prodotto non gira offline.
 | 6  | [0012](04-platform-core/0012-servizio-core-multitenancy.md) | Core service + multitenancy + schema `platform` (Flyway) | Platform Core | 0008, 0009 · ☁0004 | ✅ |
 | 7  | [0011](03-local-dev/0011-dati-seed.md) | Seed data deterministico | Local Dev | 0012 | ⬜ |
 | 8  | [0010](03-local-dev/0010-provider-auth-locale.md) | Auth provider locale (JWT/JWKS, claim DB, refresh, TOTP, Mailpit) | Local Dev | 0009, 0011, 0012 | ⬜ |
-| 9  | [0013](04-platform-core/0013-account-utenti-inviti-api.md) | Accounts/Users/Invitations + core REST API | Platform Core | 0012 | ⬜ |
+| 9  | [0013](04-platform-core/0013-account-utenti-inviti-api.md) | Accounts/Users/Invitations + core REST API | Platform Core | 0012 | ✅ |
 | 10 | [0020](06-frontend/0020-shell-spa-backoffice.md) | Backoffice SPA shell | Frontend | 0019, 0013, 0010 · ☁0015 | ⬜ |
 | 11 | [0017](05-auth/0017-flussi-auth.md) | Flussi auth UI (signup/login/reset/invite/2FA) | Auth | 0020, 0013, 0010 · ☁0015,0016,0018 | ⬜ |
 | 12 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ⬜ |

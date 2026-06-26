@@ -19,10 +19,24 @@ public final class TestTokens {
                 .sign();
     }
 
+    /** Subject (= user_id/cognito_sub locale) corrispondente a {@link #withTenant}. */
+    public static String subjectFor(String tenantId) {
+        return "sub-" + tenantId;
+    }
+
     public static String withoutTenant() {
         return Jwt.issuer(ISSUER)
                 .upn("user-anon")
                 .subject("sub-anon")
+                .sign();
+    }
+
+    /** Token autenticato CON ruoli ma SENZA {@code tenant_id}: esercita il fail-closed del resolver. */
+    public static String withRolesNoTenant(String... roles) {
+        return Jwt.issuer(ISSUER)
+                .upn("user-anon")
+                .subject("sub-anon")
+                .groups(Set.of(roles))
                 .sign();
     }
 }

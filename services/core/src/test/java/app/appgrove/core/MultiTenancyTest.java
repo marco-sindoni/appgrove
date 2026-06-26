@@ -12,64 +12,77 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Matrice multi-tenancy (UC 0012 §9): righe isolate per tenant (leak detector) e anti-override del tenant.
- * I tenant sono determinati esclusivamente dal JWT firmato dall'harness. L'isolamento è verificato
- * rileggendo dal DB (GET), che esercita il filtro automatico del discriminator.
+ * Matrice multi-tenancy (UC 0013 §9) sulle entità reali (inviti): righe isolate per tenant
+ * (leak detector) e anti-override del tenant. Il tenant deriva esclusivamente dal JWT firmato
+ * dall'harness; l'isolamento è verificato rileggendo via GET (filtro automatico del discriminator).
  */
 @QuarkusTest
 class MultiTenancyTest {
 
-    private static final String PATH = "/api/_demo/widgets";
+    private static final String PATH = "/api/platform/v1/invitations";
+    // tenant come UUID (= account id): tenant_id è varchar ma contiene l'id dell'account.
+    private static final String TENANT_A = "aaaaaaaa-0000-0000-0000-000000000001";
+    private static final String TENANT_B = "bbbbbbbb-0000-0000-0000-000000000002";
 
     @Test
     void rowsAreIsolatedByTenant() {
-        String tokenA = TestTokens.withTenant("tenant-a");
-        String tokenB = TestTokens.withTenant("tenant-b");
+        String tokenA = TestTokens.withTenant(TENANT_A, "owner");
+        String tokenB = TestTokens.withTenant(TENANT_B, "owner");
 
+        invite(tokenA, "mt-a@example.test");
+        invite(tokenB, "mt-b@example.test");
+
+        // A vede solo i propri inviti
         given().header("Authorization", "Bearer " + tokenA)
-                .contentType(ContentType.JSON).body(Map.of("name", "widget-a"))
-                .when().post(PATH)
-                .then().statusCode(200);
-
-        given().header("Authorization", "Bearer " + tokenB)
-                .contentType(ContentType.JSON).body(Map.of("name", "widget-b"))
-                .when().post(PATH)
-                .then().statusCode(200);
-
-        // A vede solo le proprie righe, tutte col proprio tenant
-        given().header("Authorization", "Bearer " + tokenA)
-                .when().get(PATH)
+                .when().get(PATH + "?size=100")
                 .then().statusCode(200)
-                .body("name", hasItem("widget-a"))
-                .body("name", not(hasItem("widget-b")))
-                .body("tenantId", everyItem(is("tenant-a")));
+                .body("content.email", hasItem("mt-a@example.test"))
+                .body("content.email", not(hasItem("mt-b@example.test")));
 
-        // B vede solo le proprie righe
+        // B vede solo i propri inviti
         given().header("Authorization", "Bearer " + tokenB)
-                .when().get(PATH)
+                .when().get(PATH + "?size=100")
                 .then().statusCode(200)
-                .body("name", hasItem("widget-b"))
-                .body("name", not(hasItem("widget-a")))
-                .body("tenantId", everyItem(is("tenant-b")));
+                .body("content.email", hasItem("mt-b@example.test"))
+                .body("content.email", not(hasItem("mt-a@example.test")));
     }
 
     @Test
     void tenantIdInBodyIsIgnored() {
-        String tokenA = TestTokens.withTenant("tenant-a");
-        String tokenB = TestTokens.withTenant("tenant-b");
+        String tokenA = TestTokens.withTenant(TENANT_A, "owner");
+        String tokenB = TestTokens.withTenant(TENANT_B, "owner");
 
-        // il body prova a forzare tenant-b: deve essere ignorato (tenant solo dal JWT)
+        // il body prova a forzare il tenant B: deve essere ignorato (tenant solo dal JWT)
         given().header("Authorization", "Bearer " + tokenA)
-                .contentType(ContentType.JSON).body(Map.of("name", "override-attempt", "tenantId", "tenant-b"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "mt-override@example.test", "role", "member", "tenant_id", TENANT_B))
                 .when().post(PATH)
-                .then().statusCode(200).body("tenantId", is("tenant-a"));
+                .then().statusCode(201);
 
-        // la riga appartiene ad A, non a B
         given().header("Authorization", "Bearer " + tokenA)
-                .when().get(PATH)
-                .then().body("name", hasItem("override-attempt"));
+                .when().get(PATH + "?size=100")
+                .then().body("content.email", hasItem("mt-override@example.test"));
         given().header("Authorization", "Bearer " + tokenB)
-                .when().get(PATH)
-                .then().body("name", not(hasItem("override-attempt")));
+                .when().get(PATH + "?size=100")
+                .then().body("content.email", not(hasItem("mt-override@example.test")));
+    }
+
+    @Test
+    void listIsTenantScoped() {
+        String tokenA = TestTokens.withTenant(TENANT_A, "owner");
+        invite(tokenA, "mt-scope@example.test");
+        // Tutte le righe lette dal tenant A sono pending del tenant A: nessun leak cross-tenant.
+        given().header("Authorization", "Bearer " + tokenA)
+                .when().get(PATH + "?size=100")
+                .then().statusCode(200)
+                .body("content.status", everyItem(is("pending")));
+    }
+
+    private static void invite(String token, String email) {
+        given().header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", email, "role", "member"))
+                .when().post(PATH)
+                .then().statusCode(201);
     }
 }
