@@ -52,8 +52,14 @@ EOF
   ensure_env
   ok "dev/.env pronto"
 
-  step "6/8 Chiavi JWT locali  [stub → UC 0010]"
-  warn "provider auth locale non ancora implementato: chiavi JWT/JWKS e claim dal DB arriveranno con UC 0010."
+  step "6/8 Chiavi JWT locali (auth-local, UC 0010)"
+  if [ -f "$AUTH_PRIV" ] && [ -f "$AUTH_PUB" ]; then
+    ok "chiavi JWT già presenti (dev/auth/)"
+  elif gen_jwt_keys; then
+    ok "chiavi JWT RSA generate in dev/auth/ (firma access/id + JWKS locale)"
+  else
+    warn "chiavi JWT non generate: installa openssl, poi ri-esegui setup (auth-local non partirà)."
+  fi
 
   step "7/8 Avvio stack locale"
   ensure_env

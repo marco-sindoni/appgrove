@@ -3,6 +3,7 @@
 Thumbs.db
 .idea/
 *.iml
+.vscode/
 
 # --- Node / TypeScript (frontend, infra CDK) ---
 node_modules/
@@ -34,3 +35,8 @@ target/
 # --- local dev stack (UC 0008) ---
 dev/certs/*
 !dev/certs/.gitkeep
+
+# --- auth-local (UC 0010): chiavi JWT locali + pid/log del processo host ---
+dev/auth/
+dev/.auth-local.pid
+dev/.auth-local.log
