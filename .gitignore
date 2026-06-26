@@ -40,3 +40,6 @@ dev/certs/*
 dev/auth/
 dev/.auth-local.pid
 dev/.auth-local.log
+
+# --- app-start/app-stop: pid/log dei processi host ---
+dev/.run/

@@ -7,6 +7,7 @@ import {
   ACCENTS,
   type Accent,
 } from '@appgrove/design-system'
+import { Link } from 'react-router-dom'
 import { useTranslation, LANGUAGES, type Language } from '@appgrove/i18n'
 import { useAuthStore } from '../auth/authStore'
 import { useLogout } from '../auth/useLogout'
@@ -76,6 +77,13 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
         </summary>
         <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-line bg-surface p-2 shadow-lg">
           <p className="truncate px-2 py-1 text-xs text-fg-muted">{claims?.email}</p>
+          <Link
+            to="/security"
+            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-fg hover:bg-surface-2"
+          >
+            <Icon name="shield" size={18} />
+            {t('nav.security')}
+          </Link>
           <Button
             variant="ghost"
             size="sm"

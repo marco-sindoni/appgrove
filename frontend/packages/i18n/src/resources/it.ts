@@ -1,6 +1,6 @@
 import type { Resources } from './en'
 
-// Catalogo IT — traduzione del design EN (UC 0020 §i18n).
+// Catalogo IT — traduzione del design EN (UC 0020/0017).
 export const it: Resources = {
   app: { name: 'appgrove' },
   nav: {
@@ -10,6 +10,7 @@ export const it: Resources = {
     settings: 'Impostazioni',
     account: 'Account',
     billing: 'Fatturazione',
+    security: 'Sicurezza',
   },
   topbar: {
     notifications: 'Notifiche',
@@ -25,11 +26,97 @@ export const it: Resources = {
     error: 'Qualcosa è andato storto',
     retry: 'Riprova',
   },
+  common: {
+    email: 'Email',
+    password: 'Password',
+    newPassword: 'Nuova password',
+    displayName: 'Il tuo nome',
+    workspaceName: 'Nome del workspace',
+    code: 'Codice',
+    continue: 'Continua',
+    back: 'Indietro',
+    submit: 'Invia',
+    cancel: 'Annulla',
+    optional: 'facoltativo',
+  },
   auth: {
     restoring: 'Ripristino della sessione…',
     loginRequired: 'Accedi per continuare',
     notEntitled: 'Non hai accesso a questa app',
     signIn: 'Accedi',
+    noAccount: 'Non hai un account?',
+    haveAccount: 'Hai già un account?',
+    createAccount: 'Crea account',
+    forgotPassword: 'Password dimenticata?',
+  },
+  login: {
+    title: 'Accedi',
+    submit: 'Accedi',
+    totpTitle: 'Autenticazione a due fattori',
+    totpHint: 'Inserisci il codice a 6 cifre dalla tua app di autenticazione',
+    totpSubmit: 'Verifica',
+  },
+  signup: {
+    title: 'Crea il tuo account',
+    submit: 'Crea account',
+    accountStep: 'Account',
+    verifyStep: 'Verifica email',
+    workspaceStep: 'Workspace',
+    doneStep: 'Fatto',
+  },
+  verify: {
+    title: 'Verifica la tua email',
+    sent: 'Abbiamo inviato un link di verifica a {{email}}. Aprilo per continuare.',
+    pendingHint: 'Dopo aver cliccato il link, torna qui e continua.',
+    continue: 'Ho verificato — continua',
+    notYet: 'Non vediamo ancora una sessione verificata. Clicca il link nella mail, poi riprova.',
+    resend: 'Invia di nuovo',
+    resent: 'Se l’indirizzo esiste e non è verificato, è in arrivo un nuovo link.',
+    verifying: 'Verifica della tua email…',
+    failed: 'Questo link di verifica non è valido o è scaduto.',
+  },
+  workspace: {
+    title: 'Dai un nome al workspace',
+    hint: 'Potrai cambiarlo più tardi dalle impostazioni.',
+    save: 'Continua',
+  },
+  done: {
+    title: 'Tutto pronto',
+    hint: 'Il tuo workspace è pronto.',
+    goToDashboard: 'Vai alla dashboard',
+  },
+  forgot: {
+    title: 'Reimposta la password',
+    hint: 'Inserisci la tua email e ti invieremo un link per il reset.',
+    submit: 'Invia link di reset',
+    sent: 'Se esiste un account per quell’email, è in arrivo un link di reset.',
+  },
+  reset: {
+    title: 'Scegli una nuova password',
+    submit: 'Aggiorna password',
+    done: 'La tua password è stata aggiornata.',
+    goToLogin: 'Vai all’accesso',
+    invalid: 'Questo link di reset non è valido o è scaduto.',
+  },
+  accept: {
+    title: 'Entra nel workspace',
+    hint: 'Imposta una password per accettare l’invito.',
+    submit: 'Accetta invito',
+    invalid: 'Questo invito non è valido.',
+    expired: 'Questo invito è scaduto o è già stato usato.',
+    missingToken: 'Token di invito mancante.',
+  },
+  twofa: {
+    title: 'Autenticazione a due fattori',
+    nudge: 'Proteggi il tuo account: abilita l’autenticazione a due fattori.',
+    enable: 'Abilita 2FA',
+    enrolling: 'Configurazione…',
+    scanHint: 'Scansiona questo QR con la tua app di autenticazione, o inserisci il segreto manualmente.',
+    secretLabel: 'Segreto',
+    codeHint: 'Inserisci il codice a 6 cifre per confermare',
+    confirm: 'Conferma',
+    enabled: 'L’autenticazione a due fattori è attiva.',
+    dismiss: 'Ignora',
   },
   settings: {
     title: 'Impostazioni',
@@ -39,7 +126,17 @@ export const it: Resources = {
   },
   validation: {
     required: 'Campo obbligatorio',
-    tooShort: 'Troppo corto (min {{min}})',
+    email: 'Inserisci un indirizzo email valido',
+    passwordPolicy: 'Almeno 10 caratteri, con una maiuscola, una minuscola e un numero',
+    code: 'Inserisci il codice a 6 cifre',
     tooLong: 'Troppo lungo (max {{max}})',
+  },
+  errors: {
+    emailTaken: 'Questa email è già registrata.',
+    invalidCredentials: 'Email o password non validi.',
+    emailNotVerified: 'La tua email non è ancora verificata. Controlla la posta.',
+    suspended: 'Questo account è sospeso.',
+    invalidCode: 'Codice non valido.',
+    generic: 'Qualcosa è andato storto. Riprova.',
   },
 }

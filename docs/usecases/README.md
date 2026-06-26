@@ -73,6 +73,7 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | 0019 | 0 | Design system & brand kit (token dai mockup, light/dark, Material Symbols, font) | — | 🟢 |
 | 0020 | 2 | Backoffice SPA shell (sidebar, app registry, routing, auth store, API client, i18n, theme) | 0019, 0013 | 🟢 |
 | 0021 | 6 | Admin console SPA (accounts, users, matrice entitlement, billing, danger zone, disable-app) | 0019, 0013 | 🟢 |
+| 0059 | 2 | Gestione membri & inviti (UI backoffice: lista, invita, revoca, cambia ruolo) | 0020, 0013, 0017 | 🟡 |
 
 ### 07-payments
 | UC | Fase | Titolo | Dipendenze | Stato |

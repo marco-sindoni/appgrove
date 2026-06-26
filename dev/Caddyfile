@@ -29,6 +29,10 @@
 	handle /api/auth/* {
 		reverse_proxy host.docker.internal:9100
 	}
+	# /api/platform/* → API core/platform (UC 0013/0020), processo host su :8080
+	handle /api/platform/* {
+		reverse_proxy host.docker.internal:8080
+	}
 	# /api/<app_id>/v1/* → backend del servizio (UC 0009 assegna la porta)
 	# handle /api/notes/v1/* {
 	#	reverse_proxy host.docker.internal:8081
@@ -38,9 +42,8 @@
 # ── Backoffice cliente (un solo origin: SPA + /api/*) ────────────────────────
 app.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	# import api_routes                          # (UC 0010 attiva /api/auth/*, UC 0009 i servizi)
-	# reverse_proxy host.docker.internal:5173    # SPA backoffice (Vite) — tutto il resto (UC 0009)
-	respond "appgrove dev — backoffice non avviato. Avvia le app con `dev up` (UC 0009)." 200
+	import api_routes                          # /api/auth/* → auth-local :9100, /api/platform/* → core :8080
+	reverse_proxy host.docker.internal:5173   # SPA backoffice (Vite) — tutto il resto
 }
 
 # ── Vetrina pubblica (apex locale, servita da apps/backoffice) ───────────────

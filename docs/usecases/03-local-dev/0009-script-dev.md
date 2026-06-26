@@ -93,3 +93,20 @@ _Tracciati dalla change `0006-use-case-0012-…` (regola CLAUDE.md "Tracciamento
   esportare `DOCKER_HOST=unix://$HOME/.colima/default/docker.sock` (+ `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE`).
   Valutare che `dev doctor`/`dev setup` rilevino il socket colima e lo esportino/segnalino, così `mvn test` gira
   senza configurazione manuale.
+
+_Aggiunti dalla change `0012-use-case-0017-…` (avvio/verifica dello stack completo per gli E2E manuali della UI auth)._
+
+- **`app-start.sh` / `app-stop.sh` provvisori → assorbire in `dev`.** Per avviare *tutte* le app insieme
+  (auth-local + core + SPA) sono stati creati due script alla radice. Sono un ponte: il comando canonico
+  `dev service` (stub → UC 0046) dovrebbe avviare core + app selettivamente, e `dev up` orchestrare anche la SPA.
+  Quando arriva quel comando, deprecare gli script radice o renderli wrapper sottili.
+- **Wiring Caddy single-origin SPA — atterrato in anticipo.** Il blocco `app.local.appgrove.app` è stato attivato
+  (`import api_routes` + `reverse_proxy …:5173`) e a `(api_routes)` è stata aggiunta la rotta
+  `/api/platform/* → core :8080`; `config.json` ora punta same-origin a `https://app.local.appgrove.app` e Vite gira
+  con `host:true` + `allowedHosts:['.local.appgrove.app']`. Questo è lavoro di UC 0009: qui è stato anticipato il
+  minimo per la verifica manuale. Da consolidare in UC 0009 (es. rotte per-app, admin SPA :5174, vetrina apex).
+- **core in dev sul Postgres CONDIVISO (non DevServices).** `app-start.sh` lancia `core` con
+  `QUARKUS_DATASOURCE_*` + `QUARKUS_HTTP_PORT=8080` verso il Postgres dello stack (:5433, schema `platform` già
+  migrato), così core e auth-local condividono i dati seed (necessario per onboarding → `PATCH /accounts/me`). Il
+  profilo `%dev` di core resta su DevServices effimero: **da decidere** se renderlo il default di dev (spostando
+  l'injection in `application.properties`/`dev service`). Owner naturale: `dev service` (UC 0046) + config core.
