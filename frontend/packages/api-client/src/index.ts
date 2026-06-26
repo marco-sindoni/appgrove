@@ -15,5 +15,5 @@ export {
   type ProblemDetail,
   type FetchResult,
 } from './problem'
-export type { UserView, AccountView } from './contract'
+export type { UserView, AccountView, InvitationView } from './contract'
 export type { paths, components } from './schema'

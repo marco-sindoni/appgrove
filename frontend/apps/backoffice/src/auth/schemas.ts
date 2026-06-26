@@ -42,3 +42,10 @@ export const acceptSchema = (t: TFn) =>
   z.object({ password: passwordField(t), displayName: displayNameField(t) })
 
 export const workspaceSchema = (t: TFn) => z.object({ name: nameField(t) })
+
+/** Form invito membro (UC 0059), allineato a `CreateInvitation` (@Email, @Size(max=320), role admin/member). */
+export const inviteSchema = (t: TFn) =>
+  z.object({
+    email: emailField(t).refine((v) => v.length <= 320, t('validation.tooLong', { max: 320 })),
+    role: z.enum(['admin', 'member']),
+  })

@@ -77,3 +77,15 @@ _Tracciati dalla change `0006-use-case-0012-…` (regola CLAUDE.md "Tracciamento
   e spostare la suite multi-tenancy sulle entità reali.
 - **Audit-attore (`created_by`/`updated_by`).** Valorizzarli dal `sub` del JWT (es. AuditListener) quando arrivano
   le entità con scrittura utente.
+
+_Aggiunti dalla change `0013-use-case-0059-…` (UI gestione membri/inviti): due lacune lato core riscontrate._
+
+- **Guard "ultimo owner" assente.** `PATCH /users/{id}` e `DELETE /users/{id}` non impediscono di declassare/rimuovere
+  l'**ultimo owner** del tenant (né le self-action che chiuderebbero fuori l'unico owner): sono gated solo da
+  `@RolesAllowed(OWNER,ADMIN)`. La UI (UC 0059) applica solo una protezione **UX** (disabilita le azioni su self/ultimo
+  owner). Aggiungere l'enforcement server-side (rifiuto problem+json) qui.
+- **OpenAPI di `POST /invitations` senza body di risposta.** Lo spec generato dichiara `200` **senza `content`**, mentre
+  il servizio ritorna `InvitationView` col **token grezzo** (status atteso `201`). Il client (UC 0059) è costretto a
+  castare manualmente la risposta (`components['schemas']['InvitationView']`) perché il tipo generato non la modella.
+  Annotare `@APIResponse(responseCode="201", content=InvitationView)` su `InvitationResource.create` così che lo spec
+  (e il client `gen`) riflettano il contratto reale.
