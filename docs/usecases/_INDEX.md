@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0058** (riga 10, primo ⬜) — flussi auth locali completi; poi **UC 0020** (shell SPA)
+## 👉 Prossimo da implementare: **UC 0020** (riga 11, primo ⬜) — Backoffice SPA shell; poi **UC 0017** (flussi auth UI)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -47,7 +47,7 @@ AWS finché il prodotto non gira offline.
 | 7  | [0011](03-local-dev/0011-dati-seed.md) | Seed data deterministico | Local Dev | 0012 | ✅ |
 | 8  | [0010](03-local-dev/0010-provider-auth-locale.md) | Auth provider locale — security-core (JWT/JWKS, claim DB, refresh, fail-closed) | Local Dev | 0009, 0011, 0012, 0013 | ✅ |
 | 9  | [0013](04-platform-core/0013-account-utenti-inviti-api.md) | Accounts/Users/Invitations + core REST API | Platform Core | 0012 | ✅ |
-| 10 | [0058](03-local-dev/0058-flussi-auth-locali-completi.md) | Flussi auth locali completi (signup/verify/invite/reset/2FA/Mailpit) | Local Dev | 0010, 0013, 0011 | ⬜ |
+| 10 | [0058](03-local-dev/0058-flussi-auth-locali-completi.md) | Flussi auth locali completi (signup/verify/invite/reset/2FA/Mailpit) | Local Dev | 0010, 0013, 0011 | ✅ |
 | 11 | [0020](06-frontend/0020-shell-spa-backoffice.md) | Backoffice SPA shell | Frontend | 0019, 0013, 0010 · ☁0015 | ⬜ |
 | 12 | [0017](05-auth/0017-flussi-auth.md) | Flussi auth UI (signup/login/reset/invite/2FA) | Auth | 0020, 0058, 0013, 0010 · ☁0015,0016,0018 | ⬜ |
 | 13 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ⬜ |

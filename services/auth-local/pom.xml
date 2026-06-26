@@ -41,6 +41,28 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-jdbc-postgresql</artifactId>
     </dependency>
+    <!-- Schema dev-only auth_local (credenziali/2FA), isolato da platform -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-flyway</artifactId>
+    </dependency>
+    <!-- Email transazionali → Mailpit (verifica/reset/invito) -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
+    </dependency>
+    <!-- Hash password (BCrypt) -->
+    <dependency>
+      <groupId>at.favre.lib</groupId>
+      <artifactId>bcrypt</artifactId>
+      <version>0.10.2</version>
+    </dependency>
+    <!-- 2FA TOTP (segreto, otpauth URI, verifica codice) -->
+    <dependency>
+      <groupId>dev.samstevens.totp</groupId>
+      <artifactId>totp</artifactId>
+      <version>1.7.1</version>
+    </dependency>
     <!-- Firma JWT (smallrye-jwt-build) — self-contained, niente verify-extension richiesta -->
     <dependency>
       <groupId>io.smallrye</groupId>

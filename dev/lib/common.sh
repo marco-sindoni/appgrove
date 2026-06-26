@@ -106,11 +106,12 @@ auth_local_start() {
     ( cd "$REPO_ROOT/services" && mvn -q -pl auth-local -am -DskipTests package ) \
       || { warn "build auth-local fallita: avvio saltato."; return 0; }
   fi
+  # profilo dev: applica i %dev (Flyway migrate auth_local, mailer→Mailpit, bypass 2FA).
   AUTH_LOCAL_PRIVATE_KEY="$AUTH_PRIV" AUTH_LOCAL_PUBLIC_KEY="$AUTH_PUB" \
   QUARKUS_DATASOURCE_JDBC_URL="jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB}" \
   QUARKUS_DATASOURCE_USERNAME="${POSTGRES_USER}" QUARKUS_DATASOURCE_PASSWORD="${POSTGRES_PASSWORD}" \
   QUARKUS_HTTP_PORT="$AUTH_PORT" \
-  nohup java -jar "$AUTH_JAR" >"$AUTH_LOG" 2>&1 &
+  nohup java -Dquarkus.profile=dev -jar "$AUTH_JAR" >"$AUTH_LOG" 2>&1 &
   echo $! > "$AUTH_PID"
   ok "auth-local avviato su :$AUTH_PORT (pid $(cat "$AUTH_PID"), log dev/.auth-local.log)"
 }
