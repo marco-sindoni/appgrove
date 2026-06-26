@@ -1,6 +1,6 @@
 # Indice di esecuzione — Use Case appgrove
 
-**Ordine di esecuzione reale** dei 58 use case, in **tabella unica**. L'ordine deriva da un ordinamento
+**Ordine di esecuzione reale** dei 59 use case, in **tabella unica**. L'ordine deriva da un ordinamento
 topologico sulle **dipendenze effettive** (estratte rileggendo per intero ogni use case, non solo dagli
 header `Dipendenze:`) sotto una strategia **local-first**. Si implementa **dall'alto verso il basso**:
 ogni UC ha tutti i suoi prerequisiti *hard* sopra di sé.
@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0020** (riga 11, primo ⬜) — Backoffice SPA shell; poi **UC 0017** (flussi auth UI)
+## 👉 Prossimo da implementare: **UC 0017** (flussi auth UI, in corso — change `0012`); poi **UC 0059** (gestione membri & inviti)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -49,53 +49,54 @@ AWS finché il prodotto non gira offline.
 | 9  | [0013](04-platform-core/0013-account-utenti-inviti-api.md) | Accounts/Users/Invitations + core REST API | Platform Core | 0012 | ✅ |
 | 10 | [0058](03-local-dev/0058-flussi-auth-locali-completi.md) | Flussi auth locali completi (signup/verify/invite/reset/2FA/Mailpit) | Local Dev | 0010, 0013, 0011 | ✅ |
 | 11 | [0020](06-frontend/0020-shell-spa-backoffice.md) | Backoffice SPA shell | Frontend | 0019, 0013, 0010 · ☁0015 | ✅ |
-| 12 | [0017](05-auth/0017-flussi-auth.md) | Flussi auth UI (signup/login/reset/invite/2FA) | Auth | 0020, 0058, 0013, 0010 · ☁0015,0016,0018 | ⬜ |
-| 13 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ⬜ |
-| 14 | [0051](11-apps/0051-app1-backend.md) | App #1 (B2C) backend | Apps | 0012, 0013 · ☁0004,0014 | ⬜ |
-| 15 | [0052](11-apps/0052-app1-modulo-frontend.md) | App #1 frontend module | Apps | 0020, 0051 | ⬜ |
-| 16 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | ⬜ |
-| 17 | [0022](07-payments/0022-pricing-as-code-sincronizzazione.md) | Pricing-as-code + sync pipeline | Payments | 0013, 0023 · ☁0005 | ⬜ |
-| 18 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | ⬜ |
-| 19 | [0026](07-payments/0026-ciclo-vita-abbonamento.md) | Ciclo di vita subscription | Payments | 0025, 0013 | ⬜ |
-| 20 | [0024](07-payments/0024-checkout.md) | Checkout (overlay, polling) | Payments | 0023, 0022, 0025, 0020 | ⬜ |
-| 21 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ⬜ |
-| 22 | [0028](07-payments/0028-portale-cliente-self-service.md) | Customer portal self-service | Payments | 0026, 0020 | ⬜ |
-| 23 | [0029](07-payments/0029-test-pagamenti-l1-l2-l3.md) | Test pagamenti L1/L2/L3 | Payments | 0024, 0025, 0023 | ⬜ |
-| 24 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ⬜ |
-| 25 | [0031](08-compliance-gdpr/0031-gate-privacy-ropa-new-change.md) | Gate privacy/RoPA in `new-change` | Compliance & GDPR | 0044, 0030 | ⬜ |
-| 26 | [0032](08-compliance-gdpr/0032-framework-esportazione-cancellazione.md) | Framework export/erasure | Compliance & GDPR | 0013, 0051 | ⬜ |
-| 27 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | ⬜ |
-| 28 | [0034](08-compliance-gdpr/0034-console-diritti-gdpr.md) | Console "Diritti GDPR" (admin) | Compliance & GDPR | 0032, 0021 | ⬜ |
-| 29 | [0003](02-devops-infra/0003-fondamenta-terraform.md) | Terraform foundation | DevOps & Infra | — | ⬜ |
-| 30 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | ⬜ |
-| 31 | [0004](02-devops-infra/0004-modulo-microsaas-app.md) | Modulo `microsaas_app` | DevOps & Infra | 0003, 0055 | ⬜ |
-| 32 | [0006](02-devops-infra/0006-osservabilita-base.md) | Observability baseline | DevOps & Infra | 0003, 0004 | ⬜ |
-| 33 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ⬜ |
-| 34 | [0015](05-auth/0015-cognito-auth-bff.md) | Cognito + auth BFF | Auth | 0003, 0012 | ⬜ |
-| 35 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ⬜ |
-| 36 | [0014](04-platform-core/0014-authorizer-custom.md) | Custom Lambda authorizer | Platform Core | 0013, 0016 | ⬜ |
-| 37 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ⬜ |
-| 38 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ⬜ |
-| 39 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ⬜ |
-| 40 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ⬜ |
-| 41 | [0047](10-skills-tooling/0047-skill-pricing-change.md) | skill `pricing-change` | Skills & Tooling | 0022 | ⬜ |
-| 42 | [0002](01-business-legal/0002-documenti-legali-multilingua.md) | Documenti legali reali 5 lingue | Business & Legal | — | ⬜ |
-| 43 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | ⬜ |
-| 44 | [0037](09-marketing-site/0037-homepage-nav-footer.md) | Homepage + nav/footer | Marketing Site | 0036 | ⬜ |
-| 45 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ⬜ |
-| 46 | [0057](10-skills-tooling/0057-skill-finalize-landing.md) | skill `finalize-landing` | Skills & Tooling | 0038, 0046, 0036 | ⬜ |
-| 47 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ⬜ |
-| 48 | [0041](09-marketing-site/0041-geo-llms.md) | GEO (`llms.txt`, crawler AI) | Marketing Site | 0036 | ⬜ |
-| 49 | [0039](09-marketing-site/0039-newsletter-consenso-plausible.md) | Newsletter + consent log + Plausible | Marketing Site | 0036, 0013 | ⬜ |
-| 50 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ⬜ |
-| 51 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ⬜ |
-| 52 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | ⬜ |
-| 53 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ⬜ |
-| 54 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |
-| 55 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ⬜ |
-| 56 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
-| 57 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ⬜ |
-| 58 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ⬜ |
+| 12 | [0017](05-auth/0017-flussi-auth.md) | Flussi auth UI (signup/login/reset/invite/2FA) | Auth | 0020, 0058, 0013, 0010 · ☁0015,0016,0018 | ✅ |
+| 13 | [0059](06-frontend/0059-gestione-membri-inviti.md) | Gestione membri & inviti (UI backoffice) | Frontend | 0020, 0013, 0017 | ⬜ |
+| 14 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ⬜ |
+| 15 | [0051](11-apps/0051-app1-backend.md) | App #1 (B2C) backend | Apps | 0012, 0013 · ☁0004,0014 | ⬜ |
+| 16 | [0052](11-apps/0052-app1-modulo-frontend.md) | App #1 frontend module | Apps | 0020, 0051 | ⬜ |
+| 17 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | ⬜ |
+| 18 | [0022](07-payments/0022-pricing-as-code-sincronizzazione.md) | Pricing-as-code + sync pipeline | Payments | 0013, 0023 · ☁0005 | ⬜ |
+| 19 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | ⬜ |
+| 20 | [0026](07-payments/0026-ciclo-vita-abbonamento.md) | Ciclo di vita subscription | Payments | 0025, 0013 | ⬜ |
+| 21 | [0024](07-payments/0024-checkout.md) | Checkout (overlay, polling) | Payments | 0023, 0022, 0025, 0020 | ⬜ |
+| 22 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ⬜ |
+| 23 | [0028](07-payments/0028-portale-cliente-self-service.md) | Customer portal self-service | Payments | 0026, 0020 | ⬜ |
+| 24 | [0029](07-payments/0029-test-pagamenti-l1-l2-l3.md) | Test pagamenti L1/L2/L3 | Payments | 0024, 0025, 0023 | ⬜ |
+| 25 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ⬜ |
+| 26 | [0031](08-compliance-gdpr/0031-gate-privacy-ropa-new-change.md) | Gate privacy/RoPA in `new-change` | Compliance & GDPR | 0044, 0030 | ⬜ |
+| 27 | [0032](08-compliance-gdpr/0032-framework-esportazione-cancellazione.md) | Framework export/erasure | Compliance & GDPR | 0013, 0051 | ⬜ |
+| 28 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | ⬜ |
+| 29 | [0034](08-compliance-gdpr/0034-console-diritti-gdpr.md) | Console "Diritti GDPR" (admin) | Compliance & GDPR | 0032, 0021 | ⬜ |
+| 30 | [0003](02-devops-infra/0003-fondamenta-terraform.md) | Terraform foundation | DevOps & Infra | — | ⬜ |
+| 31 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | ⬜ |
+| 32 | [0004](02-devops-infra/0004-modulo-microsaas-app.md) | Modulo `microsaas_app` | DevOps & Infra | 0003, 0055 | ⬜ |
+| 33 | [0006](02-devops-infra/0006-osservabilita-base.md) | Observability baseline | DevOps & Infra | 0003, 0004 | ⬜ |
+| 34 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ⬜ |
+| 35 | [0015](05-auth/0015-cognito-auth-bff.md) | Cognito + auth BFF | Auth | 0003, 0012 | ⬜ |
+| 36 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ⬜ |
+| 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Custom Lambda authorizer | Platform Core | 0013, 0016 | ⬜ |
+| 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ⬜ |
+| 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ⬜ |
+| 40 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ⬜ |
+| 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ⬜ |
+| 42 | [0047](10-skills-tooling/0047-skill-pricing-change.md) | skill `pricing-change` | Skills & Tooling | 0022 | ⬜ |
+| 43 | [0002](01-business-legal/0002-documenti-legali-multilingua.md) | Documenti legali reali 5 lingue | Business & Legal | — | ⬜ |
+| 44 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | ⬜ |
+| 45 | [0037](09-marketing-site/0037-homepage-nav-footer.md) | Homepage + nav/footer | Marketing Site | 0036 | ⬜ |
+| 46 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ⬜ |
+| 47 | [0057](10-skills-tooling/0057-skill-finalize-landing.md) | skill `finalize-landing` | Skills & Tooling | 0038, 0046, 0036 | ⬜ |
+| 48 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ⬜ |
+| 49 | [0041](09-marketing-site/0041-geo-llms.md) | GEO (`llms.txt`, crawler AI) | Marketing Site | 0036 | ⬜ |
+| 50 | [0039](09-marketing-site/0039-newsletter-consenso-plausible.md) | Newsletter + consent log + Plausible | Marketing Site | 0036, 0013 | ⬜ |
+| 51 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ⬜ |
+| 52 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ⬜ |
+| 53 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | ⬜ |
+| 54 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ⬜ |
+| 55 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |
+| 56 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ⬜ |
+| 57 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
+| 58 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ⬜ |
+| 59 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ⬜ |
 
 **Traguardi (milestone) lungo la tabella:**
 - riga **28**: prodotto applicativo completo e testato **offline** (zero AWS);

@@ -65,3 +65,13 @@ Schema `platform`: `accounts`/`users`/`invitations` (creazione da signup/invito)
   2. Accept invito crea l'utente nel tenant invitante (single-use/scadenza).
   3. Reset password (Mailpit) e **2FA TOTP** (enroll/verify) + bypass dev funzionanti.
   4. Suite integration + security verdi; nessun servizio AWS.
+
+## Punti aperti / decisioni differite
+
+_Aggiunti dalla change `0012-use-case-0017-…`: la UI auth (UC 0017) ha riscontrato due lacune lato auth-local._
+
+- **Endpoint `/api/auth/2fa/disable`** — auth-local offre enroll/verify ma **non** la disattivazione del 2FA; la UI
+  (UC 0017 UC10, "disattivazione dal profilo con ri-autenticazione") non è implementabile finché manca. Aggiungerlo qui.
+- **Esporre lo stato `totpEnabled`** — nessun claim/endpoint indica se il 2FA è attivo, quindi il banner di nudge della
+  shell non riflette la verità server (oggi è dismissibile lato client). Aggiungere il flag nell'id-token o un
+  `GET /api/auth/me` (coordinare con `users/me` del core UC 0013).

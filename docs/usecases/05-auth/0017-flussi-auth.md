@@ -93,3 +93,21 @@ Cognito (login custom via **auth Lambda**), **core DB** (`accounts`/`users`/`inv
 
 ## Questioni aperte
 _Nessuna — blocco chiuso. Resta solo la stesura dei **testi** dei template email EN/IT (contenuto, non decisione)._
+
+## Punti aperti / decisioni differite
+
+_Aggiunti dalla change `0012-use-case-0017-…` (implementazione UI auth contro auth-local; regola CLAUDE.md
+"Tracciamento delle decisioni differite")._
+
+- **Step "Pick apps" dell'onboarding** (UC1 step 6) — crea `subscription`/entitlement: **nessun backend** (#09 pagamenti
+  non implementato, nessun endpoint subscription). L'onboarding implementato si ferma a **Workspace → Done**. *Owner:*
+  #09 / checkout (UC 0024) + moduli app (0052/0054).
+- **UI di invio inviti / gestione membri** — scorporata nel **nuovo UC [0059](../06-frontend/0059-gestione-membri-inviti.md)**.
+  Qui è implementato solo l'**accept-invite** (lato invitato).
+- **Disattivazione 2FA** — auth-local espone `/2fa/enroll` e `/2fa/verify` ma **non** `/2fa/disable`: implementata solo
+  l'**abilitazione**. Serve l'endpoint backend → tracciato in **UC 0058**.
+- **Stato "2FA attivo?"** per il banner di nudge — nessun endpoint/claim espone `totpEnabled`: il banner è **dismissibile**
+  (localStorage) e non riflette la verità server. Serve un claim id-token o un `GET /me` → tracciato in **UC 0058**.
+- **Specificità prod Cognito** (challenge names, Custom Message Lambda EN/IT, throttling API GW) — la UI è
+  backend-agnostica (`/api/auth/*`); in locale gira su auth-local. *Owner:* ☁ UC 0015/0016/0018.
+- **QR 2FA** — ✅ reso con `qrcode.react` nella pagina Sicurezza (oltre al secret in chiaro per inserimento manuale).

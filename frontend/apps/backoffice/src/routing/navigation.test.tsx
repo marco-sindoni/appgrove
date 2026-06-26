@@ -22,6 +22,7 @@ describe('navigazione + route guard (app intera)', () => {
   it('anonimo: una route protetta redirige al login', async () => {
     useAuthStore.getState().clear()
     renderApp({ entitled: ['demo'], route: '/' })
-    expect(await screen.findByText('Please sign in to continue')).toBeInTheDocument()
+    // la pagina di login reale mostra il form (email) — non più il placeholder
+    expect(await screen.findByLabelText('Email')).toBeInTheDocument()
   })
 })
