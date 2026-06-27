@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# app-start.sh — avvia in locale TUTTE le applicazioni appgrove (auth-local, core, SPA backoffice).
+# app-start.sh — avvia in locale TUTTE le applicazioni appgrove (auth-local, core, fatture, SPA backoffice).
 #
 # Risolve due fastidi ricorrenti:
 #   1. `commons not found`: i servizi Quarkus dipendono dal modulo fratello `services/commons`, che va
@@ -98,6 +98,16 @@ start_bg core 8080 bash -c "cd '$REPO_ROOT/services' && \
   QUARKUS_HTTP_PORT=8080 \
   exec mvn -pl core quarkus:dev -Ddebug=5005"
 
+#    fatture (:8081): app #1 reale (UC 0051/0052). Stesso Postgres condiviso; in `%dev` Flyway migra
+#    lo schema `app_fatture` all'avvio (V1 schema + V2 dominio). Debug su 5006 per non collidere con
+#    core (5005). Avvio hardcoded della prima app; l'auto-discovery multi-servizio arriva con UC 0046.
+start_bg fatture 8081 bash -c "cd '$REPO_ROOT/services' && \
+  QUARKUS_DATASOURCE_JDBC_URL='jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB}' \
+  QUARKUS_DATASOURCE_USERNAME='${POSTGRES_USER}' \
+  QUARKUS_DATASOURCE_PASSWORD='${POSTGRES_PASSWORD}' \
+  QUARKUS_HTTP_PORT=8081 \
+  exec mvn -pl fatture quarkus:dev -Ddebug=5006"
+
 # 4) SPA Vite — backoffice (:5173) + admin (:5174)
 if [ "$SPA" -eq 1 ]; then
   start_bg backoffice 5173 bash -c "cd '$REPO_ROOT/frontend' && exec npm run dev -w @appgrove/backoffice"
@@ -108,6 +118,7 @@ fi
 log "Attendo l'avvio dei servizi…"
 lsof -ti tcp:9100 >/dev/null 2>&1 && ok "auth-local pronto (:9100)" || warn "auth-local non su :9100 (avviato da 'dev up') — vedi dev/.auth-local.log"
 wait_port 8080 && ok "core pronto (:8080)" || warn "core non pronto entro il timeout — vedi dev/.run/core.log"
+wait_port 8081 && ok "fatture pronto (:8081)" || warn "fatture non pronto entro il timeout — vedi dev/.run/fatture.log"
 if [ "$SPA" -eq 1 ]; then
   wait_port 5173 && ok "SPA backoffice pronta (:5173)" || warn "SPA backoffice non pronta — vedi dev/.run/backoffice.log"
   wait_port 5174 && ok "SPA admin pronta (:5174)" || warn "SPA admin non pronta — vedi dev/.run/admin.log"
@@ -123,6 +134,7 @@ $( [ "$SPA" -eq 1 ] && echo "    • Console admin (single-origin) https://admin
 $( [ "$SPA" -eq 1 ] && echo "    • Backoffice SPA (diretto) .... http://localhost:5173             (Vite; /api/* NON cablate qui)" )
 $( [ "$SPA" -eq 1 ] && echo "    • Admin SPA (diretto) ......... http://localhost:5174             (Vite; /api/* NON cablate qui)" )
     • core API (diretto) .......... http://localhost:8080/api/platform/v1/
+    • fatture API (diretto) ....... http://localhost:8081/api/fatture/v1/   (app #1, UC 0051/0052)
     • auth-local API (diretto) .... http://localhost:9100/api/auth/
 
   Utility / stack locale (Compose):
@@ -136,7 +148,7 @@ $( [ "$SPA" -eq 1 ] && echo "    • Admin SPA (diretto) ......... http://localh
   Utenti seed (password Password1!): owner@acme.test · admin@acme.test · member@acme.test · bob@bob.test
                                      · admin@appgrove.test (platform-admin → console admin)
 
-  Log:  tail -f dev/.run/{core,backoffice,admin}.log  ·  auth-local: dev/.auth-local.log
+  Log:  tail -f dev/.run/{core,fatture,backoffice,admin}.log  ·  auth-local: dev/.auth-local.log
   Stop: ./app-stop.sh
 
   Single-origin: ogni SPA e le sue API stanno sullo stesso origin via Caddy (→ SPA :5173/:5174,

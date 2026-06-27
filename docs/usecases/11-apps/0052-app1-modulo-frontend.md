@@ -57,3 +57,12 @@ Nessuna persistenza client; legge/scrive via API backend (filtrate per tenant la
   2. UI app #1 con design system + client OpenAPI; banner quota.
   3. Solo UX (enforcement backend); route guard difesa in profondità.
   4. Component + E2E + a11y verdi.
+
+## Punti aperti / decisioni differite
+
+- **Banner quota proattivo (consumo/limite)** — richiede un endpoint backend di quota-status. Deciso con lo
+  sviluppatore (change `0016`) di **aggiungerlo subito**: `GET /api/fatture/v1/quota` è stato realizzato in questa change ma
+  è **concettualmente di UC 0051** (vedi i suoi "Punti aperti"). *Owner*: UC 0051.
+- **i18n del modulo (EN/IT)** — le stringhe del modulo `fatture` sono **per-modulo inline in italiano** (come il modulo
+  demo, #03 dec.6). La standardizzazione bilingue dei moduli app è **trasversale** e tracciata in
+  [docs/_BACKLOG.md](../../_BACKLOG.md) → "App modules frontend (UC 0052+)". *Owner*: #03/#19.

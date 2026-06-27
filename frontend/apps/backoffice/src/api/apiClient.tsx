@@ -1,17 +1,20 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { createApiClient, type ApiClient } from '@appgrove/api-client'
+import { createApiClient, type ApiClient, type ApiClientConfig } from '@appgrove/api-client'
 import { useAuthStore, getAccessToken } from '../auth/authStore'
 import { refreshSession } from '../auth/authApi'
 import { useConfig, type RuntimeConfig } from '../config'
 
 /**
- * Costruisce il client del core cablato sull'auth store:
+ * Config auth condivisa (Bearer + 401→refresh→retry + logout su fallimento) cablata sull'auth store:
  * - `getAccessToken` legge il token in memoria;
- * - `refresh` chiama `/api/auth/refresh` e aggiorna lo store (per l'interceptor 401→refresh→retry);
+ * - `refresh` chiama `/api/auth/refresh` e aggiorna lo store;
  * - `onAuthFailure` azzera la sessione (logout UX).
+ *
+ * Riusata sia dal client del **core** sia dai client **per-app** (es. fatture, UC 0052) via
+ * `createTypedClient`: stesso origin, stessa meccanica auth, solo `paths` diversi.
  */
-export function buildApiClient(config: RuntimeConfig): ApiClient {
-  return createApiClient({
+export function buildAuthClientConfig(config: RuntimeConfig): ApiClientConfig {
+  return {
     baseUrl: config.coreBaseUrl,
     getAccessToken,
     refresh: async () => {
@@ -24,7 +27,12 @@ export function buildApiClient(config: RuntimeConfig): ApiClient {
       return true
     },
     onAuthFailure: () => useAuthStore.getState().clear(),
-  })
+  }
+}
+
+/** Costruisce il client tipizzato del core a partire dalla config auth condivisa. */
+export function buildApiClient(config: RuntimeConfig): ApiClient {
+  return createApiClient(buildAuthClientConfig(config))
 }
 
 const ApiClientContext = createContext<ApiClient | null>(null)

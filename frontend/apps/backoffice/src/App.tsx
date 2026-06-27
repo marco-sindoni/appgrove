@@ -19,8 +19,8 @@ const queryClient = makeQueryClient()
  * `entitled` viene dal provider **stub** (il core non espone ancora gli entitlement — rinvio tracciato).
  */
 export function App({ config, i18n }: { config: RuntimeConfig; i18n: I18n }) {
-  // STUB entitlement: in attesa dell'endpoint core, il demo è abilitato in locale.
-  const entitled = useMemo(() => (config.env === 'local' ? ['demo'] : []), [config.env])
+  // STUB entitlement: in attesa dell'endpoint core, demo + fatture (UC 0052) sono abilitati in locale.
+  const entitled = useMemo(() => (config.env === 'local' ? ['demo', 'fatture'] : []), [config.env])
 
   return (
     <ConfigProvider value={config}>

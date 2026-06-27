@@ -2,7 +2,7 @@
 // Tipi generati dallo spec OpenAPI del core (`schema.ts`, script `gen`) + client openapi-fetch
 // con middleware auth (Bearer + 401→refresh→retry) e mapping problem+json.
 
-export { createApiClient, type ApiClient, type ApiClientConfig } from './client'
+export { createApiClient, createTypedClient, type ApiClient, type ApiClientConfig } from './client'
 export {
   authMiddleware,
   RETRY_HEADER,

@@ -187,6 +187,18 @@ di [usecases/06-frontend/0020](usecases/06-frontend/0020-shell-spa-backoffice.md
   rilassamento del check peer in install (nessun effetto a runtime). **Follow-up**: rimuovere quando l'ecosistema
   aggiorna i peer a TS6.
 
+## App modules frontend (UC 0052+) — rinvii cross-area (richiesto 2026-06-27)
+
+Emersi implementando il primo modulo app reale (`fatture`, change `0016-use-case-0052-…`):
+
+- **i18n dei moduli app (EN/IT) — standardizzazione** 🔑 — la shell e le pagine di piattaforma sono bilingui (EN/IT via
+  `@appgrove/i18n` con switch lingua), ma i **moduli app** (demo, fatture) hanno **stringhe per-modulo inline in italiano**
+  (#03 dec.6: "le stringhe app sono per-modulo"). Manca una convenzione su **come** un modulo app espone le proprie
+  stringhe in più lingue (namespace i18n per-modulo? bundle co-locato registrato nello switch lingua della shell?). Per ora
+  IT-only, coerente col modulo demo e con la lingua di prodotto. **Owner**: da decidere fra #03 (contratto moduli) e #19
+  (design-system/i18n); rilevante per ogni nuova app (`new-application`, UC 0046). Tracciato anche in
+  [usecases/11-apps/0052](usecases/11-apps/0052-app1-modulo-frontend.md).
+
 ## Console admin (UC 0021) — rinvii cross-area (richiesto 2026-06-27)
 
 Emersi implementando la console admin come **slice verticale MVP** (change `0014-use-case-0021-…`): nuova SPA `apps/admin`

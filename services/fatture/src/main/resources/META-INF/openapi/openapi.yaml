@@ -98,6 +98,20 @@ components:
         totalPages:
           type: integer
           format: int32
+    QuotaStatusView:
+      type: object
+      properties:
+        metric:
+          type: string
+        used:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+          format: int64
+        remaining:
+          type: integer
+          format: int64
     UUID:
       type: string
       format: uuid
@@ -248,6 +262,26 @@ paths:
       summary: Delete
       tags:
       - Invoice Resource
+      security:
+      - SecurityScheme:
+        - owner
+        - admin
+  /api/fatture/v1/quota:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuotaStatusView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Fatture
+      tags:
+      - Quota Resource
       security:
       - SecurityScheme:
         - owner

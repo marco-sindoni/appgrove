@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# app-stop.sh — ferma le applicazioni appgrove avviate da app-start.sh (auth-local, core, SPA).
+# app-stop.sh — ferma le applicazioni appgrove avviate da app-start.sh (auth-local, core, fatture, SPA).
 #
 # Uso:
 #   ./app-stop.sh           # ferma solo le app (auth-local :9100, core :8080, SPA :5173)
@@ -44,6 +44,7 @@ stop_port() {
 
 stop_port auth-local 9100
 stop_port core 8080
+stop_port fatture 8081
 stop_port backoffice 5173
 stop_port admin 5174
 
