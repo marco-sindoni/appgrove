@@ -51,7 +51,7 @@ AWS finché il prodotto non gira offline.
 | 11 | [0020](06-frontend/0020-shell-spa-backoffice.md) | Backoffice SPA shell | Frontend | 0019, 0013, 0010 · ☁0015 | ✅ |
 | 12 | [0017](05-auth/0017-flussi-auth.md) | Flussi auth UI (signup/login/reset/invite/2FA) | Auth | 0020, 0058, 0013, 0010 · ☁0015,0016,0018 | ✅ |
 | 13 | [0059](06-frontend/0059-gestione-membri-inviti.md) | Gestione membri & inviti (UI backoffice) | Frontend | 0020, 0013, 0017 | ✅ |
-| 14 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ⬜ |
+| 14 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | 🟡 |
 | 15 | [0051](11-apps/0051-app1-backend.md) | App #1 (B2C) backend | Apps | 0012, 0013 · ☁0004,0014 | ⬜ |
 | 16 | [0052](11-apps/0052-app1-modulo-frontend.md) | App #1 frontend module | Apps | 0020, 0051 | ⬜ |
 | 17 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | ⬜ |
