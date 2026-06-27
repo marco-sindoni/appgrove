@@ -63,3 +63,22 @@ entitlement/quota) con payload firmati; L2 = E2E UX con Paddle.js mockato. Deter
   2. Paddle.js finto + API finta + webhook sintetici firmati che passano per la pipeline reale (ElasticMQ).
   3. Scenari lifecycle completi (happy/past_due/canceled/upgrade/downgrade) offline.
   4. Abilita L1/L2 deterministici; mai pagamenti reali in locale.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0018-use-case-0023-…` (regola CLAUDE.md "Tracciamento delle decisioni differite"). Confine deciso nel
+gate di chiarimento: **Approach A** (stub + pipeline locale minima) con consumer a rigore **Minimo** (HMAC + idempotenza)._
+
+- **`PaddlePaymentProvider` reale (test/prod).** La change 0018 introduce il **port `PaymentProvider`** + `StubPaymentProvider`
+  (dev); l'impl reale verso Paddle è fuori scope (gated #14, nessun account) e va riempita **per-metodo** dagli UC consumatori:
+  `startCheckout` → **UC 0024**, sessione customer portal → **UC 0028**, sync pricing-as-code → **UC 0022**. Proprietà distribuita
+  per metodo.
+- **Rigore L1 esaustivo lato consumer.** Il consumer locale di 0018 fa **HMAC + idempotenza** (upsert convergente). La **dedup su
+  `event_id`**, l'**out-of-order via `occurred_at`** e **DLQ + allarmi** restano a **UC 0025** (vedi sue "Punti aperti"). Lo
+  **stub-emettitore** in 0018 sa già generare i casi limite (firma errata/duplicato/out-of-order); manca solo la gestione completa
+  lato consumer. **Proprietario**: UC 0025.
+- **Risoluzione `paddle_price_id` → `app_tier_id`** negli scenari upgrade/downgrade. Dipende dalle **entità JPA del catalogo**
+  (UC 0022). Nello stub gli scenari di cambio tier portano l'`app_tier_id` target **esplicito** nei `custom_data`/scenario finché
+  UC 0022 non fornisce il mapping. **Proprietario** del mapping: UC 0022.
+- **Secret HMAC.** In 0018 è un secret di **test** in config `%dev`; il secret di firma **per-ambiente** in Secrets Manager è di
+  **UC 0025/infra** (#09 I38).

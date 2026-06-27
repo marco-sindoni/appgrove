@@ -54,7 +54,7 @@ AWS finché il prodotto non gira offline.
 | 14 | [0021](06-frontend/0021-console-admin-spa.md) | Admin console SPA | Frontend | 0019, 0013, 0020, 0010 · ☁0015,0016 | ✅ |
 | 15 | [0051](11-apps/0051-app1-backend.md) | App #1 (B2C) backend | Apps | 0012, 0013 · ☁0004,0014 | ✅ |
 | 16 | [0052](11-apps/0052-app1-modulo-frontend.md) | App #1 frontend module | Apps | 0020, 0051 | ✅ |
-| 17 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | ⬜ |
+| 17 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | 🟡 |
 | 18 | [0022](07-payments/0022-pricing-as-code-sincronizzazione.md) | Pricing-as-code + sync pipeline | Payments | 0013, 0023 · ☁0005 | ⬜ |
 | 19 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | ⬜ |
 | 20 | [0026](07-payments/0026-ciclo-vita-abbonamento.md) | Ciclo di vita subscription | Payments | 0025, 0013 | ⬜ |
