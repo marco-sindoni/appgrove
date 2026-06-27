@@ -16,4 +16,11 @@ describe('App Registry — intersezione moduli ∩ entitlement', () => {
     expect(findModule('demo')?.name).toBe('Demo app')
     expect(findModule('inesistente')).toBeUndefined()
   })
+
+  it('il modulo fatture (UC 0052) è registrato e visibile solo se entitled', () => {
+    expect(findModule('fatture')?.id).toBe('fatture')
+    // regression guard: senza entitlement "fatture" l'app non compare
+    expect(intersectModules(MODULES, ['demo']).map((m) => m.id)).not.toContain('fatture')
+    expect(intersectModules(MODULES, ['fatture']).map((m) => m.id)).toEqual(['fatture'])
+  })
 })

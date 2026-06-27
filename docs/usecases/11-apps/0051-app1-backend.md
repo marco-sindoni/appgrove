@@ -80,3 +80,9 @@ Schema `app_<app_id>`: i contenuti dell'app (es. fatture → nominativi/importi)
   classificati con `@PersonalData` + manifesto. Il **bump della Privacy Policy** e la **RoPA** non sono
   azionabili ora (documenti legali UC 0002 non implementati, Paddle non attivo): di competenza di
   **UC 0030** (RoPA) e **UC 0002/0056** (testi legali + ri-accettazione).
+- **Endpoint quota-status `GET /api/fatture/v1/quota`** (aggiunto dalla change `0016`, UC 0052): espone
+  `{metric, used, limit, remaining}` (sola lettura) per alimentare il banner consumo/limite del frontend.
+  È **concettualmente di UC 0051** (backend app #1) ma realizzato in UC 0052 per sbloccare il DoD §6 del
+  modulo. *Nota nullability*: lo spec OpenAPI genera `limit`/`remaining` come `int64` non-nullable, ma a
+  runtime sono `null` quando il tetto è illimitato (`cap < 0`); il frontend lo gestisce. Esprimere la
+  nullability nello spec è eventuale lavoro futuro. *Owner*: UC 0051 (tetto reale dall'entitlement → UC 0027).

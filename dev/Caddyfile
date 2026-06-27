@@ -34,9 +34,10 @@
 		reverse_proxy host.docker.internal:8080
 	}
 	# /api/<app_id>/v1/* → backend del servizio (UC 0009 assegna la porta)
-	# handle /api/notes/v1/* {
-	#	reverse_proxy host.docker.internal:8081
-	# }
+	# /api/fatture/v1/* → app #1 fatture (UC 0051/0052), processo host su :8081
+	handle /api/fatture/v1/* {
+		reverse_proxy host.docker.internal:8081
+	}
 }
 
 # ── Backoffice cliente (un solo origin: SPA + /api/*) ────────────────────────

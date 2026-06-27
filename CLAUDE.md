@@ -36,6 +36,21 @@ il task:
 Non lasciare questi punti solo nella conversazione: **si perdono**, ed è un problema grave.
 Tracciare ≠ risolvere: le decisioni premature si annotano, **non** si forzano fuori dal loro contesto.
 
+## Avvio locale di nuove app/moduli (non negoziabile)
+
+Ogni change che introduce una **nuova applicazione backend** (`services/<app>`) o un **nuovo modulo frontend avviabile**
+DEVE **cablarne l'avvio e lo stop negli script di sviluppo locale** nello stesso pattern degli esistenti, così che l'app/
+modulo sia **eseguibile in locale subito dopo il merge**, senza passi manuali impliciti:
+
+- backend: aggiungere il processo a [app-start.sh](app-start.sh) e [app-stop.sh](app-stop.sh) (Postgres condiviso, porta
+  dedicata, profilo `%dev`) **e** la route `/api/<app_id>/v1/*` in [dev/Caddyfile](dev/Caddyfile);
+- frontend: registrare il modulo nell'App Registry (∩ entitlement) e — finché l'entitlement reale non esiste — abilitarlo
+  nello stub locale.
+
+È parte del **Definition of Done** della change e va verificato eseguendo l'app in locale. L'**auto-discovery
+multi-servizio** del dev stack è di **UC 0046** (`dev service` è uno stub dichiarato): finché non esiste, il cablaggio è
+**esplicito** e non si rimanda.
+
 ## Documenti di decisione
 
 Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
