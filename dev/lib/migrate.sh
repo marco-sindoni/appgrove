@@ -19,7 +19,10 @@ EOF
   [ -d "$CORE_MIGRATIONS" ] || die "migrazioni core non trovate: $CORE_MIGRATIONS"
 
   step "Flyway migrate (core) → Postgres locale :${POSTGRES_PORT:-5432}"
+  # JAVA_ARGS=-Xint: forza l'interprete (niente JIT). Sotto l'emulazione x86_64 di colima la JVM del
+  # container Flyway può andare in SIGSEGV nel compilatore c1; il migrate è minuscolo, l'interprete basta.
   docker run --rm \
+    -e JAVA_ARGS="-Xint" \
     --add-host=host.docker.internal:host-gateway \
     -v "$CORE_MIGRATIONS:/flyway/sql:ro" \
     "$FLYWAY_IMAGE" \

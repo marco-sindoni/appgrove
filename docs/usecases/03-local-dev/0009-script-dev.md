@@ -110,3 +110,9 @@ _Aggiunti dalla change `0012-use-case-0017-…` (avvio/verifica dello stack comp
   migrato), così core e auth-local condividono i dati seed (necessario per onboarding → `PATCH /accounts/me`). Il
   profilo `%dev` di core resta su DevServices effimero: **da decidere** se renderlo il default di dev (spostando
   l'injection in `application.properties`/`dev service`). Owner naturale: `dev service` (UC 0046) + config core.
+
+_Aggiunto dalla change `0014-use-case-0021-…` (console admin)._
+
+- **SPA admin nell'orchestrazione `dev`.** `app-start.sh` ora avvia anche la **SPA admin** (`:5174`) e il blocco Caddy
+  `admin.local.appgrove.app` è attivato (proxy SPA + `/api/*`). Da assorbire nel comando canonico `dev`/`dev service`
+  (UC 0009/0046), come per backoffice. Vedi [_BACKLOG](../../_BACKLOG.md) "Console admin (UC 0021)" #13.

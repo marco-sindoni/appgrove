@@ -2,6 +2,32 @@
   "openapi" : "3.1.0",
   "components" : {
     "schemas" : {
+      "AccountDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserView"
+            }
+          },
+          "entitlements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntitlementCell"
+            }
+          }
+        }
+      },
       "AccountView" : {
         "type" : "object",
         "properties" : {
@@ -19,6 +45,103 @@
           }
         }
       },
+      "AdminAccountView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "users" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "activeSubscriptions" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "AdminUserView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AppView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "userModel" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "BillingRow" : {
+        "type" : "object",
+        "properties" : {
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "tierKey" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "currentPeriodStart" : {
+            "type" : "string"
+          },
+          "currentPeriodEnd" : {
+            "type" : "string"
+          }
+        }
+      },
       "CreateInvitation" : {
         "type" : "object",
         "required" : [ "email", "role" ],
@@ -31,6 +154,35 @@
           "role" : {
             "type" : "string",
             "pattern" : "\\S"
+          }
+        }
+      },
+      "EntitlementCell" : {
+        "type" : "object",
+        "properties" : {
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          },
+          "appId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "subscriptionStatus" : {
+            "type" : "string"
+          },
+          "appActive" : {
+            "type" : "boolean"
+          },
+          "entitled" : {
+            "type" : "boolean"
           }
         }
       },
@@ -59,6 +211,27 @@
           },
           "token" : {
             "type" : "string"
+          }
+        }
+      },
+      "OverviewView" : {
+        "type" : "object",
+        "properties" : {
+          "accounts" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "users" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "activeSubscriptions" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "disabledApps" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -129,6 +302,16 @@
             "type" : "string",
             "pattern" : "\\S",
             "maxLength" : 255
+          }
+        }
+      },
+      "UpdateAppStatus" : {
+        "type" : "object",
+        "required" : [ "status" ],
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "pattern" : "\\S"
           }
         }
       },
@@ -240,6 +423,263 @@
         "tags" : [ "Account Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/accounts" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminAccountView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Accounts",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/accounts/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountDetailView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Account",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/apps" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AppView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Apps",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/apps/{id}" : {
+      "patch" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateAppStatus"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Set App Status",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/billing" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BillingRow"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Billing",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/entitlements" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/EntitlementCell"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Entitlements",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/overview" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OverviewView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Overview",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/users" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminUserView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Users",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
         } ]
       }
     },

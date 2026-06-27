@@ -45,6 +45,7 @@ stop_port() {
 stop_port auth-local 9100
 stop_port core 8080
 stop_port backoffice 5173
+stop_port admin 5174
 
 if [ "$INFRA" -eq 1 ]; then
   printf '\n'

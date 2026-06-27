@@ -187,6 +187,34 @@ di [usecases/06-frontend/0020](usecases/06-frontend/0020-shell-spa-backoffice.md
   rilassamento del check peer in install (nessun effetto a runtime). **Follow-up**: rimuovere quando l'ecosistema
   aggiorna i peer a TS6.
 
+## Console admin (UC 0021) — rinvii cross-area (richiesto 2026-06-27)
+
+Emersi implementando la console admin come **slice verticale MVP** (change `0014-use-case-0021-…`): nuova SPA `apps/admin`
++ `AdminResource` nel core (read-only **cross-tenant** via query native, gated `platform-admin`, unico write `app.status`).
+Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Item per **UC proprietario**:
+
+- **#1 Subscription: entità/lifecycle + drift Paddle reale → UC 0025** (pipeline-webhook). Ora: lettura native read-only; il
+  Billing admin mostra solo lo **stato locale**, non il drift vs Paddle.
+- **#2 Catalogo app (`app`/`app_tier`/`app_price`): dominio/entità → UC 0022** (pricing-as-code). Ora: lettura native + `UPDATE app.status`.
+- **#3 Creazione/modifica subscription (checkout) → UC 0024**. Ora: l'admin vede le subscription esistenti (seed), non le crea.
+- **#4 Enforcement gate disable-app (403 runtime) → UC 0014** (Lambda authorizer "app-abilitata") **+ UC 0027** (enforcement runtime).
+  Ora: solo toggle `app.status` + esclusione delle app `inactive` dalla matrice admin; **nessun blocco effettivo** dell'accesso tenant.
+- **#5 Provider entitlement reale del backoffice (sostituire `StubEntitlementsProvider`)** — può **riusare la derivazione**
+  entitlement (tenant×app da `subscription` + `app.status`) introdotta qui nell'admin. Vedi anche il punto UC 0020 sopra. **Owner**: core/billing.
+- **#6 `platform-admin` in cloud → UC 0016** (pre-token-gen) **+ UC 0015** (Cognito BFF). Ora: in locale il claim arriva da auth-local (`admin@appgrove.test`).
+- **#7 SSO cross-sottodominio** (cookie su `api.appgrove.app` valido per `app.`+`admin.`) **→ UC 0015**. Ora: `admin.local` è origin separato → login proprio per-host.
+- **#8 Hosting prod SPA admin** (CloudFront+S3/OAC+alias Route53) **→ UC 0055** (già pianificato: "2 distribuzioni CloudFront, backoffice+admin") **+ ACM/zona UC 0003**. Ora: solo dev (Caddy `admin.local` + Vite :5174).
+- **#9 Pipeline FE pubblica il bundle admin → UC 0005** (CI/CD).
+- **#10 Audit persistito delle azioni admin** (disable-app) + archivio 12 mesi **→ UC 0035** (archivio audit) **+ #08**. Ora: solo **logging strutturato** (actor `sub`, `app_id`, esito).
+- **#11 KPI ricchi Overview** (MRR/churn) **→ #08/UC 0025**. Ora: KPI base da conteggi nativi.
+- **#12 Estrazione base `Table` + stati compositi → UC 0019** (anche in "Punti aperti" di UC 0021/0020).
+- **#13 Integrazione SPA admin nel comando canonico `dev`/`dev service` → UC 0009/0046**. Ora: solo `app-start.sh` (:5174) + blocco Caddy `admin.local`.
+- **#14 Formalizzazione pattern "endpoint admin non-tenant-scoped" → UC 0013 / doc #02 auth-sicurezza**: come/dove disabilitare in sicurezza il filtro `@TenantId`, test anti-leak sistematici. Ora: query native + gating `platform-admin` (eccezione esplicita all'invariante #2).
+- **#15 Console "Diritti GDPR" → UC 0034** (già escluso da UC 0021; nessuna azione, solo confine).
+- **#16 Override/toggle entitlement per-tenant** (dettaglio Account, oggi **read-only**) **→ UC 0014/0027** (modello) **+ UC 0013** (schema). Nel modello attuale l'entitlement per-tenant ha **una sola leva** (la subscription): un override per-tenant-app non esiste in schema → decisione di data-model rimandata ai gate.
+- **#17 Azione admin sulla subscription** (sospendi/cancella per tenant) **→ UC 0024/0025** (Paddle-coupled).
+- **#18 Estrazione runtime auth/sessione condiviso backoffice+admin** — oggi **duplicato** il sottoinsieme minimo in `apps/admin` (config/auth/api). **Owner**: frontend condiviso (rinvio UC 0020) — valutare un pacchetto `@appgrove/app-runtime`.
+
 ## Script / tooling DevOps
 - **Start/stop servizi test** (scale 0↔1 task Fargate) — ✅ deciso in [07-devops-cicd](07-devops-cicd.md) §28
   (avvio manuale `test-start`; spegnimento via **cron giornaliero `test-stop`**, idempotente, orario UTC fisso).

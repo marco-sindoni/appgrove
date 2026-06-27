@@ -89,3 +89,13 @@ _Aggiunti dalla change `0013-use-case-0059-…` (UI gestione membri/inviti): due
   castare manualmente la risposta (`components['schemas']['InvitationView']`) perché il tipo generato non la modella.
   Annotare `@APIResponse(responseCode="201", content=InvitationView)` su `InvitationResource.create` così che lo spec
   (e il client `gen`) riflettano il contratto reale.
+
+_Aggiunti dalla change `0014-use-case-0021-…` (console admin). Dettaglio in [_BACKLOG](../../_BACKLOG.md) "Console admin (UC 0021)"._
+
+- **Pattern "endpoint admin non-tenant-scoped".** `AdminResource` (UC 0021) introduce la **prima** superficie cross-tenant:
+  query **native** read-only gated `platform-admin` che **bypassano** il filtro `@TenantId` (eccezione esplicita e
+  documentata all'invariante #2). Da **formalizzare**: come/dove disabilitare in sicurezza il filtro tenant, test
+  anti-leak sistematici, eventuale separazione del persistence path admin (coordinare con doc #02).
+- **Schema override entitlement per-tenant.** La console admin **non** offre un toggle entitlement per-tenant perché nel
+  modello attuale l'unica leva è la `subscription`. Se servirà (UC 0014/0027), serve **decidere lo schema** di un override
+  per-tenant-app (tabella/colonna) qui.
