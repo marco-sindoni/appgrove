@@ -59,3 +59,17 @@ billing/quota (base contratto). Diritti GDPR sempre esercitabili (UC 0032/0033).
   2. SPI quota chiamata dall'app prima del consumo; frontend solo UX.
   3. Diritti GDPR esenti dai gate per tutta la retention.
   4. Test catena gate (401/402/403/429) + isolamento verdi.
+
+## Punti aperti / decisioni differite
+
+- **Risoluzione del tetto di quota dall'entitlement** *(owner: questo UC 0027)*. La change
+  `0015-use-case-0051-app1-backend` ha introdotto in `commons` il contratto quota SPI
+  (`QuotaService`/`QuotaLimitSource`/`QuotaExceededException`) e l'ha implementato nell'app `fatture`
+  con il **meccanismo completo** (conteggio della finestra mensile + `429`), ma il **tetto** è preso
+  da un'implementazione **config-driven locale** (`ConfigQuotaLimitSource`, `app.fatture.quota.fatture.cap`,
+  default 10). *Cosa manca qui:* fornire l'implementazione **reale** di `QuotaLimitSource` che risolve
+  il tetto dall'entitlement (`subscription → app_tier → limits.cap` per `(tenant, app, metric)`), più
+  il gate stato/grace (402) e la natura **stock**. *Perché differito:* richiede la lettura di
+  `platform.subscription`, fuori dall'isolamento di schema dell'app (`app_fatture`), quindi è
+  enforcement di piattaforma di competenza di questo UC. Il seam è già pronto: basta sostituire il
+  provider `QuotaLimitSource` senza toccare il codice di `fatture`.

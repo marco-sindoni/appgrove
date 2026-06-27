@@ -49,11 +49,13 @@ ON CONFLICT (id) DO UPDATE SET
   invited_by = EXCLUDED.invited_by, accepted_user_id = EXCLUDED.accepted_user_id, updated_at = EXCLUDED.updated_at;
 
 -- ── catalogo: app (platform-level) ───────────────────────────────────────────
--- notes = single-user · teams = multi-user · legacy = multi-user DISABILITATA (status inactive).
+-- notes = single-user · teams = multi-user · legacy = multi-user DISABILITATA (status inactive)
+-- fatture = app #1 reale (B2C single-user, UC 0051).
 INSERT INTO platform.app (id, slug, name, user_model, status, paddle_product_id, created_at, updated_at, created_by) VALUES
-  ('d0000000-0000-4000-8000-000000000001', 'notes',  'Notes',  'single_user', 'active',   NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('d0000000-0000-4000-8000-000000000002', 'teams',  'Teams',  'multi_user',  'active',   NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('d0000000-0000-4000-8000-000000000003', 'legacy', 'Legacy', 'multi_user',  'inactive', NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
+  ('d0000000-0000-4000-8000-000000000001', 'notes',   'Notes',   'single_user', 'active',   NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000002', 'teams',   'Teams',   'multi_user',  'active',   NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000003', 'legacy',  'Legacy',  'multi_user',  'inactive', NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000004', 'fatture', 'Fatture', 'single_user', 'active',   NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
 ON CONFLICT (id) DO UPDATE SET
   slug = EXCLUDED.slug, name = EXCLUDED.name, user_model = EXCLUDED.user_model,
   status = EXCLUDED.status, paddle_product_id = EXCLUDED.paddle_product_id, updated_at = EXCLUDED.updated_at;
@@ -63,7 +65,8 @@ INSERT INTO platform.app_tier (id, app_id, key, name, limits, features, trial_da
   ('e0000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'free', 'Notes Free', '{"metric":"notes","window":"month","cap":100,"type":"flow"}'::jsonb,   '{}'::jsonb, 14, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('e0000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000001', 'pro',  'Notes Pro',  '{"metric":"notes","window":"month","cap":10000,"type":"flow"}'::jsonb, '{}'::jsonb, 0,  '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('e0000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000002', 'team', 'Teams',      '{"metric":"seats","cap":10,"type":"stock"}'::jsonb,                   '{}'::jsonb, 14, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('e0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'std',  'Legacy Std', '{"metric":"items","window":"month","cap":1000,"type":"flow"}'::jsonb, '{}'::jsonb, 0,  '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
+  ('e0000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'std',  'Legacy Std',   '{"metric":"items","window":"month","cap":1000,"type":"flow"}'::jsonb,  '{}'::jsonb, 0,  '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('e0000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000004', 'free', 'Fatture Free', '{"metric":"fatture","window":"month","cap":10,"type":"flow"}'::jsonb,   '{}'::jsonb, 0,  '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
 ON CONFLICT (id) DO UPDATE SET
   app_id = EXCLUDED.app_id, key = EXCLUDED.key, name = EXCLUDED.name, limits = EXCLUDED.limits,
   features = EXCLUDED.features, trial_days = EXCLUDED.trial_days, updated_at = EXCLUDED.updated_at;

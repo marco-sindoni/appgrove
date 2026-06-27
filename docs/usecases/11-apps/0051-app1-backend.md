@@ -60,3 +60,23 @@ Schema `app_<app_id>`: i contenuti dell'app (es. fatture → nominativi/importi)
   2. Quota SPI (flow) + contratto GDPR (export/purge) + manifesto dati.
   3. API problem+json + OpenAPI; logging strutturato.
   4. Suite security/multi-tenancy + compliance verdi.
+
+## Punti aperti / decisioni differite
+
+- **Contratti SPI introdotti in `commons`** (change `0015`): `QuotaService`/`QuotaLimitSource`/
+  `QuotaExceededException` (+ `QuotaExceededMapper` 429), `AppDataContract`/`GdprScope`/`ExportResult`/
+  `PurgeResult`/`DataManifest`, annotazione `@PersonalData`. Sono il contratto stabile che gli UC a
+  valle consumano. *Owner del consumo:* tetto da entitlement → **UC 0027**; manifesti/RoPA automation →
+  **UC 0030**; gate privacy bloccante (`@PersonalData`) → **UC 0031**; orchestrazione export/erasure →
+  **UC 0032**.
+- **Semplificazioni dell'app #1 da rivedere con `new-application` (UC 0046)**:
+  1. *Conteggio quota flow*: conta le fatture **non** soft-deleted nel mese; una fattura creata e poi
+     cancellata "libera" quota. Accettabile per validare il pattern; se serve una semantica "creazioni
+     nel mese" andrà contato includendo i soft-deleted.
+  2. *Numerazione*: `number` progressivo per-tenant/anno generato dal **max suffisso** via query nativa
+     (monotòna, non riusa numeri). Niente sequenza DB dedicata: sotto alta concorrenza per lo stesso
+     tenant potrebbe servire un lock/sequence (non un caso B2C single-user).
+- **PP/ToS + RoPA**: l'app introduce dati personali (`customer_name`/`customer_email`, base contratto),
+  classificati con `@PersonalData` + manifesto. Il **bump della Privacy Policy** e la **RoPA** non sono
+  azionabili ora (documenti legali UC 0002 non implementati, Paddle non attivo): di competenza di
+  **UC 0030** (RoPA) e **UC 0002/0056** (testi legali + ri-accettazione).

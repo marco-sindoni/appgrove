@@ -81,13 +81,17 @@ class SeedDataTest {
         assertEquals(1, scalar("select count(*) from platform.users where created_by = 'seed' and role = 'member'"));
 
         // ── catalogo (single/multi/disabled) ─────────────────────────────────
-        assertEquals(3, scalar("select count(*) from platform.app where created_by = 'seed'"));
-        assertEquals(4, scalar("select count(*) from platform.app_tier where created_by = 'seed'"));
+        assertEquals(4, scalar("select count(*) from platform.app where created_by = 'seed'"));
+        assertEquals(5, scalar("select count(*) from platform.app_tier where created_by = 'seed'"));
         assertEquals(4, scalar("select count(*) from platform.app_price where created_by = 'seed'"));
         assertEquals("inactive", text("select status from platform.app where slug = 'legacy'"),
                 "l'app 'legacy' è disabilitata dall'admin (esercita il gate app-abilitata)");
         assertEquals("single_user", text("select user_model from platform.app where slug = 'notes'"));
         assertEquals("multi_user", text("select user_model from platform.app where slug = 'teams'"));
+        // app #1 reale (UC 0051): fatture, single-user, con tier free cap 10 fatture/mese
+        assertEquals("single_user", text("select user_model from platform.app where slug = 'fatture'"));
+        assertEquals(10, scalar("select (limits->>'cap')::int from platform.app_tier"
+                + " where app_id = (select id from platform.app where slug = 'fatture')"));
 
         // ── subscription: stati di lifecycle vari (entitlement derivato) ──────
         assertEquals(5, scalar("select count(*) from platform.subscription where created_by = 'seed'"));

@@ -1,0 +1,361 @@
+{
+  "openapi" : "3.1.0",
+  "components" : {
+    "schemas" : {
+      "CreateInvoice" : {
+        "type" : "object",
+        "required" : [ "customerName" ],
+        "properties" : {
+          "customerName" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 255
+          },
+          "customerEmail" : {
+            "type" : "string",
+            "maxLength" : 320
+          },
+          "issueDate" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "currency" : {
+            "type" : "string",
+            "maxLength" : 3
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CreateLine"
+            }
+          }
+        }
+      },
+      "CreateLine" : {
+        "type" : "object",
+        "required" : [ "description" ],
+        "properties" : {
+          "description" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 500
+          },
+          "quantity" : {
+            "type" : "number"
+          },
+          "unitAmount" : {
+            "type" : "number"
+          }
+        }
+      },
+      "InvoiceView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "number" : {
+            "type" : "string"
+          },
+          "customerName" : {
+            "type" : "string"
+          },
+          "customerEmail" : {
+            "type" : "string"
+          },
+          "issueDate" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "totalAmount" : {
+            "type" : "number"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "lines" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LineView"
+            }
+          }
+        }
+      },
+      "LineView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "quantity" : {
+            "type" : "number"
+          },
+          "unitAmount" : {
+            "type" : "number"
+          },
+          "lineAmount" : {
+            "type" : "number"
+          }
+        }
+      },
+      "LocalDate" : {
+        "type" : "string",
+        "format" : "date",
+        "examples" : [ "2022-03-10" ]
+      },
+      "PageInvoiceView" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/InvoiceView"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "UUID" : {
+        "type" : "string",
+        "format" : "uuid",
+        "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      },
+      "UpdateInvoice" : {
+        "type" : "object",
+        "properties" : {
+          "customerName" : {
+            "type" : "string",
+            "maxLength" : 255
+          },
+          "customerEmail" : {
+            "type" : "string",
+            "maxLength" : 320
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "SecurityScheme" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT",
+        "description" : "Authentication"
+      }
+    }
+  },
+  "paths" : {
+    "/api/fatture/v1/invoices" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PageInvoiceView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Invoice Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateInvoice"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Invoice Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    },
+    "/api/fatture/v1/invoices/{id}" : {
+      "patch" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateInvoice"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvoiceView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Invoice Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      },
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InvoiceView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Invoice Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Delete",
+        "tags" : [ "Invoice Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    }
+  },
+  "info" : {
+    "title" : "appgrove fatture API",
+    "version" : "v1"
+  },
+  "servers" : [ {
+    "url" : "http://localhost:8081",
+    "description" : "Auto generated value"
+  }, {
+    "url" : "http://0.0.0.0:8081",
+    "description" : "Auto generated value"
+  } ]
+}
