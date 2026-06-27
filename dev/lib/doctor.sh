@@ -21,6 +21,42 @@ EOF
   if docker compose version >/dev/null 2>&1; then ok "plugin docker compose"
   else err "plugin compose assente → brew install docker-compose"; blocking=1; fi
 
+  # Coerenza VM Colima ↔ host: una VM x86_64 su Apple Silicon è instabile (con vmType=vz è proprio
+  # impossibile → il guest non completa il boot, manca il guest agent, docker.sock non viene inoltrato).
+  step "Colima VM (host arm64)"
+  if [ "$(uname -m)" != "arm64" ]; then
+    info "  host non arm64 → check non applicabile"
+  elif ! require_cmd colima; then
+    info "  colima non installato → check saltato"
+  else
+    local colima_yaml="$HOME/.colima/default/colima.yaml"
+    if [ ! -f "$colima_yaml" ]; then
+      info "  VM Colima non ancora creata (la crea 'colima start' / ./dev.sh setup)"
+    else
+      local vm_arch vm_type
+      vm_arch="$(sed -n 's/^arch:[[:space:]]*//p' "$colima_yaml" | head -1 | tr -d '"[:space:]')"
+      vm_type="$(sed -n 's/^vmType:[[:space:]]*//p' "$colima_yaml" | head -1 | tr -d '"[:space:]')"
+      case "$vm_arch" in
+        x86_64|amd64)
+          err "VM Colima '$vm_arch' su host arm64 → instabile (vz non esegue x86_64; il guest non completa il boot)."
+          info "  fix: colima delete -f && colima start --arch aarch64 --vm-type vz --cpu 4 --memory 6 --disk 60"
+          blocking=1
+          ;;
+        aarch64|arm64|"")
+          if [ "$vm_type" = "qemu" ]; then
+            warn "VM Colima arm64 ma vmType=qemu → preferisci vz (più stabile/veloce):"
+            info "  colima delete -f && colima start --arch aarch64 --vm-type vz"
+          else
+            ok "VM Colima nativa (${vm_arch:-aarch64}${vm_type:+/$vm_type})"
+          fi
+          ;;
+        *)
+          warn "VM Colima con arch non riconosciuta: '$vm_arch' (atteso aarch64 su Apple Silicon)"
+          ;;
+      esac
+    fi
+  fi
+
   step "TLS locale (mkcert)"
   if require_cmd mkcert; then
     ok "mkcert presente"

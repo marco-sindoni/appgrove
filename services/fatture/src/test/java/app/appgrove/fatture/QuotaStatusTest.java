@@ -20,7 +20,7 @@ class QuotaStatusTest {
 
     @Test
     void freshTenantHasFullQuota() {
-        String token = TestTokens.withTenant("33333333-0000-0000-0000-000000000031", "owner");
+        String token = TestTokens.withTenant("55555555-0000-0000-0000-000000000031", "owner");
 
         given().header("Authorization", "Bearer " + token)
                 .when().get(QUOTA)
@@ -33,7 +33,7 @@ class QuotaStatusTest {
 
     @Test
     void usageAndRemainingTrackCreatedInvoices() {
-        String token = TestTokens.withTenant("33333333-0000-0000-0000-000000000032", "owner");
+        String token = TestTokens.withTenant("55555555-0000-0000-0000-000000000032", "owner");
 
         for (int i = 0; i < 3; i++) {
             given().header("Authorization", "Bearer " + token)
@@ -54,8 +54,8 @@ class QuotaStatusTest {
     @Test
     void quotaIsScopedToCallerTenant() {
         // Il tenant A crea 2 fatture; il tenant B deve vedere il proprio uso a 0 (isolamento #2).
-        String tokenA = TestTokens.withTenant("33333333-0000-0000-0000-0000000000a3", "owner");
-        String tokenB = TestTokens.withTenant("33333333-0000-0000-0000-0000000000b3", "owner");
+        String tokenA = TestTokens.withTenant("55555555-0000-0000-0000-0000000000a3", "owner");
+        String tokenB = TestTokens.withTenant("55555555-0000-0000-0000-0000000000b3", "owner");
 
         for (int i = 0; i < 2; i++) {
             given().header("Authorization", "Bearer " + tokenA)
