@@ -61,3 +61,13 @@ PII in chiaro nei log (identificativi opachi, #08 5). Manifest: rientra nel trat
   2. Nessuna tabella entitlements; nessuna cache attiva (solo futura/opzionale).
   3. Diritti GDPR esenti dai gate; health/Swagger gestiti correttamente.
   4. Test gate (401/402/403) + isolamento verdi.
+
+## Punti aperti / decisioni differite
+
+_Tracciati dalla change `0014-use-case-0021-…` (console admin). Dettaglio in [_BACKLOG](../../_BACKLOG.md) "Console admin (UC 0021)"._
+
+- **Enforcement disable-app (gate 2) — lettore di `app.status`.** La console admin (UC 0021) consente di **togglare**
+  `platform.app.status` (active/inactive), ma il **blocco effettivo** (403 "app non abilitata") nella catena gate è di
+  questo UC (+ UC 0027 runtime). Implementare la lettura di `app.status` nell'authorizer e il rifiuto coerente.
+- **Override entitlement per-tenant.** Oggi l'entitlement è derivato **solo** da `subscription`. Se servirà una leva
+  admin per-tenant-app (UC 0021 #16), va definita qui (modello gate) + schema in UC 0013.

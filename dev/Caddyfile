@@ -56,9 +56,8 @@ local.appgrove.app {
 # ── Console admin (app separata) ─────────────────────────────────────────────
 admin.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	# import api_routes
-	# reverse_proxy host.docker.internal:5174    # admin SPA (Vite) — UC 0009
-	respond "appgrove dev — console admin non avviata (UC 0009)." 200
+	import api_routes                          # /api/auth/* → auth-local :9100, /api/platform/* → core :8080
+	reverse_proxy host.docker.internal:5174   # admin SPA (Vite) — tutto il resto (UC 0021)
 }
 
 # ── Host API/auth canonico (≈ api.appgrove.app) ──────────────────────────────

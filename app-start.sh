@@ -98,9 +98,10 @@ start_bg core 8080 bash -c "cd '$REPO_ROOT/services' && \
   QUARKUS_HTTP_PORT=8080 \
   exec mvn -pl core quarkus:dev -Ddebug=5005"
 
-# 4) SPA backoffice (Vite)
+# 4) SPA Vite — backoffice (:5173) + admin (:5174)
 if [ "$SPA" -eq 1 ]; then
   start_bg backoffice 5173 bash -c "cd '$REPO_ROOT/frontend' && exec npm run dev -w @appgrove/backoffice"
+  start_bg admin 5174 bash -c "cd '$REPO_ROOT/frontend' && exec npm run dev -w @appgrove/admin"
 fi
 
 # 5) attesa readiness + riepilogo
@@ -108,7 +109,8 @@ log "Attendo l'avvio dei servizi…"
 lsof -ti tcp:9100 >/dev/null 2>&1 && ok "auth-local pronto (:9100)" || warn "auth-local non su :9100 (avviato da 'dev up') — vedi dev/.auth-local.log"
 wait_port 8080 && ok "core pronto (:8080)" || warn "core non pronto entro il timeout — vedi dev/.run/core.log"
 if [ "$SPA" -eq 1 ]; then
-  wait_port 5173 && ok "SPA pronta (:5173)" || warn "SPA non pronta — vedi dev/.run/backoffice.log"
+  wait_port 5173 && ok "SPA backoffice pronta (:5173)" || warn "SPA backoffice non pronta — vedi dev/.run/backoffice.log"
+  wait_port 5174 && ok "SPA admin pronta (:5174)" || warn "SPA admin non pronta — vedi dev/.run/admin.log"
 fi
 
 cat <<EOF
@@ -116,8 +118,10 @@ cat <<EOF
 $(printf '\033[1;32m')Applicazioni avviate.$(printf '\033[0m')
 
   Applicazioni:
-$( [ "$SPA" -eq 1 ] && echo "    • Backoffice (single-origin) .. https://app.local.appgrove.app   ← usa QUESTO (SPA + /api/* via Caddy)" )
-$( [ "$SPA" -eq 1 ] && echo "    • Backoffice SPA (diretto) .... http://localhost:5173            (Vite; /api/* NON cablate qui)" )
+$( [ "$SPA" -eq 1 ] && echo "    • Backoffice (single-origin) .. https://app.local.appgrove.app    ← cliente (SPA + /api/* via Caddy)" )
+$( [ "$SPA" -eq 1 ] && echo "    • Console admin (single-origin) https://admin.local.appgrove.app  ← platform-admin (login admin@appgrove.test)" )
+$( [ "$SPA" -eq 1 ] && echo "    • Backoffice SPA (diretto) .... http://localhost:5173             (Vite; /api/* NON cablate qui)" )
+$( [ "$SPA" -eq 1 ] && echo "    • Admin SPA (diretto) ......... http://localhost:5174             (Vite; /api/* NON cablate qui)" )
     • core API (diretto) .......... http://localhost:8080/api/platform/v1/
     • auth-local API (diretto) .... http://localhost:9100/api/auth/
 
@@ -127,13 +131,14 @@ $( [ "$SPA" -eq 1 ] && echo "    • Backoffice SPA (diretto) .... http://localh
     • MinIO API (S3) ........ http://localhost:${MINIO_API_PORT:-9000}
     • ElasticMQ (SQS) ....... http://localhost:${ELASTICMQ_PORT:-9324}
     • Postgres .............. localhost:${POSTGRES_PORT:-5432}  (db ${POSTGRES_DB:-appgrove}, user ${POSTGRES_USER:-appgrove})
-    • Caddy proxy (HTTPS) ... https://app.local.appgrove.app (SPA+API) · https://api.local.appgrove.app (solo API)
+    • Caddy proxy (HTTPS) ... app.local (backoffice) · admin.local (admin) · api.local (solo API)
 
   Utenti seed (password Password1!): owner@acme.test · admin@acme.test · member@acme.test · bob@bob.test
+                                     · admin@appgrove.test (platform-admin → console admin)
 
-  Log:  tail -f dev/.run/{core,backoffice}.log  ·  auth-local: dev/.auth-local.log
+  Log:  tail -f dev/.run/{core,backoffice,admin}.log  ·  auth-local: dev/.auth-local.log
   Stop: ./app-stop.sh
 
-  Single-origin: la SPA e le API stanno sullo stesso origin https://app.local.appgrove.app (proxy
-  Caddy → SPA :5173, /api/auth/* :9100, /api/platform/* :8080): login/refresh col cookie funzionano.
+  Single-origin: ogni SPA e le sue API stanno sullo stesso origin via Caddy (→ SPA :5173/:5174,
+  /api/auth/* :9100, /api/platform/* :8080): login/refresh col cookie funzionano.
 EOF

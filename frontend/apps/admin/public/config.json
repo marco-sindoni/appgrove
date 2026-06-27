@@ -1,0 +1,6 @@
+{
+  "env": "local",
+  "authBaseUrl": "https://admin.local.appgrove.app",
+  "coreBaseUrl": "https://admin.local.appgrove.app",
+  "cognito": { "userPoolId": "", "clientId": "" }
+}
