@@ -33,6 +33,9 @@
     <archunit.version>1.3.0</archunit.version>
 
     <skipITs>true</skipITs>
+
+    <!-- API Docker richiesta al client docker-java di Testcontainers (vedi surefire più sotto). -->
+    <docker.api.version>1.41</docker.api.version>
   </properties>
 
   <dependencyManagement>
@@ -81,7 +84,25 @@
             <systemPropertyVariables>
               <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
               <maven.home>${maven.home}</maven.home>
+              <!-- docker-java legge l'API anche da system property `api.version` (oltre all'env DOCKER_API_VERSION). -->
+              <api.version>${docker.api.version}</api.version>
             </systemPropertyVariables>
+            <!--
+              Pin dell'API Docker per il client docker-java di Testcontainers (Dev Services): il client
+              bundle parla di default API 1.32, rifiutata dai Docker Engine recenti (es. 29.x → min 1.40).
+              Iniettata nel JVM forkato (l'env della shell non viene ereditato) → test affidabili in
+              locale e CI. Sovrascrivibile con -Ddocker.api.version=...
+            -->
+            <environmentVariables>
+              <DOCKER_API_VERSION>${docker.api.version}</DOCKER_API_VERSION>
+              <!--
+                Path del socket Docker da montare nei container ausiliari (ryuk). Va indicato il path
+                INTERNO al runtime (/var/run/docker.sock), non quello host: con Colima il socket host è
+                in ~/.colima/... e non esiste dentro la VM → il mount di ryuk fallirebbe. Su CI Linux/
+                Docker Desktop /var/run/docker.sock è già il path reale → innocuo.
+              -->
+              <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
+            </environmentVariables>
           </configuration>
         </plugin>
       </plugins>
