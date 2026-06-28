@@ -14,6 +14,24 @@
   <name>appgrove :: services :: core</name>
   <description>Core/platform service Quarkus (schema platform). Le entità di dominio arrivano in UC 0013.</description>
 
+  <properties>
+    <!-- AWS SDK v2 per il client SQS verso ElasticMQ (stub Paddle, UC 0023). UC 0025 valuterà
+         il passaggio all'estensione Quarkus amazon-sqs per il deploy cloud. -->
+    <awssdk.version>2.31.78</awssdk.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>app.appgrove</groupId>
@@ -52,6 +70,31 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
+    </dependency>
+
+    <!-- Stub Paddle (UC 0023): poller consumer schedulato + client SQS verso ElasticMQ -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sqs</artifactId>
+      <exclusions>
+        <!-- usiamo il client HTTP sync url-connection (leggero), non Netty/Apache -->
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>netty-nio-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>apache-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
     </dependency>
 
     <!-- Test -->
