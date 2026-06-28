@@ -65,6 +65,48 @@ public class TestData {
                 tenantId, appId);
     }
 
+    /** Stato della subscription per {@code (tenant, app)}, o null se assente (per gli assert L1 0025). */
+    public String subscriptionStatus(String tenantId, UUID appId) {
+        return queryString(
+                "select status from platform.subscription where tenant_id = ? and app_id = ? and deleted_at is null",
+                tenantId, appId);
+    }
+
+    /** Fine periodo corrente della subscription (per asserire l'avanzamento sul rinnovo). */
+    public java.time.Instant subscriptionPeriodEnd(String tenantId, UUID appId) {
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(
+                        "select current_period_end from platform.subscription"
+                                + " where tenant_id = ? and app_id = ? and deleted_at is null")) {
+            ps.setObject(1, tenantId);
+            ps.setObject(2, appId);
+            try (var rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    var ts = rs.getTimestamp(1);
+                    return ts == null ? null : ts.toInstant();
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** {@code paddle_customer_id} dell'account (per asserire la cattura da customer.*). */
+    public String accountPaddleCustomerId(String tenantId) {
+        return queryString("select paddle_customer_id from platform.accounts where id = ?", UUID.fromString(tenantId));
+    }
+
+    /** Esito registrato in {@code webhook_event} per un event_id (processed | skipped_stale | received). */
+    public String webhookOutcome(String eventId) {
+        return queryString("select outcome from platform.webhook_event where event_id = ?", eventId);
+    }
+
+    /** Numero di righe di dedup per un event_id (deve restare 1 anche con re-delivery). */
+    public int webhookEventCount(String eventId) {
+        return queryInt("select count(*) from platform.webhook_event where event_id = ?", eventId);
+    }
+
     private int queryInt(String sql, Object... params) {
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
@@ -72,6 +114,19 @@ public class TestData {
             }
             try (var rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String queryString(String sql, Object... params) {
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            try (var rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

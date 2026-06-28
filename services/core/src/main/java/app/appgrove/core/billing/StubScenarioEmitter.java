@@ -16,8 +16,10 @@ import java.util.UUID;
  * di ingest dei webhook reali ({@link WebhookIngestService}: verifica firma → coda → consumer). Il
  * linkage tenant è impostato server-side nei {@code custom_data} (#09 C14/D21).
  *
- * <p>Sa generare anche i <b>casi limite</b> per L1 (firma errata, duplicato, out-of-order); la
- * gestione completa lato consumer (dedup/out-of-order) è di UC 0025.
+ * <p>Copre il set di scenari lifecycle (#09 I39): happy/past_due/canceled/upgrade/downgrade/paused/
+ * resumed/renewal/chargeback/customer. I casi limite per L1 (firma errata/replay, duplicato,
+ * out-of-order) sono costruiti puntualmente nei test ({@code WebhookFixtures}); la gestione lato
+ * consumer (dedup/out-of-order/DLQ) è ora completa (UC 0025).
  */
 @ApplicationScoped
 public class StubScenarioEmitter {
@@ -77,6 +79,38 @@ public class StubScenarioEmitter {
                         require(targetTierId, "targetTierId richiesto per downgrade"),
                         paddleSubId, base.plusSeconds(1), base, base.plus(365, ChronoUnit.DAYS), null, null));
             }
+            case paused -> {
+                out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base, base, base.plus(365, ChronoUnit.DAYS), null, null));
+                out.add(send("subscription.paused", SubscriptionStatus.paused, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(1), base, base.plus(365, ChronoUnit.DAYS), null, null));
+            }
+            case resumed -> {
+                out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base, base, base.plus(365, ChronoUnit.DAYS), null, null));
+                out.add(send("subscription.paused", SubscriptionStatus.paused, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(1), base, base.plus(365, ChronoUnit.DAYS), null, null));
+                out.add(send("subscription.resumed", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(2), base, base.plus(365, ChronoUnit.DAYS), null, null));
+            }
+            case renewal -> {
+                out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base, base, base.plus(365, ChronoUnit.DAYS), null, null));
+                // rinnovo: il periodo avanza di un anno (transaction.completed → active)
+                out.add(send("transaction.completed", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(1), base.plus(365, ChronoUnit.DAYS),
+                        base.plus(730, ChronoUnit.DAYS), null, null));
+            }
+            case chargeback -> {
+                out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base, base, base.plus(365, ChronoUnit.DAYS), null, null));
+                out.add(send("transaction.disputed", SubscriptionStatus.past_due, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(1), base, base.plus(365, ChronoUnit.DAYS), null, null));
+            }
+            case customer -> {
+                String paddleCustomerId = "ctm_" + UUID.randomUUID().toString().replace("-", "").substring(0, 24);
+                out.add(sendCustomer("customer.updated", tenantId, paddleCustomerId, base));
+            }
         }
         return out;
     }
@@ -89,6 +123,26 @@ public class StubScenarioEmitter {
                 periodStart, periodEnd, cancelAt, trialEnd);
         ingest.ingest(body, signature.sign(body));
         return new EmittedEvent(eventType, status.name());
+    }
+
+    /** Emette un evento {@code customer.*} (cattura {@code paddle_customer_id} su accounts). */
+    private EmittedEvent sendCustomer(
+            String eventType, String tenantId, String paddleCustomerId, Instant occurredAt) {
+        ObjectNode root = mapper.createObjectNode();
+        root.put("event_id", "evt_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+        root.put("event_type", eventType);
+        root.put("occurred_at", occurredAt.toString());
+        ObjectNode data = root.putObject("data");
+        data.put("paddle_customer_id", paddleCustomerId);
+        data.putObject("custom_data").put("tenant_id", tenantId);
+        String body;
+        try {
+            body = mapper.writeValueAsString(root);
+        } catch (Exception e) {
+            throw new IllegalStateException("Serializzazione webhook customer fallita", e);
+        }
+        ingest.ingest(body, signature.sign(body));
+        return new EmittedEvent(eventType, null);
     }
 
     /** Serializza un evento nella forma attesa da {@link PaddleWebhookEvent}. */

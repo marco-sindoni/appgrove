@@ -15,5 +15,15 @@ public enum LifecycleScenario {
     /** active(tier) → active(targetTier): upgrade immediato (#09 E22). */
     upgrade,
     /** active(tier) → active(targetTier): downgrade (qui semplificato; scheduling vero → UC 0026). */
-    downgrade
+    downgrade,
+    /** active → paused: sospensione (status {@code paused} = no accesso, #09 E28). */
+    paused,
+    /** active → paused → resumed(active): ripresa dopo pausa. */
+    resumed,
+    /** active → transaction.completed: rinnovo riuscito, il periodo avanza (#09 D21). */
+    renewal,
+    /** active → transaction.disputed: chargeback/dispute → {@code past_due} (reazione MoR, #09 J42). */
+    chargeback,
+    /** customer.updated: cattura {@code paddle_customer_id} su {@code accounts} (#09 C15/D21). */
+    customer
 }

@@ -66,3 +66,13 @@ _Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento
 - **Table + stati composti (loading/empty/error/success)** — il design-system (UC 0019) fornisce solo i
   **primitivi**; le tabelle della console admin (accounts/users/matrice entitlement/billing) vanno composte
   **qui** sopra i primitivi. Valutare l'estrazione di una base condivisa verso UC 0019 se il riuso lo giustifica.
+
+- **Observability read-only della pipeline webhook in console admin** — _tracciato dalla change
+  `0020-use-case-0025-…`._ La change 0020 (UC 0025) introduce la tabella `platform.webhook_event` (audit
+  eventi: `event_id`/`event_type`/`occurred_at`/`outcome` `processed|skipped_stale`) e la **DLQ** (ElasticMQ
+  in locale; SQS + allarme CloudWatch cloud-deferred in UC 0025). Coerente con **#09 H34** ("admin =
+  read-only/observability: vedi subscription, **drift vs Paddle**") e **#08**, l'admin console potrebbe
+  esporre **in sola lettura**: ultimi eventi webhook + esito, **profondità DLQ**/eventi falliti, e il drift
+  `subscription` ↔ Paddle. **Perché differito**: non è un buco di UC 0025 (pipeline = backend; nessuna
+  superficie visuale in 0020) e UC 0021 è già implementata (✅); è un'**evoluzione** della console abilitata
+  ora dal nuovo data source. **Proprietario**: UC 0021 (l'allarme DLQ resta a UC 0025 cloud / #08).
