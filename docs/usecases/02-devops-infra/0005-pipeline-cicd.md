@@ -69,3 +69,15 @@ drift). Coverage **riportata, non bloccante** (#10 36). Smoke E2E opzionale su t
   2. Backend JVM default + native `[graal]`/dispatch + sempre prod; gate prod bloccante senza native.
   3. Flyway one-shot in VPC prima del deploy; frontend stesso bundle + `config.json` da Terraform.
   4. Path-filter + Infracost + suite #10 bloccante sui rossi; CI ≈ $0.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0019-use-case-0022-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Cablaggio dello step di sync pricing nei workflow CI.** UC 0022 (change `0019`) implementa il **motore di sync**
+  pricing-as-code → catalogo DB → Paddle (esercitabile offline contro lo stub) **e ne espone un entrypoint runnable in
+  command-mode Quarkus** (`sync-pricing`, non avvia il server HTTP). Quel che resta a UC 0005 è **solo** invocare quel comando
+  nel workflow **dopo il Flyway migrate**: **deploy su test → `sync-pricing` verso Paddle sandbox**, **tag→prod →
+  `sync-pricing` verso Paddle production** (#09 H37, #07), con i secret Paddle per-env (Secrets Manager, #09 I38). Non c'è
+  ancora `.github/workflows/`, quindi il cablaggio non è realizzabile finché UC 0005 non costruisce la pipeline.
+  **Proprietario** del cablaggio CI: UC 0005.

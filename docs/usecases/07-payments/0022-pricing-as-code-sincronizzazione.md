@@ -73,5 +73,35 @@ _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento
   pricing-as-code le scrive). **Proprietario**: UC 0022.
 - **Mapping `paddle_price_id` → `app_tier_id` per lo stub locale.** Tracciato dalla change `0018-use-case-0023-…`: lo stub
   Paddle (UC 0023), negli scenari upgrade/downgrade, passa per ora l'`app_tier_id` target **esplicito** nei `custom_data`
-  perché il mapping `paddle_price_id`→tier richiede le **entità JPA del catalogo** (sopra). Quando UC 0022 le fornisce, lo stub
-  potrà risolvere il tier dal `paddle_price_id` **come in prod**. **Proprietario** del mapping: UC 0022.
+  perché il mapping `paddle_price_id`→tier richiede le **entità JPA del catalogo** (sopra). **La change 0019 fornisce le
+  entità + il lookup** (`AppPriceRepository.findTierIdByPaddlePriceId`), quindi il mapping è ora **disponibile**.
+  **Residuo (non fatto in 0019, tracciato qui):** ri-cablare emitter+consumer dello stub perché il webhook porti il
+  `paddle_price_id` e il consumer (`SubscriptionWriter`) risolva il tier via catalogo **come in prod**, eliminando
+  l'`app_tier_id` esplicito dai `custom_data`. Non fatto in 0019 per non destabilizzare il consumer webhook (territorio di
+  **UC 0025**) e perché richiede i price già sincronizzati. **Proprietario**: UC 0022, in coordinamento con UC 0025.
+
+_Residui tracciati dalla change `0019-use-case-0022-…` (confine deciso: slice offline completo ora; reale Paddle + CI differiti)._
+
+- **Client Paddle reale per la sync (`PaddlePaymentProvider.syncPricing`).** La change 0019 implementa il **motore di sync**
+  contro il **port `PaymentProvider`** e lo esercita offline con lo **stub** (`StubPaymentProvider` ritorna ID Paddle
+  plausibili e li scrive nel catalogo DB). Il `PaddlePaymentProvider` reale — chiamate REST a **Product/Price API di Paddle**
+  (crea mancanti, archivia rimossi, mai mutare importo vivo) + lettura secret API key per-env da Secrets Manager (#09 I38) —
+  resta **placeholder**: è **bloccato da #14** (nessun account Paddle, nemmeno sandbox, finché sito+ToU/PP non sono pubblicati).
+  Va completato **quando #14 sblocca l'account**. **Proprietario**: UC 0022. *(Il `startCheckout` reale è invece di UC 0024,
+  la robustezza webhook prod di UC 0025: stesso `PaddlePaymentProvider` riempito per-metodo dai rispettivi UC.)*
+- **Cablaggio dello step di sync nel deploy CI** → tracciato in **UC 0005** ("Punti aperti"): la pipeline non esiste ancora,
+  quindi la change 0019 fornisce l'**entrypoint runnable** in command-mode (`sync-pricing`), non il job GitHub Actions.
+  **Proprietario** del cablaggio: UC 0005.
+- **Trattamento delle app "fixture" (`notes`/`teams`/`legacy`) nel pricing-as-code centrale.** Solo `fatture` è un'app reale
+  con cartella `services/fatture`; `notes`/`teams`/`legacy` sono **fixture** del seed E2E senza service folder. Nella change
+  0019 il pricing-as-code centrale (`services/core/.../pricing/<slug>.yaml`) le ospita comunque (file YAML per ciascuna) per
+  preservare gli asset E2E con la Strada 1 (loader fonte unica, UUID deterministici da chiave). **Da ridiscutere** (sollevato
+  dal Platform Engineer): se le fixture debbano restare definizioni pricing-as-code di prima classe o essere isolate come
+  semplici fixture di test separate dal catalogo "reale" — si lega al discovery per-cartella-service di **UC 0046**.
+  **Proprietario**: UC 0022 (in coordinamento con UC 0046).
+- **Co-piloti che producono gli YAML** (`new-application` scrive il pricing iniziale, `pricing-change` gestisce i cambi con
+  immutabilità/grandfathering) → **UC 0046/0047**: la change 0019 definisce e congela il **contratto/formato YAML** che quelle
+  skill scriveranno, ma **non** le implementa. **Proprietario**: UC 0046/0047.
+- **Migrazione esplicita di subscription esistenti a un nuovo price** (oltre il grandfathering di default) → gestita da
+  `pricing-change` (**UC 0047**); la change 0019 implementa solo il **default grandfathering** (la sync non archivia/cancella
+  un price con subscription attive). **Proprietario**: UC 0047.
