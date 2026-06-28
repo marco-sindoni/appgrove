@@ -24,15 +24,16 @@ class SeedDataTest {
     @Inject
     AgroalDataSource ds;
 
-    private static Path seedFile() {
+    private static Path repoFile(String rel) {
         // user.dir = services/core → ../../ = repo root
-        return Path.of(System.getProperty("user.dir"))
-                .getParent().getParent()
-                .resolve("dev/seed/seed.sql");
+        return Path.of(System.getProperty("user.dir")).getParent().getParent().resolve(rel);
     }
 
     private void applySeed() throws Exception {
-        String sql = Files.readString(seedFile());
+        // identità + subscription: il catalogo è già presente (loader allo startup), quindi le FK risolvono.
+        String sql = Files.readString(repoFile("dev/seed/seed.sql"))
+                + "\n"
+                + Files.readString(repoFile("dev/seed/seed-subscriptions.sql"));
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
             st.execute(sql); // pgjdbc esegue più statement separati da ';'
         }
@@ -81,9 +82,12 @@ class SeedDataTest {
         assertEquals(1, scalar("select count(*) from platform.users where created_by = 'seed' and role = 'member'"));
 
         // ── catalogo (single/multi/disabled) ─────────────────────────────────
-        assertEquals(4, scalar("select count(*) from platform.app where created_by = 'seed'"));
-        assertEquals(5, scalar("select count(*) from platform.app_tier where created_by = 'seed'"));
-        assertEquals(4, scalar("select count(*) from platform.app_price where created_by = 'seed'"));
+        // Non più nel seed: con il pricing-as-code (UC 0022) il catalogo è prodotto dal loader allo startup
+        // (created_by = 'sync'), dagli YAML in services/core/.../pricing/. Le subscription del seed lo
+        // referenziano via UUID deterministici (CatalogIds) → la doppia applicazione del seed non duplica.
+        assertEquals(4, scalar("select count(*) from platform.app where created_by = 'sync'"));
+        assertEquals(5, scalar("select count(*) from platform.app_tier where created_by = 'sync'"));
+        assertEquals(4, scalar("select count(*) from platform.app_price where created_by = 'sync'"));
         assertEquals("inactive", text("select status from platform.app where slug = 'legacy'"),
                 "l'app 'legacy' è disabilitata dall'admin (esercita il gate app-abilitata)");
         assertEquals("single_user", text("select user_model from platform.app where slug = 'notes'"));

@@ -92,13 +92,23 @@ _Residui tracciati dalla change `0019-use-case-0022-…` (confine deciso: slice 
 - **Cablaggio dello step di sync nel deploy CI** → tracciato in **UC 0005** ("Punti aperti"): la pipeline non esiste ancora,
   quindi la change 0019 fornisce l'**entrypoint runnable** in command-mode (`sync-pricing`), non il job GitHub Actions.
   **Proprietario** del cablaggio: UC 0005.
-- **Trattamento delle app "fixture" (`notes`/`teams`/`legacy`) nel pricing-as-code centrale.** Solo `fatture` è un'app reale
-  con cartella `services/fatture`; `notes`/`teams`/`legacy` sono **fixture** del seed E2E senza service folder. Nella change
-  0019 il pricing-as-code centrale (`services/core/.../pricing/<slug>.yaml`) le ospita comunque (file YAML per ciascuna) per
-  preservare gli asset E2E con la Strada 1 (loader fonte unica, UUID deterministici da chiave). **Da ridiscutere** (sollevato
-  dal Platform Engineer): se le fixture debbano restare definizioni pricing-as-code di prima classe o essere isolate come
-  semplici fixture di test separate dal catalogo "reale" — si lega al discovery per-cartella-service di **UC 0046**.
-  **Proprietario**: UC 0022 (in coordinamento con UC 0046).
+- **Trattamento delle app "fixture" (`notes`/`teams`/`legacy`) — RISOLTO nella change 0019.** Solo `fatture` è un'app reale;
+  `notes`/`teams`/`legacy` sono **fixture** sintetiche per dev/test/E2E. Decisione (sollevata dal Platform Engineer): le fixture
+  sono **non-prod** e **mai** sincronizzate sul vero Paddle. Implementazione: app reali in `pricing/<slug>.yaml` (vanno in prod),
+  fixture in `pricing/fixtures/<slug>.yaml` caricate **solo** con `appgrove.pricing.include-fixtures=true` (true `%dev`/`%test`,
+  false prod). Una guardia di test (`PricingCatalogRealOnlyTest`) blocca la regressione (in prod il loader carica solo le reali).
+  Un'app reale futura (es. un vero `notes`) sarà un modulo separato con il suo `pricing/<slug>.yaml` di prod, non la fixture.
+- **Invocazione one-shot di `sync-pricing` nel flusso seed.** Confine Opzione 1: `dev seed` esegue
+  `migrate → sync-pricing (catalogo da YAML) → psql seed.sql`. La change 0019 invoca il command-mode **costruendo il jar
+  del core (profilo dev) e lanciando `java -jar … sync-pricing`** (stesso pattern di auth-local in `dev/lib/common.sh`).
+  Note implementative (per il revisore): (a) il jar va **sempre ricostruito** — un jar stantio *senza* il command-mode
+  girerebbe come server e **bloccherebbe** il seed (un watchdog lo uccide comunque dopo 180s); (b) la selezione del provider
+  è **build-time** (`@IfBuildProperty`): il build deve usare il **profilo dev** per includere lo `StubPaymentProvider`
+  (un build prod selezionerebbe il `PaddlePaymentProvider` placeholder, che lancia — coerente: in prod la sync è bloccata da
+  #14); (c) un DB dev con **catalogo legacy** (slug già presenti con UUID vecchi) richiede `./dev.sh reset` una tantum
+  (migrazione dallo schema a UUID deterministici). **Residuo:** l'**invocazione industrializzata** del comando (step CI reale
+  + dev senza build/JVM ad-hoc) e la **scoperta multi-servizio** del catalogo vanno riviste con **UC 0005** (step pipeline) e
+  **UC 0046** (auto-discovery multi-servizio). **Proprietari**: UC 0005 (CI) / UC 0046 (discovery & industrializzazione).
 - **Co-piloti che producono gli YAML** (`new-application` scrive il pricing iniziale, `pricing-change` gestisce i cambi con
   immutabilità/grandfathering) → **UC 0046/0047**: la change 0019 definisce e congela il **contratto/formato YAML** che quelle
   skill scriveranno, ma **non** le implementa. **Proprietario**: UC 0046/0047.

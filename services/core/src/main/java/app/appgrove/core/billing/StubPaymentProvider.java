@@ -2,6 +2,11 @@ package app.appgrove.core.billing;
 
 import io.quarkus.arc.properties.IfBuildProperty;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -23,8 +28,49 @@ public class StubPaymentProvider implements PaymentProvider {
                 "sub_" + token());
     }
 
+    /**
+     * Sync pricing finta: ritorna ID Paddle <b>deterministici</b> dalla chiave interna stabile (così il
+     * ri-sync è idempotente, offline). Se un ID è già noto lo riconferma (mai rigenera) — modella
+     * "esiste già su Paddle". Non muta importi: l'immutabilità è già garantita dal {@code PricingSyncService}.
+     */
+    @Override
+    public PricingSyncResult syncPricing(PricingSyncRequest request) {
+        Map<String, String> productIds = new LinkedHashMap<>();
+        Map<String, String> priceIds = new LinkedHashMap<>();
+        for (ProductSync product : request.products()) {
+            productIds.put(
+                    product.productKey(),
+                    product.existingProductId() != null
+                            ? product.existingProductId()
+                            : "pro_" + det(product.productKey()));
+            for (PriceSync price : product.prices()) {
+                priceIds.put(
+                        price.priceKey(),
+                        price.existingPriceId() != null
+                                ? price.existingPriceId()
+                                : "pri_" + det(price.priceKey()));
+            }
+        }
+        return new PricingSyncResult(productIds, priceIds);
+    }
+
     /** ID plausibile e opaco (stile Paddle), deterministicamente unico. */
     private static String token() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 24);
+    }
+
+    /** Token deterministico (24 hex) dalla chiave: stabile tra ri-sync → idempotenza offline. */
+    private static String det(String key) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(key.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(24);
+            for (int i = 0; i < 12; i++) {
+                sb.append(Character.forDigit((digest[i] >> 4) & 0xf, 16));
+                sb.append(Character.forDigit(digest[i] & 0xf, 16));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 non disponibile", e);
+        }
     }
 }

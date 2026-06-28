@@ -1,0 +1,18 @@
+# Teams — app B2B multi-user (fixture di catalogo). Chiave stabile: slug 'teams'.
+slug: teams
+name: Teams
+userModel: multi_user
+status: active
+tiers:
+  - key: team
+    name: Teams
+    trialDays: 14
+    limits: { metric: seats, cap: 10, type: stock }
+    features: {}
+    prices:
+      - billingCycle: monthly
+        amount: 1900
+        currency: EUR
+      - billingCycle: annual
+        amount: 19000
+        currency: EUR

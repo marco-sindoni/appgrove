@@ -37,18 +37,30 @@ assegna il gruppo `platform-admin` al subject `seed-platform-admin`.
 
 Su DB è salvato solo `token_hash = SHA-256(hex)` del token grezzo (single-use).
 
-## Catalogo
+## Catalogo (pricing-as-code, UC 0022)
 
-| App | id | slug | user_model | status |
+Il catalogo (`app`/`app_tier`/`app_price`) **non è più in `seed.sql`**: è la **definizione pricing-as-code** in
+`services/core/src/main/resources/pricing/<slug>.yaml` (fonte di verità del "cosa si vende"), caricata dal **loader**
+del core. `dev seed` esegue `sync-pricing` (loader, YAML → DB) **dopo** il migrate e **prima** del seed; in `@QuarkusTest`
+il loader gira allo startup. Gli ID sono **deterministici** dalla chiave stabile (`CatalogIds`: UUIDv3 name-based su
+`app:<slug>` / `tier:<slug>:<key>` / `price:<slug>:<key>:<cycle>`), così le FK delle subscription del seed restano stabili.
+
+| App | id (`CatalogIds.appId`) | slug | user_model | status |
 |---|---|---|---|---|
-| Notes | `d0000000-…-001` | notes | single_user | active |
-| Teams | `d0000000-…-002` | teams | multi_user | active |
-| Legacy | `d0000000-…-003` | legacy | multi_user | **inactive** (disabilitata dall'admin) |
+| Notes | `e8b95b18-…-9eb` | notes | single_user | active |
+| Teams | `1c4ea96d-…-779` | teams | multi_user | active |
+| Legacy | `52fbfc15-…-232` | legacy | multi_user | **inactive** (disabilitata dall'admin) |
+| Fatture | `c46a39d9-…-4c6` | fatture | single_user | active (app #1, UC 0051) |
 
 Tier (`app_tier`) con `limits` jsonb (flow/stock) e prezzi (`app_price`) monthly+annual EUR per i tier a pagamento
-(Notes Pro, Teams). Vedi `seed.sql` per gli ID.
+(Notes Pro, Teams). I `paddle_product_id`/`paddle_price_id` (per-ambiente) li riempie la sync (stub in locale). Vedi gli
+YAML in `services/core/.../pricing/` per i valori.
 
 ## Subscription (stati di lifecycle → entitlement derivato + catena di gate)
+
+> File separato: **`seed-subscriptions.sql`** (dipende dal catalogo via FK). Applicato **solo** dove il catalogo
+> esiste — core `@QuarkusTest` (loader allo startup) e dev/E2E (dopo `sync-pricing`). I servizi di sola identità
+> (es. auth-local) applicano **solo** `seed.sql` (accounts/users/invitations), non le subscription.
 
 | Tenant | App | Tier | Stato | Note |
 |---|---|---|---|---|

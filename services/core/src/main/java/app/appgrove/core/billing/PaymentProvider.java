@@ -1,5 +1,7 @@
 package app.appgrove.core.billing;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -31,4 +33,31 @@ public interface PaymentProvider {
             String paddleCustomerId,
             String paddleTransactionId,
             String paddleSubscriptionId) {}
+
+    /**
+     * Sincronizza il <b>catalogo pricing-as-code</b> verso il provider (UC 0022, #09 H37): per ogni
+     * Product/Price <b>crea il mancante</b> e ritorna l'ID Paddle <b>per-ambiente</b>; per gli esistenti
+     * (con ID già noto) lo riconferma. L'immutabilità (mai mutare l'importo di un price vivo), l'archiviazione
+     * dei rimossi e il grandfathering sono applicati a monte dal {@code PricingSyncService}: qui il provider
+     * si limita ad assegnare/riconfermare gli ID. Idempotente: stessa richiesta → stessi ID.
+     */
+    PricingSyncResult syncPricing(PricingSyncRequest request);
+
+    /** Richiesta di sync: i Product desiderati con i loro Price (chiavi interne stabili + eventuale ID già noto). */
+    record PricingSyncRequest(List<ProductSync> products) {}
+
+    /** Un Product (= app): {@code productKey} = slug; {@code existingProductId} non-null se già su Paddle. */
+    record ProductSync(
+            String productKey, String productName, String existingProductId, List<PriceSync> prices) {}
+
+    /** Un Price (= tier × ciclo): {@code priceKey} = {@code slug:tierKey:cycle}; importo in minor units. */
+    record PriceSync(
+            String priceKey,
+            long amountMinorUnits,
+            String currency,
+            String billingCycle,
+            String existingPriceId) {}
+
+    /** Esito: chiave interna stabile → ID Paddle dell'ambiente, per Product e per Price. */
+    record PricingSyncResult(Map<String, String> productIdByKey, Map<String, String> priceIdByKey) {}
 }

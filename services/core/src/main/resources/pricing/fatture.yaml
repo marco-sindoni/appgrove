@@ -1,0 +1,12 @@
+# Fatture — app #1 reale (B2C single-user, UC 0051). Chiave stabile: slug 'fatture'.
+slug: fatture
+name: Fatture
+userModel: single_user
+status: active
+tiers:
+  - key: free
+    name: Fatture Free
+    trialDays: 0
+    limits: { metric: fatture, window: month, cap: 10, type: flow }
+    features: {}
+    prices: []

@@ -22,4 +22,14 @@ public class PaddlePaymentProvider implements PaymentProvider {
                 "PaddlePaymentProvider reale non implementato (fuori scope UC 0023, gated #14): "
                         + "startCheckout è di UC 0024");
     }
+
+    @Override
+    public PricingSyncResult syncPricing(PricingSyncRequest request) {
+        // UC 0022, slice offline: il motore di sync è esercitato contro lo stub. L'integrazione REALE
+        // (REST Product/Price API di Paddle + secret per-ambiente da Secrets Manager, #09 I38) è BLOCCATA
+        // da #14 (nessun account Paddle, sandbox incluso) → tracciata nei "Punti aperti" di UC 0022.
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.syncPricing reale non implementato (gated #14): "
+                        + "il client Paddle è tracciato nei Punti aperti di UC 0022");
+    }
 }
