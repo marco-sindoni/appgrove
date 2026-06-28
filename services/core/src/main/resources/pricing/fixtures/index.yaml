@@ -1,0 +1,8 @@
+# Registro delle app FIXTURE (UC 0022): catalogo sintetico per dev/test/E2E (entitlement matrix, disable-app,
+# stati di subscription). Caricate SOLO con appgrove.pricing.include-fixtures=true (true in %dev/%test,
+# false in prod) → MAI sincronizzate sul vero Paddle. Un'app reale (es. un futuro 'notes') sarebbe un modulo
+# separato con il suo pricing/<slug>.yaml in produzione, non questa fixture.
+apps:
+  - notes
+  - teams
+  - legacy

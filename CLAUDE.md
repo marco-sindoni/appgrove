@@ -51,6 +51,19 @@ modulo sia **eseguibile in locale subito dopo il merge**, senza passi manuali im
 multi-servizio** del dev stack è di **UC 0046** (`dev service` è uno stub dichiarato): finché non esiste, il cablaggio è
 **esplicito** e non si rimanda.
 
+## Esecuzione dei test (non negoziabile)
+
+Lo script **[run-tests.sh](run-tests.sh)** alla root è la **sorgente di verità unica** per "lanciare tutti i test automatici
+di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via npm/vitest), infra (`infra/` via Terraform).
+Esegue tutte le aree, non si ferma al primo errore e ritorna exit-code ≠ 0 se una qualsiasi suite è rossa (`./run-tests.sh`
+per tutto, oppure `./run-tests.sh backend|frontend|infra`).
+
+**Va tenuto costantemente aggiornato**: ogni change che **aggiunge/rimuove un modulo** (`services/<app>`, package frontend) o
+**cambia il comando di test** di un'area DEVE aggiornare `run-tests.sh` nello stesso commit, così che resti l'unico entrypoint
+completo. È parte del **Definition of Done** di `new-change`. Prima del commit, una change che tocca codice eseguibile lancia
+`run-tests.sh` (almeno le aree toccate) e verifica il verde — l'esecuzione per-area dei singoli comandi resta valida, ma
+`run-tests.sh` è il modo canonico per "eseguire tutto".
+
 ## Documenti di decisione
 
 Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso

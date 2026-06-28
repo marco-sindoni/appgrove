@@ -1,0 +1,12 @@
+# Legacy — app multi-user DISABILITATA dall'admin (status inactive → esercita il gate "app abilitata").
+slug: legacy
+name: Legacy
+userModel: multi_user
+status: inactive
+tiers:
+  - key: std
+    name: Legacy Std
+    trialDays: 0
+    limits: { metric: items, window: month, cap: 1000, type: flow }
+    features: {}
+    prices: []

@@ -1,0 +1,6 @@
+# Registro pricing-as-code (UC 0022): app REALI del catalogo, un file <slug>.yaml per app. Queste vanno
+# in produzione e si sincronizzano col vero Paddle. Le app fixture (solo dev/test/E2E) stanno in
+# pricing/fixtures/ e si caricano solo con appgrove.pricing.include-fixtures=true (mai in prod).
+# Registro ESPLICITO finché l'auto-discovery multi-servizio (UC 0046) non lo industrializza.
+apps:
+  - fatture

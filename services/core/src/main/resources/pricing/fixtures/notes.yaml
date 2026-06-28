@@ -1,0 +1,24 @@
+# Notes — app B2C single-user (fixture di catalogo). Chiave stabile: slug 'notes'.
+slug: notes
+name: Notes
+userModel: single_user
+status: active
+tiers:
+  - key: free
+    name: Notes Free
+    trialDays: 14
+    limits: { metric: notes, window: month, cap: 100, type: flow }
+    features: {}
+    prices: []
+  - key: pro
+    name: Notes Pro
+    trialDays: 0
+    limits: { metric: notes, window: month, cap: 10000, type: flow }
+    features: {}
+    prices:
+      - billingCycle: monthly
+        amount: 900
+        currency: EUR
+      - billingCycle: annual
+        amount: 9000
+        currency: EUR

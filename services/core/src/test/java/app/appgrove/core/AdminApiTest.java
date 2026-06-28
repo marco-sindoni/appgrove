@@ -27,7 +27,8 @@ class AdminApiTest {
 
     private static final String ADMIN = "/api/platform/v1/admin";
     private static final String PLATFORM_TENANT = "a0000000-0000-4000-8000-000000000003";
-    private static final String TEAMS_APP = "d0000000-0000-4000-8000-000000000002";
+    // catalogo prodotto dal loader pricing-as-code (UC 0022): UUID deterministico CatalogIds('app:teams').
+    private static final String TEAMS_APP = "1c4ea96d-bc57-3109-9c83-0933a3553779";
 
     @Inject
     AgroalDataSource ds;
@@ -38,8 +39,11 @@ class AdminApiTest {
 
     @BeforeEach
     void seed() throws Exception {
-        Path seed = Path.of(System.getProperty("user.dir")).getParent().getParent().resolve("dev/seed/seed.sql");
-        String sql = Files.readString(seed);
+        // identità + subscription (catalogo presente via loader allo startup → FK risolvono)
+        Path root = Path.of(System.getProperty("user.dir")).getParent().getParent();
+        String sql = Files.readString(root.resolve("dev/seed/seed.sql"))
+                + "\n"
+                + Files.readString(root.resolve("dev/seed/seed-subscriptions.sql"));
         try (Connection c = ds.getConnection(); Statement st = c.createStatement()) {
             st.execute(sql);
         }
