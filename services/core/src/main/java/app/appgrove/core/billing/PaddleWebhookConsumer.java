@@ -11,9 +11,11 @@ import org.jboss.logging.Logger;
  * modo idempotente. In dev il drain è schedulato (poller); nei test lo scheduler è disabilitato e il
  * drain è invocato esplicitamente (deterministico).
  *
- * <p>Rigore <b>Minimo</b> (UC 0023): HMAC (a monte, ingest) + idempotenza (upsert). La <b>dedup</b> su
- * {@code event_id}, l'<b>out-of-order</b> via {@code occurred_at} e <b>DLQ + allarmi</b> sono di UC 0025
- * (qui un errore lascia il messaggio in coda, senza DLQ).
+ * <p>Hardening UC 0025: dedup su {@code event_id}, out-of-order via {@code occurred_at} e set eventi
+ * completo sono gestiti nel {@link SubscriptionWriter} (transazionale). Qui il consumer governa il
+ * <b>redrive/DLQ</b>: su esito andato a buon fine (applicato, duplicato o stale) conferma ed elimina il
+ * messaggio; su <b>errore</b> NON conferma → la coda lo ri-consegna e, dopo {@code maxReceiveCount}
+ * (ElasticMQ/SQS), lo instrada in <b>DLQ</b>. L'<b>allarme</b> sulla DLQ è cloud (UC 0025 "Punti aperti").
  */
 @ApplicationScoped
 public class PaddleWebhookConsumer {
@@ -41,17 +43,19 @@ public class PaddleWebhookConsumer {
         }
     }
 
-    /** Elabora i messaggi disponibili; ritorna quanti ne ha applicati. Pubblico per i test. */
+    /** Elabora i messaggi disponibili; ritorna quanti ne ha confermati. Pubblico per i test. */
     public int drain() {
         int processed = 0;
         for (WebhookQueue.Message message : queue.receive(BATCH)) {
             try {
-                writer.apply(PaddleWebhookEvent.from(mapper, message.body()));
-                queue.delete(message);
+                SubscriptionWriter.Outcome outcome = writer.apply(PaddleWebhookEvent.from(mapper, message.body()));
+                queue.delete(message); // esito di successo (applicato/duplicato/stale) → conferma
                 processed++;
+                LOG.debugf("webhook.consume outcome=%s", outcome);
             } catch (RuntimeException e) {
-                // UC 0023 (Minimo): logga e lascia il messaggio in coda. Retry/DLQ/allarme → UC 0025.
-                LOG.errorf(e, "webhook.consume errore di elaborazione → messaggio non confermato");
+                // Errore di elaborazione: NON confermare → redrive della coda → dopo maxReceiveCount → DLQ.
+                // Log strutturato (invariante #4: MDC valorizzato dal writer/commons) come aggancio allarme.
+                LOG.errorf(e, "webhook.consume errore di elaborazione → messaggio non confermato (redrive/DLQ)");
             }
         }
         return processed;

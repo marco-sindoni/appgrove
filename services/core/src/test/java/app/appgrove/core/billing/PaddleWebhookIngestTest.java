@@ -63,6 +63,18 @@ class PaddleWebhookIngestTest {
         assertEquals(0, queue.size());
     }
 
+    @Test
+    void replayedSignatureIsRejected() {
+        String body = webhook(UUID.randomUUID());
+        long oneHourAgo = java.time.Instant.now().getEpochSecond() - 3600;
+        given().contentType(ContentType.JSON)
+                .header("Paddle-Signature", signature.sign(body, oneHourAgo))
+                .body(body)
+                .when().post(PATH)
+                .then().statusCode(401);
+        assertEquals(0, queue.size(), "firma replay (ts fuori finestra) → niente processing");
+    }
+
     private static String webhook(UUID appId) {
         return """
                 {"event_id":"evt_test","event_type":"subscription.activated","occurred_at":"2026-06-27T10:00:00Z",

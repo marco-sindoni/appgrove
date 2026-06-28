@@ -77,3 +77,30 @@ _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento
   aggiungere); (d) **DLQ + allarmi** (#08); (e) set eventi completo. Il consumer minimo di 0018 va **irrobustito**, non riscritto.
   Lo **stub-emettitore** (0018) sa già generare firma errata/duplicato/out-of-order: qui si completa la **gestione** lato consumer
   per chiudere l'**L1 esaustivo**. **Proprietario**: UC 0025.
+
+### Stato dopo la change `0020-use-case-0025-…` (hardening APPLICATIVO completato)
+
+La change **0020** ha implementato in `services/core` (tutto verificabile in locale, L1 esaustivo verde):
+**firma reale `ts=…;h1=…` + anti-replay**; **dedup su `event_id`** (migrazione `V3`, tabella `platform.webhook_event`, claim
+transazionale autoritativo nel consumer); **out-of-order via `occurred_at`** (colonna `subscription.last_event_occurred_at`,
+guardia nel `DO UPDATE`); **set eventi completo** (created/activated/updated/canceled/paused/resumed, transaction.completed→rinnovo,
+payment_failed/disputed→`past_due`, customer.*→`accounts.paddle_customer_id`) con mappatura autoritativa lato consumer
+(`WebhookEventMapping`); **redrive→DLQ** a livello consumer (non-ack su errore) + simulazione DLQ nei test. **L1**: `WebhookSignatureTest`,
+`WebhookHardeningTest`, `PaddleWebhookIngestTest`, `SubscriptionPipelineTest`.
+
+**Resta differito (proprietà UC 0025) — packaging CLOUD, gated sulle fondamenta infra (0003/0004/0006/0055), `phased-env-activation`:**
+- **Lambda di ingest** dietro **API Gateway** + **packaging Terraform** (istanziando il modulo `microsaas_app`, invariante #3 —
+  oggi `infra/` non ha `.tf`). Il codice locale `WebhookIngestService`/`PaddleWebhookResource` è già il corpo della futura Lambda.
+- **Secret per-ambiente in Secrets Manager** (signing secret + `webhook-max-age`): oggi in config `%dev` con valore di test (#09 I38).
+- **DLQ reale (SQS) + allarme CloudWatch** sulla profondità DLQ (#08): oggi la DLQ è ElasticMQ (`dev/elasticmq.conf`, maxReceiveCount=5)
+  e l'allarme è solo un log strutturato d'errore lato consumer.
+- **Dedup best-effort all'ingest (pre-filtro nella Lambda)**: ottimizzazione cloud; la correttezza è già garantita dal claim
+  transazionale nel consumer.
+
+**Differito ad altri UC (tracciato qui per non perderlo):**
+- **Semantica del ciclo di vita** (dunning/grace, accesso fino a fine periodo, suspend-vs-`past_due` su chargeback, gating
+  downgrade `flow`/`stock`) → **UC 0026**. La change 0020 porta solo `subscription` allo **stato** corretto.
+- **Enforcement entitlement + quota SPI** (derivazione entitlement, gate 402/429) → **UC 0027**.
+- **Validazione del contratto firma/eventi reali Paddle** (formato `ts/h1` definitivo, secret reali, shape eventi) → **L3 smoke**,
+  **UC 0029** (gated #14 + account attivato). Qui è validato solo contro payload sintetici.
+- **Creazione lazy del customer + `custom_data` server-side al checkout** (l'altra metà di `paddle_customer_id`) → **UC 0024**.

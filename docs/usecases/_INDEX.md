@@ -56,7 +56,7 @@ AWS finché il prodotto non gira offline.
 | 16 | [0052](11-apps/0052-app1-modulo-frontend.md) | App #1 frontend module | Apps | 0020, 0051 | ✅ |
 | 17 | [0023](07-payments/0023-stub-paddle-locale.md) | Stub Paddle locale (port PaymentProvider, webhook sintetici) | Payments | 0008, 0013 | ✅ |
 | 18 | [0022](07-payments/0022-pricing-as-code-sincronizzazione.md) | Pricing-as-code + sync pipeline | Payments | 0013, 0023 · ☁0005 | ✅ |
-| 19 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | 🟡 |
+| 19 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | ✅ |
 | 20 | [0026](07-payments/0026-ciclo-vita-abbonamento.md) | Ciclo di vita subscription | Payments | 0025, 0013 | ⬜ |
 | 21 | [0024](07-payments/0024-checkout.md) | Checkout (overlay, polling) | Payments | 0023, 0022, 0025, 0020 | ⬜ |
 | 22 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ⬜ |
@@ -124,3 +124,7 @@ AWS finché il prodotto non gira offline.
   l'ordine autorevole è questa tabella. Allinearli è un follow-up opzionale (un change dedicato).
 - `0045` è ✅ perché la skill `new-usecase` è già presente in `.claude/skills/`; `0044/0008/0009` sono ✅
   per le change già mergiate in `main`.
+- **Evoluzione post-implementazione tracciata** (non un nuovo UC): la change `0020-use-case-0025-…` ha
+  introdotto `webhook_event` + DLQ; l'**observability read-only** di questi (eventi/esito/profondità DLQ +
+  drift Paddle) nella **console admin** è tracciata come punto aperto in
+  [UC 0021](06-frontend/0021-console-admin-spa.md) (#09 H34, #08) — UC già ✅, evoluzione futura.
