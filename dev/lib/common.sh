@@ -54,16 +54,24 @@ require_cmd() { command -v "$1" >/dev/null 2>&1; }
 # wrapper compose con file ed env precompilati
 compose() { docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"; }
 
+# Verità unica sullo stato dell'engine: risponde il daemon docker? (`colima status` è inaffidabile —
+# può dare "running" mentre il socket docker è morto, o fallire con "empty value": non lo usiamo.)
 engine_up() { docker info >/dev/null 2>&1; }
+wait_engine() { local t="${1:-60}" i=0; until engine_up; do i=$((i + 1)); [ "$i" -ge "$t" ] && return 1; sleep 1; done; return 0; }
 
+# Assicura che il Docker engine (Colima) sia attivo e RAGGIUNGIBILE. Idempotente: no-op se già su.
+# Gestisce sia "VM giù" (→ colima start) sia "VM su ma daemon docker morto" (→ colima restart).
 ensure_engine() {
   engine_up && return 0
-  if require_cmd colima; then
-    step "Docker daemon non attivo: avvio Colima..."
-    colima start
-  else
-    die "Docker daemon non raggiungibile e Colima non installato (vedi: ./dev.sh doctor)."
+  require_cmd colima || die "Docker daemon non raggiungibile e Colima non installato (vedi: ./dev.sh doctor)."
+  step "Docker engine non risponde → avvio Colima…"
+  colima start >/dev/null 2>&1 || true
+  if ! wait_engine 30; then
+    step "engine ancora KO (VM su ma daemon morto?) → colima restart…"
+    colima restart >/dev/null 2>&1 || die "colima restart fallito (vedi: colima restart)"
+    wait_engine 60 || die "Docker engine non pronto dopo colima restart (vedi: colima status)"
   fi
+  ok "Docker engine pronto (Colima)"
 }
 
 ensure_env() {
