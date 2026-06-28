@@ -1,368 +1,5 @@
 {
   "openapi" : "3.1.0",
-  "components" : {
-    "schemas" : {
-      "AccountDetailView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "users" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/AdminUserView"
-            }
-          },
-          "entitlements" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/EntitlementCell"
-            }
-          }
-        }
-      },
-      "AccountView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "paddleCustomerId" : {
-            "type" : "string"
-          }
-        }
-      },
-      "AdminAccountView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "users" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "activeSubscriptions" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }
-      },
-      "AdminUserView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "email" : {
-            "type" : "string"
-          },
-          "displayName" : {
-            "type" : "string"
-          },
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "tenantId" : {
-            "type" : "string"
-          },
-          "tenantName" : {
-            "type" : "string"
-          }
-        }
-      },
-      "AppView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "slug" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "userModel" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          }
-        }
-      },
-      "BillingRow" : {
-        "type" : "object",
-        "properties" : {
-          "tenantId" : {
-            "type" : "string"
-          },
-          "tenantName" : {
-            "type" : "string"
-          },
-          "appSlug" : {
-            "type" : "string"
-          },
-          "appName" : {
-            "type" : "string"
-          },
-          "tierKey" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "currentPeriodStart" : {
-            "type" : "string"
-          },
-          "currentPeriodEnd" : {
-            "type" : "string"
-          }
-        }
-      },
-      "CreateInvitation" : {
-        "type" : "object",
-        "required" : [ "email", "role" ],
-        "properties" : {
-          "email" : {
-            "type" : "string",
-            "pattern" : "\\S",
-            "maxLength" : 320
-          },
-          "role" : {
-            "type" : "string",
-            "pattern" : "\\S"
-          }
-        }
-      },
-      "EntitlementCell" : {
-        "type" : "object",
-        "properties" : {
-          "tenantId" : {
-            "type" : "string"
-          },
-          "tenantName" : {
-            "type" : "string"
-          },
-          "appId" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "appSlug" : {
-            "type" : "string"
-          },
-          "appName" : {
-            "type" : "string"
-          },
-          "subscriptionStatus" : {
-            "type" : "string"
-          },
-          "appActive" : {
-            "type" : "boolean"
-          },
-          "entitled" : {
-            "type" : "boolean"
-          }
-        }
-      },
-      "Instant" : {
-        "type" : "string",
-        "format" : "date-time",
-        "examples" : [ "2022-03-10T16:15:50Z" ]
-      },
-      "InvitationView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "email" : {
-            "type" : "string"
-          },
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "expiresAt" : {
-            "$ref" : "#/components/schemas/Instant"
-          },
-          "token" : {
-            "type" : "string"
-          }
-        }
-      },
-      "OverviewView" : {
-        "type" : "object",
-        "properties" : {
-          "accounts" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "users" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "activeSubscriptions" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "disabledApps" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }
-      },
-      "PageInvitationView" : {
-        "type" : "object",
-        "properties" : {
-          "content" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/InvitationView"
-            }
-          },
-          "page" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }
-      },
-      "PageUserView" : {
-        "type" : "object",
-        "properties" : {
-          "content" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/UserView"
-            }
-          },
-          "page" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "size" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "totalElements" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "totalPages" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        }
-      },
-      "UUID" : {
-        "type" : "string",
-        "format" : "uuid",
-        "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
-      },
-      "UpdateAccount" : {
-        "type" : "object",
-        "required" : [ "name" ],
-        "properties" : {
-          "name" : {
-            "type" : "string",
-            "pattern" : "\\S",
-            "maxLength" : 255
-          }
-        }
-      },
-      "UpdateAppStatus" : {
-        "type" : "object",
-        "required" : [ "status" ],
-        "properties" : {
-          "status" : {
-            "type" : "string",
-            "pattern" : "\\S"
-          }
-        }
-      },
-      "UpdateUser" : {
-        "type" : "object",
-        "properties" : {
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "displayName" : {
-            "type" : "string",
-            "maxLength" : 255
-          }
-        }
-      },
-      "UserView" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "email" : {
-            "type" : "string"
-          },
-          "displayName" : {
-            "type" : "string"
-          },
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "tenantId" : {
-            "type" : "string"
-          }
-        }
-      }
-    },
-    "securitySchemes" : {
-      "SecurityScheme" : {
-        "type" : "http",
-        "scheme" : "bearer",
-        "bearerFormat" : "JWT",
-        "description" : "Authentication"
-      }
-    }
-  },
   "paths" : {
     "/api/platform/v1/accounts/me" : {
       "patch" : {
@@ -955,6 +592,397 @@
         "security" : [ {
           "SecurityScheme" : [ "owner", "admin" ]
         } ]
+      }
+    },
+    "/api/platform/v1/webhooks/paddle" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "Paddle-Signature",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "string"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Receive",
+        "tags" : [ "Paddle Webhook Resource" ]
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "AccountDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserView"
+            }
+          },
+          "entitlements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntitlementCell"
+            }
+          }
+        }
+      },
+      "AccountView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "paddleCustomerId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AdminAccountView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "users" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "activeSubscriptions" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "AdminUserView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          }
+        }
+      },
+      "AppView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "userModel" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        }
+      },
+      "BillingRow" : {
+        "type" : "object",
+        "properties" : {
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "tierKey" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "currentPeriodStart" : {
+            "type" : "string"
+          },
+          "currentPeriodEnd" : {
+            "type" : "string"
+          }
+        }
+      },
+      "CreateInvitation" : {
+        "type" : "object",
+        "required" : [ "email", "role" ],
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 320
+          },
+          "role" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        }
+      },
+      "EntitlementCell" : {
+        "type" : "object",
+        "properties" : {
+          "tenantId" : {
+            "type" : "string"
+          },
+          "tenantName" : {
+            "type" : "string"
+          },
+          "appId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "subscriptionStatus" : {
+            "type" : "string"
+          },
+          "appActive" : {
+            "type" : "boolean"
+          },
+          "entitled" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "Instant" : {
+        "type" : "string",
+        "format" : "date-time",
+        "examples" : [ "2022-03-10T16:15:50Z" ]
+      },
+      "InvitationView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "token" : {
+            "type" : "string"
+          }
+        }
+      },
+      "OverviewView" : {
+        "type" : "object",
+        "properties" : {
+          "accounts" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "users" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "activeSubscriptions" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "disabledApps" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "PageInvitationView" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/InvitationView"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "PageUserView" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserView"
+            }
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalElements" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "totalPages" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "UUID" : {
+        "type" : "string",
+        "format" : "uuid",
+        "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      },
+      "UpdateAccount" : {
+        "type" : "object",
+        "required" : [ "name" ],
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 255
+          }
+        }
+      },
+      "UpdateAppStatus" : {
+        "type" : "object",
+        "required" : [ "status" ],
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        }
+      },
+      "UpdateUser" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string",
+            "maxLength" : 255
+          }
+        }
+      },
+      "UserView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "tenantId" : {
+            "type" : "string"
+          }
+        }
+      }
+    },
+    "securitySchemes" : {
+      "SecurityScheme" : {
+        "type" : "http",
+        "scheme" : "bearer",
+        "bearerFormat" : "JWT",
+        "description" : "Authentication"
       }
     }
   },

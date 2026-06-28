@@ -67,7 +67,13 @@ dato carta (MoR). Manifest: trattamento billing/abbonamento (base contratto); fi
 
 _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
-- **Entità JPA `subscription`.** UC 0013 crea solo il **DDL Flyway** della tabella `subscription` (scope change 0007:
-  niente mapping speculativo; la subscription è scritta dal consumer webhook, non da editor runtime). L'**entità JPA +
-  repository** di `subscription` va modellata **qui** (UC 0025), primo consumatore che la scrive; UC 0027 la legge per
-  l'entitlement derivato. **Proprietario**: UC 0025 (lettura entitlement: UC 0027).
+- **Entità JPA `subscription` — SPOSTATA a UC 0023 (change `0018`).** ~~Va modellata qui~~. Il gate di chiarimento della change
+  `0018-use-case-0023-…` ha scelto **Approach A**: l'entità JPA `Subscription` + repository (tenant-scoped, `@TenantId`) e un
+  **consumer locale minimo** (HMAC + idempotenza) **nascono in 0018**, perché lo stub 0023 deve mutare davvero `subscription`
+  offline (DoD 0023). UC 0027 la legge per l'entitlement derivato. **Nuovo proprietario dell'entità**: UC 0023 (change 0018).
+- **Ri-scopo di UC 0025 → hardening cloud/prod (residuo dopo la pipeline locale minima di 0018).** Restano a UC 0025:
+  (a) **Lambda ingest** dietro API GW + packaging **Terraform**; (b) **dedup su `event_id`** (richiede una migrazione: tabella
+  `webhook_event` o colonna dedicata — il DDL attuale non ce l'ha); (c) **out-of-order via `occurred_at`** (idem, colonna da
+  aggiungere); (d) **DLQ + allarmi** (#08); (e) set eventi completo. Il consumer minimo di 0018 va **irrobustito**, non riscritto.
+  Lo **stub-emettitore** (0018) sa già generare firma errata/duplicato/out-of-order: qui si completa la **gestione** lato consumer
+  per chiudere l'**L1 esaustivo**. **Proprietario**: UC 0025.

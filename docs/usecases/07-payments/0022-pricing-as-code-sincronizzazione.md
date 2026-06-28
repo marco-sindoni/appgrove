@@ -71,3 +71,7 @@ _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento
   catalogo (decisione di scope della change 0007: niente mapping speculativo, #09 H34 = nessun editor runtime). Le
   **entità JPA + repository** del catalogo vanno modellate **qui** (UC 0022), che è il primo consumatore reale (sync
   pricing-as-code le scrive). **Proprietario**: UC 0022.
+- **Mapping `paddle_price_id` → `app_tier_id` per lo stub locale.** Tracciato dalla change `0018-use-case-0023-…`: lo stub
+  Paddle (UC 0023), negli scenari upgrade/downgrade, passa per ora l'`app_tier_id` target **esplicito** nei `custom_data`
+  perché il mapping `paddle_price_id`→tier richiede le **entità JPA del catalogo** (sopra). Quando UC 0022 le fornisce, lo stub
+  potrà risolvere il tier dal `paddle_price_id` **come in prod**. **Proprietario** del mapping: UC 0022.

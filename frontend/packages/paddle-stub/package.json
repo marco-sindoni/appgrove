@@ -1,0 +1,29 @@
+{
+  "name": "@appgrove/paddle-stub",
+  "version": "0.1.0",
+  "description": "Fake Paddle.js per dev/test (UC 0023): stessa interfaccia dell'overlay, emette checkout.completed sintetico. La schermata di checkout reale è UC 0024.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "files": ["dist", "src"],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0",
+    "vite-plugin-dts": "^5.0.3",
+    "vitest": "^4.1.9"
+  }
+}
