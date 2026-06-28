@@ -1,35 +1,44 @@
 #!/usr/bin/env bash
-# app-stop.sh — ferma le applicazioni appgrove avviate da app-start.sh (auth-local, core, fatture, SPA).
+# app-stop.sh — ferma TUTTO lo stack appgrove avviato da app-start.sh.
+#
+# Di default spegne sia le applicazioni (auth-local, core, fatture, SPA) SIA lo stack Compose
+# (Postgres, Caddy, Mailpit, MinIO, ElasticMQ). I dati restano (i volumi NON vengono cancellati).
 #
 # Uso:
-#   ./app-stop.sh           # ferma solo le app (auth-local :9100, core :8080, SPA :5173)
-#   ./app-stop.sh --infra   # ferma anche lo stack infra (`dev down`: Postgres/Caddy/Mailpit…)
+#   ./app-stop.sh             # ferma TUTTO (app + stack Compose; dati preservati)
+#   ./app-stop.sh --apps-only # ferma solo le app host (lascia su Postgres/Caddy/…)
+#   ./app-stop.sh --wipe      # ferma tutto E cancella i volumi (reset dati: Postgres/MinIO/code)
 #
-# Stop "per porta" (robusto su macOS): termina qualunque processo ascolti su quelle porte,
+# Stop "per porta" (robusto su macOS): termina qualunque processo ascolti sulle porte note,
 # inclusi i figli java spawnati da `mvn quarkus:dev`.
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RUN_DIR="$REPO_ROOT/dev/.run"
+DEV_DIR="$REPO_ROOT/dev"
+export REPO_ROOT DEV_DIR
+RUN_DIR="$DEV_DIR/.run"
 
-INFRA=0
+# helper condivisi (ok/warn/err, compose, auth_local_stop, AUTH_PID/AUTH_PORT; carica dev/.env)
+# shellcheck source=dev/lib/common.sh
+source "$DEV_DIR/lib/common.sh"
+
+APPS_ONLY=0; WIPE=0
 for arg in "$@"; do
   case "$arg" in
-    --infra) INFRA=1 ;;
-    -h|--help) sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "opzione sconosciuta: $arg" >&2; exit 2 ;;
+    --apps-only) APPS_ONLY=1 ;;
+    --wipe|-v)   WIPE=1 ;;
+    --infra)     : ;; # retrocompat: lo stack ora si ferma di default (no-op)
+    -h|--help)   sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) err "opzione sconosciuta: $arg"; exit 2 ;;
   esac
 done
 
-ok()   { printf '\033[0;32m✓ %s\033[0m\n' "$*"; }
-warn() { printf '\033[0;33m! %s\033[0m\n' "$*"; }
-
+# stop_port <name> <port> — termina chi ascolta sulla porta (TERM, poi KILL); ripulisce il pidfile.
 stop_port() {
-  local name="$1" port="$2"
-  local pids
+  local name="$1" port="$2" pids
   pids="$(lsof -ti "tcp:$port" 2>/dev/null || true)"
   if [ -z "$pids" ]; then
-    warn "$name: niente in ascolto su :$port"
+    info "  $name: niente su :$port"
   else
     # shellcheck disable=SC2086
     kill $pids 2>/dev/null || true
@@ -42,13 +51,25 @@ stop_port() {
   rm -f "$RUN_DIR/$name.pid"
 }
 
-stop_port auth-local 9100
+step "Stop applicazioni host"
+auth_local_stop 2>/dev/null || true   # pidfile dedicato (dev/.auth-local.pid)
+stop_port auth-local "${AUTH_PORT:-9100}"
 stop_port core 8080
 stop_port fatture 8081
 stop_port backoffice 5173
 stop_port admin 5174
 
-if [ "$INFRA" -eq 1 ]; then
-  printf '\n'
-  "$REPO_ROOT/dev/dev" down
+if [ "$APPS_ONLY" -eq 1 ]; then
+  ok "App fermate. Stack Compose lasciato attivo (--apps-only)."
+  exit 0
+fi
+
+step "Stop stack Compose"
+if [ "$WIPE" -eq 1 ]; then
+  warn "--wipe: cancello anche i volumi (Postgres/MinIO/code) → reset dati"
+  compose down -v || warn "compose down -v fallito"
+  ok "stack fermato e volumi cancellati"
+else
+  compose down || warn "compose down fallito"
+  ok "stack fermato (volumi/dati preservati)"
 fi
