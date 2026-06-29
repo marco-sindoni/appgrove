@@ -93,6 +93,10 @@ class AdminApiTest {
                 .body("findAll { it.tenantName == 'Acme Corp' && it.appSlug == 'teams' }.entitled", hasItem(true))
                 // Acme→legacy: subscription active MA app legacy inactive → NON entitled (gate 2)
                 .body("findAll { it.tenantName == 'Acme Corp' && it.appSlug == 'legacy' }.entitled", hasItem(false))
+                // Acme→notes: subscription past_due (dunning/grace) + app notes active → entitled (UC 0026, #09 E29)
+                .body("findAll { it.tenantName == 'Acme Corp' && it.appSlug == 'notes' }.entitled", hasItem(true))
+                // Bob→notes: subscription trialing + app notes active → entitled
+                .body("findAll { it.tenantName == 'Bob Personal' && it.appSlug == 'notes' }.entitled", hasItem(true))
                 // Bob→teams: subscription canceled → NON entitled
                 .body("findAll { it.tenantName == 'Bob Personal' && it.appSlug == 'teams' }.entitled", hasItem(false));
     }

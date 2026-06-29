@@ -73,3 +73,10 @@ billing/quota (base contratto). Diritti GDPR sempre esercitabili (UC 0032/0033).
   `platform.subscription`, fuori dall'isolamento di schema dell'app (`app_fatture`), quindi è
   enforcement di piattaforma di competenza di questo UC. Il seam è già pronto: basta sostituire il
   provider `QuotaLimitSource` senza toccare il codice di `fatture`.
+- **Read-model entitlement già disponibile** *(da UC 0026, change `0021-use-case-0026-…`)*. La mappa
+  status→accesso (gate 3) è ora la *fonte di verità unica* `SubscriptionStatus.grantsAccess()` e la
+  semantica lifecycle è derivata da `SubscriptionLifecycle` (`access`/`accessUntil`, fasi
+  TRIAL/ACTIVE/CANCELING/GRACE/ENDED): l'enforcement 402 di questo UC deve **consumare** quel
+  building block, non ri-derivare la regola. *Differito a questo UC:* la **natura `stock`** del gate
+  (downgrade gated se lo stato eccede il target) — oggi **non esiste** alcuna nozione di metrica
+  flow/stock nel codice; va introdotta qui (e/o in UC 0054) insieme al gate stato/grace.

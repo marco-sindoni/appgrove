@@ -59,3 +59,15 @@ Paddle** (MoR). Manifest: billing/abbonamento (base contratto); fatture/fiscale 
   2. Pulsante portal Paddle (pagamento+fatture) generato server-side.
   3. Gating flow/stock rispettato; diritti GDPR disponibili anche a subscription scaduta.
   4. L2 E2E + integration + security verdi.
+
+## Punti aperti / decisioni differite
+
+- **Persistenza del cambio tier schedulato (downgrade a fine periodo)** *(owner: questo UC 0028)*. La
+  change `0021-use-case-0026-…` ha implementato la semantica di accesso del ciclo di vita (mappa
+  status→accesso + `SubscriptionLifecycle`), ma **non** la *surfacing* del downgrade schedulato "attivo
+  dal giorno X verso il tier Y": a livello di accesso un downgrade schedulato è identico a `ACTIVE`
+  (tier corrente fino a fine periodo), quindi la sola derivazione non basta. *Cosa manca:* persistere il
+  cambio schedulato (es. colonna `subscription.scheduled_tier_id` + `scheduled_change_at`) e mapparlo
+  dall'evento webhook `subscription.updated` (oggi il consumer di UC 0025 mappa solo status/tier
+  corrente/period/cancel_at/trial_end), così la UX self-service può mostrarlo. *Perché differito:* serve
+  un consumatore (il portale self-service di questo UC) e tocca schema+pipeline → matura qui, non in 0026.
