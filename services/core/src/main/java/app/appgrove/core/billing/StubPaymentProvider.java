@@ -21,11 +21,11 @@ public class StubPaymentProvider implements PaymentProvider {
 
     @Override
     public CheckoutInit startCheckout(StartCheckoutCommand command) {
-        return new CheckoutInit(
-                "chk_" + token(),
-                "ctm_" + token(),
-                "txn_" + token(),
-                "sub_" + token());
+        // Customer lazy (#09 C15): se l'account ne ha già uno lo riusa, altrimenti ne "crea" uno finto.
+        String customerId = command.existingPaddleCustomerId() != null
+                ? command.existingPaddleCustomerId()
+                : "ctm_" + token();
+        return new CheckoutInit("chk_" + token(), customerId, "txn_" + token(), "sub_" + token());
     }
 
     /**
