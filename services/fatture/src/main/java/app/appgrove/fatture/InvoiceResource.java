@@ -1,5 +1,6 @@
 package app.appgrove.fatture;
 
+import app.appgrove.commons.entitlement.RequiresEntitlement;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.fatture.InvoiceDtos.CreateInvoice;
@@ -32,9 +33,14 @@ import java.util.UUID;
 /**
  * API fatture del tenant. Tenant-scoped automatico (discriminator): ogni query filtra
  * {@code WHERE tenant_id = ?} senza codice manuale. La creazione consuma quota (metrica {@code fatture}).
+ *
+ * <p>{@code @RequiresEntitlement} (UC 0027): la risorsa passa dal gate entitlement (402) — accesso negato
+ * (subscription canceled/paused, app disabilitata) → 402 prima ancora del gate quota. L'endpoint di stato
+ * quota ({@code QuotaResource}) resta volutamente <b>fuori</b> dal gate (informativo).
  */
 @Path("/api/fatture/v1/invoices")
 @Authenticated
+@RequiresEntitlement
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class InvoiceResource {

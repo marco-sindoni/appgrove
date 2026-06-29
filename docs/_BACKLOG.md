@@ -2,6 +2,28 @@
 
 Lista dei temi sollevati durante le sessioni di decisione, da affrontare nell'argomento giusto (o in uno dedicato).
 
+## Architettura di piattaforma — accoppiamento inter-servizio app↔core (richiesto 2026-06-29) — GRANDE 🏛️
+
+Sollevato durante UC 0027 (change `0023-use-case-0027-…`, enforcement entitlement/quota). L'enforcement fine gira
+**dentro l'app** (`fatture`), ma la verità di entitlement (accesso + tetti di quota) vive in `platform.subscription` /
+`platform.app_tier.limits`, di proprietà di **core**. Per sbloccare l'enforcement reale **adesso** (local-first, un'app)
+abbiamo scelto la via **semplice e sincrona**: core espone `GET /api/platform/v1/me/entitlements` e l'app lo **chiama via
+HTTP server-to-server** (propagando il JWT) a ogni gate 402 / risoluzione cap quota.
+
+**Questo è, a regime, un antipattern** (sollevato dall'utente): la chiamata sincrona `app → core` accoppia ogni app al
+**ciclo di vita e alla disponibilità** di core (core giù → l'app non sa gatekeepare), crea un **fan-in sincrono** che
+peggiora con ogni nuova app (UC 0054, 0046…) e mette core sul **path caldo** di ogni request applicativa.
+
+**Target pulito = event-driven / disaccoppiato.** L'ossatura esiste già (pipeline webhook → SQS → consumer idempotente +
+`webhook_event`, UC 0025): core **pubblica i cambi di lifecycle subscription** su uno **stream/bus interno**; ogni app
+mantiene una **proiezione locale read-only di entitlement+limits** nel proprio schema `app_<id>` e fa l'enforcement
+**leggendo solo dati propri** — niente chiamata sincrona, niente lettura cross-schema. Da valutare: bus (SNS/SQS,
+EventBridge, …), formato evento, replay/bootstrap della proiezione, consistenza eventuale vs gate (finestra di staleness
+accettabile sull'accesso/quota), e l'industrializzazione della proiezione in `new-application` (UC 0046) / `microsaas_app`
+(UC 0004). **Owner futuro:** decisione di piattaforma trasversale (non un singolo UC); rivisitare prima della 2ª/3ª app o
+quando il fan-in sincrono diventa un costo reale. Il seam attuale (`QuotaLimitSource` sostituibile + client REST isolato in
+`fatture`) è progettato per essere rimpiazzato dalla proiezione locale **senza toccare il codice di dominio dell'app**.
+
 ## Compliance & privacy (GDPR) — richiesto 2026-06-14
 Probabilmente merita un **documento dedicato** (nuova area, es. `13-compliance-privacy.md`). Da coprire:
 - **GDPR**: basi giuridiche, data retention, diritto all'oblio/erasure (già impostato a livello dati in [05-persistenza-dati](05-persistenza-dati.md) §12), portabilità, DPA.

@@ -71,3 +71,12 @@ Paddle** (MoR). Manifest: billing/abbonamento (base contratto); fatture/fiscale 
   dall'evento webhook `subscription.updated` (oggi il consumer di UC 0025 mappa solo status/tier
   corrente/period/cancel_at/trial_end), così la UX self-service può mostrarlo. *Perché differito:* serve
   un consumatore (il portale self-service di questo UC) e tocca schema+pipeline → matura qui, non in 0026.
+
+- **UX azionabile per i gate di enforcement (402/403/429)** _(tracciato dalla change `0023-use-case-0027-…`)_. UC 0027 ha
+  reso reale il **confine di enforcement lato backend** (gate 402 entitlement/stato, 429 quota, 403 ruolo) + l'endpoint
+  `/me/entitlements`, ma il frontend è **solo UX** (#09 F30): mancano i **banner azionabili** che traducono questi esiti —
+  "limite raggiunto, fai upgrade" (429), "abbonamento scaduto: **riattiva oppure esporta/elimina** i tuoi dati" (402,
+  #09 F31, ribadisce che i dati restano esercitabili) — e l'aggancio ai flussi di **riattivazione/upgrade**. *Perché qui:*
+  è UX di self-service billing, naturale nel portale cliente; UC 0027 ha lasciato solo il **wiring del registry** (app
+  acquistata compare in sidebar) e le risposte problem+json con i messaggi. *Cosa manca:* intercettare 402/429 nel client
+  API e mostrare i banner/CTA con i link a checkout/portal.

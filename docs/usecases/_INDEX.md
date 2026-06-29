@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0017** (flussi auth UI, in corso — change `0012`); poi **UC 0059** (gestione membri & inviti)
+## 👉 Prossimo da implementare: **UC 0028** (customer portal self-service); poi **UC 0029** (test pagamenti L1/L2/L3)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -59,7 +59,7 @@ AWS finché il prodotto non gira offline.
 | 19 | [0025](07-payments/0025-pipeline-webhook.md) | Pipeline webhook (ingest → SQS → consumer idempotente) | Payments | 0013, 0023 | ✅ |
 | 20 | [0026](07-payments/0026-ciclo-vita-abbonamento.md) | Ciclo di vita subscription | Payments | 0025, 0013 | ✅ |
 | 21 | [0024](07-payments/0024-checkout.md) | Checkout (overlay, polling) | Payments | 0023, 0022, 0025, 0020 | ✅ |
-| 22 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ⬜ |
+| 22 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ✅ |
 | 23 | [0028](07-payments/0028-portale-cliente-self-service.md) | Customer portal self-service | Payments | 0026, 0020 | ⬜ |
 | 24 | [0029](07-payments/0029-test-pagamenti-l1-l2-l3.md) | Test pagamenti L1/L2/L3 | Payments | 0024, 0025, 0023 | ⬜ |
 | 25 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ⬜ |
@@ -115,6 +115,12 @@ AWS finché il prodotto non gira offline.
 3. **0043 → 0050** (soft): il lancio è guidato da `campaign-guide`; relazione soft, non blocca.
 4. **0012 ↔ 0016** (solo test): 0012 cita 0016 per i test d'integrazione JWT; in locale i test di 0012
    usano l'auth locale (0010) / unit test → ciclo rotto sulla dipendenza di test.
+5. **0027 → 0046** (refactor di disaccoppiamento, tracciato): UC 0027 introduce per necessità una chiamata **sincrona
+   `app → core`** (`GET /me/entitlements`) per l'enforcement entitlement/quota — antipattern a regime. **UC 0046** (riga 39)
+   è il **primo UC del flusso che permette di bonificarla**: industrializza per ogni app una **proiezione locale**
+   alimentata da eventi di lifecycle subscription (bus SQS già da UC 0025), eliminando la chiamata sincrona. UC 0054 non
+   deve perpetuarla. Dettaglio nei "Punti aperti" di [UC 0046](10-skills-tooling/0046-skill-new-application.md) e in
+   [docs/_BACKLOG.md](../_BACKLOG.md).
 
 ## Note
 
