@@ -59,3 +59,17 @@ dati per-app (categorie/finalità/base/retention) generato da `new-application`.
   2. Inviti/ruoli + seat come quota stock + downgrade gated funzionanti.
   3. Suite security/multi-tenancy + E2E B2B + compliance verdi.
   4. Eventuali lacune della skill corrette in UC 0046.
+
+## Punti aperti / decisioni differite
+
+- **Primo consumatore `stock` reale (seats) della SPI quota** _(tracciato dalla change `0023-use-case-0027-…`)_. UC 0027
+  ha completato il **contratto** quota flow/stock in `commons` (`QuotaNature`, `EntitlementService.natureOf/capFor`, SPI che
+  gestisce semanticamente entrambe) ma l'**enforcement live è solo `flow`** (app `fatture`); la natura `stock` è coperta
+  solo da test a livello commons/SPI, **senza app/metrica fittizia**. **Questo UC è il primo consumatore stock reale**: la
+  metrica "seats" (posti B2B) è `stock` (tetto sul livello istantaneo, niente reset) con **downgrade gated** a monte
+  (UC 0026). Deve **riusare** il contratto già pronto — `quota.checkAndReserve("seats")` prima di consumare un posto — senza
+  re-introdurre logica di tetto. Il cap arriva dall'entitlement (`app_tier.limits` con `type: stock`) via lo stesso
+  read-model di UC 0027.
+- **Niente chiamata sincrona app→core**: l'enforcement dell'app #2 **non deve perpetuare** la chiamata HTTP sincrona
+  `app → core` introdotta da UC 0027 — va costruito sulla **proiezione locale** event-driven industrializzata da UC 0046
+  (vedi [_INDEX.md](../_INDEX.md) Eccezioni #5 e [_BACKLOG.md](../../_BACKLOG.md)).

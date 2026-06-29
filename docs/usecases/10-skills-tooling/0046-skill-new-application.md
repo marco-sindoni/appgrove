@@ -77,3 +77,17 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   migrazioni e il seed (UC 0011) ne ha bisogno. La versione **multi-servizio** — scoperta di tutti i `services/<app>`
   con `db/migration`, ordinamento, e l'aggancio automatico quando `new-application` genera una nuova app — va
   industrializzata **qui**. **Proprietario**: UC 0046 (comando `dev migrate` di base: UC 0009).
+
+- **Disaccoppiamento entitlement: ritirare la chiamata sincrona app→core (da UC 0027).** _Tracciato dalla change
+  `0023-use-case-0027-…` (enforcement entitlement/quota); rationale completo in [docs/_BACKLOG.md](../../_BACKLOG.md),
+  sezione "Architettura di piattaforma — accoppiamento inter-servizio app↔core"._ UC 0027 sblocca l'enforcement reale
+  con una via **semplice e sincrona**: l'app chiama `GET /api/platform/v1/me/entitlements` di core via HTTP (client REST
+  isolato in `commons`, propagazione JWT) a ogni gate 402 / risoluzione cap quota. È un **antipattern a regime** (fan-in
+  sincrono, accoppiamento a disponibilità/lifecycle di core sul path caldo). **Questo UC è il primo del flusso che
+  permette la bonifica**: industrializzando il pattern per-app, `new-application` deve generare per ogni app una
+  **proiezione locale read-only di entitlement+limits** (nello schema `app_<id>`) alimentata da **eventi di lifecycle
+  subscription pubblicati da core** sul bus interno (ossatura SQS già presente da UC 0025), così l'enforcement legge
+  **solo dati propri** — niente chiamata sincrona, niente lettura cross-schema. Il seam attuale (`QuotaLimitSource`
+  sostituibile + `EntitlementService`/client in `commons`) è progettato per essere rimpiazzato dalla proiezione **senza
+  toccare il codice di dominio dell'app**. UC 0054 (2ª app) **non deve perpetuare** la chiamata sincrona. **Proprietario**:
+  UC 0046 (industrializzazione); il publisher di eventi lato core può anticiparsi se serve prima.

@@ -60,3 +60,14 @@ auto-delete 7gg, presigned in-app. **Purge** = hard-delete con audit (prova). Ma
   2. ZIP S3 SSE auto-delete 7gg + presigned in-app; purge con audit.
   3. Orchestrazione account-level + EventBridge purge per-tenant; diritti esenti dai gate.
   4. Compliance test (no dati orfani) verde; gira in locale (MinIO/ElasticMQ).
+
+## Punti aperti / decisioni differite
+
+- **Esenzione dai gate di enforcement: gli endpoint export/erasure NON devono annotare il gate** _(tracciato dalla change
+  `0023-use-case-0027-…`)_. UC 0027 ha implementato il gate entitlement/quota in `commons` come **annotazione opt-in**
+  (`@RequiresEntitlement`) proprio per soddisfare **per costruzione** l'esenzione GDPR (#09 F31): gli endpoint che
+  esercitano export/erasure di questo UC **non** devono portare l'annotazione, così restano raggiungibili (solo
+  authN+ownership) anche con `subscription` canceled/paused o quota esaurita, per tutta la retention. *Cosa va fatto qui:*
+  (a) non annotare gli endpoint dei diritti GDPR; (b) aggiungere un **test** che verifica che export/erasure rispondono
+  **anche senza accesso** (subscription non-grant) — il guard concreto di F31 che UC 0027 non ha potuto scrivere perché
+  questi endpoint non esistevano ancora.
