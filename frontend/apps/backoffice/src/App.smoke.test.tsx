@@ -25,6 +25,13 @@ const server = setupServer(
   http.get('http://localhost/api/platform/v1/accounts/me', () =>
     HttpResponse.json({ id: 'a1', name: 'Acme', status: 'active' }),
   ),
+  http.get('http://localhost/api/platform/v1/me/entitlements', () =>
+    HttpResponse.json({
+      entitlements: [
+        { appSlug: 'fatture', tierKey: 'free', limits: { fatture: { cap: 10, nature: 'flow', window: 'month' } } },
+      ],
+    }),
+  ),
 )
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }))
 afterEach(() => server.resetHandlers())

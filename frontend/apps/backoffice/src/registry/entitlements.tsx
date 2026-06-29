@@ -1,4 +1,5 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode } from 'react'
+import { computeEntitled, useMyEntitlements } from './entitlementsApi'
 
 /** Stato degli entitlement del tenant (app_id a cui è abbonato). */
 export interface EntitlementsState {
@@ -10,12 +11,33 @@ export interface EntitlementsState {
 const EntitlementsContext = createContext<EntitlementsState | null>(null)
 
 /**
- * Provider entitlement **STUB** (UC 0020).
- *
- * Il core NON espone ancora un endpoint che serva gli entitlement (derivati da `platform.subscription`,
- * #01 dec.10/#09 dec.12). Finché non esiste, la sorgente è un set statico iniettato (config/fixture).
- * Rinvio tracciato: vedi "Punti aperti / decisioni differite" di UC 0020 + _BACKLOG.md (contratto
- * frontend↔core). La sostituzione con una query reale tocca **solo** questo provider.
+ * Provider entitlement **reale** (UC 0027): legge `GET /api/platform/v1/me/entitlements` da core e ne
+ * deriva l'insieme entitled (slug). Sostituisce lo stub: un'app appena acquistata compare in sidebar
+ * appena il read-model la include. Il modulo `demo` (senza backend) è abilitato solo in locale
+ * (`demoInLocal`). Va montato **dentro** il SessionGate (sessione stabile → token disponibile).
+ */
+export function EntitlementsProvider({
+  demoInLocal = false,
+  children,
+}: {
+  demoInLocal?: boolean
+  children: ReactNode
+}) {
+  const query = useMyEntitlements()
+  const value = useMemo<EntitlementsState>(
+    () => ({
+      entitled: computeEntitled(query.data, demoInLocal),
+      isLoading: query.isLoading,
+      isError: query.isError,
+    }),
+    [query.data, query.isLoading, query.isError, demoInLocal],
+  )
+  return <EntitlementsContext.Provider value={value}>{children}</EntitlementsContext.Provider>
+}
+
+/**
+ * Provider entitlement **STUB** (UC 0020): set statico iniettato. Mantenuto per i test e per scenari
+ * che non vogliono colpire la rete; in app la sorgente reale è {@link EntitlementsProvider}.
  */
 export function StubEntitlementsProvider({
   entitled,

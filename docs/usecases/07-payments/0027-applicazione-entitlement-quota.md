@@ -89,3 +89,13 @@ billing/quota (base contratto). Diritti GDPR sempre esercitabili (UC 0032/0033).
   registry FE usa lo **slug** come chiave di entitlement mentre `subscription.app_id` è un **UUID** → questo UC
   deve **riconciliare slug↔UUID** (es. esporre lo slug nell'entitlement view). *Perché differito:* è
   enforcement/lettura entitlement di piattaforma, fuori dallo scope del solo checkout.
+  → **Implementato** nella change `0023-use-case-0027-…` (endpoint `/me/entitlements` + cablaggio registry FE reale,
+  `demo` solo in locale; riconciliazione slug↔UUID nella view).
+
+- **Subscription a pagamento `canceled`/`paused` → fallback al free tier?** *(emerso e DIFFERITO nella change
+  `0023-use-case-0027-…`)*. La regola implementata è asimmetrica: **nessuna** subscription → baseline free tier
+  (accesso); subscription presente che **non** concede accesso (`canceled`/`paused`) → **niente** accesso (402, niente
+  fallback al free), coerente con la UX "abbonamento scaduto: riattiva **o** esporta" (#09 F31). *Aperto:* per un
+  prodotto freemium si potrebbe volere che un ex-pagante **decada al free** invece di perdere ogni accesso. È una
+  **decisione di prodotto** (non tecnica): va presa con la UX self-service di **UC 0028** (riattivazione/downgrade).
+  Il seam è isolato in `EntitlementReadModel.forCurrentTenant()` (core): cambia solo lì.

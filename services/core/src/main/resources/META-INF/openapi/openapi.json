@@ -214,6 +214,29 @@
           }
         }
       },
+      "EntitlementView" : {
+        "type" : "object",
+        "properties" : {
+          "appSlug" : {
+            "type" : "string"
+          },
+          "tierKey" : {
+            "type" : "string"
+          },
+          "phase" : {
+            "type" : "string"
+          },
+          "accessUntil" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "limits" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/MetricLimit"
+            }
+          }
+        }
+      },
       "Instant" : {
         "type" : "string",
         "format" : "date-time",
@@ -238,6 +261,32 @@
             "$ref" : "#/components/schemas/Instant"
           },
           "token" : {
+            "type" : "string"
+          }
+        }
+      },
+      "MeEntitlementsView" : {
+        "type" : "object",
+        "properties" : {
+          "entitlements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EntitlementView"
+            }
+          }
+        }
+      },
+      "MetricLimit" : {
+        "type" : "object",
+        "properties" : {
+          "cap" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "nature" : {
+            "type" : "string"
+          },
+          "window" : {
             "type" : "string"
           }
         }
@@ -1001,6 +1050,33 @@
         "tags" : [ "Invitation Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/me/entitlements" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeEntitlementsView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Entitlements",
+        "tags" : [ "Me Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
         } ]
       }
     },

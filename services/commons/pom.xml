@@ -39,6 +39,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-jwt</artifactId>
     </dependency>
+    <!-- Client REST verso core per il read-model entitlement (UC 0027, EntitlementClient). -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-rest-client-jackson</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>io.quarkus</groupId>
