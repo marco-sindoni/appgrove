@@ -34,4 +34,10 @@ public class CallerContext {
     public String subject() {
         return jwt.getSubject();
     }
+
+    /** Email del chiamante (claim {@code upn}), o {@code null} se assente — usata per il customer al checkout. */
+    public String email() {
+        Object upn = jwt.getClaim("upn");
+        return upn == null ? null : upn.toString();
+    }
 }

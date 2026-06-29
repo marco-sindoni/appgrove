@@ -500,6 +500,173 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/checkout/apps/{appSlug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StartCheckoutRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CheckoutTokenView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/checkout/apps/{appSlug}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Subscription */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SubscriptionStatusView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/checkout/apps/{appSlug}/tiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tiers */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AppTiersView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/invitations": {
         parameters: {
             query?: never;
@@ -875,6 +1042,46 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/platform/v1/webhooks/paddle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Receive */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "Paddle-Signature"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": string;
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -910,6 +1117,12 @@ export interface components {
             tenantId?: string;
             tenantName?: string;
         };
+        AppTiersView: {
+            appId?: components["schemas"]["UUID"];
+            slug?: string;
+            name?: string;
+            tiers?: components["schemas"]["TierView"][];
+        };
         AppView: {
             id?: components["schemas"]["UUID"];
             slug?: string;
@@ -926,6 +1139,9 @@ export interface components {
             status?: string;
             currentPeriodStart?: string;
             currentPeriodEnd?: string;
+        };
+        CheckoutTokenView: {
+            checkoutToken?: string;
         };
         CreateInvitation: {
             email: string;
@@ -985,6 +1201,35 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        PriceView: {
+            billingCycle?: string;
+            /** Format: int32 */
+            amount?: number;
+            currency?: string;
+        };
+        StartCheckoutRequest: {
+            tierKey?: string;
+            appTierId?: components["schemas"]["UUID"];
+            billingCycle: string;
+        };
+        SubscriptionStatusView: {
+            status?: string;
+            active?: boolean;
+        };
+        TierView: {
+            tierId?: components["schemas"]["UUID"];
+            key?: string;
+            name?: string;
+            limits?: {
+                [key: string]: unknown;
+            };
+            features?: {
+                [key: string]: unknown;
+            };
+            /** Format: int32 */
+            trialDays?: number;
+            prices?: components["schemas"]["PriceView"][];
         };
         /** Format: uuid */
         UUID: string;

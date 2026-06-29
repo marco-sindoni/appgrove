@@ -23,9 +23,20 @@ public interface PaymentProvider {
      */
     CheckoutInit startCheckout(StartCheckoutCommand command);
 
-    /** Comando di avvio checkout. Il {@code tenantId} arriva dal JWT verificato (invariante #1). */
+    /**
+     * Comando di avvio checkout (UC 0024). Il {@code tenantId} arriva dal JWT verificato (invariante #1) e
+     * finisce nei {@code custom_data} server-side; {@code paddlePriceId} è il price risolto da
+     * {@code (app, tier, ciclo)}; {@code existingPaddleCustomerId} (nullable) abilita il <b>customer
+     * lazy</b> (#09 C15): se l'account ne ha già uno lo si riusa, altrimenti il provider lo crea.
+     */
     record StartCheckoutCommand(
-            String tenantId, UUID appId, UUID appTierId, String billingCycle, String customerEmail) {}
+            String tenantId,
+            UUID appId,
+            UUID appTierId,
+            String paddlePriceId,
+            String billingCycle,
+            String customerEmail,
+            String existingPaddleCustomerId) {}
 
     /** Esito: token per l'overlay + ID plausibili (customer/transaction/subscription). */
     record CheckoutInit(

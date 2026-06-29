@@ -1,5 +1,325 @@
 ---
 openapi: 3.1.0
+components:
+  schemas:
+    AccountDetailView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        status:
+          type: string
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUserView"
+        entitlements:
+          type: array
+          items:
+            $ref: "#/components/schemas/EntitlementCell"
+    AccountView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        status:
+          type: string
+        paddleCustomerId:
+          type: string
+    AdminAccountView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        status:
+          type: string
+        users:
+          type: integer
+          format: int64
+        activeSubscriptions:
+          type: integer
+          format: int64
+    AdminUserView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        email:
+          type: string
+        displayName:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        tenantId:
+          type: string
+        tenantName:
+          type: string
+    AppTiersView:
+      type: object
+      properties:
+        appId:
+          $ref: "#/components/schemas/UUID"
+        slug:
+          type: string
+        name:
+          type: string
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TierView"
+    AppView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        slug:
+          type: string
+        name:
+          type: string
+        userModel:
+          type: string
+        status:
+          type: string
+    BillingRow:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        tenantName:
+          type: string
+        appSlug:
+          type: string
+        appName:
+          type: string
+        tierKey:
+          type: string
+        status:
+          type: string
+        currentPeriodStart:
+          type: string
+        currentPeriodEnd:
+          type: string
+    CheckoutTokenView:
+      type: object
+      properties:
+        checkoutToken:
+          type: string
+    CreateInvitation:
+      type: object
+      required:
+      - email
+      - role
+      properties:
+        email:
+          type: string
+          pattern: \S
+          maxLength: 320
+        role:
+          type: string
+          pattern: \S
+    EntitlementCell:
+      type: object
+      properties:
+        tenantId:
+          type: string
+        tenantName:
+          type: string
+        appId:
+          $ref: "#/components/schemas/UUID"
+        appSlug:
+          type: string
+        appName:
+          type: string
+        subscriptionStatus:
+          type: string
+        appActive:
+          type: boolean
+        entitled:
+          type: boolean
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    InvitationView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        email:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        expiresAt:
+          $ref: "#/components/schemas/Instant"
+        token:
+          type: string
+    OverviewView:
+      type: object
+      properties:
+        accounts:
+          type: integer
+          format: int64
+        users:
+          type: integer
+          format: int64
+        activeSubscriptions:
+          type: integer
+          format: int64
+        disabledApps:
+          type: integer
+          format: int64
+    PageInvitationView:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvitationView"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PageUserView:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserView"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PriceView:
+      type: object
+      properties:
+        billingCycle:
+          type: string
+        amount:
+          type: integer
+          format: int32
+        currency:
+          type: string
+    StartCheckoutRequest:
+      type: object
+      properties:
+        tierKey:
+          type: string
+        appTierId:
+          $ref: "#/components/schemas/UUID"
+        billingCycle:
+          type: string
+          pattern: \S
+      required:
+      - billingCycle
+    SubscriptionStatusView:
+      type: object
+      properties:
+        status:
+          type: string
+        active:
+          type: boolean
+    TierView:
+      type: object
+      properties:
+        tierId:
+          $ref: "#/components/schemas/UUID"
+        key:
+          type: string
+        name:
+          type: string
+        limits:
+          type: object
+          additionalProperties: {}
+        features:
+          type: object
+          additionalProperties: {}
+        trialDays:
+          type: integer
+          format: int32
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceView"
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UpdateAccount:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          pattern: \S
+          maxLength: 255
+    UpdateAppStatus:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          pattern: \S
+    UpdateUser:
+      type: object
+      properties:
+        role:
+          type: string
+        status:
+          type: string
+        displayName:
+          type: string
+          maxLength: 255
+    UserView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        email:
+          type: string
+        displayName:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+        tenantId:
+          type: string
+  securitySchemes:
+    SecurityScheme:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentication
 paths:
   /api/platform/v1/accounts/me:
     patch:
@@ -223,6 +543,87 @@ paths:
       security:
       - SecurityScheme:
         - platform-admin
+  /api/platform/v1/checkout/apps/{appSlug}:
+    post:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartCheckoutRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutTokenView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Start
+      tags:
+      - Checkout Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/checkout/apps/{appSlug}/subscription:
+    get:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionStatusView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Subscription
+      tags:
+      - Checkout Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/checkout/apps/{appSlug}/tiers:
+    get:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppTiersView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Tiers
+      tags:
+      - Checkout Resource
+      security:
+      - SecurityScheme: []
   /api/platform/v1/invitations:
     get:
       parameters:
@@ -445,257 +846,6 @@ paths:
       summary: Receive
       tags:
       - Paddle Webhook Resource
-components:
-  schemas:
-    AccountDetailView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        name:
-          type: string
-        status:
-          type: string
-        users:
-          type: array
-          items:
-            $ref: "#/components/schemas/AdminUserView"
-        entitlements:
-          type: array
-          items:
-            $ref: "#/components/schemas/EntitlementCell"
-    AccountView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        name:
-          type: string
-        status:
-          type: string
-        paddleCustomerId:
-          type: string
-    AdminAccountView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        name:
-          type: string
-        status:
-          type: string
-        users:
-          type: integer
-          format: int64
-        activeSubscriptions:
-          type: integer
-          format: int64
-    AdminUserView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        email:
-          type: string
-        displayName:
-          type: string
-        role:
-          type: string
-        status:
-          type: string
-        tenantId:
-          type: string
-        tenantName:
-          type: string
-    AppView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        slug:
-          type: string
-        name:
-          type: string
-        userModel:
-          type: string
-        status:
-          type: string
-    BillingRow:
-      type: object
-      properties:
-        tenantId:
-          type: string
-        tenantName:
-          type: string
-        appSlug:
-          type: string
-        appName:
-          type: string
-        tierKey:
-          type: string
-        status:
-          type: string
-        currentPeriodStart:
-          type: string
-        currentPeriodEnd:
-          type: string
-    CreateInvitation:
-      type: object
-      required:
-      - email
-      - role
-      properties:
-        email:
-          type: string
-          pattern: \S
-          maxLength: 320
-        role:
-          type: string
-          pattern: \S
-    EntitlementCell:
-      type: object
-      properties:
-        tenantId:
-          type: string
-        tenantName:
-          type: string
-        appId:
-          $ref: "#/components/schemas/UUID"
-        appSlug:
-          type: string
-        appName:
-          type: string
-        subscriptionStatus:
-          type: string
-        appActive:
-          type: boolean
-        entitled:
-          type: boolean
-    Instant:
-      type: string
-      format: date-time
-      examples:
-      - 2022-03-10T16:15:50Z
-    InvitationView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        email:
-          type: string
-        role:
-          type: string
-        status:
-          type: string
-        expiresAt:
-          $ref: "#/components/schemas/Instant"
-        token:
-          type: string
-    OverviewView:
-      type: object
-      properties:
-        accounts:
-          type: integer
-          format: int64
-        users:
-          type: integer
-          format: int64
-        activeSubscriptions:
-          type: integer
-          format: int64
-        disabledApps:
-          type: integer
-          format: int64
-    PageInvitationView:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/InvitationView"
-        page:
-          type: integer
-          format: int32
-        size:
-          type: integer
-          format: int32
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-    PageUserView:
-      type: object
-      properties:
-        content:
-          type: array
-          items:
-            $ref: "#/components/schemas/UserView"
-        page:
-          type: integer
-          format: int32
-        size:
-          type: integer
-          format: int32
-        totalElements:
-          type: integer
-          format: int64
-        totalPages:
-          type: integer
-          format: int32
-    UUID:
-      type: string
-      format: uuid
-      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
-    UpdateAccount:
-      type: object
-      required:
-      - name
-      properties:
-        name:
-          type: string
-          pattern: \S
-          maxLength: 255
-    UpdateAppStatus:
-      type: object
-      required:
-      - status
-      properties:
-        status:
-          type: string
-          pattern: \S
-    UpdateUser:
-      type: object
-      properties:
-        role:
-          type: string
-        status:
-          type: string
-        displayName:
-          type: string
-          maxLength: 255
-    UserView:
-      type: object
-      properties:
-        id:
-          $ref: "#/components/schemas/UUID"
-        email:
-          type: string
-        displayName:
-          type: string
-        role:
-          type: string
-        status:
-          type: string
-        tenantId:
-          type: string
-  securitySchemes:
-    SecurityScheme:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: Authentication
 info:
   title: appgrove core API
   version: v1

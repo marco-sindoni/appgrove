@@ -80,3 +80,12 @@ billing/quota (base contratto). Diritti GDPR sempre esercitabili (UC 0032/0033).
   building block, non ri-derivare la regola. *Differito a questo UC:* la **natura `stock`** del gate
   (downgrade gated se lo stato eccede il target) — oggi **non esiste** alcuna nozione di metrica
   flow/stock nel codice; va introdotta qui (e/o in UC 0054) insieme al gate stato/grace.
+- **Entitlement reale del registry FE + endpoint `/me/entitlements`** *(owner: questo UC 0027)*. La change
+  `0022-use-case-0024-…` (checkout) ha lasciato lo **stub** `entitled: string[]` nel registry del backoffice
+  e ha aggiunto solo un endpoint **per-app** mirato al polling post-checkout
+  (`GET /checkout/apps/{appSlug}/subscription`). *Cosa manca qui:* l'endpoint **`/me/entitlements`** che
+  elenca le app entitled del tenant (derivate da `subscription` via `grantsAccess()`) e il **cablaggio reale**
+  del registry, così un'app **appena acquistata compare in sidebar** senza refresh manuale. *Nota chiave:* il
+  registry FE usa lo **slug** come chiave di entitlement mentre `subscription.app_id` è un **UUID** → questo UC
+  deve **riconciliare slug↔UUID** (es. esporre lo slug nell'entitlement view). *Perché differito:* è
+  enforcement/lettura entitlement di piattaforma, fuori dallo scope del solo checkout.

@@ -61,3 +61,32 @@ passata al primo checkout (per il customer). Manifest: trattamento "billing/abbo
   2. Overlay col solo token; attivazione SOLO via webhook; UX polling rassicurante.
   3. Invariante tenant_id-da-JWT rispettata; dati pagamento mai toccati.
   4. L2 E2E + integration verdi; L3 pre-release.
+
+## Punti aperti / decisioni differite
+
+### Stato dopo la change `0022-use-case-0024-…` (slice verticale locale)
+
+**Fatto**: catalogo lato cliente + checkout server-initiated + polling, end-to-end in locale.
+- **Backend** (`services/core`): `CheckoutResource` — `GET /checkout/apps/{appSlug}/tiers` (tier+prezzi),
+  `POST /checkout/apps/{appSlug}` (OWNER, token, `custom_data` server-side dal JWT, customer lazy),
+  `GET /checkout/apps/{appSlug}/subscription` (stato minimale per il polling, `active` dalla mappa #09 E29).
+  Gli endpoint sono **slug-based** (chiave stabile = `app.slug`, allineata al registry FE).
+- **Frontend** (`backoffice`, pagina `/billing`): scelta app→tier (default annuale + sconto + trial), overlay
+  via `@appgrove/paddle-stub`, UX a polling rassicurante (mai errore di pagamento). Test: integration L1 +
+  vitest (state machine) + **L2 Playwright** (`e2e/checkout.spec.ts`, Paddle.js mockato).
+- **Attivazione fedele**: `CheckoutResource` non attiva nulla; emette un evento CDI `CheckoutStarted`. In
+  prod nessun osservatore (attivazione solo via webhook reale). In dev/test un bean **stub-only**
+  (`StubCheckoutActivation`, gate `provider=stub`) emette il webhook `happy_path` via la pipeline firmata
+  (UC 0023/0025) → il polling locale arriva ad "attivato" da solo.
+
+**Differito** (con proprietario):
+- **Overlay Paddle.js reale** (loader script remoto + client-token) e **`PaddlePaymentProvider.startCheckout`
+  reale**: gated **#14** (nessun account Paddle); smoke **L3** → **UC 0029**. La factory FE `billing/paddle.ts`
+  e il provider backend sono i due seam pronti da sostituire.
+- **Marketplace / discovery delle app non possedute**: oggi `/billing` lista le app dal **registry build-time**
+  (`MODULES`); manca una vetrina che elenchi dal **catalogo reale** le app acquistabili (incl. quelle non nel
+  bundle FE). *Follow-up* — proprietà di questo UC 0024 (o nuovo UC catalogo pubblico se cresce).
+- **Formattazione prezzo per-locale**: `formatPrice` usa `it-IT` fisso (la UI però è multilingua). Polish
+  minore → UC 0024 (passare il locale corrente).
+- **Cablaggio entitlement reale del registry** (l'app appena comprata non appare in sidebar senza refresh) +
+  endpoint `/me/entitlements` + riconciliazione chiave **slug↔UUID** dell'entitlement → **UC 0027** (vedi nota lì).

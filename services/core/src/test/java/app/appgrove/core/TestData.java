@@ -58,6 +58,15 @@ public class TestData {
                 id, appId, key, key, 0, OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Crea un price (tier × ciclo) di catalogo (FK app_price → app_tier); idempotente. Per UC 0024. */
+    public void appPrice(UUID id, UUID appTierId, String billingCycle, String paddlePriceId, int amount) {
+        exec("insert into platform.app_price"
+                        + "(id,app_tier_id,billing_cycle,paddle_price_id,amount,currency,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?) on conflict (id) do nothing",
+                id, appTierId, billingCycle, paddlePriceId, amount, "EUR",
+                OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
     /** Numero di subscription (non cancellate) per {@code (tenant, app)} — per i test di idempotenza. */
     public int subscriptionCount(String tenantId, UUID appId) {
         return queryInt(
