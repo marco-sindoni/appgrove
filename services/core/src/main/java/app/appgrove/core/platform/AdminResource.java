@@ -4,6 +4,7 @@ import app.appgrove.core.platform.AdminDtos.AccountDetailView;
 import app.appgrove.core.platform.AdminDtos.AdminAccountView;
 import app.appgrove.core.platform.AdminDtos.AdminUserView;
 import app.appgrove.core.platform.AdminDtos.AppView;
+import app.appgrove.core.billing.SubscriptionStatus;
 import app.appgrove.core.platform.AdminDtos.BillingRow;
 import app.appgrove.core.platform.AdminDtos.EntitlementCell;
 import app.appgrove.core.platform.AdminDtos.OverviewView;
@@ -179,10 +180,12 @@ public class AdminResource {
 
     // ── helper ───────────────────────────────────────────────────────────────
 
+    // entitled NON è nel SQL: si deriva in Java dalla mappa canonica status→accesso
+    // (SubscriptionStatus.grantsAccess(), UC 0026) ∧ app abilitata → fonte di verità unica, niente
+    // predicato duplicato. app_active resta in SQL (è uno stato dell'app, non della subscription).
     private static final String ENTITLEMENTS_SQL = """
             select s.tenant_id, a.name, app.id, app.slug, app.name, s.status,
-                   (app.status = 'active') as app_active,
-                   (s.status in ('active','trialing') and app.status = 'active') as entitled
+                   (app.status = 'active') as app_active
             from platform.subscription s
             join platform.accounts a on a.id::text = s.tenant_id
             join platform.app app on app.id = s.app_id
@@ -214,8 +217,12 @@ public class AdminResource {
     }
 
     private EntitlementCell toEntitlement(Object[] r) {
+        String status = str(r[5]);
+        boolean appActive = bool(r[6]);
+        // entitled = mappa canonica status→accesso (UC 0026) ∧ app abilitata (gate 2).
+        boolean entitled = SubscriptionStatus.valueOf(status).grantsAccess() && appActive;
         return new EntitlementCell(
-                str(r[0]), str(r[1]), (UUID) r[2], str(r[3]), str(r[4]), str(r[5]), bool(r[6]), bool(r[7]));
+                str(r[0]), str(r[1]), (UUID) r[2], str(r[3]), str(r[4]), status, appActive, entitled);
     }
 
     @SuppressWarnings("unchecked")

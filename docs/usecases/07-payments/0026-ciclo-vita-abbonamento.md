@@ -59,3 +59,30 @@ i dati restano secondo retention (#13 E), UX "abbonamento scaduto, riattiva/espo
   2. Upgrade immediato (proration) / downgrade a fine periodo con gating stock; UX downgrade chiara.
   3. Dunning grace 2 settimane; trial carta upfront→conversione; cancel=accesso fino a scadenza, riattivabile.
   4. Entitlement derivato; test lifecycle (L1) verdi.
+
+## Punti aperti / decisioni differite
+
+### Stato dopo la change `0021-use-case-0026-…` (semantica di dominio backend)
+
+**Fatto** (`services/core`, pura derivazione, nessuno schema nuovo):
+- **Mappa status→accesso canonica** come *fonte di verità unica*: `SubscriptionStatus.grantsAccess()`
+  (accesso `∈ {trialing, active, past_due}`); sanata l'omissione di `past_due` che era duplicata e
+  incompleta in `AdminResource.ENTITLEMENTS_SQL` (ora `entitled` si deriva in Java dalla mappa ∧ app attiva).
+- **Derivazione lifecycle** `SubscriptionLifecycle` (read-model che 0027/0028 consumeranno): fasi
+  `TRIAL/ACTIVE/CANCELING/GRACE/ENDED` + `access` + `accessUntil` (cancel → fino a `cancel_at`,
+  riattivabile azzerandolo; altrimenti fine periodo; null se ENDED). Tutto derivabile dallo schema attuale.
+- **Test L1** puri (mappa completa + fasi) + regressione admin (`past_due` ora `entitled`).
+
+**Differito** (con proprietario):
+- **Enforcement runtime** del gate entitled (402) + risoluzione tetto quota dall'entitlement → **UC 0027**
+  (il read-model `grantsAccess()`/`SubscriptionLifecycle` è il building block già pronto da consumare).
+- **Avvio self-service** di upgrade/downgrade/disdetta/riattivazione e **UX downgrade** "schedulato,
+  attivo dal giorno X" → **UC 0028**. La *surfacing* del cambio tier schedulato richiede inoltre la
+  **persistenza del cambio schedulato** (colonna `scheduled_tier_id`/`scheduled_change_at` + mapping
+  webhook `subscription.updated`), **non derivabile dallo schema attuale** → vedi nota in UC 0028. A
+  livello di **accesso** un downgrade schedulato resta identico a `ACTIVE` (tier corrente fino a fine
+  periodo), quindi non è una fase a sé.
+- **Gating `stock`** del downgrade + nozione di **metrica flow/stock** (oggi inesistente nel codice) →
+  **UC 0054/0027**.
+- **Trial→conversione** e **2 settimane di dunning**: temporizzati da **Paddle** (che poi flippa lo
+  status a `canceled`/`paused`); qui *nessun timer locale* — ci si fida dello status corrente.
