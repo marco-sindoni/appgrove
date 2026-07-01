@@ -54,6 +54,33 @@ public class StubPaymentProvider implements PaymentProvider {
         return new PricingSyncResult(productIds, priceIds);
     }
 
+    /**
+     * Cambio piano nello stub: <b>no-op</b>. L'effetto sulla {@code subscription} arriva dal webhook
+     * sintetico emesso dallo {@link StubSubscriptionActivation} (osservatore di {@link SubscriptionChangeRequested}),
+     * così l'attivazione passa sempre dalla pipeline webhook (invariante #09 C16), come per il checkout.
+     */
+    @Override
+    public void changeSubscriptionTier(SubscriptionTierChange change) {
+        // no-op: il webhook lo emette lo stub observer.
+    }
+
+    @Override
+    public void cancelSubscription(SubscriptionRef ref) {
+        // no-op: il webhook lo emette lo stub observer.
+    }
+
+    @Override
+    public void resumeSubscription(SubscriptionRef ref) {
+        // no-op: il webhook lo emette lo stub observer.
+    }
+
+    /** Portal finto (offline): URL plausibile e deterministico dal customer id, nessuna rete esterna. */
+    @Override
+    public CustomerPortalSession createCustomerPortalSession(String paddleCustomerId) {
+        return new CustomerPortalSession(
+                "https://sandbox-customer-portal.paddle.com/stub/" + det(paddleCustomerId));
+    }
+
     /** ID plausibile e opaco (stile Paddle), deterministicamente unico. */
     private static String token() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 24);

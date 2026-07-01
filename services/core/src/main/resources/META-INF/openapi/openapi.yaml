@@ -107,6 +107,25 @@ components:
           type: string
         currentPeriodEnd:
           type: string
+    ChangeTierRequest:
+      type: object
+      required:
+      - targetTierKey
+      - billingCycle
+      properties:
+        targetTierKey:
+          type: string
+          pattern: \S
+        billingCycle:
+          type: string
+          pattern: \S
+    ChangeTierResult:
+      type: object
+      properties:
+        direction:
+          type: string
+        effectiveAt:
+          $ref: "#/components/schemas/Instant"
     CheckoutTokenView:
       type: object
       properties:
@@ -196,6 +215,13 @@ components:
           type: string
         window:
           type: string
+    MySubscriptionsView:
+      type: object
+      properties:
+        subscriptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubscriptionView"
     OverviewView:
       type: object
       properties:
@@ -249,6 +275,11 @@ components:
         totalPages:
           type: integer
           format: int32
+    PortalSessionView:
+      type: object
+      properties:
+        url:
+          type: string
     PriceView:
       type: object
       properties:
@@ -277,6 +308,49 @@ components:
         status:
           type: string
         active:
+          type: boolean
+    SubscriptionView:
+      type: object
+      properties:
+        appSlug:
+          type: string
+        appName:
+          type: string
+        status:
+          type: string
+        tierKey:
+          type: string
+        tierName:
+          type: string
+        currentPeriodStart:
+          $ref: "#/components/schemas/Instant"
+        currentPeriodEnd:
+          $ref: "#/components/schemas/Instant"
+        cancelAt:
+          $ref: "#/components/schemas/Instant"
+        trialEnd:
+          $ref: "#/components/schemas/Instant"
+        scheduledTierKey:
+          type: string
+        scheduledChangeAt:
+          $ref: "#/components/schemas/Instant"
+        phase:
+          type: string
+        limits:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/MetricLimit"
+        canUpgrade:
+          type: boolean
+        canDowngrade:
+          type: boolean
+        canCancel:
+          type: boolean
+        canResume:
+          type: boolean
+        canReactivate:
+          type: boolean
+        portalAvailable:
           type: boolean
     TierView:
       type: object
@@ -750,6 +824,126 @@ paths:
       - Me Resource
       security:
       - SecurityScheme: []
+  /api/platform/v1/me/portal-session:
+    post:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalSessionView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Create
+      tags:
+      - Portal Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/subscriptions:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MySubscriptionsView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: My Subscriptions
+      tags:
+      - Subscription Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/subscriptions/{appSlug}/cancel:
+    post:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeTierResult"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Cancel
+      tags:
+      - Subscription Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/subscriptions/{appSlug}/change-tier:
+    post:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeTierRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeTierResult"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Change Tier
+      tags:
+      - Subscription Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/subscriptions/{appSlug}/resume:
+    post:
+      parameters:
+      - name: appSlug
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChangeTierResult"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Resume
+      tags:
+      - Subscription Resource
+      security:
+      - SecurityScheme:
+        - owner
   /api/platform/v1/users:
     get:
       parameters:

@@ -50,6 +50,26 @@ public class Subscription extends BaseTenantEntity {
     @Column(name = "paddle_subscription_id")
     private String paddleSubscriptionId;
 
+    /**
+     * Cambio tier <b>schedulato</b> a fine periodo (downgrade): tier di destinazione. Null se nessun
+     * cambio programmato. Persiste ciò che la derivazione lifecycle non può inferire (a parità di accesso
+     * un downgrade schedulato è {@code ACTIVE}); popolato/azzerato dal consumer webhook (UC 0028).
+     */
+    @Column(name = "scheduled_tier_id", columnDefinition = "uuid")
+    private UUID scheduledTierId;
+
+    /** Istante in cui il cambio tier schedulato diventa effettivo (tipicamente {@code current_period_end}). */
+    @Column(name = "scheduled_change_at")
+    private Instant scheduledChangeAt;
+
+    /**
+     * Timestamp dell'ultimo evento applicato (guardia out-of-order, UC 0025). Sola lettura: la scrittura è
+     * del {@code SubscriptionWriter} in SQL nativo; qui è mappata per far emettere alle mutazioni
+     * self-service (UC 0028) un webhook con {@code occurred_at} monotòno rispetto allo stato corrente.
+     */
+    @Column(name = "last_event_occurred_at", insertable = false, updatable = false)
+    private Instant lastEventOccurredAt;
+
     protected Subscription() {
         // richiesto da JPA
     }
@@ -84,5 +104,17 @@ public class Subscription extends BaseTenantEntity {
 
     public String getPaddleSubscriptionId() {
         return paddleSubscriptionId;
+    }
+
+    public UUID getScheduledTierId() {
+        return scheduledTierId;
+    }
+
+    public Instant getScheduledChangeAt() {
+        return scheduledChangeAt;
+    }
+
+    public Instant getLastEventOccurredAt() {
+        return lastEventOccurredAt;
     }
 }

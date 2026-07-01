@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ShellProvider } from '../registry/ShellContext'
+import { EnforcementBanner } from '../billing/EnforcementBanner'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { TwoFaNudge } from './TwoFaNudge'
@@ -32,6 +33,7 @@ export function ShellLayout() {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar onOpenSidebar={() => setDrawerOpen(true)} />
+          <EnforcementBanner />
           <TwoFaNudge />
           <main className="flex-1 overflow-auto p-6">
             <Outlet />

@@ -39,6 +39,8 @@ public record PaddleWebhookEvent(
         Instant currentPeriodEnd,
         Instant cancelAt,
         Instant trialEnd,
+        UUID scheduledTierId,
+        Instant scheduledChangeAt,
         String paddleSubscriptionId,
         String paddleCustomerId) {
 
@@ -65,6 +67,8 @@ public record PaddleWebhookEvent(
                     instant(data, "current_period_end"),
                     instant(data, "cancel_at"),
                     instant(data, "trial_end"),
+                    uuid(custom, "scheduled_tier_id"),
+                    instant(data, "scheduled_change_at"),
                     text(data, "paddle_subscription_id"),
                     text(data, "paddle_customer_id"));
         } catch (Exception e) {

@@ -71,4 +71,39 @@ public interface PaymentProvider {
 
     /** Esito: chiave interna stabile → ID Paddle dell'ambiente, per Product e per Price. */
     record PricingSyncResult(Map<String, String> productIdByKey, Map<String, String> priceIdByKey) {}
+
+    /**
+     * Applica un cambio di piano sul provider (UC 0028 §4.2): {@code immediate=true} = upgrade con effetto
+     * subito; {@code immediate=false} = downgrade schedulato a fine periodo. In prod chiama l'API Paddle di
+     * update subscription; Paddle rimanda poi il {@code subscription.updated} che è la fonte di verità. In
+     * dev lo stub è no-op (il webhook è emesso dallo {@link StubSubscriptionActivation}).
+     */
+    void changeSubscriptionTier(SubscriptionTierChange change);
+
+    /** Comando di cambio piano: {@code targetPaddlePriceId} è il price risolto dal tier di destinazione. */
+    record SubscriptionTierChange(
+            String tenantId,
+            UUID appId,
+            String paddleSubscriptionId,
+            String targetPaddlePriceId,
+            boolean immediate) {}
+
+    /** Disdetta a fine periodo (imposta {@code cancel_at}) — UC 0028 §4.3 (E25). */
+    void cancelSubscription(SubscriptionRef ref);
+
+    /** Annulla una disdetta programmata (riattiva prima della scadenza) — UC 0028 §4.3 (E25). */
+    void resumeSubscription(SubscriptionRef ref);
+
+    /** Riferimento a una subscription del provider (tenant dal JWT, mai dal client). */
+    record SubscriptionRef(String tenantId, UUID appId, String paddleSubscriptionId) {}
+
+    /**
+     * Genera una <b>sessione Customer Portal</b> Paddle server-side (UC 0028 §4.5, #09 G33): l'utente vi
+     * aggiorna il <b>metodo di pagamento</b> (PCI, mai dati carta da noi) e scarica <b>fatture/ricevute</b>
+     * (Paddle MoR). In prod chiama l'API Paddle; in dev lo stub ritorna un URL plausibile.
+     */
+    CustomerPortalSession createCustomerPortalSession(String paddleCustomerId);
+
+    /** Esito: l'URL della sessione portal da aprire lato client (nessun dato PCI passa da noi). */
+    record CustomerPortalSession(String url) {}
 }

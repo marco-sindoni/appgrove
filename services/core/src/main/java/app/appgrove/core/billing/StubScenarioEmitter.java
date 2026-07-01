@@ -115,12 +115,42 @@ public class StubScenarioEmitter {
         return out;
     }
 
+    /**
+     * Emette un singolo {@code subscription.updated} per una mutazione self-service (UC 0028): cambio tier
+     * immediato (upgrade), downgrade schedulato ({@code scheduledTierId}+{@code scheduledChangeAt}),
+     * disdetta ({@code cancelAt}) o riattivazione ({@code cancelAt=null}). Lo snapshot è calcolato dal
+     * resource e passato per la <b>stessa</b> pipeline webhook firmata; lo stato resta {@code active}
+     * (una disdetta programmata è {@code active}+{@code cancel_at}, semantica UC 0026).
+     */
+    public EmittedEvent emitSubscriptionUpdate(
+            String tenantId, UUID appId, UUID resultTierId, String paddleSubId,
+            Instant periodStart, Instant periodEnd, Instant cancelAt,
+            UUID scheduledTierId, Instant scheduledChangeAt, Instant afterOccurredAt) {
+        // monotòno rispetto all'ultimo evento applicato: evita che la guardia out-of-order (UC 0025) scarti
+        // il cambio quando arriva nello stesso secondo dell'attivazione (tempo compresso dello stub).
+        Instant occurredAt = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        if (afterOccurredAt != null && !occurredAt.isAfter(afterOccurredAt)) {
+            occurredAt = afterOccurredAt.plusSeconds(1);
+        }
+        return send("subscription.updated", SubscriptionStatus.active, tenantId, appId, resultTierId,
+                paddleSubId, occurredAt, periodStart, periodEnd, cancelAt, null,
+                scheduledTierId, scheduledChangeAt);
+    }
+
     private EmittedEvent send(
             String eventType, SubscriptionStatus status, String tenantId, UUID appId, UUID appTierId,
             String paddleSubId, Instant occurredAt, Instant periodStart, Instant periodEnd,
             Instant cancelAt, Instant trialEnd) {
+        return send(eventType, status, tenantId, appId, appTierId, paddleSubId, occurredAt,
+                periodStart, periodEnd, cancelAt, trialEnd, null, null);
+    }
+
+    private EmittedEvent send(
+            String eventType, SubscriptionStatus status, String tenantId, UUID appId, UUID appTierId,
+            String paddleSubId, Instant occurredAt, Instant periodStart, Instant periodEnd,
+            Instant cancelAt, Instant trialEnd, UUID scheduledTierId, Instant scheduledChangeAt) {
         String body = build(eventType, status, tenantId, appId, appTierId, paddleSubId, occurredAt,
-                periodStart, periodEnd, cancelAt, trialEnd);
+                periodStart, periodEnd, cancelAt, trialEnd, scheduledTierId, scheduledChangeAt);
         ingest.ingest(body, signature.sign(body));
         return new EmittedEvent(eventType, status.name());
     }
@@ -150,6 +180,15 @@ public class StubScenarioEmitter {
             String eventType, SubscriptionStatus status, String tenantId, UUID appId, UUID appTierId,
             String paddleSubId, Instant occurredAt, Instant periodStart, Instant periodEnd,
             Instant cancelAt, Instant trialEnd) {
+        return build(eventType, status, tenantId, appId, appTierId, paddleSubId, occurredAt,
+                periodStart, periodEnd, cancelAt, trialEnd, null, null);
+    }
+
+    /** Variante con cambio tier schedulato (downgrade a fine periodo, UC 0028). */
+    String build(
+            String eventType, SubscriptionStatus status, String tenantId, UUID appId, UUID appTierId,
+            String paddleSubId, Instant occurredAt, Instant periodStart, Instant periodEnd,
+            Instant cancelAt, Instant trialEnd, UUID scheduledTierId, Instant scheduledChangeAt) {
         ObjectNode root = mapper.createObjectNode();
         root.put("event_id", "evt_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
         root.put("event_type", eventType);
@@ -161,11 +200,15 @@ public class StubScenarioEmitter {
         putInstant(data, "current_period_end", periodEnd);
         putInstant(data, "cancel_at", cancelAt);
         putInstant(data, "trial_end", trialEnd);
+        putInstant(data, "scheduled_change_at", scheduledChangeAt);
         ObjectNode custom = data.putObject("custom_data");
         custom.put("tenant_id", tenantId);
         custom.put("app_id", appId.toString());
         if (appTierId != null) {
             custom.put("app_tier_id", appTierId.toString());
+        }
+        if (scheduledTierId != null) {
+            custom.put("scheduled_tier_id", scheduledTierId.toString());
         }
         try {
             return mapper.writeValueAsString(root);

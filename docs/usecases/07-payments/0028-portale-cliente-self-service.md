@@ -62,7 +62,36 @@ Paddle** (MoR). Manifest: billing/abbonamento (base contratto); fatture/fiscale 
 
 ## Punti aperti / decisioni differite
 
-- **Persistenza del cambio tier schedulato (downgrade a fine periodo)** *(owner: questo UC 0028)*. La
+> **Stato implementazione (change `0024-use-case-0028-…`)**: implementati nel backoffice il read-model dedicato
+> `GET /me/subscriptions` (tutte le subscription, anche non-attive), le mutazioni self-service
+> (upgrade immediato / downgrade schedulato / disdici / riattiva) col modello **command → provider → webhook →
+> read-model**, la sessione **Customer Portal** Paddle server-side (`POST /me/portal-session`), il pannello
+> Billing + i **banner azionabili 402/429**. **Risolti** i due punti aperti sotto (persistenza cambio tier
+> schedulato ✅; UX enforcement 402/429 ✅). Restano differiti i residui elencati in coda.
+
+### Residui differiti (aperti dopo change 0024)
+
+- **Consumo quota in tempo reale nel pannello** *(owner: questo UC 0028 / condiviso con UC 0027)*. Oggi il
+  banner mostra i **limiti del piano** (dal read-model entitlement/subscription); il **consumo corrente** (es.
+  "73/100") è **applicativo** (SPI `QuotaService.currentUsage`, lato servizio app) e non leggibile da `core`.
+  *Cosa manca:* un contratto di lettura usage per-app (o un read-model usage trasversale) che alimenti il
+  banner. *Perché differito:* richiede un'API per-app trasversale, fuori dallo scope del portale.
+- **Gate stock del downgrade contro l'uso reale** *(stesso owner del punto sopra)*. La logica di blocco
+  (`TierChangePolicy.evaluateDowngrade`) è reale e testata, ma il resource passa un uso corrente **vuoto**
+  (stessa lacuna: `core` non conosce lo stock per-app), quindi a runtime il downgrade non viene bloccato.
+  *Cosa manca:* cablare l'uso stock reale per-app nel gate (dipende dal contratto usage sopra).
+- **Motore reale di esporta/elimina dati (GDPR)** *(owner: UC 0033)*. Il pannello (schermata scaduta) offre il
+  **CTA** verso i diritti GDPR (oggi rimanda a `/account`); il motore reale di export/cancellazione è di
+  **UC 0033** (`self-service-gdpr`).
+- **Implementazione reale Paddle** *(gated #14)*. `PaddlePaymentProvider.changeSubscriptionTier/cancelSubscription/
+  resumeSubscription/createCustomerPortalSession` lanciano `UnsupportedOperationException`: il client Paddle reale
+  è bloccato da #14 (nessun account senza sito+ToU/PP). Lo stub locale copre dev/test.
+
+### Storico (risolti da change 0024)
+
+- **Persistenza del cambio tier schedulato (downgrade a fine periodo)** ✅ *risolto in change 0024* (colonne
+  `subscription.scheduled_tier_id` + `scheduled_change_at`, mappate dal consumer webhook; esposte da
+  `/me/subscriptions`). *(owner: questo UC 0028)*. La
   change `0021-use-case-0026-…` ha implementato la semantica di accesso del ciclo di vita (mappa
   status→accesso + `SubscriptionLifecycle`), ma **non** la *surfacing* del downgrade schedulato "attivo
   dal giorno X verso il tier Y": a livello di accesso un downgrade schedulato è identico a `ACTIVE`
@@ -72,7 +101,9 @@ Paddle** (MoR). Manifest: billing/abbonamento (base contratto); fatture/fiscale 
   corrente/period/cancel_at/trial_end), così la UX self-service può mostrarlo. *Perché differito:* serve
   un consumatore (il portale self-service di questo UC) e tocca schema+pipeline → matura qui, non in 0026.
 
-- **UX azionabile per i gate di enforcement (402/403/429)** _(tracciato dalla change `0023-use-case-0027-…`)_. UC 0027 ha
+- **UX azionabile per i gate di enforcement (402/403/429)** ✅ *risolto in change 0024* (interceptor 402/429 nel
+  `QueryClient` → banner globale con CTA upgrade/riattiva; 403 resta gestito dai guard di ruolo). _(tracciato dalla change
+  `0023-use-case-0027-…`)_. UC 0027 ha
   reso reale il **confine di enforcement lato backend** (gate 402 entitlement/stato, 429 quota, 403 ruolo) + l'endpoint
   `/me/entitlements`, ma il frontend è **solo UX** (#09 F30): mancano i **banner azionabili** che traducono questi esiti —
   "limite raggiunto, fai upgrade" (429), "abbonamento scaduto: **riattiva oppure esporta/elimina** i tuoi dati" (402,
