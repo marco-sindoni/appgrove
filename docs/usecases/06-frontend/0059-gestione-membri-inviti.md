@@ -64,3 +64,9 @@ solo dal JWT; filtro row-level lato core.
 - **Lacune backend (tracciate in UC 0013)**: guard "ultimo owner" assente lato core (qui solo protezione UX); OpenAPI di
   `POST /invitations` senza body di risposta (client costretto a cast manuale). Vedi UC 0013 "Punti aperti".
 - **Seat limits / billing**: eventuali limiti al numero di membri per tier sono di #09 (non qui).
+- **🏛️ Modello utenti tenant-level vs per-app (B2B/B2C)** *(richiesto 2026-07-01, dopo UC 0028)* — questione di piattaforma
+  trasversale: la gestione membri qui è **tenant-level** (assume B2B), ma un'app può essere **B2C** (solo owner) o **B2B**
+  (utenti invitati). Direzione preferita: invito **per-app** con limiti/pricing posti per-app + funzione "invita utenti"
+  che legge gli utenti da **altre app B2B** del tenant (directory di comodo), **senza** offerta posti centralizzata. Dettaglio
+  e opzioni in [_BACKLOG](../../_BACKLOG.md) → "Modello di gestione utenti — tenant-level vs per-app". Da approfondire in
+  sessione dedicata.

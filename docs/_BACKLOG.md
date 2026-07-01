@@ -24,6 +24,34 @@ accettabile sull'accesso/quota), e l'industrializzazione della proiezione in `ne
 quando il fan-in sincrono diventa un costo reale. Il seam attuale (`QuotaLimitSource` sostituibile + client REST isolato in
 `fatture`) è progettato per essere rimpiazzato dalla proiezione locale **senza toccare il codice di dominio dell'app**.
 
+## Modello di gestione utenti — tenant-level vs per-app (B2B/B2C) (richiesto 2026-07-01) — GRANDE 🏛️
+
+Sollevato durante UC 0028 (change `0024-use-case-0028-…`, portale self-service). Oggi la schermata **"Membri"**
+(UC [0059](usecases/06-frontend/0059-gestione-membri-inviti.md) / [0017](usecases/05-auth/0017-flussi-auth.md)) gestisce gli
+utenti a livello di **tenant** (`platform.users` + inviti tenant-scoped). Questo assume **implicitamente** che il tenant sia
+**B2B** — ma non è detto: un'app può essere **B2C** (uso del solo owner, nessun invito) oppure **B2B** (utenti invitati). Il
+modello tenant-level impone la semantica B2B a tutti. *(Nota: l'entità `App` ha già `user_model`/`AppUserModel` — segnale che
+la distinzione B2C/B2B vive naturalmente a livello **app**, non tenant.)*
+
+**Opzione scartata dall'utente**: gestione utenti **centralizzata di piattaforma** con un'**offerta/costo utenti centralizzato**
+indipendente dalle singole app. Vantaggio (non re-invitare gli utenti su ogni app) ma richiederebbe un listino "posti" centrale
+slegato dalle app → **non desiderato**.
+
+**Direzione preferita (da approfondire, non ancora decisa)**:
+- **Invito utenti per-singola-app B2B**: ogni app B2B definisce i **propri** limiti/pricing dei posti come metrica di quota
+  **per-app** (es. app A: tier 20 utenti / €10; app B: stesso prezzo €10 ma 30 utenti). Coerente col modello quota
+  `flow`/`stock` già presente (#09 E23) — i "posti" sarebbero una metrica **stock** per-app (già gestibile da
+  `TierChangePolicy`/`app_tier.limits`).
+- **Funzionalità "invita utenti" cross-app**: al momento dell'invito su un'app B2B, **leggere** gli utenti già presenti su
+  **altre app B2B** del tenant per facilitare il ri-invito di utenti esistenti (directory di comodo), **senza** che
+  l'entitlement/limite diventi centrale: il gate resta **per-app**.
+
+**Da approfondire**: come distinguere B2C vs B2B (probabilmente `App.user_model`); ripensare la UI "Membri" tenant-level →
+**per-app** per le app B2B (assente/ridotta per le B2C); la directory cross-app degli utenti del tenant per l'invito rapido;
+l'interazione con `platform.users`/inviti (UC 0013) e col pricing dei posti (#09, `new-application`/`pricing-change`).
+**Owner futuro**: decisione di piattaforma trasversale (non un singolo UC); tocca UC 0059/0017/0013 + catalogo/pricing #09.
+**Approfondire in sessione dedicata** (richiesto dall'utente subito dopo UC 0028).
+
 ## Compliance & privacy (GDPR) — richiesto 2026-06-14
 Probabilmente merita un **documento dedicato** (nuova area, es. `13-compliance-privacy.md`). Da coprire:
 - **GDPR**: basi giuridiche, data retention, diritto all'oblio/erasure (già impostato a livello dati in [05-persistenza-dati](05-persistenza-dati.md) §12), portabilità, DPA.
