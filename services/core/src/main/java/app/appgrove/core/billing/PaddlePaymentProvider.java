@@ -24,6 +24,32 @@ public class PaddlePaymentProvider implements PaymentProvider {
     }
 
     @Override
+    public void changeSubscriptionTier(SubscriptionTierChange change) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.changeSubscriptionTier reale non implementato (gated #14): "
+                        + "l'update subscription via API Paddle è tracciato nei Punti aperti di UC 0028");
+    }
+
+    @Override
+    public void cancelSubscription(SubscriptionRef ref) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.cancelSubscription reale non implementato (gated #14, UC 0028)");
+    }
+
+    @Override
+    public void resumeSubscription(SubscriptionRef ref) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.resumeSubscription reale non implementato (gated #14, UC 0028)");
+    }
+
+    @Override
+    public CustomerPortalSession createCustomerPortalSession(String paddleCustomerId) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.createCustomerPortalSession reale non implementato (gated #14): "
+                        + "la sessione Customer Portal via API Paddle è tracciata nei Punti aperti di UC 0028");
+    }
+
+    @Override
     public PricingSyncResult syncPricing(PricingSyncRequest request) {
         // UC 0022, slice offline: il motore di sync è esercitato contro lo stub. L'integrazione REALE
         // (REST Product/Price API di Paddle + secret per-ambiente da Secrets Manager, #09 I38) è BLOCCATA

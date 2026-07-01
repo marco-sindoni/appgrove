@@ -863,6 +863,273 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/portal-session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PortalSessionView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Subscriptions */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MySubscriptionsView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/subscriptions/{appSlug}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeTierResult"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/subscriptions/{appSlug}/change-tier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Tier */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ChangeTierRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeTierResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/subscriptions/{appSlug}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resume */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ChangeTierResult"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/users": {
         parameters: {
             query?: never;
@@ -1190,6 +1457,14 @@ export interface components {
             currentPeriodStart?: string;
             currentPeriodEnd?: string;
         };
+        ChangeTierRequest: {
+            targetTierKey: string;
+            billingCycle: string;
+        };
+        ChangeTierResult: {
+            direction?: string;
+            effectiveAt?: components["schemas"]["Instant"];
+        };
         CheckoutTokenView: {
             checkoutToken?: string;
         };
@@ -1238,6 +1513,9 @@ export interface components {
             nature?: string;
             window?: string;
         };
+        MySubscriptionsView: {
+            subscriptions?: components["schemas"]["SubscriptionView"][];
+        };
         OverviewView: {
             /** Format: int64 */
             accounts?: number;
@@ -1270,6 +1548,9 @@ export interface components {
             /** Format: int32 */
             totalPages?: number;
         };
+        PortalSessionView: {
+            url?: string;
+        };
         PriceView: {
             billingCycle?: string;
             /** Format: int32 */
@@ -1284,6 +1565,29 @@ export interface components {
         SubscriptionStatusView: {
             status?: string;
             active?: boolean;
+        };
+        SubscriptionView: {
+            appSlug?: string;
+            appName?: string;
+            status?: string;
+            tierKey?: string;
+            tierName?: string;
+            currentPeriodStart?: components["schemas"]["Instant"];
+            currentPeriodEnd?: components["schemas"]["Instant"];
+            cancelAt?: components["schemas"]["Instant"];
+            trialEnd?: components["schemas"]["Instant"];
+            scheduledTierKey?: string;
+            scheduledChangeAt?: components["schemas"]["Instant"];
+            phase?: string;
+            limits?: {
+                [key: string]: components["schemas"]["MetricLimit"];
+            };
+            canUpgrade?: boolean;
+            canDowngrade?: boolean;
+            canCancel?: boolean;
+            canResume?: boolean;
+            canReactivate?: boolean;
+            portalAvailable?: boolean;
         };
         TierView: {
             tierId?: components["schemas"]["UUID"];

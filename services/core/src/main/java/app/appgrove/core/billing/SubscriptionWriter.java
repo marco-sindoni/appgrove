@@ -64,9 +64,10 @@ public class SubscriptionWriter {
             insert into platform.subscription
               (id, tenant_id, app_id, app_tier_id, status,
                current_period_start, current_period_end, cancel_at, trial_end,
+               scheduled_tier_id, scheduled_change_at,
                paddle_subscription_id, last_event_occurred_at,
                created_at, updated_at, created_by, updated_by)
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
             on conflict (tenant_id, app_id) where deleted_at is null
             do update set
               app_tier_id            = excluded.app_tier_id,
@@ -75,6 +76,8 @@ public class SubscriptionWriter {
               current_period_end     = excluded.current_period_end,
               cancel_at              = excluded.cancel_at,
               trial_end              = excluded.trial_end,
+              scheduled_tier_id      = excluded.scheduled_tier_id,
+              scheduled_change_at    = excluded.scheduled_change_at,
               paddle_subscription_id = excluded.paddle_subscription_id,
               last_event_occurred_at = excluded.last_event_occurred_at,
               updated_at             = now(),
@@ -173,8 +176,10 @@ public class SubscriptionWriter {
             setTimestamp(ps, 7, event.currentPeriodEnd());
             setTimestamp(ps, 8, event.cancelAt());
             setTimestamp(ps, 9, event.trialEnd());
-            setNullable(ps, 10, event.paddleSubscriptionId());
-            setTimestamp(ps, 11, event.occurredAt());
+            setNullable(ps, 10, event.scheduledTierId());
+            setTimestamp(ps, 11, event.scheduledChangeAt());
+            setNullable(ps, 12, event.paddleSubscriptionId());
+            setTimestamp(ps, 13, event.occurredAt());
             return ps.executeUpdate() == 1;
         }
     }

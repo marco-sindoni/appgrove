@@ -40,8 +40,25 @@ done
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
 
+# Assicura che Colima sia avviato (i test backend usano Testcontainers/Dev Services → serve Docker).
+# Se Colima NON è in esecuzione, esegue un ciclo stop→start del servizio per ripartire da stato pulito.
+ensure_colima() {
+  command -v colima >/dev/null 2>&1 || return 0   # Colima non installato: lascio decidere a `docker info`
+  if colima status >/dev/null 2>&1; then
+    return 0                                       # già in esecuzione
+  fi
+  warn "Colima fermo: riavvio il servizio (stop → start)…"
+  colima stop  >/dev/null 2>&1 || true            # pulisce eventuale stato residuo
+  if colima start; then
+    ok "Colima avviato."
+  else
+    fail "Colima: avvio fallito."
+  fi
+}
+
 run_backend() {
   hdr "BACKEND — services/* (mvn test)"
+  ensure_colima
   if ! docker info >/dev/null 2>&1; then
     warn "Docker/Colima non disponibile: i test backend usano Testcontainers/Dev Services e falliranno."
   fi

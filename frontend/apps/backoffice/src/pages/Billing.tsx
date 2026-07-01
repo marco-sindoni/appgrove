@@ -13,6 +13,7 @@ import { useTranslation } from '@appgrove/i18n'
 import { MODULES } from '../registry/registry'
 import { useAppTiers, useStartCheckout, useAppSubscriptionStatus } from '../billing/checkoutApi'
 import { createPaddle } from '../billing/paddle'
+import { SubscriptionsPanel } from '../billing/SubscriptionsPanel'
 import {
   annualFreeMonths,
   formatPrice,
@@ -42,7 +43,10 @@ export function Billing() {
       {appSlug ? (
         <CheckoutFlow appSlug={appSlug} onBack={() => setAppSlug(null)} />
       ) : (
-        <AppPicker onPick={setAppSlug} />
+        <>
+          <SubscriptionsPanel onReactivate={setAppSlug} />
+          <AppPicker onPick={setAppSlug} />
+        </>
       )}
     </div>
   )
