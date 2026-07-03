@@ -34,6 +34,14 @@ async function mockAuthed(page: Page, env: 'local' | 'test') {
   await page.route('**/api/platform/v1/accounts/me', (route) =>
     route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }),
   )
+  // dal UC 0027 il registry deriva l'accesso da /me/entitlements (non più dal solo stub locale):
+  // 'local' → fatture entitled (baseline free); 'test' → nessun entitlement (per la route guard)
+  const entitlements = env === 'local'
+    ? [{ appSlug: 'fatture', tierKey: 'free', limits: { fatture: { cap: 10, nature: 'flow', window: 'month' } } }]
+    : []
+  await page.route('**/api/platform/v1/me/entitlements', (route) =>
+    route.fulfill({ json: { entitlements } }),
+  )
   await page.route('**/api/fatture/v1/quota', (route) => route.fulfill({ json: quota }))
   await page.route('**/api/fatture/v1/invoices?*', (route) =>
     route.fulfill({ json: { content: invoices, page: 0, size: 20, totalElements: invoices.length, totalPages: 1 } }),

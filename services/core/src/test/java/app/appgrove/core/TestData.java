@@ -58,6 +58,13 @@ public class TestData {
                 id, appId, key, key, 0, OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Tier con descrittore {@code limits} jsonb ({@code {metric,cap,type,window}}) — per la catena L1 (UC 0029). */
+    public void appTier(UUID id, UUID appId, String key, String limitsJson) {
+        exec("insert into platform.app_tier(id,app_id,key,name,trial_days,limits,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?::jsonb,?,?) on conflict (id) do nothing",
+                id, appId, key, key, 0, limitsJson, OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
     /** Crea un price (tier × ciclo) di catalogo (FK app_price → app_tier); idempotente. Per UC 0024. */
     public void appPrice(UUID id, UUID appTierId, String billingCycle, String paddlePriceId, int amount) {
         exec("insert into platform.app_price"

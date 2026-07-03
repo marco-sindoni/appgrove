@@ -63,3 +63,12 @@ entità legale corretta nei documenti; checklist commercialista evasa (F1–F9).
   2. Domiciliazione attiva; entità legale aggiornata nei documenti.
   3. Account Paddle Individual verificato/live (Domain Review superata) con sito + `app.appgrove.app`.
   4. Sequenza rispettata: #14 prima del vero Paddle (stub locale per sviluppare prima).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0025-use-case-0029-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **L'account Paddle Sandbox sblocca i test L3 (UC 0029).** La suite smoke L3 esiste già nel repo
+  (`frontend/apps/backoffice/e2e-l3/`, auto-skip senza env `APPGROVE_L3_*`) ma non è eseguibile finché questo UC non
+  produce l'account Paddle (sandbox incluso, a valle del gate #14). Alla verifica dell'account, notificare UC 0029/0005
+  per attivare lo smoke nella pipeline di release. **Proprietario** dell'account: UC 0001.

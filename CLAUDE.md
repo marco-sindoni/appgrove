@@ -54,7 +54,8 @@ multi-servizio** del dev stack è di **UC 0046** (`dev service` è uno stub dich
 ## Esecuzione dei test (non negoziabile)
 
 Lo script **[run-tests.sh](run-tests.sh)** alla root è la **sorgente di verità unica** per "lanciare tutti i test automatici
-di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via npm/vitest), infra (`infra/` via Terraform).
+di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via npm/vitest **+ Playwright e2e L2**, browser
+auto-installato — UC 0029; la suite L3 sandbox è pre-release e resta fuori), infra (`infra/` via Terraform).
 Esegue tutte le aree, non si ferma al primo errore e ritorna exit-code ≠ 0 se una qualsiasi suite è rossa (`./run-tests.sh`
 per tutto, oppure `./run-tests.sh backend|frontend|infra`).
 
