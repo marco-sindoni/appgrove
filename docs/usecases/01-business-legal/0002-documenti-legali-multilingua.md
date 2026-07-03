@@ -65,3 +65,15 @@ I documenti **descrivono** i trattamenti (non contengono dati utente). Il **log 
   2. Versioning frontmatter + accettazione scoped (major/minor) wired al gate privacy.
   3. Check CI 5 lingue verde; documenti linkati da menu/footer (requisito Paddle).
   4. Resta 🟡 finché i **testi** non sono redatti (revisione legale opzionale).
+
+## Punti aperti / decisioni differite
+
+- **Riporto delle classificazioni MAJOR/MINOR accumulate** (da change 0027, UC 0031): finché `content/legal/` non
+  esiste, il gate privacy di `new-change` registra la classificazione (major/minor + componente + motivazione) negli
+  artefatti della change (`requirements.md` campo "Tocca dati personali?" + implementation-log). **Al primo rilascio dei
+  testi legali**, ripercorrere le change accumulate e riflettere le classificazioni nel front-matter
+  `version`/`effective_date` dei componenti interessati. *Perché differito*: i file legali nascono qui. *Owner*: UC 0002.
+- **Seed della lista sub-processor** (da change 0027, UC 0031): creare `content/legal/subprocessors.<lang>.md` seminata
+  dall'inventario #13 dec. 45 (AWS; Plausible quando attivo; Paddle escluso = titolare autonomo) **più le segnalazioni
+  "potenziale nuovo sub-processor"** registrate nel frattempo negli implementation-log delle change dal gate privacy.
+  *Perché differito*: la struttura `content/legal/` nasce qui. *Owner*: UC 0002.

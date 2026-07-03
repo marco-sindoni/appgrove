@@ -7,6 +7,7 @@
   "scripts": {
     "assemble": "node ropa.mjs assemble",
     "check": "node ropa.mjs check",
+    "privacy-scan": "node privacy-scan.mjs",
     "test": "node --test"
   },
   "dependencies": {

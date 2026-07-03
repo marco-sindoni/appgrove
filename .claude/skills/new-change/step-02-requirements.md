@@ -38,7 +38,7 @@ instructions stay in English):
 **Data**: AAAA-MM-GG
 **Autore**: (nome dello sviluppatore o "Platform Engineering")
 **Use case sorgente**: <`docs/usecases/<area>/YYYY-*.md` se la change implementa uno use case del catalogo, altrimenti "Nessuno (change ad-hoc)">
-**Tocca dati personali?**: <Sì / No — se Sì si applica il checkpoint privacy/RoPA di step-03 (classifica → manifesto/RoPA → bump versione PP/ToS); il gate CI bloccante è UC 0031>
+**Tocca dati personali?**: <Sì / No — se Sì si applica il gate privacy/RoPA di step-03 (UC 0031: scanner + co-pilota → manifesto/RoPA; classificazione **MAJOR/MINOR** del cambio con motivazione, registrata qui finché `content/legal/` non esiste — poi pilota il bump versione PP/ToS); l'enforcement CI `@PersonalData`↔manifesto è in `mvn test` (UC 0030)>
 
 ## Problema / Obiettivo
 

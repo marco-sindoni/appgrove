@@ -93,6 +93,19 @@ sed -i '' -E "/\[$YYYY\]\(/ s/\| (⬜|🟡|✅) \|$/| ✅ |/" docs/usecases/_IND
 If you also added **new** use cases as part of this change, re-run the Fase+Dipendenze ordering so `_INDEX.md` stays a
 valid topological order. For a **normal** change (no `YYYY`), skip.
 
+## Verify the privacy/RoPA gate ran (UC 0031)
+
+Before the commit gate, confirm the step-03 privacy gate was executed on the final diff:
+
+```bash
+( cd tools/compliance && npm run privacy-scan )
+```
+
+- **Exit 0** → record "gate privacy: nessun segnale" in the implementation log (if not already there).
+- **Exit ≠ 0** → every reported signal must have been classified via the step-03 co-pilot (manifest + RoPA updated,
+  `@PersonalData` annotated, MAJOR/MINOR + sub-processor flags recorded in the log). If any signal is unaddressed, go
+  back to step-03 **before** asking for commit consent — never close a change with unclassified privacy signals.
+
 ## Traccia le decisioni differite (non-negoziabile)
 
 Before the commit gate, confirm that **every** architectural decision, drift, or open point you

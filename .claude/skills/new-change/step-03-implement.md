@@ -39,20 +39,48 @@ diff is a signal to **investigate** (real regression vs intended UI change), not
 the UI change is intentional and reviewed; note it in the implementation log. Prefer `aria-snapshot` as the primary net,
 pixel diffs tolerant (#10 20).
 
-## Privacy/RoPA checkpoint (tracked hook — blocking CI enforcement is UC 0031)
+## Privacy/RoPA gate (UC 0031) — mandatory before closing
 
-If the diff **touches personal data**, surface it during implementation (this is a guided reminder, not the CI gate):
+When the implementation looks complete (and in any case before step-04), run the **deterministic signal scanner**:
 
-- **Triggers**: new/changed Flyway migrations (columns/tables), new entity/DTO/API fields, or a **new external integration**
-  (potential sub-processor).
-- **Then remind the developer to**: classify the field's **nature / purpose / legal basis / retention**; update the data
-  **manifest + RoPA** (#13 C); if the integration is a new sub-processor, update `content/legal/subprocessors.*.md` (+ 30-day
-  client notice); and **bump the PP/ToS version** — material change → **major** (re-accept, UC 0056) / minor → notice (#13 G41).
-- **Art. 9** (health/biometric/…): strong warning + DPIA (#13 K); do not proceed silently.
-- Set **"Personal data touched? = Yes"** in `requirements.md` and note the classification in the implementation log.
+```bash
+( cd tools/compliance && npm run privacy-scan )        # default: merge-base(main, HEAD) → working tree, untracked included
+# npm run privacy-scan -- main...HEAD                  # explicit git range
+# npm run privacy-scan -- --json                       # machine-readable output
+```
 
-The real **blocking** check (`@PersonalData` not declared → build red, ArchUnit-style classification co-pilot) is delivered by
-**UC 0031**; here `new-change` only reminds, so nothing slips through unnoticed before 0031 lands.
+Exit ≠ 0 = signals found: new Flyway migration tables/columns · new entity/DTO fields (`src/main/java`) · new
+dependencies/external hosts (**potential sub-processor**) · classification keys touched in the data manifests. The scanner
+is deterministic but heuristic — treat its output as the **floor, not the ceiling**: also consider signals it cannot see
+(e.g. a purpose change implemented in code, a new API exposing existing fields).
+
+**No signals and nothing personal-data-related in the change** → record "gate privacy: nessun segnale" in the
+implementation log and move on.
+
+**On signals, act as the classification co-pilot (#13 C16)** — reason *with* the developer, not a passive checklist. For
+each signal:
+
+1. **Elicit the purpose**: "spiegami cos'è e a cosa serve questo campo/integrazione".
+2. **Deduce and propose** nature / purpose / legal basis / retention **with your reasoning**; ask deepening questions
+   **only if the case is ambiguous** (e.g. phone number for the feature vs commercial re-contact — the legal basis changes).
+3. **Get explicit confirmation** ("finalità=X, base=Y, retention=Z, categoria=ordinaria — ti torna?") → update the
+   **manifest YAML** (`docs/compliance/manifests/`, both languages), regenerate the RoPA (`npm run assemble`) and annotate
+   the field **`@PersonalData`** — the CI verifier (UC 0030) enforces the pairing in `mvn test`.
+4. **Art. 9 escalation** (health, biometric, genetic, …): **strong warning** + DPIA screening against the art. 35/EDPB
+   criteria (#13 K67) + reinforced legal basis; never proceed silently. **Guardrail**: pseudonymization is **not**
+   erasure (#13 L72) — reject retention/erasure designs that only pseudonymize.
+5. **Classify MAJOR/MINOR** (#13 G41, #14 C18): **material** change (purposes / legal bases / data categories /
+   retention) → **major** → scoped re-accept (UC 0056); otherwise **minor** → notice. Record the classification
+   (major/minor + affected component: platform core vs app module + rationale) in `requirements.md`
+   ("Tocca dati personali?") **and** in the implementation log. While `content/legal/` does not exist yet (UC 0002), this
+   record **is** the deliverable — UC 0002 will replay the accumulated classifications into the front-matter versions;
+   once the legal texts exist, bump the affected component's `version`/`effective_date` front-matter here.
+6. **Sub-processor** (#13 C49): a new external integration → flag **"potenziale nuovo sub-processor"**; update
+   `content/legal/subprocessors.*.md` + 30-day client notice once they exist (UC 0002 / notice channel UC 0056) — until
+   then, record the flag in the implementation log so UC 0002 seeds the list from it.
+
+The co-pilot assists **up to a solid draft**; validation remains a legal-review matter (`docs/_REVISIONE-LEGALE.md`).
+The classification dialogue follows the **Questioning style** (one question at a time, verbose, confirm before recording).
 
 ## Cross-area contracts
 
