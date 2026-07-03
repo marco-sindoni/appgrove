@@ -1,0 +1,232 @@
+# Manifesto dati — sezione PIATTAFORMA (UC 0030, #13 C14/C15/C18).
+# Fonte unica: alimenta il RoPA interno (docs/compliance/ropa.<lang>.md, generato — NON editarlo a mano),
+# lo snippet privacy pubblico (UC 0002) e l'export/erasure (UC 0032).
+# Voci `entity`+`field` = entity-backed: il check JUnit (services/commons) le incrocia con @PersonalData.
+# BOZZA SOTTO DISCLAIMER: validazione finale del legale (docs/_REVISIONE-LEGALE.md).
+
+id: platform
+name:
+  it: Piattaforma appgrove (core)
+  en: appgrove platform (core)
+description:
+  it: >-
+    Trattamenti trasversali della piattaforma (account, utenti, inviti, autenticazione, log).
+    appgrove agisce come titolare per i consumatori B2C e come responsabile per i tenant B2B
+    titolari (#13 C13). Paddle (Merchant of Record) è titolare autonomo per i dati di pagamento.
+  en: >-
+    Cross-cutting platform processing (accounts, users, invitations, authentication, logs).
+    appgrove acts as controller towards B2C consumers and as processor for B2B tenant
+    controllers (#13 C13). Paddle (Merchant of Record) is an independent controller for payment data.
+
+entries:
+  - key: users.email
+    entity: app.appgrove.core.platform.User
+    field: email
+    location:
+      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti registrati (membri di un account/tenant)
+      en: Registered users (members of an account/tenant)
+    data_category:
+      it: Contatto (indirizzo email)
+      en: Contact data (email address)
+    purpose:
+      it: Erogazione e gestione dell'account (login, comunicazioni di servizio)
+      en: Account provisioning and management (login, service communications)
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
+      en: While the account is active + 14-day grace period after deletion (#13 E25)
+
+  - key: users.display_name
+    entity: app.appgrove.core.platform.User
+    field: displayName
+    location:
+      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti registrati
+      en: Registered users
+    data_category:
+      it: Identità (nome visualizzato)
+      en: Identity (display name)
+    purpose:
+      it: Identificazione dell'utente nell'interfaccia e nelle collaborazioni del tenant
+      en: User identification in the UI and within tenant collaboration
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
+      en: While the account is active + 14-day grace period after deletion (#13 E25)
+
+  - key: users.cognito_sub
+    entity: app.appgrove.core.platform.User
+    field: cognitoSub
+    location:
+      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti registrati
+      en: Registered users
+    data_category:
+      it: Identificativo online (subject Cognito, pseudo-identificatore)
+      en: Online identifier (Cognito subject, pseudo-identifier)
+    purpose:
+      it: Collegamento tra identità di autenticazione (Cognito) e profilo applicativo
+      en: Link between the authentication identity (Cognito) and the application profile
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
+      en: While the account is active + 14-day grace period after deletion (#13 E25)
+
+  - key: invitations.email
+    entity: app.appgrove.core.platform.Invitation
+    field: email
+    location:
+      it: Tabella `platform.invitations` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.invitations` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Persone invitate a entrare in un tenant (non ancora utenti)
+      en: People invited to join a tenant (not yet users)
+    data_category:
+      it: Contatto (indirizzo email dell'invitato)
+      en: Contact data (invitee email address)
+    purpose:
+      it: Recapito e gestione dell'invito (single-use, con scadenza; il token è salvato solo come hash)
+      en: Delivery and management of the invitation (single-use, expiring; the token is stored hashed only)
+    legal_basis:
+      it: Misure precontrattuali / contratto (art. 6.1.b GDPR)
+      en: Pre-contractual measures / contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a scadenza/accettazione dell'invito; soft-delete e purge secondo il ciclo piattaforma
+      en: Until the invitation expires or is accepted; soft-delete and purge per the platform lifecycle
+  - key: accounts.name
+    entity: app.appgrove.core.platform.Account
+    field: name
+    location:
+      it: Tabella `platform.accounts` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.accounts` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Titolari dell'account (per i B2C individuali è tipicamente il nome della persona)
+      en: Account holders (for individual B2C accounts it is typically the person's name)
+    data_category:
+      it: Identità/anagrafica account (classificazione prudente — può essere ragione sociale)
+      en: Identity / account name (prudent classification — may be a company name)
+    purpose:
+      it: Identificazione dell'account/tenant nella piattaforma e nelle comunicazioni
+      en: Identification of the account/tenant across the platform and communications
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
+      en: While the account is active + 14-day grace period after deletion (#13 E25)
+
+  - key: accounts.paddle_customer_id
+    entity: app.appgrove.core.platform.Account
+    field: paddleCustomerId
+    location:
+      it: Tabella `platform.accounts` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.accounts` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Titolari dell'account con abbonamento
+      en: Account holders with a subscription
+    data_category:
+      it: Identificativo online (customer id presso Paddle, pseudo-identificatore)
+      en: Online identifier (customer id at Paddle, pseudo-identifier)
+    purpose:
+      it: "Riconciliazione abbonamenti/pagamenti con Paddle (Merchant of Record, titolare autonomo — #13 H)"
+      en: "Subscription/payment reconciliation with Paddle (Merchant of Record, independent controller — #13 H)"
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace; gli obblighi fiscali sui pagamenti restano in capo a Paddle
+      en: While the account is active + 14-day grace period; fiscal retention on payments rests with Paddle
+
+  - key: cognito.credentials
+    location:
+      it: User pool Amazon Cognito (eu-west-1); in locale solo stub dev (`auth-local`, fuori RoPA)
+      en: Amazon Cognito user pool (eu-west-1); locally a dev-only stub (`auth-local`, out of RoPA scope)
+    data_subjects:
+      it: Utenti registrati
+      en: Registered users
+    data_category:
+      it: Credenziali di autenticazione (hash password) e segreti MFA/TOTP
+      en: Authentication credentials (password hash) and MFA/TOTP secrets
+    purpose:
+      it: Autenticazione degli utenti e protezione dell'accesso (MFA)
+      en: User authentication and access protection (MFA)
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo; eliminazione con la cancellazione dell'utenza Cognito
+      en: While the account is active; removed when the Cognito user is deleted
+
+  - key: logs.structured
+    location:
+      it: CloudWatch Logs (eu-west-1/eu-central-1); audit su S3/Glacier (#08 I)
+      en: CloudWatch Logs (eu-west-1/eu-central-1); audit trail on S3/Glacier (#08 I)
+    data_subjects:
+      it: Utenti della piattaforma
+      en: Platform users
+    data_category:
+      it: Identificativi tecnici nei log strutturati (`tenant_id`, `app_id`, `user_id`, IP)
+      en: Technical identifiers in structured logs (`tenant_id`, `app_id`, `user_id`, IP)
+    purpose:
+      it: "Sicurezza, stabilità e diagnostica (limitazione di finalità — niente profilazione, #13 B12)"
+      en: "Security, stability and diagnostics (purpose limitation — no profiling, #13 B12)"
+    legal_basis:
+      it: Legittimo interesse (art. 6.1.f GDPR — sicurezza e continuità del servizio)
+      en: Legitimate interest (art. 6(1)(f) GDPR — service security and continuity)
+    retention:
+      it: Log applicativi prod 30 giorni; audit/sicurezza 12 mesi su S3→Glacier (#08 I26)
+      en: Prod application logs 30 days; audit/security 12 months on S3→Glacier (#08 I26)
+
+sections:
+  - key: recipients
+    title:
+      it: Destinatari e sub-responsabili
+      en: Recipients and sub-processors
+    body:
+      it: >-
+        Sub-responsabili: **AWS** (hosting, regioni UE — DPA con SCC + certificazione DPF) e
+        **Plausible Analytics** (analytics senza cookie, hosting UE). **Paddle** (Merchant of Record)
+        è **titolare autonomo** per i dati di pagamento, non sub-responsabile (#13 H45-47).
+        Lista pubblica: `content/subprocessors.md` (UC 0002).
+      en: >-
+        Sub-processors: **AWS** (hosting, EU regions — DPA with SCCs + DPF certification) and
+        **Plausible Analytics** (cookieless analytics, EU hosting). **Paddle** (Merchant of Record)
+        is an **independent controller** for payment data, not a sub-processor (#13 H45-47).
+        Public list: `content/subprocessors.md` (UC 0002).
+  - key: transfers
+    title:
+      it: Trasferimenti extra-UE
+      en: Non-EU transfers
+    body:
+      it: >-
+        Dati a riposo solo in regioni UE (eu-west-1; monitoring eu-central-1) — #13 I51.
+        AWS Inc. (USA, CLOUD Act): garanzie DPF + SCC nel DPA, più cifratura at-rest/in-transit (#13 I52).
+      en: >-
+        Data at rest only in EU regions (eu-west-1; monitoring in eu-central-1) — #13 I51.
+        AWS Inc. (US, CLOUD Act): DPF + SCC safeguards in the DPA, plus at-rest/in-transit encryption (#13 I52).
+  - key: security
+    title:
+      it: Misure di sicurezza
+      en: Security measures
+    body:
+      it: >-
+        Cifratura at-rest e in-transit; isolamento per-tenant row-level (`tenant_id` solo dal JWT
+        verificato); least-privilege IAM; token di invito persistiti solo come hash; soft-delete con
+        purge programmata (grace 14 giorni); logging strutturato e audit trail (#02/#05/#06/#08).
+      en: >-
+        At-rest and in-transit encryption; row-level per-tenant isolation (`tenant_id` only from the
+        verified JWT); least-privilege IAM; invitation tokens stored hashed only; soft-delete with
+        scheduled purge (14-day grace); structured logging and audit trail (#02/#05/#06/#08).

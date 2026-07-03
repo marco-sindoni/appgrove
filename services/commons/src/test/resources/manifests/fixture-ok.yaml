@@ -1,0 +1,7 @@
+# Fixture: manifesto allineato con FixtureCustomer (solo la parte usata dal verifier Java).
+id: fixture
+entries:
+  - key: fixture_customer.email
+    entity: app.appgrove.commons.privacy.fixtures.FixtureCustomer
+    field: email
+  - key: cognito.credentials # voce non entity-backed: ignorata dal check Java

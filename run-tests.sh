@@ -6,13 +6,15 @@
 #   • frontend — frontend/  (npm workspaces)  → `npm test` + `npm run e2e`  [vitest + Playwright L2 (UC 0029),
 #                browser chromium auto-installato se assente; la suite L3 sandbox NON è qui: è pre-release]
 #   • infra    — infra/     (Terraform)       → `terraform fmt -check` + `validate` (best-effort se inizializzato)
+#   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
+#                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
 #
 # Esegue TUTTE le aree selezionate (non si ferma al primo errore), raccoglie gli esiti e ritorna
 # exit-code != 0 se QUALSIASI suite fallisce. È la SORGENTE DI VERITÀ unica per "lanciare tutti i test".
 #
 # Uso:
 #   ./run-tests.sh                 # tutte le aree
-#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra
+#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance
 #   ./run-tests.sh frontend infra
 #   ./run-tests.sh -h
 set -uo pipefail
@@ -31,12 +33,12 @@ usage() { sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 AREAS=()
 for a in "$@"; do
   case "$a" in
-    backend|frontend|infra) AREAS+=("$a") ;;
+    backend|frontend|infra|compliance) AREAS+=("$a") ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "area sconosciuta: $a (usa: backend | frontend | infra)" >&2; exit 2 ;;
+    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance)" >&2; exit 2 ;;
   esac
 done
-[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra)
+[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance)
 
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
@@ -113,6 +115,24 @@ run_infra() {
     warn "infra non inizializzata (.terraform assente): eseguito solo fmt -check; 'validate' salta (init in CI)."
   fi
   if [ "$rc" -eq 0 ]; then ok "infra: ok"; record infra OK; else fail "infra: problemi (fmt/validate)"; record infra FAIL; fi
+}
+
+# Check compliance (UC 0030): parità lingue dei manifesti dati + freshness del RoPA generato.
+# Il check @PersonalData ↔ manifesto gira invece nei test backend (JUnit, services/commons).
+run_compliance() {
+  hdr "COMPLIANCE — tools/compliance (parità lingue manifesti + freshness RoPA)"
+  if ! command -v node >/dev/null 2>&1; then
+    warn "node non installato: salto il check compliance."; record compliance SKIP; return
+  fi
+  if [ ! -d "$ROOT/tools/compliance/node_modules" ]; then
+    warn "tools/compliance/node_modules assente: installo le dipendenze (npm ci)…"
+    ( cd "$ROOT/tools/compliance" && { npm ci || npm install; } ) \
+      || { fail "compliance: install dipendenze fallita"; record compliance FAIL; return; }
+  fi
+  local rc=0
+  ( cd "$ROOT/tools/compliance" && npm test ) || rc=1
+  ( cd "$ROOT/tools/compliance" && npm run check ) || rc=1
+  if [ "$rc" -eq 0 ]; then ok "compliance: ok"; record compliance OK; else fail "compliance: check falliti"; record compliance FAIL; fi
 }
 
 for area in "${AREAS[@]}"; do "run_$area"; done

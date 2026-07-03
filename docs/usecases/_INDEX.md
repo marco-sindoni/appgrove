@@ -62,7 +62,7 @@ AWS finché il prodotto non gira offline.
 | 22 | [0027](07-payments/0027-applicazione-entitlement-quota.md) | Enforcement entitlement + quota SPI | Payments | 0026, 0051 · ☁0014 | ✅ |
 | 23 | [0028](07-payments/0028-portale-cliente-self-service.md) | Customer portal self-service | Payments | 0026, 0020 | ✅ |
 | 24 | [0029](07-payments/0029-test-pagamenti-l1-l2-l3.md) | Test pagamenti L1/L2/L3 | Payments | 0024, 0025, 0023 | ✅ |
-| 25 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ⬜ |
+| 25 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ✅ |
 | 26 | [0031](08-compliance-gdpr/0031-gate-privacy-ropa-new-change.md) | Gate privacy/RoPA in `new-change` | Compliance & GDPR | 0044, 0030 | ⬜ |
 | 27 | [0032](08-compliance-gdpr/0032-framework-esportazione-cancellazione.md) | Framework export/erasure | Compliance & GDPR | 0013, 0051 | ⬜ |
 | 28 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | ⬜ |

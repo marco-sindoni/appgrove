@@ -1,0 +1,9 @@
+# Fixture: voce entity-backed che punta a un campo NON annotato → il check deve fallire (voce stantia).
+id: fixture
+entries:
+  - key: fixture_customer.email
+    entity: app.appgrove.commons.privacy.fixtures.FixtureCustomer
+    field: email
+  - key: fixture_customer.notes
+    entity: app.appgrove.commons.privacy.fixtures.FixtureCustomer
+    field: notes

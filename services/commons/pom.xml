@@ -50,10 +50,36 @@
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Check @PersonalData ↔ manifesto dati (UC 0030): scan entità + parsing YAML del manifesto.
+         Il verifier è nel test-jar (vedi build) e viene riusato dai test di ogni servizio. -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+      <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <!-- test-jar: espone ai servizi le utility di test condivise (PersonalDataManifestVerifier, UC 0030). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>test-jar</id>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Indice Jandex: Quarkus scopre bean/entity di questa libreria nel servizio che la importa. -->
       <plugin>
         <groupId>io.smallrye</groupId>

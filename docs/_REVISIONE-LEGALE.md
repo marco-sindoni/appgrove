@@ -27,6 +27,7 @@ Aggiornato a ogni decisione che tocca aspetti legali.
 | L11 | **Entità legale titolare = persona fisica → ditta individuale** (no società), nome legale + **indirizzo via domiciliazione/virtual office** (#14 D23, no indirizzo di casa) + contatto — richiesta da privacy policy e da Paddle (MoR); inquadramento in [_COMMERCIALISTA](_COMMERCIALISTA.md) | #13 G / #14 D | pre-go-live | ⏳ prerequisito business |
 | L12 | **Template notifiche data breach** (Garante art. 33, interessati art. 34, controller B2B) IT/EN | #13 J | pre-go-live | ⏳ deliverable |
 | L13 | **Refund Policy** — pagina pubblica **separata**, accessibile dal menu (**requisito Paddle Domain Review**, #14 A2); contenuto "vendite finali/no refund salvo legge + Buyer Terms Paddle" (#09 J43); 5 lingue, IT facente fede | #09 J / #14 A | **prerequisito Paddle** | ⏳ da redigere |
+| L14 | **RoPA generato + classificazioni dei manifesti dati** (`docs/compliance/ropa.{it,en}.md`, `docs/compliance/manifests/*.yaml`): basi giuridiche, retention, classificazione prudente `accounts.name`/`paddle_customer_id`, voce log (legittimo interesse) — bozza interna assemblata automaticamente (UC 0030) | #13 C / UC 0030 | pre-go-live | ⏳ bozza interna |
 
 ## Note
 - I documenti **interni** (RoPA, manifesti-dati per-app) NON sono pubblici e non rientrano nella revisione "pubblica":

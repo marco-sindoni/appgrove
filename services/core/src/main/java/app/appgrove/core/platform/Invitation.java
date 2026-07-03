@@ -1,6 +1,7 @@
 package app.appgrove.core.platform;
 
 import app.appgrove.commons.persistence.BaseTenantEntity;
+import app.appgrove.commons.privacy.PersonalData;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,11 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at is null")
 public class Invitation extends BaseTenantEntity {
 
+    @PersonalData(
+            category = "contatto (email dell'invitato)",
+            purpose = "recapito e gestione dell'invito",
+            legalBasis = "misure precontrattuali/contratto",
+            retention = "fino a scadenza/accettazione dell'invito")
     @Column(nullable = false)
     private String email;
 

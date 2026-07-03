@@ -76,6 +76,19 @@
       <version>${archunit.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- Verifier @PersonalData ↔ manifesto dati (UC 0030) dal test-jar di commons + parser YAML. -->
+    <dependency>
+      <groupId>app.appgrove</groupId>
+      <artifactId>commons</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

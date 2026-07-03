@@ -1,0 +1,4 @@
+# Fixture: manca la voce per FixtureCustomer.email → il check deve fallire (campo non dichiarato).
+id: fixture
+entries:
+  - key: cognito.credentials
