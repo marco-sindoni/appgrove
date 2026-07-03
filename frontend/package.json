@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
+    "e2e": "npm run e2e --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "storybook": "npm run storybook --workspace @appgrove/design-system",

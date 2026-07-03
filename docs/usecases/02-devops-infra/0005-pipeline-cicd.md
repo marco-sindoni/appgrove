@@ -81,3 +81,15 @@ _Tracciato dalla change `0019-use-case-0022-…` (regola CLAUDE.md "Tracciamento
   `sync-pricing` verso Paddle production** (#09 H37, #07), con i secret Paddle per-env (Secrets Manager, #09 I38). Non c'è
   ancora `.github/workflows/`, quindi il cablaggio non è realizzabile finché UC 0005 non costruisce la pipeline.
   **Proprietario** del cablaggio CI: UC 0005.
+
+_Tracciato dalla change `0025-use-case-0029-…` (test pagamenti L1/L2/L3)._
+
+- **Cablaggio per-PR bloccante di L1/L2 (UC 0029).** La change `0025` ha reso `run-tests.sh` il gate canonico completo:
+  l'area `frontend` esegue vitest **e** gli E2E Playwright L2 (browser auto-installato), il backend include la catena L1
+  `WebhookEntitlementChainTest`. Quel che resta a UC 0005 è **solo** eseguire `./run-tests.sh` per-PR e marcarlo required —
+  a quel punto la clausola "L1+L2 bloccanti per-PR" (#09 D20, #10 35) è soddisfatta per costruzione.
+- **Job L3 nella pipeline di release tag→prod + gate con override motivato (UC 0029).** La suite smoke sandbox esiste già
+  (`frontend/apps/backoffice/playwright.l3.config.ts` + `e2e-l3/`, auto-skip senza env `APPGROVE_L3_*`; runbook in
+  `e2e-l3/README.md`). Restano a UC 0005: il job di release che la esegue contro l'ambiente deployato, l'esito che
+  confluisce nel **gate di approvazione manuale** prod (#07 b1) e il meccanismo di **override manuale con motivazione
+  registrata** (audit) quando il sandbox Paddle è down (#09 D20 L3). Prerequisito esterno: account sandbox (UC 0001).

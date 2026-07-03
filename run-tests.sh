@@ -3,7 +3,8 @@
 #
 # Aree (vedi CLAUDE.md "Esecuzione dei test"):
 #   • backend  — services/* (Quarkus/Maven)  → `mvn test`  [richiede Docker/Colima: Testcontainers/Dev Services]
-#   • frontend — frontend/  (npm workspaces)  → `npm test`  [vitest su packages/* e apps/*]
+#   • frontend — frontend/  (npm workspaces)  → `npm test` + `npm run e2e`  [vitest + Playwright L2 (UC 0029),
+#                browser chromium auto-installato se assente; la suite L3 sandbox NON è qui: è pre-release]
 #   • infra    — infra/     (Terraform)       → `terraform fmt -check` + `validate` (best-effort se inizializzato)
 #
 # Esegue TUTTE le aree selezionate (non si ferma al primo errore), raccoglie gli esiti e ritorna
@@ -69,17 +70,33 @@ run_backend() {
   fi
 }
 
+# Assicura il browser Playwright per gli e2e L2 (UC 0029): `playwright install` è idempotente
+# (scarica chromium solo se assente) — stesso spirito di ensure_colima per il backend.
+ensure_playwright() {
+  ( cd "$ROOT/frontend" && npx playwright install chromium ) \
+    || warn "Playwright: install del browser fallita (gli e2e potrebbero fallire)."
+}
+
 run_frontend() {
-  hdr "FRONTEND — frontend/ (npm test)"
+  hdr "FRONTEND — frontend/ (npm test + Playwright e2e)"
   if [ ! -d "$ROOT/frontend/node_modules" ]; then
     warn "frontend/node_modules assente: installo le dipendenze (npm ci)…"
     ( cd "$ROOT/frontend" && { npm ci || npm install; } ) || { fail "frontend: install dipendenze fallita"; record frontend FAIL; return; }
   fi
+  local rc=0
   if ( cd "$ROOT/frontend" && npm test ); then
-    ok "frontend: test verdi"; record frontend OK
+    ok "frontend: unit/component verdi"
   else
-    fail "frontend: test falliti"; record frontend FAIL
+    fail "frontend: unit/component falliti"; rc=1
   fi
+  # L2 (UC 0029): gli E2E Playwright sono parte del gate canonico — "frontend verde" = vitest + e2e.
+  ensure_playwright
+  if ( cd "$ROOT/frontend" && npm run e2e ); then
+    ok "frontend: e2e verdi"
+  else
+    fail "frontend: e2e falliti"; rc=1
+  fi
+  if [ "$rc" -eq 0 ]; then record frontend OK; else record frontend FAIL; fi
 }
 
 run_infra() {

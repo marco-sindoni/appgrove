@@ -55,3 +55,21 @@ verde con Paddle.js mockato; L3 smoke verde (o override motivato se sandbox down
   2. L2 E2E con Paddle.js mockato (per-PR, bloccante) sulla UX checkout/polling.
   3. L3 smoke reale su sandbox (pre-release) con override manuale motivato.
   4. Mai pagamenti reali in locale; non si guida l'iframe Paddle.
+
+## Punti aperti / decisioni differite
+
+_Aggiornato dalla change `0025-use-case-0029-…` (implementazione, perimetro "test nel repo")._
+
+Implementato dalla change `0025`: catena L1 completa (`WebhookEntitlementChainTest`: webhook firmato → pipeline reale →
+`subscription` → `/me/entitlements` derivato, senza seed SQL), L2 promosso a gate canonico (`run-tests.sh` area `frontend`
+= vitest + Playwright e2e, chromium auto-installato), struttura L3 skip-by-default
+(`frontend/apps/backoffice/playwright.l3.config.ts` + `e2e-l3/` + runbook). Resta aperto:
+
+- **Cablaggio per-PR bloccante di L1/L2 + job L3 nella release con gate/override** → possiede **UC 0005** (dettaglio nella
+  sua sezione "Punti aperti"); qui L1/L2 sono già dietro `run-tests.sh`, manca solo la pipeline che lo esegue.
+- **Account Paddle Sandbox** (prerequisito per eseguire L3) → possiede **UC 0001** (a valle del gate #14).
+- **Loader del vero Paddle.js e `PaddlePaymentProvider` reale** (oggi placeholder gated #14:
+  `frontend/apps/backoffice/src/billing/paddle.ts` ritorna sempre lo stub; il provider backend lancia
+  `UnsupportedOperationException`): si attivano quando esiste il sandbox — prima esecuzione reale di L3.
+- **Selettori dell'iframe Paddle nello smoke L3** (`e2e-l3/checkout-smoke.spec.ts`): da finalizzare alla prima esecuzione
+  contro il sandbox reale (l'iframe non è ispezionabile offline; principio: è smoke, non si guida l'iframe nei per-PR).
