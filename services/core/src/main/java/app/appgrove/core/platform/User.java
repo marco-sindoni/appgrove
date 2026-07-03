@@ -1,6 +1,7 @@
 package app.appgrove.core.platform;
 
 import app.appgrove.commons.persistence.BaseTenantEntity;
+import app.appgrove.commons.privacy.PersonalData;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,12 +19,24 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at is null")
 public class User extends BaseTenantEntity {
 
+    @PersonalData(
+            category = "identificativo online (subject Cognito)",
+            purpose = "collegamento identità di autenticazione ↔ profilo applicativo",
+            retention = "account attivo + grace 14gg (#13 E25)")
     @Column(name = "cognito_sub", nullable = false, updatable = false)
     private String cognitoSub;
 
+    @PersonalData(
+            category = "contatto",
+            purpose = "erogazione e gestione account (login, comunicazioni di servizio)",
+            retention = "account attivo + grace 14gg (#13 E25)")
     @Column(nullable = false)
     private String email;
 
+    @PersonalData(
+            category = "identità (nome visualizzato)",
+            purpose = "identificazione dell'utente nella UI e nel tenant",
+            retention = "account attivo + grace 14gg (#13 E25)")
     @Column(name = "display_name")
     private String displayName;
 

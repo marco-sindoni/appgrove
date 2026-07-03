@@ -1,0 +1,10 @@
+# Configurazione dell'automazione RoPA (UC 0030, #13 C14).
+#
+# `required_languages`: ogni testo lang-keyed dei manifesti (docs/compliance/manifests/*.yaml)
+# deve avere TUTTE queste lingue — il check (tools/compliance) fallisce se una manca.
+# Il formato è estensibile: per aggiungere una lingua basta elencarla qui e completare i manifesti
+# (+ le etichette in tools/compliance/lib.mjs). Oggi il RoPA interno è IT+EN (#13 C14); lo snippet
+# privacy pubblico (UC 0002) porterà il set a 5 lingue sulla stessa fonte.
+required_languages:
+  - it
+  - en

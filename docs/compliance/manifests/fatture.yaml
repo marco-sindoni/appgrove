@@ -1,0 +1,61 @@
+# Manifesto dati — app FATTURE (UC 0030, #13 C14/C15/C18).
+# Fonte unica (vedi platform.yaml per il funzionamento). Le voci entity-backed sono incrociate
+# con le annotazioni @PersonalData di services/fatture dal check JUnit.
+# BOZZA SOTTO DISCLAIMER: validazione finale del legale (docs/_REVISIONE-LEGALE.md).
+
+id: fatture
+name:
+  it: App Fatture (fatturazione B2C single-user)
+  en: Fatture app (single-user B2C invoicing)
+description:
+  it: >-
+    Dati dei clienti finali inseriti dal tenant nelle proprie fatture (schema `app_fatture`).
+    Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13).
+  en: >-
+    End-customer data entered by the tenant in their invoices (schema `app_fatture`).
+    The tenant is the data controller; appgrove acts as processor (#13 C13).
+
+entries:
+  - key: invoice.customer_name
+    entity: app.appgrove.fatture.Invoice
+    field: customerName
+    location:
+      it: Tabella `app_fatture.invoice` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_fatture.invoice` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Clienti (destinatari delle fatture) del tenant
+      en: Customers (invoice recipients) of the tenant
+    data_category:
+      it: Identità cliente (nome/denominazione)
+      en: Customer identity (name)
+    purpose:
+      it: Emissione e gestione delle fatture
+      en: Invoice issuance and management
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR) e obblighi legali del titolare (art. 6.1.c)
+      en: Contract (art. 6(1)(b) GDPR) and the controller's legal obligations (art. 6(1)(c))
+    retention:
+      it: 10 anni dall'emissione (obblighi fiscali)
+      en: 10 years from issuance (fiscal obligations)
+
+  - key: invoice.customer_email
+    entity: app.appgrove.fatture.Invoice
+    field: customerEmail
+    location:
+      it: Tabella `app_fatture.invoice` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_fatture.invoice` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Clienti (destinatari delle fatture) del tenant
+      en: Customers (invoice recipients) of the tenant
+    data_category:
+      it: Contatto cliente (indirizzo email, facoltativo)
+      en: Customer contact data (email address, optional)
+    purpose:
+      it: Recapito e invio della fattura
+      en: Invoice delivery
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: 10 anni dall'emissione (obblighi fiscali)
+      en: 10 years from issuance (fiscal obligations)

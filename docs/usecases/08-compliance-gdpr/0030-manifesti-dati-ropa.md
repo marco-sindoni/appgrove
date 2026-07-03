@@ -62,9 +62,8 @@ Manifest GDPR: **è** lo strumento di accountability. RoPA interno cifrato/versi
 
 _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
-- **Entry manifesto piattaforma per i PII di UC 0013.** La change 0007 introduce dati personali nel core
-  (`users.email`, `users.display_name`, `users.cognito_sub`, `invitations.email`): natura = identità/contatto,
-  finalità = erogazione/gestione account, base = contratto (6.1.b), retention = "finché attivo" + grace 14gg
-  (#13 E25). Vanno inseriti nel **manifesto piattaforma** + RoPA quando questo UC realizza il framework; e va
-  apposta l'annotazione **`@PersonalData`** su `email`/`display_name`/`cognito_sub` (check bloccante = UC 0031).
-  Allora si potrà valutare il bump PP/ToS (ora N/A: testi legali non ancora redatti, UC 0002). **Proprietario**: UC 0030 (gate CI: UC 0031).
+- ✅ **Entry manifesto piattaforma per i PII di UC 0013** — *risolto dalla change `0026-use-case-0030-…`*.
+  I campi core (`users.email`, `users.display_name`, `users.cognito_sub`, `invitations.email`, più
+  `accounts.name` e `accounts.paddle_customer_id` in classificazione prudente) sono annotati `@PersonalData`
+  e dichiarati in `docs/compliance/manifests/platform.yaml`; RoPA assemblato in `docs/compliance/ropa.{it,en}.md`.
+  Il bump PP/ToS resta N/A (testi legali non ancora redatti, UC 0002); il gate di processo in `new-change` resta a UC 0031.

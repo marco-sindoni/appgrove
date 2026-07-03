@@ -1,0 +1,15 @@
+{
+  "name": "appgrove-compliance-tools",
+  "private": true,
+  "version": "0.1.0",
+  "description": "RoPA automation (UC 0030): assembla docs/compliance/ropa.<lang>.md dai manifesti dati e verifica parità lingue + freshness.",
+  "type": "module",
+  "scripts": {
+    "assemble": "node ropa.mjs assemble",
+    "check": "node ropa.mjs check",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  }
+}

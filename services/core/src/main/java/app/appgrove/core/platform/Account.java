@@ -1,6 +1,7 @@
 package app.appgrove.core.platform;
 
 import app.appgrove.commons.persistence.BaseEntity;
+import app.appgrove.commons.privacy.PersonalData;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +19,10 @@ import org.hibernate.annotations.SQLRestriction;
 @SQLRestriction("deleted_at is null")
 public class Account extends BaseEntity {
 
+    @PersonalData(
+            category = "identità/anagrafica account (nei B2C è il nome della persona)",
+            purpose = "identificazione dell'account/tenant nella piattaforma",
+            retention = "account attivo + grace 14gg (#13 E25)")
     @Column(nullable = false)
     private String name;
 
@@ -25,6 +30,10 @@ public class Account extends BaseEntity {
     @Column(nullable = false)
     private AccountStatus status = AccountStatus.active;
 
+    @PersonalData(
+            category = "identificativo online (customer id Paddle)",
+            purpose = "riconciliazione abbonamenti/pagamenti con Paddle (MoR, titolare autonomo)",
+            retention = "account attivo + grace 14gg; retention fiscale in capo a Paddle")
     @Column(name = "paddle_customer_id")
     private String paddleCustomerId;
 

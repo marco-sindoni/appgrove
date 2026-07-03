@@ -71,3 +71,10 @@ auto-delete 7gg, presigned in-app. **Purge** = hard-delete con audit (prova). Ma
   (a) non annotare gli endpoint dei diritti GDPR; (b) aggiungere un **test** che verifica che export/erasure rispondono
   **anche senza accesso** (subscription non-grant) — il guard concreto di F31 che UC 0027 non ha potuto scrivere perché
   questi endpoint non esistevano ancora.
+- **Riconciliare `DataManifest` (record Java della SPI) con i manifesti YAML bilingui** _(tracciato dalla change
+  `0026-use-case-0030-…`)_. UC 0030 ha reso i **file YAML** (`docs/compliance/manifests/<app_id>.yaml`, lang-keyed)
+  la **fonte unica** legale (RoPA/snippet); il record `DataManifest` di `commons.gdpr` (monolingua, derivato via
+  reflection dalle annotazioni in `FattureDataContract.manifest()`) resta l'inventario tecnico della SPI export/purge.
+  La coerenza oggi è **transitiva** (entrambi ancorati a `@PersonalData`, check UC 0030 su annotazioni↔YAML). *Cosa
+  valutare qui:* se `manifest()` debba derivare dal YAML (o esserne validato: code-manifest ⊆ YAML), ed eventualmente
+  sfoltire gli attributi testuali duplicati di `@PersonalData`. Differito perché l'interfaccia SPI è di questo UC.
