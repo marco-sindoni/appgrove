@@ -69,3 +69,11 @@ Schema `platform`: **`legal_version`** (componente/major/effective_date — dato
   2. Endpoint `/me/legal-status` (derivazione major → da ri-accettare; minor → notifica) chiamato dallo shell al load.
   3. Schermata bloccante nella shell, scope per-componente; nuova app non forza re-accept.
   4. Diritti GDPR esenti; suite integration+security+E2E verde.
+
+## Punti aperti / decisioni differite
+
+- **Canale di notifica per i cambi MINOR e per il preavviso 30gg sub-processor** (da change 0027, UC 0031): il gate
+  privacy di `new-change` classifica e **registra** (minor → "notifica"; nuova integrazione esterna → "potenziale nuovo
+  sub-processor" con preavviso 30 giorni + finestra di opposizione, #13 C49), ma il **canale** con cui notificare
+  utenti/clienti (in-app e/o email) non esiste ancora: va progettato qui, insieme al meccanismo derivato di
+  re-accept/notifica. *Perché differito*: notifiche e re-accept runtime sono di questo UC. *Owner*: UC 0056.

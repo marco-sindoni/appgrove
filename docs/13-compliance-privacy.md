@@ -245,7 +245,8 @@ retention log/audit + no-PII nei log (#08), Paddle MoR (#09), accessibilità (#1
     eu-central-1, UE), **Plausible** (analytics vetrina, **EU-hosted Hetzner**, cookieless). **Atlassian e Cloudflare
     RIMOSSI** (ticketing → in-house; analytics → Plausible EU). **Paddle = ruolo a sé** (Merchant of Record, titolare/
     indipendente per pagamento/fiscale), **non** sub-processor classico. Trasferimenti → I.
-46. **Lista sub-processor pubblica e viva** in `content/subprocessors.md` (md, EN/IT min.): nome, finalità, regione,
+46. **Lista sub-processor pubblica e viva** in `content/legal/subprocessors.<lang>.md` (md, EN/IT min.; path allineato
+    all'artefatto di UC 0002, che la prevede in 5 lingue accanto agli altri legali): nome, finalità, regione,
     categorie dati; **linkata** da privacy policy e DPA.
 47. **DPA con ciascun sub-processor**: adesione ai **DPA standard** dei fornitori (AWS, Plausible), una-tantum
     pre-go-live (L9 in [_REVISIONE-LEGALE](_REVISIONE-LEGALE.md)).

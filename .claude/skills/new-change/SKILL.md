@@ -36,8 +36,10 @@ monorepo. Change documentation lives in `changes/NNNN-*/` at the repo root.
 `docs/usecases/_INDEX.md` in sync: set `YYYY` → 🟡 (in corso) at step-01 and → ✅ (implementato) at step-04. The edit is
 bundled into the change commit, so `main` reflects completion only on merge. Normal changes skip this.
 
-**Tracked hooks (reminders, not the CI gate).** (1) **Privacy/RoPA** — when a diff touches personal data, step-03 surfaces a
-guided checkpoint (classify → manifest/RoPA → PP/ToS bump); the blocking CI enforcement is **UC 0031**. (2) **E2E visual
+**Tracked hooks.** (1) **Privacy/RoPA gate (UC 0031)** — step-03 runs the deterministic signal scanner
+(`npm run privacy-scan` in `tools/compliance`) and, on signals, acts as the **classification co-pilot** (classify →
+manifest/RoPA → MAJOR/MINOR classification piloting the PP/ToS version bump); step-04 verifies the gate ran before the
+commit gate. The blocking CI check `@PersonalData`↔manifest lives in `mvn test` (UC 0030). (2) **E2E visual
 baseline** (#10 F) — never re-record a snapshot baseline blindly; investigate unexpected diffs (steps 03/04).
 
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
