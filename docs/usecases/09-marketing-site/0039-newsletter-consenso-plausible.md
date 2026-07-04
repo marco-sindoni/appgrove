@@ -60,3 +60,14 @@ identificativo** (legittimo interesse, cookieless). `@PersonalData` su email sub
   2. Consent log con prova (art. 7); unsubscribe facile; retention 24 mesi post-unsubscribe.
   3. Plausible cookieless EU sul solo vetrina, nessun banner; app loggata zero tracking.
   4. Test consenso/double opt-in/unsubscribe verdi.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Centro preferenze consensi in-app + unsubscribe (da UC 0033)**: la change 0029 implementa i diritti
+  self-service che poggiano sul framework UC 0032 ma **rimanda** l'opposizione al marketing (unsubscribe)
+  e il centro preferenze consensi (hub newsletter/futuri opt-in con revoca facile, #13 D19/F31), perché
+  presuppongono il registro dei consensi che nasce qui. Quando questo use case verrà implementato, deve
+  consegnare **anche** la parte in-app richiesta da UC 0033: toggle/centro preferenze nell'account e
+  unsubscribe con revoca registrata nel consent log.

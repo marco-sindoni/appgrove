@@ -71,3 +71,14 @@ Manifest: applica le retention dichiarate (accountability art. 5.1.e). `@Persona
   cambiare. Qui vanno costruiti: lo stato di account disattivato/in-grace, l'annullabilità entro 14 giorni, e
   il job schedulato che allo scadere invoca l'orchestrazione di UC 0032 (nome/punto d'ingresso documentati
   nell'`implementation-log.md` della change 0028). Il trigger UI è di UC 0033.
+  - **Aggiornamento (change `0029-use-case-0033-…`)**: la macchina della grazia è stata **anticipata nella
+    change 0029** insieme al trigger UI, perché l'ordine di esecuzione mette UC 0033 prima di UC 0035, i
+    requisiti di test di UC 0033 chiedono l'end-to-end "elimina account + grazia + annulla", e il contenuto
+    decisionale era già fissato da #13 E25 (solo implementazione, nessuna decisione prematura). La change
+    0029 consegna: stato account in grazia, disattivazione immediata, endpoint di annullamento entro 14
+    giorni, job schedulato che allo scadere invoca `TenantOffboarding.offboard`. **Restano a questo use
+    case**: auto-cancellazione account inattivi 24 mesi, retention per-categoria as-code (log Terraform, S3
+    lifecycle, DB purge job/EventBridge), archivio audit/sicurezza 12 mesi, e la **verifica in cloud** della
+    schedulazione (in locale gira su scheduler applicativo; il trigger EventBridge/cron di produzione è
+    materia di UC 0035 con UC 0004/0006). Il punto 1 del DoD qui sopra va letto al netto della parte grace
+    già consegnata.

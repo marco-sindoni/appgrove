@@ -59,3 +59,17 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
   2. Ticketing in-house (thread + SES) con ticket privacy speciali auto-creati.
   3. Scoped alla retention; prova di evasione nell'audit; nessuna impersonation.
   4. E2E admin + security verdi.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Gestione operativa della limitazione del trattamento (art. 18, da UC 0033)**. La change 0029 espone la
+  limitazione nella pagina dei diritti come **diritto dichiarato con canale di richiesta** (contatto
+  privacy), senza flag self-service: è un diritto eccezionale valutato caso per caso e senza questa console
+  nessuno potrebbe gestirlo. Quando questo use case verrà implementato deve coprire la presa in carico
+  della richiesta (ticket privacy), l'applicazione del **flag/sospensione di limitazione** (la meccanica di
+  sospensione utente/account esiste già) e la prova di evasione nell'audit (#13 D19).
+- **Ticket privacy automatico su export FAILED (da UC 0032/0033)**: già rimandato qui dalla change 0028 —
+  resta valido; la UI export della change 0029 mostra lo stato FAILED e invita a contattare il supporto
+  finché il ticketing non esiste.

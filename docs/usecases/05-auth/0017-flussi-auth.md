@@ -111,3 +111,10 @@ _Aggiunti dalla change `0012-use-case-0017-…` (implementazione UI auth contro 
 - **Specificità prod Cognito** (challenge names, Custom Message Lambda EN/IT, throttling API GW) — la UI è
   backend-agnostica (`/api/auth/*`); in locale gira su auth-local. *Owner:* ☁ UC 0015/0016/0018.
 - **QR 2FA** — ✅ reso con `qrcode.react` nella pagina Sicurezza (oltre al secret in chiaro per inserimento manuale).
+- **Cambio email con verifica** _(tracciato dalla change `0029-use-case-0033-…`, rettifica art. 16)_ — la
+  rettifica self-service di UC 0033 copre il **nome visualizzato** (`PATCH /users/me`); il **cambio
+  dell'email** resta escluso perché l'email è l'identificatore di accesso e vive nel provider di identità
+  (Cognito in cloud, auth-local in locale): serve un flusso dedicato con verifica del nuovo indirizzo
+  (invio codice/link, aggiornamento nel provider, riallineamento del record `users` nel core). *Owner:*
+  questo use case (flusso UI) + **UC 0058** (endpoint auth-local) + ☁ UC 0015/0016 (Cognito). Finché non
+  esiste, la rettifica dell'email passa dal supporto.

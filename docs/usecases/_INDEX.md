@@ -65,7 +65,7 @@ AWS finché il prodotto non gira offline.
 | 25 | [0030](08-compliance-gdpr/0030-manifesti-dati-ropa.md) | Manifesti dati per-app + RoPA automation | Compliance & GDPR | 0051 · (0046 industrializza) | ✅ |
 | 26 | [0031](08-compliance-gdpr/0031-gate-privacy-ropa-new-change.md) | Gate privacy/RoPA in `new-change` | Compliance & GDPR | 0044, 0030 | ✅ |
 | 27 | [0032](08-compliance-gdpr/0032-framework-esportazione-cancellazione.md) | Framework export/erasure | Compliance & GDPR | 0013, 0051 | ✅ |
-| 28 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | ⬜ |
+| 28 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | 🟡 |
 | 29 | [0034](08-compliance-gdpr/0034-console-diritti-gdpr.md) | Console "Diritti GDPR" (admin) | Compliance & GDPR | 0032, 0021 | ⬜ |
 | 30 | [0003](02-devops-infra/0003-fondamenta-terraform.md) | Terraform foundation | DevOps & Infra | — | ⬜ |
 | 31 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | ⬜ |
