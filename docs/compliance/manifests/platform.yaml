@@ -170,6 +170,50 @@ entries:
       it: Finché l'account è attivo; eliminazione con la cancellazione dell'utenza Cognito
       en: While the account is active; removed when the Cognito user is deleted
 
+  - key: support_ticket.subject
+    entity: app.appgrove.core.support.SupportTicket
+    field: subject
+    location:
+      it: Tabella `platform.support_ticket` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.support_ticket` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti che aprono richieste di supporto o di esercizio dei diritti
+      en: Users opening support or data-rights requests
+    data_category:
+      it: Contenuto libero (oggetto della richiesta di supporto/privacy)
+      en: Free-form content (subject of the support/privacy request)
+    purpose:
+      it: "Gestione delle richieste di supporto e di esercizio dei diritti (ticketing in-house, #13 D21)"
+      en: "Handling support and data-rights requests (in-house ticketing, #13 D21)"
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR); per i ticket privacy anche obbligo legale (art. 12 GDPR)
+      en: Contract (art. 6(1)(b) GDPR); for privacy tickets also legal obligation (art. 12 GDPR)
+    retention:
+      it: "24 mesi dalla chiusura del ticket, poi eliminazione automatica (#13 E)"
+      en: "24 months from ticket closure, then automatic deletion (#13 E)"
+
+  - key: support_ticket_message.body
+    entity: app.appgrove.core.support.SupportTicketMessage
+    field: body
+    location:
+      it: Tabella `platform.support_ticket_message` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.support_ticket_message` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti che scrivono nel thread di un ticket di supporto
+      en: Users writing in a support-ticket thread
+    data_category:
+      it: Contenuto libero (testo dei messaggi del thread di supporto)
+      en: Free-form content (support-thread message text)
+    purpose:
+      it: "Gestione delle richieste di supporto e di esercizio dei diritti (ticketing in-house, #13 D21)"
+      en: "Handling support and data-rights requests (in-house ticketing, #13 D21)"
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR); per i ticket privacy anche obbligo legale (art. 12 GDPR)
+      en: Contract (art. 6(1)(b) GDPR); for privacy tickets also legal obligation (art. 12 GDPR)
+    retention:
+      it: "24 mesi dalla chiusura del ticket, poi eliminazione automatica (#13 E)"
+      en: "24 months from ticket closure, then automatic deletion (#13 E)"
+
   - key: logs.structured
     location:
       it: CloudWatch Logs (eu-west-1/eu-central-1); audit su S3/Glacier (#08 I)

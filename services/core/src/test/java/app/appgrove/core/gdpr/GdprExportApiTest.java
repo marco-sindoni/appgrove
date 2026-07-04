@@ -90,7 +90,7 @@ class GdprExportApiTest {
                 .body("status", equalTo("COMPLETED"))
                 .body("progress.completed", equalTo(1))
                 .body("items[0].appId", equalTo("platform"))
-                .body("items[0].steps.size()", equalTo(3));
+                .body("items[0].steps.size()", equalTo(4));
 
         // ZIP aggregato nello storage, con il frammento platform.json
         String zipKey = GdprQueues.zipKey(jobId);

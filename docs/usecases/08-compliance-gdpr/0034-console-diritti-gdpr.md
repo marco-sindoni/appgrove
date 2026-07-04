@@ -62,14 +62,22 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
 
 ## Punti aperti / decisioni differite
 
-_Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
-
-- **Gestione operativa della limitazione del trattamento (art. 18, da UC 0033)**. La change 0029 espone la
-  limitazione nella pagina dei diritti come **diritto dichiarato con canale di richiesta** (contatto
-  privacy), senza flag self-service: è un diritto eccezionale valutato caso per caso e senza questa console
-  nessuno potrebbe gestirlo. Quando questo use case verrà implementato deve coprire la presa in carico
-  della richiesta (ticket privacy), l'applicazione del **flag/sospensione di limitazione** (la meccanica di
-  sospensione utente/account esiste già) e la prova di evasione nell'audit (#13 D19).
-- **Ticket privacy automatico su export FAILED (da UC 0032/0033)**: già rimandato qui dalla change 0028 —
-  resta valido; la UI export della change 0029 mostra lo stato FAILED e invita a contattare il supporto
-  finché il ticketing non esiste.
+- ~~**Gestione operativa della limitazione del trattamento (art. 18, da UC 0033)**~~ → **risolto dalla
+  change `0030-use-case-0034-…`**: presa in carico via ticket privacy, azione admin applica/rimuovi con
+  causale dedicata `gdpr_restriction` (sospensione riusata, distinta da quella amministrativa) e prova di
+  evasione nel registro `gdpr_restriction_audit` (#13 D19).
+- ~~**Ticket privacy automatico su export FAILED (da UC 0032/0033)**~~ → **risolto dalla change
+  `0030-use-case-0034-…`**: il consumer risultati apre un ticket privacy idempotente per job fallito
+  (scadenza legale 1 mese, priorità alta, notifica alla casella di supporto).
+- **Relay email SES in cloud** _(tracciato dalla change `0030-use-case-0034-…`)_: le notifiche del
+  ticketing usano il Mailer Quarkus (Mailpit in dev, MockMailbox in test); la configurazione del relay
+  reale (Amazon SES: identità verificata, IAM, config `%prod` del mailer) è **infrastruttura** da
+  consegnare con il deploy cloud del core (UC 0003/0005), come per S3/SQS.
+- **Validazione dei deep-link console AWS in cloud** _(tracciato dalla change `0030-use-case-0034-…`)_:
+  gli URL Logs Insights/S3 (`AwsConsoleLinks`) seguono il formato documentato della console AWS ma sono
+  verificabili solo su un ambiente reale (in locale la config è assente e i link non compaiono); alla
+  prima attivazione cloud vanno provati e, se serve, corretti — insieme alla scelta di `region`/`log-group`
+  (config `appgrove.aws-console.*`).
+- **Link al registro breach**: la console non lo mostra finché il registro non esiste → rimando su UC 0049.
+- **Cambi consenso nella console**: omessi (nessun modello consensi, postura no-consent) → rimando su UC 0039.
+- **Retention di ticket/registri oltre lo sweeper applicativo** → rimando su UC 0035.

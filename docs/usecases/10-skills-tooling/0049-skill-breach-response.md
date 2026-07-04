@@ -59,3 +59,11 @@ completi (IT/EN); `security.txt` pubblicato. (Nessun test runtime di prodotto.)
   2. Skill `breach-response`: albero soglie + draft registro/notifiche (Garante/interessati/controller B2B, IT/EN).
   3. `security.txt` + `security@` per responsible disclosure.
   4. Leva cifratura applicata; notifiche per ruolo (A).
+
+## Punti aperti / decisioni differite
+
+- **Link al registro breach dalla console "Diritti GDPR" (UC 0034)** _(tracciato dalla change
+  `0030-use-case-0034-…`)_: lo use case 0034 prevede che la console punti al registro breach/notifiche
+  (#13 J), ma il registro nasce qui. La change 0030 **non** mostra alcuna sezione breach; quando il
+  registro esisterà, aggiungere il puntatore nella pagina admin "Diritti GDPR" (pattern dei puntatori
+  già presenti: Logs Insights, S3, audit purge/limitazioni).

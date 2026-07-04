@@ -484,6 +484,516 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/admin/gdpr/exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExportDetailView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/purge-audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purge Audit */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PurgeAuditView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Requests */
+        get: {
+            parameters: {
+                query?: {
+                    type?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RequestView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/restrictions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Restriction List */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RestrictionsView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /** Apply Restriction */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ApplyRestriction"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RestrictionResult"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/restrictions/{targetKind}/{targetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Restriction */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    targetId: components["schemas"]["UUID"];
+                    targetKind: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RestrictionResult"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ticket List */
+        get: {
+            parameters: {
+                query?: {
+                    status?: components["schemas"]["TicketStatus"];
+                    type?: components["schemas"]["TicketType"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTicketView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/tickets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ticket */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTicketDetailView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTicket"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminTicketView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/platform/v1/admin/gdpr/tickets/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reply */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PostMessage"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminMessageView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/admin/overview": {
         parameters: {
             query?: never;
@@ -1442,6 +1952,216 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TicketView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /** Open */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["OpenTicket"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TicketView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/tickets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TicketDetailView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/tickets/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reply */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PostMessage"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MessageView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/users": {
         parameters: {
             query?: never;
@@ -1825,6 +2545,30 @@ export interface components {
             /** Format: int64 */
             activeSubscriptions?: number;
         };
+        AdminMessageView: {
+            id?: components["schemas"]["UUID"];
+            author?: components["schemas"]["TicketAuthor"];
+            body?: string;
+            createdAt?: components["schemas"]["Instant"];
+        };
+        AdminTicketDetailView: {
+            ticket?: components["schemas"]["AdminTicketView"];
+            thread?: components["schemas"]["AdminMessageView"][];
+        };
+        AdminTicketView: {
+            id?: components["schemas"]["UUID"];
+            tenantId?: string;
+            accountName?: string;
+            type?: components["schemas"]["TicketType"];
+            subject?: string;
+            priority?: components["schemas"]["TicketPriority"];
+            status?: components["schemas"]["TicketStatus"];
+            dueAt?: components["schemas"]["Instant"];
+            exportJobId?: components["schemas"]["UUID"];
+            closedAt?: components["schemas"]["Instant"];
+            createdAt?: components["schemas"]["Instant"];
+            logsUrl?: string;
+        };
         AdminUserView: {
             id?: components["schemas"]["UUID"];
             email?: string;
@@ -1846,6 +2590,12 @@ export interface components {
             name?: string;
             userModel?: string;
             status?: string;
+        };
+        ApplyRestriction: {
+            targetKind: components["schemas"]["TargetKind"];
+            targetId: components["schemas"]["UUID"];
+            ticketId?: components["schemas"]["UUID"];
+            note?: string;
         };
         BillingRow: {
             tenantId?: string;
@@ -1895,6 +2645,17 @@ export interface components {
                 [key: string]: components["schemas"]["MetricLimit"];
             };
         };
+        ExportDetailView: {
+            request?: components["schemas"]["RequestView"];
+            items?: components["schemas"]["ExportItemView"][];
+            zipKey?: string;
+            s3ConsoleUrl?: string;
+        };
+        ExportItemView: {
+            appId?: string;
+            status?: string;
+            error?: string;
+        };
         /** @enum {string} */
         GdprExportKind: "account" | "app";
         /** @enum {string} */
@@ -1932,6 +2693,12 @@ export interface components {
         MeEntitlementsView: {
             entitlements?: components["schemas"]["EntitlementView"][];
         };
+        MessageView: {
+            id?: components["schemas"]["UUID"];
+            author?: components["schemas"]["TicketAuthor"];
+            body?: string;
+            createdAt?: components["schemas"]["Instant"];
+        };
         MetricLimit: {
             /** Format: int64 */
             cap?: number;
@@ -1940,6 +2707,11 @@ export interface components {
         };
         MySubscriptionsView: {
             subscriptions?: components["schemas"]["SubscriptionView"][];
+        };
+        OpenTicket: {
+            type: components["schemas"]["TicketType"];
+            subject: string;
+            message: string;
         };
         OverviewView: {
             /** Format: int64 */
@@ -1976,6 +2748,9 @@ export interface components {
         PortalSessionView: {
             url?: string;
         };
+        PostMessage: {
+            body: string;
+        };
         PriceView: {
             billingCycle?: string;
             /** Format: int32 */
@@ -1987,6 +2762,53 @@ export interface components {
             completed?: number;
             /** Format: int32 */
             total?: number;
+        };
+        PurgeAuditView: {
+            id?: components["schemas"]["UUID"];
+            tenantId?: string;
+            appId?: string;
+            reason?: string;
+            /** Format: int32 */
+            total?: number;
+            executedAt?: components["schemas"]["Instant"];
+        };
+        RequestView: {
+            type?: string;
+            refId?: components["schemas"]["UUID"];
+            tenantId?: string;
+            accountName?: string;
+            appId?: string;
+            subjectId?: string;
+            status?: string;
+            requestedAt?: components["schemas"]["Instant"];
+            completedAt?: components["schemas"]["Instant"];
+            dueAt?: components["schemas"]["Instant"];
+            error?: string;
+            logsUrl?: string;
+        };
+        RestrictionAuditView: {
+            id?: components["schemas"]["UUID"];
+            tenantId?: string;
+            targetKind?: components["schemas"]["TargetKind"];
+            targetId?: string;
+            action?: string;
+            ticketId?: components["schemas"]["UUID"];
+            actor?: string;
+            note?: string;
+            executedAt?: components["schemas"]["Instant"];
+        };
+        RestrictionResult: {
+            outcome?: string;
+        };
+        RestrictionView: {
+            targetKind?: components["schemas"]["TargetKind"];
+            targetId?: components["schemas"]["UUID"];
+            tenantId?: string;
+            label?: string;
+        };
+        RestrictionsView: {
+            active?: components["schemas"]["RestrictionView"][];
+            auditTrail?: components["schemas"]["RestrictionAuditView"][];
         };
         StartCheckoutRequest: {
             tierKey?: string;
@@ -2027,6 +2849,30 @@ export interface components {
             canReactivate?: boolean;
             portalAvailable?: boolean;
         };
+        /** @enum {string} */
+        TargetKind: "account" | "user";
+        /** @enum {string} */
+        TicketAuthor: "user" | "admin" | "system";
+        TicketDetailView: {
+            ticket?: components["schemas"]["TicketView"];
+            thread?: components["schemas"]["MessageView"][];
+        };
+        /** @enum {string} */
+        TicketPriority: "low" | "normal" | "high";
+        /** @enum {string} */
+        TicketStatus: "open" | "in_progress" | "resolved" | "closed";
+        /** @enum {string} */
+        TicketType: "support" | "privacy";
+        TicketView: {
+            id?: components["schemas"]["UUID"];
+            type?: components["schemas"]["TicketType"];
+            subject?: string;
+            priority?: components["schemas"]["TicketPriority"];
+            status?: components["schemas"]["TicketStatus"];
+            dueAt?: components["schemas"]["Instant"];
+            createdAt?: components["schemas"]["Instant"];
+            closedAt?: components["schemas"]["Instant"];
+        };
         TierView: {
             tierId?: components["schemas"]["UUID"];
             key?: string;
@@ -2051,6 +2897,10 @@ export interface components {
         };
         UpdateMe: {
             displayName: string;
+        };
+        UpdateTicket: {
+            status: components["schemas"]["TicketStatus"];
+            priority: components["schemas"]["TicketPriority"];
         };
         UpdateUser: {
             role?: string;

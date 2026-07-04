@@ -48,6 +48,13 @@ public class User extends BaseTenantEntity {
     @Column(nullable = false)
     private UserStatus status = UserStatus.active;
 
+    /**
+     * Causale della sospensione (UC 0034): {@code gdpr_restriction} = limitazione del trattamento
+     * (art. 18, #13 D19), distinta da una sospensione amministrativa. Null se non sospeso.
+     */
+    @Column(name = "suspended_reason", length = 32)
+    private String suspendedReason;
+
     protected User() {
         // richiesto da JPA
     }
@@ -93,5 +100,13 @@ public class User extends BaseTenantEntity {
 
     public void setStatus(UserStatus status) {
         this.status = status;
+    }
+
+    public String getSuspendedReason() {
+        return suspendedReason;
+    }
+
+    public void setSuspendedReason(String suspendedReason) {
+        this.suspendedReason = suspendedReason;
     }
 }

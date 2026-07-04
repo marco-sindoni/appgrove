@@ -73,6 +73,78 @@
           }
         }
       },
+      "AdminMessageView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "author" : {
+            "$ref" : "#/components/schemas/TicketAuthor"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "AdminTicketDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "ticket" : {
+            "$ref" : "#/components/schemas/AdminTicketView"
+          },
+          "thread" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminMessageView"
+            }
+          }
+        }
+      },
+      "AdminTicketView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "accountName" : {
+            "type" : "string"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/TicketType"
+          },
+          "subject" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "$ref" : "#/components/schemas/TicketPriority"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/TicketStatus"
+          },
+          "dueAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "exportJobId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "closedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "logsUrl" : {
+            "type" : "string"
+          }
+        }
+      },
       "AdminUserView" : {
         "type" : "object",
         "properties" : {
@@ -136,6 +208,25 @@
           },
           "status" : {
             "type" : "string"
+          }
+        }
+      },
+      "ApplyRestriction" : {
+        "type" : "object",
+        "required" : [ "targetKind", "targetId" ],
+        "properties" : {
+          "targetKind" : {
+            "$ref" : "#/components/schemas/TargetKind"
+          },
+          "targetId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "ticketId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "note" : {
+            "type" : "string",
+            "maxLength" : 512
           }
         }
       },
@@ -279,6 +370,40 @@
           }
         }
       },
+      "ExportDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "request" : {
+            "$ref" : "#/components/schemas/RequestView"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ExportItemView"
+            }
+          },
+          "zipKey" : {
+            "type" : "string"
+          },
+          "s3ConsoleUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ExportItemView" : {
+        "type" : "object",
+        "properties" : {
+          "appId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      },
       "GdprExportKind" : {
         "type" : "string",
         "enum" : [ "account", "app" ]
@@ -381,6 +506,23 @@
           }
         }
       },
+      "MessageView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "author" : {
+            "$ref" : "#/components/schemas/TicketAuthor"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "MetricLimit" : {
         "type" : "object",
         "properties" : {
@@ -404,6 +546,25 @@
             "items" : {
               "$ref" : "#/components/schemas/SubscriptionView"
             }
+          }
+        }
+      },
+      "OpenTicket" : {
+        "type" : "object",
+        "required" : [ "type", "subject", "message" ],
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/TicketType"
+          },
+          "subject" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 200
+          },
+          "message" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 4000
           }
         }
       },
@@ -490,6 +651,17 @@
           }
         }
       },
+      "PostMessage" : {
+        "type" : "object",
+        "required" : [ "body" ],
+        "properties" : {
+          "body" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 4000
+          }
+        }
+      },
       "PriceView" : {
         "type" : "object",
         "properties" : {
@@ -515,6 +687,145 @@
           "total" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "PurgeAuditView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "appId" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "executedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "RequestView" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "refId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "accountName" : {
+            "type" : "string"
+          },
+          "appId" : {
+            "type" : "string"
+          },
+          "subjectId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "requestedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "completedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "dueAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "error" : {
+            "type" : "string"
+          },
+          "logsUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RestrictionAuditView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "targetKind" : {
+            "$ref" : "#/components/schemas/TargetKind"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "action" : {
+            "type" : "string"
+          },
+          "ticketId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "actor" : {
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "executedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "RestrictionResult" : {
+        "type" : "object",
+        "properties" : {
+          "outcome" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RestrictionView" : {
+        "type" : "object",
+        "properties" : {
+          "targetKind" : {
+            "$ref" : "#/components/schemas/TargetKind"
+          },
+          "targetId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "tenantId" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          }
+        }
+      },
+      "RestrictionsView" : {
+        "type" : "object",
+        "properties" : {
+          "active" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RestrictionView"
+            }
+          },
+          "auditTrail" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RestrictionAuditView"
+            }
           }
         }
       },
@@ -632,6 +943,69 @@
           }
         }
       },
+      "TargetKind" : {
+        "type" : "string",
+        "enum" : [ "account", "user" ]
+      },
+      "TicketAuthor" : {
+        "type" : "string",
+        "enum" : [ "user", "admin", "system" ]
+      },
+      "TicketDetailView" : {
+        "type" : "object",
+        "properties" : {
+          "ticket" : {
+            "$ref" : "#/components/schemas/TicketView"
+          },
+          "thread" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MessageView"
+            }
+          }
+        }
+      },
+      "TicketPriority" : {
+        "type" : "string",
+        "enum" : [ "low", "normal", "high" ]
+      },
+      "TicketStatus" : {
+        "type" : "string",
+        "enum" : [ "open", "in_progress", "resolved", "closed" ]
+      },
+      "TicketType" : {
+        "type" : "string",
+        "enum" : [ "support", "privacy" ]
+      },
+      "TicketView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/TicketType"
+          },
+          "subject" : {
+            "type" : "string"
+          },
+          "priority" : {
+            "$ref" : "#/components/schemas/TicketPriority"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/TicketStatus"
+          },
+          "dueAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "closedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "TierView" : {
         "type" : "object",
         "properties" : {
@@ -698,6 +1072,18 @@
             "type" : "string",
             "pattern" : "\\S",
             "maxLength" : 255
+          }
+        }
+      },
+      "UpdateTicket" : {
+        "type" : "object",
+        "required" : [ "status", "priority" ],
+        "properties" : {
+          "status" : {
+            "$ref" : "#/components/schemas/TicketStatus"
+          },
+          "priority" : {
+            "$ref" : "#/components/schemas/TicketPriority"
           }
         }
       },
@@ -1070,6 +1456,384 @@
         },
         "summary" : "Entitlements",
         "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/exports/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ExportDetailView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Export",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/purge-audit" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PurgeAuditView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Purge Audit",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/requests" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "type",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RequestView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Requests",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/restrictions" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestrictionsView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Restriction List",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ApplyRestriction"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestrictionResult"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Apply Restriction",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/restrictions/{targetKind}/{targetId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "targetId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        }, {
+          "name" : "targetKind",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RestrictionResult"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Remove Restriction",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/tickets" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "status",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/TicketStatus"
+          }
+        }, {
+          "name" : "type",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/TicketType"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminTicketView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Ticket List",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/tickets/{id}" : {
+      "patch" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateTicket"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminTicketView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      },
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminTicketDetailView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Ticket",
+        "tags" : [ "Admin Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/gdpr/tickets/{id}/messages" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PostMessage"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminMessageView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Reply",
+        "tags" : [ "Admin Gdpr Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "platform-admin" ]
         } ]
@@ -1705,6 +2469,157 @@
         "tags" : [ "Subscription Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "owner" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/tickets" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OpenTicket"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Open",
+        "tags" : [ "Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin", "member" ]
+        } ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TicketView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin", "member" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/tickets/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketDetailView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin", "member" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/tickets/{id}/messages" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PostMessage"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Reply",
+        "tags" : [ "Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       }
     },

@@ -117,6 +117,30 @@ test('I miei dati: export profilo scarica un JSON', async ({ page }) => {
   expect(download.suggestedFilename()).toBe('appgrove-profilo.json')
 })
 
+test('I miei dati: export fallito → messaggio con link alla pagina Supporto (UC 0034)', async ({ page }) => {
+  await mockAuthed(page)
+  // override (registrato dopo mockAuthed → vince): l'export fallisce; il ticket privacy nasce lato server
+  const failed = {
+    id: 'job-f1',
+    kind: 'account',
+    status: 'FAILED',
+    progress: { completed: 0, total: 1 },
+    items: [],
+    error: 'errore simulato',
+  }
+  await page.route('**/api/platform/v1/gdpr/exports', (route) =>
+    route.fulfill({ status: 202, json: failed }),
+  )
+  await page.route('**/api/platform/v1/gdpr/exports/job-f1', (route) => route.fulfill({ json: failed }))
+  await page.route('**/api/platform/v1/tickets', (route) => route.fulfill({ json: [] }))
+
+  await page.goto('/privacy')
+  await page.getByRole('button', { name: /Start export/ }).click()
+  await expect(page.getByText(/Export failed/)).toBeVisible()
+  await page.getByRole('link', { name: 'Go to support' }).click()
+  await expect(page.getByRole('heading', { name: 'Support', level: 1 })).toBeVisible()
+})
+
 test('I miei dati: export account → pronto → link con scadenza', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/privacy')

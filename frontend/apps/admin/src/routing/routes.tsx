@@ -11,6 +11,9 @@ import { Users } from '../pages/Users'
 import { Entitlements } from '../pages/Entitlements'
 import { Billing } from '../pages/Billing'
 import { Apps } from '../pages/Apps'
+import { GdprRights } from '../pages/GdprRights'
+import { GdprTicketDetail } from '../pages/GdprTicketDetail'
+import { GdprExportDetail } from '../pages/GdprExportDetail'
 
 /**
  * Albero route della console admin: pubbliche `/login` e `/forbidden`; area shell protetta da
@@ -32,6 +35,9 @@ export const routes: RouteObject[] = [
           { path: 'entitlements', element: <Entitlements /> },
           { path: 'billing', element: <Billing /> },
           { path: 'apps', element: <Apps /> },
+          { path: 'gdpr', element: <GdprRights /> },
+          { path: 'gdpr/tickets/:id', element: <GdprTicketDetail /> },
+          { path: 'gdpr/exports/:id', element: <GdprExportDetail /> },
         ],
       },
     ],

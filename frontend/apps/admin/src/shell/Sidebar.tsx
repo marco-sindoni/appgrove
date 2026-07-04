@@ -48,6 +48,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Icon name="grid_view" size={20} />
         {t('admin.nav.apps')}
       </NavLink>
+      <NavLink to="/gdpr" className={linkClass} onClick={onNavigate}>
+        <Icon name="policy" size={20} />
+        {t('admin.nav.gdpr')}
+      </NavLink>
     </nav>
   )
 }

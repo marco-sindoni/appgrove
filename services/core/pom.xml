@@ -76,6 +76,12 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-openapi</artifactId>
     </dependency>
+    <!-- Notifiche email del ticketing (UC 0034, #13 D21): Mailpit in dev, MockMailbox in test;
+         il relay SES nel cloud è infrastruttura tracciata (UC 0034 "Punti aperti"). -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
+    </dependency>
 
     <!-- Stub Paddle (UC 0023): poller consumer schedulato + client SQS verso ElasticMQ -->
     <dependency>
