@@ -5,7 +5,7 @@
 **Data**: 2026-07-04
 **Autore**: Platform Engineering
 **Use case sorgente**: [docs/usecases/08-compliance-gdpr/0034-console-diritti-gdpr.md](../../docs/usecases/08-compliance-gdpr/0034-console-diritti-gdpr.md)
-**Tocca dati personali?**: Sì — nuova entità ticket di supporto (user_id/tenant_id, oggetto, thread; dati personali minimizzati, niente allegati) e nuovo trattamento "gestione diritti/supporto" nel manifesto dati. Si applica il gate privacy/RoPA di step-03 (UC 0031: scanner + classificazione MAJOR/MINOR).
+**Tocca dati personali?**: Sì — nuova entità ticket di supporto (user_id/tenant_id, oggetto, thread; dati personali minimizzati, niente allegati) e nuovo trattamento "gestione diritti/supporto" nel manifesto dati. Gate privacy/RoPA (UC 0031) eseguito: 9 segnali classificati col co-pilota e **classificazione confermata dallo sviluppatore: MINOR, componente piattaforma core** — finalità "gestione richieste di supporto e diritti" interna al contratto (art. 6.1.b; per i ticket privacy anche obbligo legale art. 12), trattamento avviato volontariamente dall'utente, retention 24 mesi dalla chiusura attuata da codice, nessun nuovo sub-responsabile (Mailpit in dev; SES in cloud = servizio AWS già in lista #13 H45). `suspended_reason` e `gdpr_restriction_audit` = dati tecnici di stato/prova, senza voce manifesto (come `status`/`gdpr_purge_audit`). Registrata qui finché `content/legal/` non esiste (UC 0002).
 
 ## Problema / Obiettivo
 

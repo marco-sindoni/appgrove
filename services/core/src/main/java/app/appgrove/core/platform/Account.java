@@ -46,6 +46,13 @@ public class Account extends BaseEntity {
     @Column(name = "deletion_requested_at")
     private Instant deletionRequestedAt;
 
+    /**
+     * Causale della sospensione (UC 0034): {@code gdpr_restriction} = limitazione del trattamento
+     * (art. 18, #13 D19), distinta da una sospensione amministrativa. Null se non sospeso.
+     */
+    @Column(name = "suspended_reason", length = 32)
+    private String suspendedReason;
+
     protected Account() {
         // richiesto da JPA
     }
@@ -80,6 +87,14 @@ public class Account extends BaseEntity {
 
     public Instant getDeletionRequestedAt() {
         return deletionRequestedAt;
+    }
+
+    public String getSuspendedReason() {
+        return suspendedReason;
+    }
+
+    public void setSuspendedReason(String suspendedReason) {
+        this.suspendedReason = suspendedReason;
     }
 
     public void setDeletionRequestedAt(Instant deletionRequestedAt) {

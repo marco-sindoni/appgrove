@@ -93,8 +93,10 @@ services:
       GDPR_EXPORT_BUCKET: ${GDPR_EXPORT_BUCKET:-gdpr-export}
 
   # ElasticMQ ≈ SQS: code purge per-tenant (#06 H) + webhook Paddle (UC 0023) + export (#13 D).
+  # Tag PINNATO (niente `latest`): il latest corrente non pubblica linux/arm64 e rompe lo stack
+  # su Apple Silicon/Colima; 1.6.x è multi-arch (amd64+arm64).
   elasticmq:
-    image: softwaremill/elasticmq-native:latest
+    image: softwaremill/elasticmq-native:1.6.14
     ports:
       - "${ELASTICMQ_PORT:-9324}:9324"
     volumes:

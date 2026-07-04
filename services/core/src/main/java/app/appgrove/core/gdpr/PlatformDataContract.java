@@ -9,6 +9,8 @@ import app.appgrove.commons.gdpr.PurgeResult;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.Invitation;
 import app.appgrove.core.platform.User;
+import app.appgrove.core.support.SupportTicket;
+import app.appgrove.core.support.SupportTicketMessage;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -48,7 +50,8 @@ public class PlatformDataContract implements AppDataContract {
     @Override
     public ExportResult exportData(GdprScope scope) {
         Map<String, List<Map<String, Object>>> entities = new LinkedHashMap<>();
-        List<String> steps = List.of("Raccolta account", "Raccolta utenti", "Raccolta inviti");
+        List<String> steps = List.of(
+                "Raccolta account", "Raccolta utenti", "Raccolta inviti", "Raccolta ticket di supporto");
 
         entities.put("accounts", query(
                 "select id, name, status, paddle_customer_id, created_at"
@@ -68,6 +71,18 @@ public class PlatformDataContract implements AppDataContract {
                 scope.tenantId(),
                 "id", "email", "role", "status", "expires_at", "created_at"));
 
+        entities.put("support_tickets", query(
+                "select id, type, subject, priority, status, due_at, created_at, closed_at"
+                        + " from platform.support_ticket where tenant_id = ? order by created_at",
+                scope.tenantId(),
+                "id", "type", "subject", "priority", "status", "due_at", "created_at", "closed_at"));
+
+        entities.put("support_ticket_messages", query(
+                "select id, ticket_id, author, body, created_at"
+                        + " from platform.support_ticket_message where tenant_id = ? order by created_at",
+                scope.tenantId(),
+                "id", "ticket_id", "author", "body", "created_at"));
+
         return new ExportResult(APP_ID, steps, entities);
     }
 
@@ -78,6 +93,11 @@ public class PlatformDataContract implements AppDataContract {
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
             Map<String, Integer> deleted = new LinkedHashMap<>();
+            // i ticket referenziano gdpr_export_job (auto-ticket): vanno via prima dei job
+            deleted.put("support_ticket_message",
+                    delete(c, "delete from platform.support_ticket_message where tenant_id = ?", scope.tenantId()));
+            deleted.put("support_ticket",
+                    delete(c, "delete from platform.support_ticket where tenant_id = ?", scope.tenantId()));
             deleted.put("gdpr_export_job_item",
                     delete(c, "delete from platform.gdpr_export_job_item where tenant_id = ?", scope.tenantId()));
             deleted.put("gdpr_export_job",
@@ -103,6 +123,8 @@ public class PlatformDataContract implements AppDataContract {
         DataManifests.collectPersonalData(Account.class, "accounts", entries);
         DataManifests.collectPersonalData(User.class, "users", entries);
         DataManifests.collectPersonalData(Invitation.class, "invitations", entries);
+        DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
+        DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);
         return new DataManifest(APP_ID, entries);
     }
 

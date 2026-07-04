@@ -71,3 +71,8 @@ _Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento
   presuppongono il registro dei consensi che nasce qui. Quando questo use case verrà implementato, deve
   consegnare **anche** la parte in-app richiesta da UC 0033: toggle/centro preferenze nell'account e
   unsubscribe con revoca registrata nel consent log.
+- **Alimentare la console "Diritti GDPR" (UC 0034) con i cambi consenso** _(tracciato dalla change
+  `0030-use-case-0034-…`)_: la console admin aggrega export/recessi/eliminazioni/ticket privacy ma **omette
+  la voce "cambi consenso"** perché oggi non esiste alcun modello di consenso (postura no-consent). Quando
+  qui nascerà il consent log, la console va estesa con il tipo di richiesta corrispondente (nuova sorgente
+  nell'aggregatore `AdminGdprResource.requests()` + tipo nella tabella della pagina admin "Diritti GDPR").

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -228,7 +229,10 @@ function AccountExportSection() {
         )}
         {status === 'FAILED' && (
           <p role="alert" className="text-sm text-danger">
-            {t('privacy.accountExportFailed')}
+            {t('privacy.accountExportFailed')}{' '}
+            <Link to="/support" className="font-medium underline underline-offset-2">
+              {t('privacy.accountExportFailedCta')}
+            </Link>
           </p>
         )}
         {status === 'COMPLETED' && (
@@ -356,7 +360,12 @@ function WithdrawalRow({ appSlug, appName }: { appSlug: string; appName: string 
       </div>
       {(start.isError || status === 'FAILED' || withdraw.isError) && (
         <p role="alert" className="w-full text-sm text-danger">
-          {status === 'FAILED' ? t('privacy.accountExportFailed') : t('errors.generic')}
+          {status === 'FAILED' ? t('privacy.accountExportFailed') : t('errors.generic')}{' '}
+          {status === 'FAILED' && (
+            <Link to="/support" className="font-medium underline underline-offset-2">
+              {t('privacy.accountExportFailedCta')}
+            </Link>
+          )}
         </p>
       )}
       {confirming && (

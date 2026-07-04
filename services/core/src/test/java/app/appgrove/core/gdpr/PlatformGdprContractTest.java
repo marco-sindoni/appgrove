@@ -37,6 +37,8 @@ class PlatformGdprContractTest {
         data.account(TENANT_A, "Acme GDPR");
         data.user(TENANT_A, "sub-gdpr-a", "gdpr-a@example.test", "owner");
         data.invitation(TENANT_A, "invitato-a@example.test", "member");
+        var ticketId = data.ticket(TENANT_A, "support", "Domanda di prova", "open");
+        data.ticketMessage(TENANT_A, ticketId, "user", "Testo del messaggio");
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());
@@ -58,6 +60,8 @@ class PlatformGdprContractTest {
         data.account(TENANT_A, "Da cancellare");
         data.user(TENANT_A, "sub-purge-a", "purge-a@example.test", "owner");
         data.invitation(TENANT_A, "invitato-purge-a@example.test", "member");
+        var ticketA = data.ticket(TENANT_A, "privacy", "Ticket da purgare", "open");
+        data.ticketMessage(TENANT_A, ticketA, "user", "Contenuto da purgare");
         data.account(TENANT_B, "Da preservare");
         data.user(TENANT_B, "sub-purge-b", "purge-b@example.test", "owner");
 

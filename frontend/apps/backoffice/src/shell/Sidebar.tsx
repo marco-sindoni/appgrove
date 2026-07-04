@@ -61,6 +61,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Icon name="shield_person" size={20} />
         {t('nav.privacy')}
       </NavLink>
+      <NavLink to="/support" className={linkClass} onClick={onNavigate}>
+        <Icon name="support_agent" size={20} />
+        {t('nav.support')}
+      </NavLink>
 
       <SectionLabel>{t('nav.yourApps')}</SectionLabel>
       {modules.length === 0 && (

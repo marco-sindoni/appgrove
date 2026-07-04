@@ -89,6 +89,65 @@ public class TestData {
                 OffsetDateTime.now().plusDays(7), OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Crea un ticket di supporto nel tenant — per i test del ticketing (UC 0034). Ritorna l'id. */
+    public UUID ticket(String tenantId, String type, String subject, String status) {
+        UUID id = UUID.randomUUID();
+        exec("insert into platform.support_ticket(id,tenant_id,type,subject,priority,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?)",
+                id, tenantId, type, subject, "normal", status, OffsetDateTime.now(), OffsetDateTime.now());
+        return id;
+    }
+
+    /** Aggiunge un messaggio al thread di un ticket — per i test del ticketing (UC 0034). */
+    public void ticketMessage(String tenantId, UUID ticketId, String author, String body) {
+        exec("insert into platform.support_ticket_message(id,tenant_id,ticket_id,author,body,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), tenantId, ticketId, author, body, OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
+    /** Retrodata la chiusura di un ticket (per i test dello sweeper retention, UC 0034). */
+    public void backdateTicketClosure(UUID ticketId, OffsetDateTime closedAt) {
+        exec("update platform.support_ticket set status='closed', closed_at=? where id=?", closedAt, ticketId);
+    }
+
+    /** Numero di ticket per export job (per l'idempotenza dell'auto-ticket, UC 0034). */
+    public int ticketCountForExportJob(UUID jobId) {
+        return queryInt("select count(*) from platform.support_ticket where export_job_id = ?", jobId);
+    }
+
+    /** Numero di ticket esistenti per id (per lo sweeper retention, UC 0034). */
+    public int ticketCount(UUID ticketId) {
+        return queryInt("select count(*) from platform.support_ticket where id = ?", ticketId);
+    }
+
+    /** Soft-delete delle subscription {@code (tenant, app)} — simula il recesso per-app (UC 0034). */
+    public void softDeleteSubscriptions(String tenantId, UUID appId) {
+        exec("update platform.subscription set deleted_at = ? where tenant_id = ? and app_id = ?",
+                OffsetDateTime.now(), tenantId, appId);
+    }
+
+    /** Stato corrente dell'account (per i test della limitazione art. 18, UC 0034). */
+    public String accountStatus(String tenantId) {
+        return queryString("select status from platform.accounts where id = ?", UUID.fromString(tenantId));
+    }
+
+    /** Causale di sospensione dell'account (per i test della limitazione art. 18, UC 0034). */
+    public String accountSuspendedReason(String tenantId) {
+        return queryString("select suspended_reason from platform.accounts where id = ?",
+                UUID.fromString(tenantId));
+    }
+
+    /** Stato corrente di un utente (per i test della limitazione art. 18, UC 0034). */
+    public String userStatus(UUID userId) {
+        return queryString("select status from platform.users where id = ?", userId);
+    }
+
+    /** Sospende un account con causale amministrativa (per i test di conflitto art. 18). */
+    public void suspendAccount(String tenantId, String reason) {
+        exec("update platform.accounts set status = 'suspended', suspended_reason = ? where id = ?",
+                reason, UUID.fromString(tenantId));
+    }
+
     /** Righe di audit purge (prova erasure #13 L70) per tenant — per i test GDPR (UC 0032). */
     public int gdprPurgeAuditCount(String tenantId, String appId) {
         return queryInt(

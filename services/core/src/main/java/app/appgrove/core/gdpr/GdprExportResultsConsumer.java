@@ -4,6 +4,8 @@ import app.appgrove.commons.gdpr.ExportResultMessage;
 import app.appgrove.commons.gdpr.GdprQueues;
 import app.appgrove.commons.messaging.MessageQueues;
 import app.appgrove.commons.storage.ExportStorage;
+import app.appgrove.core.support.TicketNotifier;
+import app.appgrove.core.support.TicketStore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.scheduler.Scheduled;
@@ -22,7 +24,7 @@ import org.jboss.logging.Logger;
  * Consumer della coda risultati (solo core, UC 0032): aggiorna item/job man mano che i servizi
  * finiscono e, quando <b>tutti</b> hanno completato, aggrega i frammenti nello <b>ZIP</b> finale
  * ({@code jobs/<job_id>/export.zip}) e chiude il job (#13 D22). Un esito FAILED marca il job FAILED
- * (il ticket privacy automatico dipende dal ticketing → UC 0034).
+ * e apre il <b>ticket privacy automatico</b> (UC 0034, #13 D21) — idempotente per job.
  *
  * <p>Errori: esito orfano (job inesistente) → scartato; errore di elaborazione → messaggio NON
  * confermato → redrive/DLQ (aggiornamenti idempotenti, il retry è sicuro).
@@ -41,6 +43,12 @@ public class GdprExportResultsConsumer {
 
     @Inject
     GdprJobStore store;
+
+    @Inject
+    TicketStore tickets;
+
+    @Inject
+    TicketNotifier notifier;
 
     @Inject
     ObjectMapper mapper;
@@ -71,9 +79,12 @@ public class GdprExportResultsConsumer {
                     case ALL_COMPLETED -> completeJob(result);
                     case UNKNOWN_JOB -> LOG.warnf(
                             "gdpr.results esito orfano scartato job_id=%s app_id=%s", result.jobId(), result.appId());
-                    case JOB_FAILED -> LOG.errorf(
-                            "gdpr.results job FAILED job_id=%s app_id=%s error=%s",
-                            result.jobId(), result.appId(), result.error());
+                    case JOB_FAILED -> {
+                        LOG.errorf(
+                                "gdpr.results job FAILED job_id=%s app_id=%s error=%s",
+                                result.jobId(), result.appId(), result.error());
+                        openPrivacyTicket(result);
+                    }
                     case UPDATED -> LOG.debugf(
                             "gdpr.results progress job_id=%s app_id=%s", result.jobId(), result.appId());
                 }
@@ -85,6 +96,22 @@ public class GdprExportResultsConsumer {
             }
         }
         return processed;
+    }
+
+    /**
+     * Ticket privacy automatico su export FAILED (UC 0034, #13 D21): idempotente — l'indice unico
+     * su {@code export_job_id} garantisce un solo ticket anche con più item falliti o redelivery.
+     * La notifica email è best-effort (il fail-soft è nel notifier).
+     */
+    private void openPrivacyTicket(ExportResultMessage result) {
+        UUID jobId = UUID.fromString(result.jobId());
+        tickets.createForFailedExport(jobId).ifPresent(ticketId -> {
+            LOG.infof("ticket.auto-created ticket_id=%s job_id=%s app_id=%s",
+                    ticketId, result.jobId(), result.appId());
+            tickets.find(ticketId).ifPresent(row -> notifier.notifySupportInbox(
+                    TicketNotifier.TicketRef.of(row),
+                    "Ticket privacy auto-creato per export fallito (job " + result.jobId() + ")."));
+        });
     }
 
     private void completeJob(ExportResultMessage result) {

@@ -82,3 +82,11 @@ Manifest: applica le retention dichiarate (accountability art. 5.1.e). `@Persona
     schedulazione (in locale gira su scheduler applicativo; il trigger EventBridge/cron di produzione è
     materia di UC 0035 con UC 0004/0006). Il punto 1 del DoD qui sopra va letto al netto della parte grace
     già consegnata.
+
+- **Retention del ticketing e dei registri della console (da UC 0034)** _(tracciato dalla change
+  `0030-use-case-0034-…`)_: la change 0030 consegna lo **sweeper applicativo** dei ticket chiusi
+  (24 mesi, `TicketRetentionSweeper`, pattern `AccountDeletionSweeper`); restano qui (a) il **trigger
+  cloud** (EventBridge/cron) anche di questo sweeper, come per gli altri; (b) la retention dei registri
+  di prova `gdpr_purge_audit` e `gdpr_restriction_audit` (12 mesi dichiarati, #08 — oggi nessun job li
+  scade); (c) l'eventuale scoping temporale delle finestre della console (i record aggregati spariscono
+  oggi solo quando la sorgente viene purgata, non per finestra di visualizzazione).
