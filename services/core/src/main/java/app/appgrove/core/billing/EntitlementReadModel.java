@@ -9,6 +9,10 @@ import app.appgrove.core.catalog.AppRepository;
 import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.catalog.AppTier;
 import app.appgrove.core.catalog.AppTierRepository;
+import app.appgrove.core.platform.Account;
+import app.appgrove.core.platform.AccountRepository;
+import app.appgrove.core.platform.AccountStatus;
+import app.appgrove.core.platform.CallerContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -48,8 +52,22 @@ public class EntitlementReadModel {
     @Inject
     AppPriceRepository prices;
 
+    @Inject
+    AccountRepository accounts;
+
+    @Inject
+    CallerContext caller;
+
     /** Entitlement effettivi del tenant del JWT (solo le app a cui ha accesso). */
     public MeEntitlementsView forCurrentTenant() {
+        // Account in grace di eliminazione (UC 0033, #13 E25): disattivazione immediata = zero
+        // entitlement. Chiude sia il registry frontend sia il gate 402 delle app; le API di
+        // piattaforma (annullo, diritti GDPR) restano fruibili (#09 F31).
+        Account account = accounts.findById(caller.tenantId());
+        if (account != null && account.getStatus() == AccountStatus.pending_deletion) {
+            return new MeEntitlementsView(List.of());
+        }
+
         Map<UUID, Subscription> byApp = new HashMap<>();
         for (Subscription s : subscriptions.listAll()) {
             byApp.put(s.getAppId(), s);

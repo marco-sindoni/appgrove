@@ -30,11 +30,19 @@ class GdprGateExemptionTest {
     /** Statica (per costruzione): gli endpoint dei diritti GDPR non portano {@code @RequiresEntitlement}. */
     @Test
     void gdprEndpointsCarryNoEntitlementGate() {
-        assertFalse(GdprResource.class.isAnnotationPresent(RequiresEntitlement.class),
-                "GdprResource non deve essere gateata (#09 F31)");
-        for (Method method : GdprResource.class.getDeclaredMethods()) {
-            assertFalse(method.isAnnotationPresent(RequiresEntitlement.class),
-                    "endpoint GDPR gateato in violazione di #09 F31: " + method.getName());
+        // UC 0032 (export account) + UC 0033 (eliminazione, recesso per-app, export profilo)
+        for (Class<?> resource : new Class<?>[] {
+                GdprResource.class,
+                AccountDeletionResource.class,
+                GdprWithdrawalResource.class,
+                ProfileExportResource.class}) {
+            assertFalse(resource.isAnnotationPresent(RequiresEntitlement.class),
+                    resource.getSimpleName() + " non deve essere gateata (#09 F31)");
+            for (Method method : resource.getDeclaredMethods()) {
+                assertFalse(method.isAnnotationPresent(RequiresEntitlement.class),
+                        "endpoint GDPR gateato in violazione di #09 F31: "
+                                + resource.getSimpleName() + "." + method.getName());
+            }
         }
     }
 

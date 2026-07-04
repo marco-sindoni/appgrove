@@ -7,6 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.Duration;
+import java.time.Instant;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
@@ -18,6 +20,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(schema = "platform", name = "accounts")
 @SQLRestriction("deleted_at is null")
 public class Account extends BaseEntity {
+
+    /** Grace di cancellazione account (#13 E25): disattivazione subito, hard-purge dopo 14 giorni. */
+    public static final Duration DELETION_GRACE = Duration.ofDays(14);
 
     @PersonalData(
             category = "identità/anagrafica account (nei B2C è il nome della persona)",
@@ -36,6 +41,10 @@ public class Account extends BaseEntity {
             retention = "account attivo + grace 14gg; retention fiscale in capo a Paddle")
     @Column(name = "paddle_customer_id")
     private String paddleCustomerId;
+
+    /** Istante della richiesta di eliminazione (UC 0033); null se nessuna eliminazione in corso. */
+    @Column(name = "deletion_requested_at")
+    private Instant deletionRequestedAt;
 
     protected Account() {
         // richiesto da JPA
@@ -67,5 +76,18 @@ public class Account extends BaseEntity {
 
     public void setPaddleCustomerId(String paddleCustomerId) {
         this.paddleCustomerId = paddleCustomerId;
+    }
+
+    public Instant getDeletionRequestedAt() {
+        return deletionRequestedAt;
+    }
+
+    public void setDeletionRequestedAt(Instant deletionRequestedAt) {
+        this.deletionRequestedAt = deletionRequestedAt;
+    }
+
+    /** Scadenza della grace (richiesta + 14gg), o null se nessuna eliminazione in corso. */
+    public Instant deletionEffectiveAt() {
+        return deletionRequestedAt == null ? null : deletionRequestedAt.plus(DELETION_GRACE);
     }
 }

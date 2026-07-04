@@ -76,3 +76,37 @@ _Tracciato dalla change `0028-use-case-0032-…` (regola CLAUDE.md "Tracciamento
 - **UI dell'export**: gli endpoint (richiesta export completo/per-app, stato/progress del job, link firmato con
   scadenza) esistono già dalla change 0028 sotto `/api/platform/v1/gdpr/*`: qui va costruita solo l'interfaccia
   (polling stato, link + data/ora scadenza, #13 D22.4).
+
+_Tracciato dalla change `0029-use-case-0033-…`:_
+
+- **Unsubscribe + centro preferenze consensi → rimandati a valle di UC 0039**. Le due funzioni presuppongono
+  il registro dei consensi (consent store) che nasce con UC 0039 (oggi non esiste né newsletter né alcun
+  consenso raccolto: il centro nascerebbe vuoto). Deciso al gate di chiarimento della change 0029 di non
+  anticipare il registro fuori dal suo contesto. La parte in-app (toggle account, centro preferenze, revoca
+  facile) è annotata su UC 0039 come requisito da consegnare lì.
+
+- **Macchina della grazia 14 giorni anticipata qui (da UC 0035)**. Il rimando della change 0028 assegnava a
+  UC 0035 stato in-grazia / annullamento / job schedulato, con il solo trigger UI qui: al gate di chiarimento
+  della change 0029 si è deciso di **anticipare la macchina in questa change** (0033 precede 0035
+  nell'ordine di esecuzione; i requisiti di test qui chiedono l'end-to-end elimina+grazia+annulla; la
+  decisione di merito era già fissata da #13 E25). Dettaglio del passaggio di consegne annotato su UC 0035,
+  sezione "Punti aperti".
+
+- **Rettifica: cambio email rimandato ai flussi di autenticazione**. La change 0029 implementa la rettifica
+  self-service del **nome visualizzato**; il **cambio email con verifica** è tracciato su UC 0017 (sezione
+  "Punti aperti") con UC 0058 / ☁ UC 0015-0016 per gli endpoint: l'email è identificatore di accesso nel
+  provider di identità, il flusso è materia auth. Nel frattempo la rettifica dell'email è esercitabile via
+  supporto.
+
+- **Limitazione (art. 18): gestione operativa rimandata a UC 0034**. La change 0029 la espone come diritto
+  dichiarato con canale di richiesta (contatto privacy) nella pagina dei diritti, insieme alla
+  dichiarazione art. 22; presa in carico, flag di limitazione e prova di evasione sono della console
+  "Diritti GDPR" (UC 0034, sezione "Punti aperti"). Nessun flag self-service: diritto eccezionale, valutato
+  caso per caso.
+
+- **Ripresa del job di export dopo ricaricamento pagina / elenco export dell'utente**. La UI della change
+  0029 tiene il riferimento al job di export nello stato del componente: ricaricando la pagina il link
+  "scarica" non è più raggiungibile (il job resta interrogabile per id, ma il core non espone un elenco
+  `GET /gdpr/exports` dei job del tenant). Miglioria differita: endpoint di elenco (o persistenza del
+  riferimento lato client) quando nascerà la vista aggregata — naturale con la console di **UC 0034**
+  (single pane export/recessi/eliminazioni) o come estensione minore di questo use case.

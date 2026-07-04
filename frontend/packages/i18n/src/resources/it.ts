@@ -12,6 +12,7 @@ export const it: Resources = {
     billing: 'Fatturazione',
     security: 'Sicurezza',
     members: 'Membri',
+    privacy: 'I miei dati',
   },
   topbar: {
     notifications: 'Notifiche',
@@ -124,6 +125,56 @@ export const it: Resources = {
     displayName: 'Nome visualizzato',
     save: 'Salva',
     saved: 'Salvato',
+  },
+  // Diritti GDPR self-service (UC 0033) — pagina "I miei dati".
+  privacy: {
+    title: 'I miei dati',
+    subtitle: 'Accedi, rettifica, esporta o elimina i tuoi dati personali (GDPR, artt. 15–22).',
+    profileHeading: 'Il mio profilo',
+    profileEmailNote: 'Per cambiare email contatta il supporto: è il tuo identificatore di accesso.',
+    profileExportHeading: 'Esporta il mio profilo',
+    profileExportBody:
+      'Scarica una copia dei tuoi dati personali conservati dalla piattaforma (profilo, inviti) in formato JSON.',
+    profileExportButton: 'Scarica i miei dati',
+    accountExportHeading: 'Export dell’account',
+    accountExportBody:
+      'Esporta tutti i dati dell’account, o di una singola app. L’archivio viene preparato in background: potrai scaricarlo da qui appena pronto.',
+    accountExportScopeAll: 'Tutto l’account',
+    accountExportStart: 'Avvia export',
+    accountExportRunning: 'Export in corso ({{completed}}/{{total}} servizi)…',
+    accountExportFailed: 'Export non riuscito. Contatta il supporto.',
+    accountExportReady: 'Export pronto.',
+    accountExportDownload: 'Scarica archivio',
+    accountExportExpires: 'Link valido fino al {{expiry}}',
+    withdrawalHeading: 'Recedi da un’app',
+    withdrawalBody:
+      'Il recesso elimina subito e definitivamente i dati dell’app per questo account. Prima esporta: l’export è richiesto per confermare.',
+    withdrawalNoApps: 'Nessuna app attivata su questo account.',
+    withdrawalExport: 'Esporta i dati dell’app',
+    withdrawalExporting: 'Preparazione export…',
+    withdrawalConfirm: 'Conferma recesso',
+    withdrawalDialogTitle: 'Recedere da {{app}}?',
+    withdrawalDialogBody:
+      'Tutti i dati di questa app per l’account saranno eliminati immediatamente. L’operazione non è annullabile.',
+    withdrawalDone: 'Recesso completato: l’eliminazione dei dati dell’app è partita.',
+    deletionHeading: 'Elimina account',
+    deletionBody:
+      'L’account viene disattivato subito; tutti i dati sono eliminati definitivamente dopo 14 giorni. Entro quel periodo puoi annullare rientrando.',
+    deletionRequest: 'Elimina questo account',
+    deletionDialogTitle: 'Eliminare l’intero account?',
+    deletionDialogBody:
+      'L’account viene disattivato subito ed eliminato definitivamente dopo 14 giorni. Entro quel periodo puoi ancora annullare l’eliminazione.',
+    deletionPending: 'Eliminazione richiesta: l’account è disattivato.',
+    deletionEffectiveAt: 'Eliminazione definitiva il {{date}}.',
+    deletionCancel: 'Annulla eliminazione',
+    deletionCanceled: 'Eliminazione annullata: l’account è di nuovo attivo.',
+    rightsHeading: 'Altri diritti',
+    rightsRestriction:
+      'Limitazione del trattamento (art. 18): scrivi a privacy@appgrove.app — la richiesta è gestita caso per caso.',
+    rightsObjection:
+      'Opposizione al marketing (art. 21): non esistono ancora comunicazioni di marketing; il centro preferenze consensi arriverà con la newsletter.',
+    rightsAutomated:
+      'Decisioni automatizzate (art. 22): appgrove non prende decisioni automatizzate con effetti giuridici o simili.',
   },
   members: {
     title: 'Membri',

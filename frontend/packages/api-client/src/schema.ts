@@ -92,6 +92,90 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/platform/v1/accounts/me/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        /** Cancel */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/admin/accounts": {
         parameters: {
             query?: never;
@@ -641,6 +725,234 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AppTiersView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/gdpr/apps/{appSlug}/withdrawal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    appSlug: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StartWithdrawal"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WithdrawalView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/gdpr/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StartExport"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JobView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/gdpr/exports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["JobView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/gdpr/exports/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DownloadView"];
                     };
                 };
                 /** @description Not Authorized */
@@ -1230,6 +1542,92 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Update Me */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMe"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["UserView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/platform/v1/users/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -1415,6 +1813,8 @@ export interface components {
             name?: string;
             status?: string;
             paddleCustomerId?: string;
+            deletionRequestedAt?: components["schemas"]["Instant"];
+            deletionEffectiveAt?: components["schemas"]["Instant"];
         };
         AdminAccountView: {
             id?: components["schemas"]["UUID"];
@@ -1472,6 +1872,10 @@ export interface components {
             email: string;
             role: string;
         };
+        DownloadView: {
+            url?: string;
+            expiresAt?: components["schemas"]["Instant"];
+        };
         EntitlementCell: {
             tenantId?: string;
             tenantName?: string;
@@ -1491,6 +1895,10 @@ export interface components {
                 [key: string]: components["schemas"]["MetricLimit"];
             };
         };
+        /** @enum {string} */
+        GdprExportKind: "account" | "app";
+        /** @enum {string} */
+        GdprExportStatus: "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED";
         /**
          * Format: date-time
          * @example 2022-03-10T16:15:50Z
@@ -1503,6 +1911,23 @@ export interface components {
             status?: string;
             expiresAt?: components["schemas"]["Instant"];
             token?: string;
+        };
+        ItemView: {
+            appId?: string;
+            status?: components["schemas"]["GdprExportStatus"];
+            steps?: string[];
+            error?: string;
+        };
+        JobView: {
+            id?: components["schemas"]["UUID"];
+            kind?: components["schemas"]["GdprExportKind"];
+            appId?: string;
+            status?: components["schemas"]["GdprExportStatus"];
+            progress?: components["schemas"]["ProgressView"];
+            items?: components["schemas"]["ItemView"][];
+            requestedAt?: components["schemas"]["Instant"];
+            completedAt?: components["schemas"]["Instant"];
+            error?: string;
         };
         MeEntitlementsView: {
             entitlements?: components["schemas"]["EntitlementView"][];
@@ -1557,10 +1982,23 @@ export interface components {
             amount?: number;
             currency?: string;
         };
+        ProgressView: {
+            /** Format: int32 */
+            completed?: number;
+            /** Format: int32 */
+            total?: number;
+        };
         StartCheckoutRequest: {
             tierKey?: string;
             appTierId?: components["schemas"]["UUID"];
             billingCycle: string;
+        };
+        StartExport: {
+            kind: components["schemas"]["GdprExportKind"];
+            appId?: string;
+        };
+        StartWithdrawal: {
+            exportJobId: string;
         };
         SubscriptionStatusView: {
             status?: string;
@@ -1611,6 +2049,9 @@ export interface components {
         UpdateAppStatus: {
             status: string;
         };
+        UpdateMe: {
+            displayName: string;
+        };
         UpdateUser: {
             role?: string;
             status?: string;
@@ -1623,6 +2064,10 @@ export interface components {
             role?: string;
             status?: string;
             tenantId?: string;
+        };
+        WithdrawalView: {
+            appId?: string;
+            status?: string;
         };
     };
     responses: never;

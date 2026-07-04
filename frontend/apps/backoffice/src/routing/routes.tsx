@@ -6,6 +6,7 @@ import { Account } from '../pages/Account'
 import { Billing } from '../pages/Billing'
 import { Settings } from '../pages/Settings'
 import { SecurityPage } from '../pages/SecurityPage'
+import { PrivacyPage } from '../pages/privacy/PrivacyPage'
 import { MembersPage } from '../pages/members/MembersPage'
 import { Forbidden } from '../pages/Forbidden'
 import { NotFound } from '../pages/NotFound'
@@ -40,6 +41,7 @@ export const routes: RouteObject[] = [
           { path: 'billing', element: <Billing /> },
           { path: 'settings', element: <Settings /> },
           { path: 'security', element: <SecurityPage /> },
+          { path: 'privacy', element: <PrivacyPage /> },
           {
             element: <ProtectedRoute guard={requireAnyRole(['owner', 'admin'])} />,
             children: [{ path: 'members', element: <MembersPage /> }],
