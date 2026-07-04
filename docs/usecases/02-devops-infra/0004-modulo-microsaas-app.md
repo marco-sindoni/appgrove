@@ -62,3 +62,17 @@ Log group cifrati con retention (#08 26). Manifest GDPR: i dati personali nascon
   2. Wrapper `service-add/remove`, `test-start/stop` funzionano con i guardrail #06 K.
   3. `terraform test` sul modulo verde; aggiungere/togliere un'app = aggiungere/togliere un blocco `module`.
   4. Ruolo DB per-servizio least-privilege; schema vuoto (tabelle via Flyway).
+
+## Punti aperti / decisioni differite
+
+- **Code SQS + bus EventBridge per il framework export/erasure (UC 0032)** _(tracciato dalla change
+  `0028-use-case-0032-…`)_. Il modulo crea già la "coda SQS (purge)" per-app; il framework UC 0032 fissa il
+  disegno completo del messaging GDPR, da riprodurre nel cloud **con gli stessi nomi usati in locale**
+  (`dev/elasticmq.conf`):
+  - per **ogni servizio** (core compreso): coda export `gdpr-export-<app_id>` + DLQ, e coda purge
+    `tenant-purge-<app_id>` + DLQ (sostituisce le vecchie code singole `gdpr-export`/`tenant-purge`);
+  - una coda condivisa **`gdpr-export-results`** + DLQ, consumata dal core (aggregazione job export);
+  - **bus EventBridge dedicato** con regola sull'evento **`tenant.offboarded`** → fan-in verso le code
+    `tenant-purge-<app_id>` di tutti i servizi (#06 H-19). In locale il bus non esiste: il publisher del core
+    invia direttamente alle code purge; nel cloud la stessa astrazione pubblica sul bus.
+  Differito perché il Terraform (modulo + bus) è di questo UC/0003; UC 0032 gira in locale su ElasticMQ.

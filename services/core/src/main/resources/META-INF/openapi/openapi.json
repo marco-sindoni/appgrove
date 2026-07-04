@@ -210,6 +210,17 @@
           }
         }
       },
+      "DownloadView" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "EntitlementCell" : {
         "type" : "object",
         "properties" : {
@@ -262,6 +273,14 @@
           }
         }
       },
+      "GdprExportKind" : {
+        "type" : "string",
+        "enum" : [ "account", "app" ]
+      },
+      "GdprExportStatus" : {
+        "type" : "string",
+        "enum" : [ "QUEUED", "RUNNING", "COMPLETED", "FAILED" ]
+      },
       "Instant" : {
         "type" : "string",
         "format" : "date-time",
@@ -286,6 +305,61 @@
             "$ref" : "#/components/schemas/Instant"
           },
           "token" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ItemView" : {
+        "type" : "object",
+        "properties" : {
+          "appId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/GdprExportStatus"
+          },
+          "steps" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      },
+      "JobView" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "kind" : {
+            "$ref" : "#/components/schemas/GdprExportKind"
+          },
+          "appId" : {
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/GdprExportStatus"
+          },
+          "progress" : {
+            "$ref" : "#/components/schemas/ProgressView"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ItemView"
+            }
+          },
+          "requestedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "completedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "error" : {
             "type" : "string"
           }
         }
@@ -425,6 +499,19 @@
           }
         }
       },
+      "ProgressView" : {
+        "type" : "object",
+        "properties" : {
+          "completed" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "StartCheckoutRequest" : {
         "type" : "object",
         "properties" : {
@@ -440,6 +527,18 @@
           }
         },
         "required" : [ "billingCycle" ]
+      },
+      "StartExport" : {
+        "type" : "object",
+        "required" : [ "kind" ],
+        "properties" : {
+          "kind" : {
+            "$ref" : "#/components/schemas/GdprExportKind"
+          },
+          "appId" : {
+            "type" : "string"
+          }
+        }
       },
       "SubscriptionStatusView" : {
         "type" : "object",
@@ -1058,6 +1157,109 @@
         "tags" : [ "Checkout Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/gdpr/exports" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StartExport"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Start",
+        "tags" : [ "Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/gdpr/exports/{id}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/gdpr/exports/{id}/download" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DownloadView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Download",
+        "tags" : [ "Gdpr Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
         } ]
       }
     },

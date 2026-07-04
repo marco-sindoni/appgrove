@@ -63,18 +63,17 @@ auto-delete 7gg, presigned in-app. **Purge** = hard-delete con audit (prova). Ma
 
 ## Punti aperti / decisioni differite
 
-- **Esenzione dai gate di enforcement: gli endpoint export/erasure NON devono annotare il gate** _(tracciato dalla change
-  `0023-use-case-0027-…`)_. UC 0027 ha implementato il gate entitlement/quota in `commons` come **annotazione opt-in**
-  (`@RequiresEntitlement`) proprio per soddisfare **per costruzione** l'esenzione GDPR (#09 F31): gli endpoint che
-  esercitano export/erasure di questo UC **non** devono portare l'annotazione, così restano raggiungibili (solo
-  authN+ownership) anche con `subscription` canceled/paused o quota esaurita, per tutta la retention. *Cosa va fatto qui:*
-  (a) non annotare gli endpoint dei diritti GDPR; (b) aggiungere un **test** che verifica che export/erasure rispondono
-  **anche senza accesso** (subscription non-grant) — il guard concreto di F31 che UC 0027 non ha potuto scrivere perché
-  questi endpoint non esistevano ancora.
-- **Riconciliare `DataManifest` (record Java della SPI) con i manifesti YAML bilingui** _(tracciato dalla change
-  `0026-use-case-0030-…`)_. UC 0030 ha reso i **file YAML** (`docs/compliance/manifests/<app_id>.yaml`, lang-keyed)
-  la **fonte unica** legale (RoPA/snippet); il record `DataManifest` di `commons.gdpr` (monolingua, derivato via
-  reflection dalle annotazioni in `FattureDataContract.manifest()`) resta l'inventario tecnico della SPI export/purge.
-  La coerenza oggi è **transitiva** (entrambi ancorati a `@PersonalData`, check UC 0030 su annotazioni↔YAML). *Cosa
-  valutare qui:* se `manifest()` debba derivare dal YAML (o esserne validato: code-manifest ⊆ YAML), ed eventualmente
-  sfoltire gli attributi testuali duplicati di `@PersonalData`. Differito perché l'interfaccia SPI è di questo UC.
+- ✅ **Esenzione dai gate di enforcement: gli endpoint export/erasure NON devono annotare il gate** _(tracciato dalla
+  change `0023-use-case-0027-…`; **risolto dalla change `0028-use-case-0032-…`**)_. Gli endpoint export
+  (`/api/platform/v1/gdpr/exports`, core) non portano `@RequiresEntitlement` e il guard concreto di #09 F31 esiste:
+  `GdprGateExemptionTest` verifica sia staticamente (nessuna annotazione sulla resource) sia funzionalmente (l'export
+  risponde a un tenant senza alcuna subscription). Gli endpoint di cancellazione non esistono ancora per scelta
+  (trigger a UC 0033/0035, tracciati lì): la macchina interna di purge non passa da alcun gate per costruzione.
+- ✅ **Riconciliare `DataManifest` (record Java della SPI) con i manifesti YAML bilingui** _(tracciato dalla change
+  `0026-use-case-0030-…`; **risolto dalla change `0028-use-case-0032-…`**)_. Decisione: `manifest()` **resta derivato
+  dalle annotazioni `@PersonalData`** (helper condiviso `DataManifests` in `commons.gdpr`) come inventario tecnico —
+  niente derivazione runtime dai YAML in `docs/` (accoppierebbe il deploy alla documentazione) e niente validazione
+  doppia (la coerenza annotazioni↔YAML è già garantita dal check bloccante di UC 0030; entrambe le rappresentazioni
+  sono ancorate alle stesse annotazioni). `manifest()` è ora il metro del test di copertura #13 L74 (export/purge
+  coprono ogni entità con dati personali). L'eventuale sfoltimento degli attributi testuali duplicati di
+  `@PersonalData` è tracciato su UC 0030 ("Punti aperti").

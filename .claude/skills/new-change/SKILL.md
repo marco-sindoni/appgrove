@@ -82,6 +82,9 @@ When you need input from the developer (clarification gate, requirements questio
 - After each question, **STOP and wait** for the developer's answer. Do not move on or assume.
 - Treat answers as a **dialogue**: if the reply opens follow-ups or needs deepening, keep discussing until the
   point is genuinely settled, *then* record the definitive answer and move to the next question.
+- **Plain language — no unexplained acronyms or slang** (CLAUDE.md "Lingua" rule): no "PII", "YAGNI",
+  "fan-out", etc. Use plain Italian words; if a technical acronym is truly needed, explain it at first use.
+  The developer must understand the question without decoding jargon.
 
 This applies to all steps (the simple step-01 prompts inherit the same spirit; the real back-and-forth is at the
 step-02 clarification gate).

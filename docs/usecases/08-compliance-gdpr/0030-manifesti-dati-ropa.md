@@ -67,3 +67,10 @@ _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento
   `accounts.name` e `accounts.paddle_customer_id` in classificazione prudente) sono annotati `@PersonalData`
   e dichiarati in `docs/compliance/manifests/platform.yaml`; RoPA assemblato in `docs/compliance/ropa.{it,en}.md`.
   Il bump PP/ToS resta N/A (testi legali non ancora redatti, UC 0002); il gate di processo in `new-change` resta a UC 0031.
+- **Valutare lo sfoltimento degli attributi testuali duplicati di `@PersonalData`** _(tracciato dalla change
+  `0028-use-case-0032-…`)_. UC 0032 ha risolto il punto rimandato dalla change `0026`: `manifest()` della SPI
+  export/purge **resta derivato dalle annotazioni** (inventario tecnico; niente dipendenza runtime dei servizi
+  dai YAML in `docs/`, niente validazione doppia — la coerenza annotazioni↔YAML è già garantita dal check
+  bloccante di questo UC). Resta da valutare **qui** se sfoltire gli attributi testuali di `@PersonalData`
+  (`purpose`, `legalBasis`, `retention`) duplicati nei manifesti YAML (fonte legale unica): toccarli significa
+  rivedere il verifier annotazioni↔manifesto di questo UC, quindi la decisione appartiene a UC 0030.
