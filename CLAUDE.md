@@ -14,6 +14,11 @@ implementazione, commenti di PR e ogni testo rivolto all'utente vanno **sempre s
 Restano in inglese solo gli identificatori tecnici intrinseci: codice, nomi di simboli/file/branch,
 comandi, chiavi di config e citazioni letterali di output di tool.
 
+**Parlare chiaro, senza acronimi né slang.** Niente sigle o gergo non spiegati (es. "PII", "YAGNI",
+"fan-out", "MoR"): usare le parole italiane per esteso ("dati personali", "interpellare tutte le app",
+…). Se una sigla tecnica è davvero necessaria, spiegarla alla prima occorrenza. Vale per le domande in
+chat come per i documenti: chi legge deve capire senza dover decodificare.
+
 ## Invarianti architetturali (non negoziabili)
 
 1. **Tenant ID solo dal JWT verificato** — claim `tenant_id` (= account, iniettato dal Pre-Token-Gen Lambda); `sub` = user_id. Mai da request body/params

@@ -60,3 +60,14 @@ Manifest: applica le retention dichiarate (accountability art. 5.1.e). `@Persona
   2. Retention per-categoria as-code applicata; archivio audit 12 mesi.
   3. Purge con audit, idempotente, no dati orfani.
   4. Integration + compliance + security verdi.
+
+## Punti aperti / decisioni differite
+
+- **L'eliminazione account con grace 14 giorni usa l'orchestrazione account-level della change `0028`**
+  _(tracciato dalla change `0028-use-case-0032-…`)_. UC 0032 implementa la **macchina interna** della
+  cancellazione account (funzione di orchestrazione: purge dei dati di piattaforma + pubblicazione
+  dell'evento `tenant.offboarded` → `purgeData` di ogni app attivata via coda), **senza esporre endpoint
+  utente**: esporre ora un "cancella account" senza il periodo di grazia sarebbe un comportamento destinato a
+  cambiare. Qui vanno costruiti: lo stato di account disattivato/in-grace, l'annullabilità entro 14 giorni, e
+  il job schedulato che allo scadere invoca l'orchestrazione di UC 0032 (nome/punto d'ingresso documentati
+  nell'`implementation-log.md` della change 0028). Il trigger UI è di UC 0033.

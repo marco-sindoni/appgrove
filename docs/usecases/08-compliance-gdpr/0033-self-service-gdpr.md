@@ -60,3 +60,19 @@ Retention/grace per #13 E. Manifest: i diritti operano sui trattamenti dichiarat
   2. Diritti esenti dai gate (disponibili anche a subscription scaduta).
   3. Dati B2B instradati al tenant-titolare (tooling admin).
   4. E2E + security + compliance verdi.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0028-use-case-0032-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Export per-utente del profilo = capability del core, fuori dal contratto per-app**. UC 0032 ha deciso che
+  `GdprScope` resta **a livello di account** (i dati delle app appartengono all'account, non al singolo
+  operatore; i dati personali *dell'utente in quanto persona* — profilo, email, inviti — vivono nel core). Il
+  diritto d'accesso/portabilità del **singolo utente** ai propri dati di profilo va quindi realizzato come
+  funzione del core, senza interpellare le app: definire **qui** trigger e UX (vista "I miei dati" / download).
+- **Trigger utente del recesso per-app (esporta → conferma → cancella immediata)**. UC 0032 fornisce la
+  macchina interna (export job + purge per-app via coda) ma **non** espone endpoint di cancellazione: il
+  flusso di recesso per-app (#13 D19/E23) va esposto qui, riusando l'orchestrazione della change 0028.
+- **UI dell'export**: gli endpoint (richiesta export completo/per-app, stato/progress del job, link firmato con
+  scadenza) esistono già dalla change 0028 sotto `/api/platform/v1/gdpr/*`: qui va costruita solo l'interfaccia
+  (polling stato, link + data/ora scadenza, #13 D22.4).

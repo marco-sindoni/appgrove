@@ -66,3 +66,13 @@ Nessun dato applicativo/personale: risorse infra. I bucket/log/DB sono **cifrati
   2. VPC no-NAT con VPC endpoints; encryption at rest+in transit ovunque.
   3. Route53+ACM+OIDC roles creati; wrapper script con `--help` + README.
   4. `plan`/`validate`/checkov/Infracost girano in CI (UC 0005); teardown completo possibile con le safety.
+
+## Punti aperti / decisioni differite
+
+- **Bucket S3 export GDPR** _(tracciato dalla change `0028-use-case-0032-…`)_. Il framework export/erasure
+  (UC 0032) richiede per ogni env un **bucket dedicato agli export**: privato, **SSE** (cifratura at rest),
+  **lifecycle di auto-cancellazione a 7 giorni** degli oggetti (#13 D22/E23), accesso solo dal ruolo dei
+  servizi (i download utente passano da presigned URL a 7 giorni generati dal core, mai accesso pubblico).
+  In locale il ruolo è svolto da MinIO (stack dev); nome bucket e endpoint sono letti dai servizi via config
+  (`appgrove.s3.*` — vedere la change 0028 per le chiavi esatte), quindi qui basta esporre gli stessi
+  parametri via SSM. Differito perché questo UC possiede le fondamenta S3/KMS; UC 0032 gira in locale senza cloud.
