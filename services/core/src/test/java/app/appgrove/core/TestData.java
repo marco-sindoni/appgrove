@@ -74,6 +74,28 @@ public class TestData {
                 OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Crea una subscription {@code (tenant, app)} nello stato dato — per i test GDPR (UC 0032). */
+    public void subscription(String tenantId, UUID appId, String status) {
+        exec("insert into platform.subscription(id,tenant_id,app_id,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?) on conflict do nothing",
+                UUID.randomUUID(), tenantId, appId, status, OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
+    /** Crea un invito pending nel tenant — per i test GDPR (UC 0032). */
+    public void invitation(String tenantId, String email, String role) {
+        exec("insert into platform.invitations(id,tenant_id,email,role,token_hash,status,expires_at,"
+                        + "created_at,updated_at) values (?,?,?,?,?,?,?,?,?) on conflict do nothing",
+                UUID.randomUUID(), tenantId, email, role, "hash-" + UUID.randomUUID(), "pending",
+                OffsetDateTime.now().plusDays(7), OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
+    /** Righe di audit purge (prova erasure #13 L70) per tenant — per i test GDPR (UC 0032). */
+    public int gdprPurgeAuditCount(String tenantId, String appId) {
+        return queryInt(
+                "select count(*) from platform.gdpr_purge_audit where tenant_id = ? and app_id = ?",
+                tenantId, appId);
+    }
+
     /** Numero di subscription (non cancellate) per {@code (tenant, app)} — per i test di idempotenza. */
     public int subscriptionCount(String tenantId, UUID appId) {
         return queryInt(

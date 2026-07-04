@@ -2,6 +2,7 @@ package app.appgrove.fatture;
 
 import app.appgrove.commons.gdpr.AppDataContract;
 import app.appgrove.commons.gdpr.DataManifest;
+import app.appgrove.commons.gdpr.DataManifests;
 import app.appgrove.commons.gdpr.ExportResult;
 import app.appgrove.commons.gdpr.GdprScope;
 import app.appgrove.commons.gdpr.PurgeResult;
@@ -9,8 +10,6 @@ import app.appgrove.commons.privacy.PersonalData;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.Column;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -93,28 +92,9 @@ public class FattureDataContract implements AppDataContract {
     @Override
     public DataManifest manifest() {
         List<DataManifest.Entry> entries = new ArrayList<>();
-        collectPersonalData(Invoice.class, "invoice", entries);
-        collectPersonalData(InvoiceLine.class, "invoice_line", entries);
+        DataManifests.collectPersonalData(Invoice.class, "invoice", entries);
+        DataManifests.collectPersonalData(InvoiceLine.class, "invoice_line", entries);
         return new DataManifest(APP_ID, entries);
-    }
-
-    /** Costruisce il manifesto dai campi annotati {@link PersonalData} dell'entità. */
-    private static void collectPersonalData(Class<?> entity, String entityName, List<DataManifest.Entry> out) {
-        for (Field field : entity.getDeclaredFields()) {
-            PersonalData pd = field.getAnnotation(PersonalData.class);
-            if (pd != null) {
-                out.add(new DataManifest.Entry(
-                        entityName, columnName(field), pd.category(), pd.purpose(), pd.legalBasis(), pd.retention()));
-            }
-        }
-    }
-
-    private static String columnName(Field field) {
-        Column column = field.getAnnotation(Column.class);
-        if (column != null && !column.name().isBlank()) {
-            return column.name();
-        }
-        return field.getName();
     }
 
     private List<Map<String, Object>> query(String sql, String tenantId, String... columns) {
