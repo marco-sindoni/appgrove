@@ -57,6 +57,10 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <Icon name="settings" size={20} />
         {t('nav.settings')}
       </NavLink>
+      <NavLink to="/privacy" className={linkClass} onClick={onNavigate}>
+        <Icon name="shield_person" size={20} />
+        {t('nav.privacy')}
+      </NavLink>
 
       <SectionLabel>{t('nav.yourApps')}</SectionLabel>
       {modules.length === 0 && (

@@ -21,6 +21,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Duration;
+import org.jboss.resteasy.reactive.ResponseStatus;
 
 /**
  * API dei diritti GDPR — export (accesso/portabilità, #13 D22). Capability di piattaforma
@@ -56,13 +57,14 @@ public class GdprResource {
 
     @POST
     @Transactional
-    public Response start(@Valid StartExport body) {
+    @ResponseStatus(202)
+    public JobView start(@Valid StartExport body) {
         if (body.kind() == GdprExportKind.app && (body.appId() == null || body.appId().isBlank())) {
             throw new BadRequestException("appId obbligatorio per l'export di una singola app");
         }
         GdprExportJob job = service.start(
                 body.kind(), body.appId(), caller.tenantId().toString(), caller.subject());
-        return Response.accepted(view(job)).build();
+        return view(job);
     }
 
     @GET

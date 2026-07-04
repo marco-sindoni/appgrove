@@ -103,3 +103,10 @@ _Tracciato dalla change `0029-use-case-0033-…`:_
   dichiarazione art. 22; presa in carico, flag di limitazione e prova di evasione sono della console
   "Diritti GDPR" (UC 0034, sezione "Punti aperti"). Nessun flag self-service: diritto eccezionale, valutato
   caso per caso.
+
+- **Ripresa del job di export dopo ricaricamento pagina / elenco export dell'utente**. La UI della change
+  0029 tiene il riferimento al job di export nello stato del componente: ricaricando la pagina il link
+  "scarica" non è più raggiungibile (il job resta interrogabile per id, ma il core non espone un elenco
+  `GET /gdpr/exports` dei job del tenant). Miglioria differita: endpoint di elenco (o persistenza del
+  riferimento lato client) quando nascerà la vista aggregata — naturale con la console di **UC 0034**
+  (single pane export/recessi/eliminazioni) o come estensione minore di questo use case.

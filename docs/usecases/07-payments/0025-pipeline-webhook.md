@@ -104,3 +104,11 @@ payment_failed/disputed→`past_due`, customer.*→`accounts.paddle_customer_id`
 - **Validazione del contratto firma/eventi reali Paddle** (formato `ts/h1` definitivo, secret reali, shape eventi) → **L3 smoke**,
   **UC 0029** (gated #14 + account attivato). Qui è validato solo contro payload sintetici.
 - **Creazione lazy del customer + `custom_data` server-side al checkout** (l'altra metà di `paddle_customer_id`) → **UC 0024**.
+
+- **Recesso per-app GDPR con Paddle reale (da UC 0033)** _(tracciato dalla change `0029-use-case-0033-…`)_.
+  Il recesso per-app (`POST /gdpr/apps/{slug}/withdrawal`) rimuove subito l'attivazione (soft-delete della
+  subscription locale), pubblica la purga dei dati e chiama `provider.cancelSubscription` come best-effort
+  (in dev lo stub è un no-op). Con Paddle attivo va verificato: la disdetta Paddle è a fine periodo (nessun
+  rimborso pro-rata?); i webhook successivi alla soft-delete non devono far ricomparire l'attivazione
+  (upsert del `SubscriptionWriter` su riga soft-deleted). Da chiudere quando la pipeline Paddle di
+  produzione viene irrobustita qui.

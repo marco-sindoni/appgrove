@@ -5,8 +5,13 @@
 **Data**: 2026-07-04
 **Autore**: Platform Engineering
 **Use case sorgente**: [docs/usecases/08-compliance-gdpr/0033-self-service-gdpr.md](../../docs/usecases/08-compliance-gdpr/0033-self-service-gdpr.md)
-**Tocca dati personali?**: Sì — si applica il gate privacy/RoPA di step-03 (UC 0031). Attesa: nessuna nuova
-categoria/finalità (la change attua diritti già dichiarati, come la 0028); classificazione da confermare al gate.
+**Tocca dati personali?**: Sì — gate privacy/RoPA (UC 0031) eseguito a step-03. Scanner: 1 segnale
+(`Account.deletionRequestedAt`, migrazione V6) = **marcatore tecnico di stato** che attua il diritto di
+cancellazione (#13 E25): niente `@PersonalData`, nessun aggiornamento manifesto/RoPA (analogo alle colonne
+status/audit, decisione change 0028). Nuovi endpoint = attuazione di diritti già dichiarati, nessuna nuova
+finalità/base/categoria/retention, nessun sub-processor. **Classificazione confermata dallo sviluppatore:
+MINOR, componente piattaforma core** (2026-07-04); registrata qui e nel log finché `content/legal/` non
+esiste (UC 0002).
 
 ## Problema / Obiettivo
 

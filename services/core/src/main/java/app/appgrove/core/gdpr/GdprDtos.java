@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -53,4 +54,13 @@ public final class GdprDtos {
 
     /** Link di download firmato con scadenza (7 giorni, #13 D22): mostrato solo in-app. */
     public record DownloadView(String url, Instant expiresAt) {}
+
+    /**
+     * Recesso per-app (UC 0033, #13 D19/E23): la conferma porta l'export per-app già COMPLETED
+     * come prova del passo "esporta" — il server la verifica prima di cancellare.
+     */
+    public record StartWithdrawal(@NotBlank String exportJobId) {}
+
+    /** Esito del recesso: purge dell'app richiesta sulla coda, attivazione rimossa. */
+    public record WithdrawalView(String appId, String status) {}
 }

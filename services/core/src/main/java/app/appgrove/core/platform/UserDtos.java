@@ -1,6 +1,7 @@
 package app.appgrove.core.platform;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
@@ -25,4 +26,7 @@ public final class UserDtos {
 
     /** Patch di un utente: campi opzionali (null = invariato). I valori enum sono validati nel resource. */
     public record UpdateUser(String role, String status, @Size(max = 255) String displayName) {}
+
+    /** Rettifica self-service del proprio profilo (art. 16, UC 0033): solo il nome visualizzato. */
+    public record UpdateMe(@NotBlank @Size(max = 255) String displayName) {}
 }

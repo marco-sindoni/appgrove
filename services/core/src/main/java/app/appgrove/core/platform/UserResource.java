@@ -2,12 +2,14 @@ package app.appgrove.core.platform;
 
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
+import app.appgrove.core.platform.UserDtos.UpdateMe;
 import app.appgrove.core.platform.UserDtos.UpdateUser;
 import app.appgrove.core.platform.UserDtos.UserView;
 import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -22,6 +24,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.UUID;
+import org.jboss.logging.Logger;
 
 /**
  * API utenti del tenant. Tenant-scoped automatico (discriminator): ogni query filtra
@@ -32,6 +35,8 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
+
+    private static final Logger LOG = Logger.getLogger(UserResource.class);
 
     @Inject
     UserRepository repository;
@@ -57,6 +62,25 @@ public class UserResource {
     public UserView me() {
         return repository.findByCognitoSub(caller.subject())
                 .map(UserView::from)
+                .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
+    }
+
+    /**
+     * Rettifica self-service del proprio profilo (art. 16, UC 0033): ogni utente, qualunque ruolo,
+     * corregge il proprio nome visualizzato. Il cambio email è dei flussi auth (UC 0017, differito).
+     */
+    @PATCH
+    @Path("/me")
+    @Transactional
+    public UserView updateMe(@Valid UpdateMe body) {
+        User user = currentUser();
+        user.setDisplayName(body.displayName());
+        LOG.infof("user.rectify tenant_id=%s user_id=%s", user.getTenantId(), caller.subject());
+        return UserView.from(user);
+    }
+
+    private User currentUser() {
+        return repository.findByCognitoSub(caller.subject())
                 .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
     }
 

@@ -10,6 +10,7 @@ export const en = {
     billing: 'Billing',
     security: 'Security',
     members: 'Members',
+    privacy: 'My data',
   },
   topbar: {
     notifications: 'Notifications',
@@ -122,6 +123,56 @@ export const en = {
     displayName: 'Display name',
     save: 'Save',
     saved: 'Saved',
+  },
+  // Diritti GDPR self-service (UC 0033) — pagina "I miei dati".
+  privacy: {
+    title: 'My data',
+    subtitle: 'Access, rectify, export or delete your personal data (GDPR, art. 15–22).',
+    profileHeading: 'My profile',
+    profileEmailNote: 'To change your email, contact support: it is your sign-in identifier.',
+    profileExportHeading: 'Export my profile',
+    profileExportBody:
+      'Download a copy of your personal data held by the platform (profile, invitations) as JSON.',
+    profileExportButton: 'Download my data',
+    accountExportHeading: 'Account export',
+    accountExportBody:
+      'Export all account data, or a single app. The archive is prepared in the background: you can download it from here once ready.',
+    accountExportScopeAll: 'Whole account',
+    accountExportStart: 'Start export',
+    accountExportRunning: 'Export in progress ({{completed}}/{{total}} services)…',
+    accountExportFailed: 'Export failed. Please contact support.',
+    accountExportReady: 'Export ready.',
+    accountExportDownload: 'Download archive',
+    accountExportExpires: 'Link valid until {{expiry}}',
+    withdrawalHeading: 'Withdraw from an app',
+    withdrawalBody:
+      'Withdrawing deletes the app data for this account immediately and permanently. Export first: the export is required to confirm.',
+    withdrawalNoApps: 'No apps activated on this account.',
+    withdrawalExport: 'Export app data',
+    withdrawalExporting: 'Preparing export…',
+    withdrawalConfirm: 'Confirm withdrawal',
+    withdrawalDialogTitle: 'Withdraw from {{app}}?',
+    withdrawalDialogBody:
+      'All data of this app for the account will be deleted immediately. This cannot be undone.',
+    withdrawalDone: 'Withdrawal completed: app data deletion has started.',
+    deletionHeading: 'Delete account',
+    deletionBody:
+      'The account is deactivated immediately; all data is permanently deleted after 14 days. You can cancel within that period by signing back in.',
+    deletionRequest: 'Delete this account',
+    deletionDialogTitle: 'Delete the whole account?',
+    deletionDialogBody:
+      'The account is deactivated right away and permanently deleted after 14 days. Within that period you can still cancel the deletion.',
+    deletionPending: 'Deletion requested: the account is deactivated.',
+    deletionEffectiveAt: 'Permanent deletion on {{date}}.',
+    deletionCancel: 'Cancel deletion',
+    deletionCanceled: 'Deletion canceled: the account is active again.',
+    rightsHeading: 'Other rights',
+    rightsRestriction:
+      'Restriction of processing (art. 18): write to privacy@appgrove.app — the request is handled case by case.',
+    rightsObjection:
+      'Objection to marketing (art. 21): no marketing communications exist yet; the consent preferences center will arrive with the newsletter.',
+    rightsAutomated:
+      'Automated decision-making (art. 22): appgrove takes no automated decisions with legal or similar effects.',
   },
   members: {
     title: 'Members',

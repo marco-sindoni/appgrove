@@ -172,7 +172,7 @@ function SubscriptionCard({
             </Button>
           )}
           {sub.phase === 'ENDED' && (
-            <Button size="sm" variant="ghost" onClick={() => navigate('/account')}>
+            <Button size="sm" variant="ghost" onClick={() => navigate('/privacy')}>
               {t('subscriptions.gdpr')}
             </Button>
           )}

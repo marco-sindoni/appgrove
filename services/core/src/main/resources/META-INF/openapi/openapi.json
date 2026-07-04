@@ -42,6 +42,12 @@
           },
           "paddleCustomerId" : {
             "type" : "string"
+          },
+          "deletionRequestedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "deletionEffectiveAt" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -540,6 +546,16 @@
           }
         }
       },
+      "StartWithdrawal" : {
+        "type" : "object",
+        "required" : [ "exportJobId" ],
+        "properties" : {
+          "exportJobId" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        }
+      },
       "SubscriptionStatusView" : {
         "type" : "object",
         "properties" : {
@@ -674,6 +690,17 @@
           }
         }
       },
+      "UpdateMe" : {
+        "type" : "object",
+        "required" : [ "displayName" ],
+        "properties" : {
+          "displayName" : {
+            "type" : "string",
+            "pattern" : "\\S",
+            "maxLength" : 255
+          }
+        }
+      },
       "UpdateUser" : {
         "type" : "object",
         "properties" : {
@@ -708,6 +735,17 @@
             "type" : "string"
           },
           "tenantId" : {
+            "type" : "string"
+          }
+        }
+      },
+      "WithdrawalView" : {
+        "type" : "object",
+        "properties" : {
+          "appId" : {
+            "type" : "string"
+          },
+          "status" : {
             "type" : "string"
           }
         }
@@ -782,6 +820,58 @@
         "tags" : [ "Account Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/accounts/me/deletion" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Request",
+        "tags" : [ "Account Deletion Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner" ]
+        } ]
+      },
+      "delete" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Cancel",
+        "tags" : [ "Account Deletion Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner" ]
         } ]
       }
     },
@@ -1160,6 +1250,54 @@
         } ]
       }
     },
+    "/api/platform/v1/gdpr/apps/{appSlug}/withdrawal" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "appSlug",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StartWithdrawal"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WithdrawalView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Gdpr Withdrawal Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
+        } ]
+      }
+    },
     "/api/platform/v1/gdpr/exports" : {
       "post" : {
         "requestBody" : {
@@ -1174,7 +1312,14 @@
         },
         "responses" : {
           "200" : {
-            "description" : "OK"
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/JobView"
+                }
+              }
+            }
           },
           "401" : {
             "description" : "Not Authorized"
@@ -1606,6 +1751,41 @@
       }
     },
     "/api/platform/v1/users/me" : {
+      "patch" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateMe"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Update Me",
+        "tags" : [ "User Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      },
       "get" : {
         "responses" : {
           "200" : {
@@ -1627,6 +1807,26 @@
         },
         "summary" : "Me",
         "tags" : [ "User Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/users/me/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Export",
+        "tags" : [ "Profile Export Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
         } ]
