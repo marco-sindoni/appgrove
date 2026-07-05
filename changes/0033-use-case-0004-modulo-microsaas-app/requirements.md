@@ -22,14 +22,19 @@ servizi (`service-add`/`service-remove`) e per lo scale-to-0 dell'ambiente test 
    per il servizio `<app_id>`:
    - **ECR repo** (immagine del servizio; scan on push, lifecycle immagini);
    - **ECS service + task definition** Fargate: 0.25 vCPU / 0.5 GB, 1 task, Spot in test / on-demand
-     in prod (#06 9/10), registrato nel cluster e nel namespace Cloud Map di `platform_shared`;
+     in prod (#06 9/10), architettura ARM64/Graviton (~-20% di costo), registrato nel cluster e nel
+     namespace Cloud Map di `platform_shared` (record SRV: l'API Gateway scopre ip+porta);
    - **route API** `/api/<app_id>/v1/*` sull'API HTTP condivisa, integrazione via VPC Link + Cloud Map;
    - **ruolo DB + schema vuoto** (default `app_<app_id>`, parametrizzabile: il core usa `platform`,
      #05 11): password generata da Terraform e salvata in **Secrets Manager** per-app; creazione
      fisica di ruolo/schema/grant (least-privilege, solo il proprio schema) via **invocazione della
      Lambda `db-bootstrap`** con SQL idempotente. Le tabelle restano a Flyway (#06 23, UC 0005/0012);
-   - **code SQS**: `tenant-purge-<app_id>` + DLQ e `gdpr-export-<app_id>` + DLQ (stessi nomi del
-     locale `dev/elasticmq.conf`, decisione differita di UC 0032), cifrate, con redrive;
+   - **code SQS**: `tenant-purge-<app_id>` + DLQ e `gdpr-export-<app_id>` + DLQ (nomi **logici** = locale
+     `dev/elasticmq.conf`, decisione differita di UC 0032), cifrate, con redrive. **Vincolo scoperto in
+     implementazione**: test e prod convivono nello stesso account/regione AWS e i nomi SQS devono essere
+     unici → il nome **fisico** è `appgrove-<env>-` + nome logico; il prefisso arriva ai servizi a runtime
+     (env var `APPGROVE_SQS_QUEUE_PREFIX` nella task definition, vuota in locale — adeguamento di
+     `services/commons` tracciato su UC 0005);
    - **regola EventBridge** sul bus condiviso: evento `tenant.offboarded` → target la coda
      `tenant-purge-<app_id>` (fan-in verso tutti i servizi, #06 H-19);
    - **log group** cifrato con retention esplicita: 7 giorni test, 30 prod (#08 26, #06 20bis);
@@ -70,9 +75,10 @@ servizi (`service-add`/`service-remove`) e per lo scale-to-0 dell'ambiente test 
 - [ ] `terraform validate` verde su `envs/test` e `envs/prod` con le istanze `platform` e `fatture`;
       `check` (fmt/validate/tflint/checkov) verde.
 - [ ] `terraform test` sul modulo verde e agganciato a `run-tests.sh` (area infra).
-- [ ] I nomi delle code SQS coincidono con quelli locali di `dev/elasticmq.conf`
+- [ ] I nomi **logici** delle code SQS coincidono con quelli locali di `dev/elasticmq.conf`
       (`tenant-purge-platform|fatture` + DLQ, `gdpr-export-platform|fatture` + DLQ,
-      `gdpr-export-results` + DLQ).
+      `gdpr-export-results` + DLQ); il nome fisico aggiunge il prefisso d'ambiente
+      `appgrove-<env>-` (vincolo: nomi SQS unici per account/regione).
 - [ ] I 4 wrapper script rispettano il pattern UC 0003 (`--help`, guardrail prod) e `test-stop` è
       idempotente/no-op a lista vuota.
 - [ ] Ruolo DB per-servizio least-privilege (grant solo sul proprio schema); schema creato vuoto.
@@ -99,5 +105,5 @@ servizi (`service-add`/`service-remove`) e per lo scale-to-0 dell'ambiente test 
 | Area | Impatto |
 |---|---|
 | Breaking change | No |
-| Contratto cross-area | Sì — servizio ↔ infra: nomi code SQS e convenzioni segreti/SSM devono combaciare con `services/commons` (`GdprQueues`) e col locale (`dev/elasticmq.conf`) |
+| Contratto cross-area | Sì — servizio ↔ infra: nomi logici code SQS = `GdprQueues`/locale; il prefisso fisico e regione/bucket viaggiano come env var della task definition (`APPGROVE_SQS_QUEUE_PREFIX`, `APPGROVE_SQS_REGION`, `APPGROVE_GDPR_EXPORT_BUCKET`, `QUARKUS_DATASOURCE_*`); l'adeguamento cloud di `services/commons` è tracciato su UC 0005 |
 | Version bump | Nessuno |
