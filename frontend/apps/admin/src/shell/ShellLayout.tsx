@@ -11,7 +11,7 @@ export function ShellLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">
-      <aside className="hidden w-64 shrink-0 border-r border-line bg-surface lg:block">
+      <aside className="hidden w-[262px] shrink-0 border-r border-line bg-surface lg:block">
         <Sidebar />
       </aside>
 
@@ -23,7 +23,7 @@ export function ShellLayout() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setDrawerOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-64 border-r border-line bg-surface">
+          <aside className="absolute left-0 top-0 h-full w-[262px] border-r border-line bg-surface">
             <Sidebar onNavigate={() => setDrawerOpen(false)} />
           </aside>
         </div>
@@ -31,8 +31,10 @@ export function ShellLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onOpenSidebar={() => setDrawerOpen(true)} />
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1240px] px-[30px] pb-[60px] pt-[28px]">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

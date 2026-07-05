@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
+import { Button, Card, CardContent, CardHeader, Icon } from '@appgrove/design-system'
 import { QueryState } from '../../../shell/QueryState'
 import { ConfirmDialog } from '../../../pages/members/ConfirmDialog'
 import { useDeleteInvoice, useInvoiceDetail, useUpdateInvoice } from '../api/hooks'
@@ -47,6 +47,7 @@ export function InvoiceDetailScreen() {
   return (
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={() => navigate('..', { relative: 'path' })}>
+        <Icon name="arrow_back" size={18} />
         {t.backToList}
       </Button>
 
@@ -66,10 +67,10 @@ export function InvoiceDetailScreen() {
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h1 className="text-2xl font-semibold text-fg">
+                  <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-fg">
                     {t.detailTitle} <span className="font-mono">{invoice.number}</span>
                   </h1>
-                  <p className="mt-1 text-sm text-fg-muted">{invoice.customerName}</p>
+                  <p className="mt-1 text-[13px] text-fg-muted">{invoice.customerName}</p>
                 </div>
                 <StatusBadge status={invoice.status} />
               </div>
@@ -90,27 +91,27 @@ export function InvoiceDetailScreen() {
                 </div>
                 <div>
                   <dt className="text-fg-muted">{t.colTotal}</dt>
-                  <dd className="text-fg">{formatAmount(invoice.totalAmount, invoice.currency)}</dd>
+                  <dd className="font-mono font-bold text-fg">{formatAmount(invoice.totalAmount, invoice.currency)}</dd>
                 </div>
               </dl>
 
               {(invoice.lines?.length ?? 0) > 0 && (
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-line text-fg-muted">
-                      <th scope="col" className="py-2 pr-4 font-medium">{t.fieldLineDescription}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t.fieldLineQuantity}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t.fieldLineUnitAmount}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t.colTotal}</th>
+                    <tr>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineDescription}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineQuantity}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineUnitAmount}</th>
+                      <th scope="col" className="border-b border-line py-2.5 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.colTotal}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoice.lines?.map((line) => (
-                      <tr key={line.id} className="border-b border-line/60">
-                        <td className="py-2 pr-4">{line.description}</td>
-                        <td className="py-2 pr-4">{line.quantity}</td>
-                        <td className="py-2 pr-4">{formatAmount(line.unitAmount, invoice.currency)}</td>
-                        <td className="py-2 pr-4">{formatAmount(line.lineAmount, invoice.currency)}</td>
+                      <tr key={line.id} className="border-b border-line last:border-b-0">
+                        <td className="py-3 pr-4 text-[13px] text-fg">{line.description}</td>
+                        <td className="py-3 pr-4 font-mono text-[13px] text-fg-muted">{line.quantity}</td>
+                        <td className="py-3 pr-4 text-right font-mono text-[13px] text-fg-muted">{formatAmount(line.unitAmount, invoice.currency)}</td>
+                        <td className="py-3 text-right font-mono text-[13px] font-bold text-fg">{formatAmount(line.lineAmount, invoice.currency)}</td>
                       </tr>
                     ))}
                   </tbody>

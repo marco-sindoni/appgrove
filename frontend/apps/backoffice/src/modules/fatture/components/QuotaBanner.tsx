@@ -21,10 +21,11 @@ export function QuotaBanner() {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface-2 p-3"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-[15px] border border-line bg-surface px-4 py-3 shadow-sm"
     >
-      <div className="flex items-center gap-2 text-sm text-fg">
-        <span className="font-medium">{t.quotaLabel}:</span>
+      <div className="flex items-center gap-2.5 text-[13px] text-fg">
+        <span aria-hidden className="h-2 w-2 rounded-pill bg-cat-blue" />
+        <span className="font-semibold text-fg-muted">{t.quotaLabel}:</span>
         {unlimited ? (
           <Badge tone="neutral">{used}</Badge>
         ) : (

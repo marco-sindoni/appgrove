@@ -18,6 +18,16 @@ export {
 } from './components/SegmentedControl'
 export { Icon, type IconProps } from './components/Icon'
 export { Logo, type LogoProps } from './components/Logo'
+export {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableHeadCell,
+  TableCell,
+  type TableRowProps,
+} from './components/Table'
+export { PageHeader, type PageHeaderProps } from './components/PageHeader'
 
 export {
   ThemeProvider,
@@ -27,6 +37,7 @@ export {
 export {
   THEMES,
   ACCENTS,
+  ACCENT_COLORS,
   DEFAULT_THEME,
   DEFAULT_ACCENT,
   applyTheme,

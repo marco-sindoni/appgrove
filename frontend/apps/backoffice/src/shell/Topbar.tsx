@@ -1,100 +1,105 @@
 import {
-  Button,
   Icon,
   SegmentedControl,
-  Switch,
+  cn,
   useTheme,
   ACCENTS,
+  ACCENT_COLORS,
   type Accent,
 } from '@appgrove/design-system'
-import { Link } from 'react-router-dom'
 import { useTranslation, LANGUAGES, type Language } from '@appgrove/i18n'
-import { useAuthStore } from '../auth/authStore'
-import { useLogout } from '../auth/useLogout'
 import { Breadcrumb } from './Breadcrumb'
 
-/** Topbar permanente: breadcrumb + accent picker + lingua + tema + notifiche + menu utente (#03 IA). */
+/* Pulsante-icona 38px del mockup (tema, notifiche): bordo sottile, raggio 10px, hover su surface-3. */
+function IconButton({
+  label,
+  icon,
+  onClick,
+  children,
+}: {
+  label: string
+  icon: string
+  onClick?: () => void
+  children?: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="relative flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-line text-fg-muted transition-colors hover:bg-surface-3"
+    >
+      <Icon name={icon} size={20} />
+      {children}
+    </button>
+  )
+}
+
+/** Topbar (mockup): 64px, sfondo traslucido sfocato, breadcrumb a sinistra; a destra pallini accent, lingua, tema, notifiche (#03 IA). */
 export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
   const { t, i18n } = useTranslation()
   const { theme, accent, setAccent, toggleTheme } = useTheme()
-  const claims = useAuthStore((s) => s.claims)
-  const logout = useLogout()
 
   const language = (i18n.language?.slice(0, 2) as Language) ?? 'en'
 
   return (
-    <header className="flex items-center gap-3 border-b border-line bg-surface px-4 py-3">
-      <Button
-        variant="ghost"
-        size="sm"
-        className="lg:hidden"
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-line bg-surface/80 px-[26px] backdrop-blur-md">
+      <button
+        type="button"
         aria-label={t('nav.platform')}
         onClick={onOpenSidebar}
+        className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-line text-fg-muted hover:bg-surface-3 lg:hidden"
       >
-        <Icon name="menu" size={22} />
-      </Button>
+        <Icon name="menu" size={20} />
+      </button>
 
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <Breadcrumb />
       </div>
 
-      <SegmentedControl
-        aria-label={t('topbar.accent')}
-        value={accent}
-        options={ACCENTS.map((a) => ({ value: a, label: a.toUpperCase().slice(0, 1) }))}
-        onValueChange={(v) => setAccent(v as Accent)}
-      />
-
-      <SegmentedControl
-        aria-label={t('topbar.language')}
-        value={language}
-        options={LANGUAGES.map((l) => ({ value: l, label: l.toUpperCase() }))}
-        onValueChange={(v) => void i18n.changeLanguage(v)}
-      />
-
-      <label className="flex items-center gap-2 text-sm text-fg-muted">
-        <Icon name="dark_mode" size={18} aria-hidden />
-        <Switch
-          checked={theme === 'dark'}
-          onCheckedChange={toggleTheme}
-          aria-label={t('topbar.toggleTheme')}
-        />
-      </label>
-
-      <Button variant="ghost" size="sm" aria-label={t('topbar.notifications')}>
-        <Icon name="notifications" size={20} />
-      </Button>
-
-      <details className="relative">
-        <summary
-          className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1 text-sm text-fg hover:bg-surface-2"
-          aria-label={t('topbar.userMenu')}
+      <div className="flex items-center gap-2.5">
+        <div
+          role="radiogroup"
+          aria-label={t('topbar.accent')}
+          className="flex items-center gap-1.5 rounded-pill bg-surface-3 p-1"
         >
-          <Icon name="account_circle" size={22} />
-          <span className="hidden max-w-[12ch] truncate sm:inline">
-            {claims?.name ?? claims?.email ?? ''}
-          </span>
-        </summary>
-        <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-line bg-surface p-2 shadow-lg">
-          <p className="truncate px-2 py-1 text-xs text-fg-muted">{claims?.email}</p>
-          <Link
-            to="/security"
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-fg hover:bg-surface-2"
-          >
-            <Icon name="shield" size={18} />
-            {t('nav.security')}
-          </Link>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start"
-            onClick={() => void logout()}
-          >
-            <Icon name="logout" size={18} />
-            {t('topbar.logout')}
-          </Button>
+          {ACCENTS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              role="radio"
+              aria-checked={accent === a}
+              aria-label={a}
+              onClick={() => setAccent(a as Accent)}
+              className={cn(
+                'h-[18px] w-[18px] rounded-pill border-2 shadow-[0_0_0_1px_rgb(var(--ag-border))]',
+                accent === a ? 'border-surface' : 'border-transparent',
+              )}
+              style={{ background: ACCENT_COLORS[a] }}
+            />
+          ))}
         </div>
-      </details>
+
+        <SegmentedControl
+          aria-label={t('topbar.language')}
+          value={language}
+          options={LANGUAGES.map((l) => ({ value: l, label: l.toUpperCase() }))}
+          onValueChange={(v) => void i18n.changeLanguage(v)}
+        />
+
+        <IconButton
+          label={t('topbar.toggleTheme')}
+          icon={theme === 'dark' ? 'light_mode' : 'dark_mode'}
+          onClick={toggleTheme}
+        />
+
+        <IconButton label={t('topbar.notifications')} icon="notifications">
+          <span
+            aria-hidden
+            className="absolute right-[9px] top-2 h-[7px] w-[7px] rounded-pill border-[1.5px] border-surface bg-accent"
+          />
+        </IconButton>
+      </div>
     </header>
   )
 }

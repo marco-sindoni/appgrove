@@ -34,7 +34,7 @@ describe('Button', () => {
       </Button>,
     )
     const btn = screen.getByRole('button', { name: 'Elimina' })
-    expect(btn.className).toContain('bg-danger')
+    expect(btn.className).toContain('text-danger')
     expect(btn.className).toContain('h-12')
   })
 

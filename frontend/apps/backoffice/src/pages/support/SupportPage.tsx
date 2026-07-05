@@ -17,9 +17,9 @@ export function SupportPage() {
   const [selected, setSelected] = useState<string | null>(null)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[22px]">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">{t('support.title')}</h1>
+        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('support.title')}</h1>
         <p className="mt-1 text-sm text-fg-muted">{t('support.subtitle')}</p>
       </div>
       {selected ? (
@@ -122,19 +122,19 @@ function TicketListSection({ onSelect }: { onSelect: (id: string) => void }) {
           onRetry={() => void tickets.refetch()}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-line text-fg-muted">
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('support.colSubject')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('support.colType')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('support.colStatus')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('support.colOpened')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('support.colDue')}</th>
+                <tr>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('support.colSubject')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('support.colType')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('support.colStatus')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('support.colOpened')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('support.colDue')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-line/60">
+                  <tr key={ticket.id} className="border-b border-line last:border-b-0">
                     <td className="py-2 pr-4">
                       <button
                         type="button"

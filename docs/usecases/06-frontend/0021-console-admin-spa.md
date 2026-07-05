@@ -76,3 +76,10 @@ _Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento
   `subscription` ↔ Paddle. **Perché differito**: non è un buco di UC 0025 (pipeline = backend; nessuna
   superficie visuale in 0020) e UC 0021 è già implementata (✅); è un'**evoluzione** della console abilitata
   ora dal nuovo data source. **Proprietario**: UC 0021 (l'allarme DLQ resta a UC 0025 cloud / #08).
+- **Elementi del mockup admin rimandati (change 0034 — fedeltà al design)** — la change 0034 ha allineato
+  shell (brand PLATFORM ADMIN, gruppi Platform/Catalog/Revenue/Governance, breadcrumb con pill), tipografia,
+  tabelle e badge al mockup `docs/frontend-design/admin/v1/`, ma restano fuori (richiedono dati/funzionalità
+  nuove) gli elementi del mockup che appartengono a **questo** UC: KPI di billing con MRR/ARR e grafico a
+  barre; ricerca e filtri pill nelle liste (accounts/users); schermate Invitations, System health e Settings
+  admin; modale di edit del catalogo; skeleton di caricamento; matrice entitlement a griglia cliccabile
+  (oggi è una tabella piatta).

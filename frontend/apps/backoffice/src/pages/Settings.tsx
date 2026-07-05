@@ -40,8 +40,8 @@ export function Settings() {
   const onSubmit = handleSubmit((values) => update.mutateAsync(values.name).catch(() => undefined))
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-fg">{t('settings.title')}</h1>
+    <div className="space-y-[22px]">
+      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('settings.title')}</h1>
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.title')}</CardTitle>

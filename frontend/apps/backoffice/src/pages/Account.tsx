@@ -9,8 +9,8 @@ export function Account() {
   const query = useCurrentUser()
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-fg">{t('nav.account')}</h1>
+    <div className="space-y-[22px]">
+      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('nav.account')}</h1>
       <Card>
         <CardHeader>
           <CardTitle>{t('nav.account')}</CardTitle>

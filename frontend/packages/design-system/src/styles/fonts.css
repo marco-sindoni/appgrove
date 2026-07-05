@@ -4,14 +4,18 @@
  * I consumer importano questo file una volta (es. nell'entry della SPA o nella vetrina).
  */
 
-/* Plus Jakarta Sans — UI (400 regular, 600 semibold, 800 per i titoli) */
+/* Plus Jakarta Sans — UI (400 regular, 500/600 label, 700 bold, 800 titoli) */
 @import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
 @import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
 @import "@fontsource/plus-jakarta-sans/800.css";
 
-/* JetBrains Mono — numeri, importi, ID */
+/* JetBrains Mono — numeri, importi, ID (700/800 per i KPI del mockup) */
 @import "@fontsource/jetbrains-mono/400.css";
 @import "@fontsource/jetbrains-mono/600.css";
+@import "@fontsource/jetbrains-mono/700.css";
+@import "@fontsource/jetbrains-mono/800.css";
 
 /* Material Symbols Rounded — iconografia (asse FILL per gli stati attivi) */
 @import "material-symbols/rounded.css";
