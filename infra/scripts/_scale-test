@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# _scale-test — motore comune di test-start/test-stop (#07 28): porta il
+# desired count dei service ECS del cluster appgrove-test al valore richiesto.
+# Non si lancia direttamente: usare test-start / test-stop.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+DESIRED="${1:?uso interno: _scale-test <0|1> [app_id ...]}"; shift
+CLUSTER="appgrove-test"
+
+# Ambiente non ancora attivato (first-run non eseguito): no-op, non un errore —
+# il cron giornaliero (UC 0005) deve poter girare anche a infra spenta.
+if ! aws ecs describe-clusters --clusters "$CLUSTER" --region "$REGION" \
+     --query 'clusters[?status==`ACTIVE`].clusterName' --output text 2>/dev/null | grep -q "$CLUSTER"; then
+  warn "cluster $CLUSTER assente o non attivo: niente da fare."
+  exit 0
+fi
+
+if [ $# -gt 0 ]; then
+  SERVICES=("$@")
+else
+  # Tutti i service del cluster (nome = app_id, modulo microsaas_app).
+  SERVICES=()
+  while IFS= read -r arn; do
+    [ -n "$arn" ] && SERVICES+=("${arn##*/}")
+  done < <(aws ecs list-services --cluster "$CLUSTER" --region "$REGION" \
+             --query 'serviceArns[]' --output text | tr '\t' '\n')
+fi
+
+if [ ${#SERVICES[@]} -eq 0 ]; then
+  warn "nessun service nel cluster $CLUSTER: niente da fare."
+  exit 0
+fi
+
+for svc in "${SERVICES[@]}"; do
+  CURRENT=$(aws ecs describe-services --cluster "$CLUSTER" --services "$svc" --region "$REGION" \
+              --query 'services[0].desiredCount' --output text 2>/dev/null || echo "MISSING")
+  case "$CURRENT" in
+    "$DESIRED") ok "$svc: già a $DESIRED (no-op)" ;;
+    MISSING|None) warn "$svc: service inesistente nel cluster, salto." ;;
+    *)
+      aws ecs update-service --cluster "$CLUSTER" --service "$svc" \
+        --desired-count "$DESIRED" --region "$REGION" >/dev/null
+      ok "$svc: desired count $CURRENT → $DESIRED"
+      ;;
+  esac
+done
+
+ok "Fatto (cluster $CLUSTER, desired count = $DESIRED)."

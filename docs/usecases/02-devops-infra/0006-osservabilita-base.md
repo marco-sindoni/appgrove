@@ -68,3 +68,15 @@ mesi (#08 29, #13 E). I log operativi **non** si archiviano a lungo (minimizzazi
   2. Metriche business via EMF a bassa cardinalità; tracce strumentate ma spente.
   3. Dashboard/alarm/SNS/Budgets as-code; retention + archivio audit 12 mesi.
   4. Allarmi pieni in prod, silenziati in test; health liveness/readiness corretti.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0033-use-case-0004-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Widget e allarmi base per-servizio sul log group del modulo `microsaas_app`.** La change 0033
+  (UC 0004) crea per ogni servizio il **log group** cifrato con retention esplicita (test 7 gg, prod
+  30 gg, #08 26) e le **DLQ** delle code SQS per-app, ma **non** i widget di dashboard né gli allarmi
+  (error rate, DLQ non vuota, task che non parte). Restano a questo UC, che possiede dashboard/alarm
+  as-code (#08): quando si implementa, agganciare le risorse già esposte dal modulo (nome log group,
+  ARN delle code/DLQ negli output). Differito perché gli allarmi appartengono al disegno complessivo
+  dell'osservabilità, non al mattone infra per-servizio.

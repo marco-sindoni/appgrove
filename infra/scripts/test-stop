@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# test-stop — spegne i servizi ECS dell'ambiente TEST (desired count → 0).
+# È il pezzo "manuale + cron giornaliero" di #07 28: i task Fargate non si
+# spengono da soli (a differenza di Aurora, che va in pausa da sé): il cron
+# CI (UC 0005) lo lancia ogni sera; a mano si usa quando si finisce prima.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: test-stop [app_id ...]
+
+Cosa fa
+  Porta a 0 il desired count dei service ECS del cluster appgrove-test
+  (#07 28): i task si fermano e la spesa Fargate va a zero (Aurora si mette
+  in pausa da sola dopo 5' di inattività). Senza argomenti agisce su TUTTI i
+  servizi; con uno o più app_id solo su quelli.
+
+  Idempotente (pensato per il cron giornaliero, UC 0005): chi è già a 0 non
+  viene toccato; se il cluster non esiste, termina senza errore. Riaccensione:
+  ./infra/scripts/test-start. Riguarda SOLO test: prod non si spegne mai da qui.
+
+Esempi
+  ./infra/scripts/test-stop             # spegne tutti i servizi di test
+  ./infra/scripts/test-stop fatture     # spegne solo fatture
+EOF
+}
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+
+require_aws
+exec "$(dirname "${BASH_SOURCE[0]}")/_scale-test" 0 "$@"

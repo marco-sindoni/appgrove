@@ -92,3 +92,11 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
   (1 transazione/anno → ~5-6%) e dal **bundling** (leva futura, K50). Paddle MoR copre tasse/fatturazione (nessun costo
   tax compliance a nostro carico). Lo **stub locale** (#09 I) = $0 (sviluppo/test senza Paddle).
 - **#08 (Observability)**: backend AWS-native (CloudWatch Logs/Metrics) + strumentazione **OTel/Micrometer neutra** (porta aperta a Grafana, E11). **Tracce strumentate ma spente** (c1) → $0. Metriche business via **EMF** (no chiamate `PutMetricData`); dimensioni a bassa cardinalità (`tenant_id` nei log, non come dimensione). Dashboard ≤3 (gratis). **Retention esplicita** (test 7gg/prod 30gg) per non accumulare; archivio **audit→S3+Glacier** (12 mesi, #13). Uptime via **canary EventBridge+Lambda in eu-central-1** (~$0). **AWS Budgets $100/mese** (soglie 75/90/100% + forecast). Costo prod ~$2–6/mese, test ~$0.
+- **UC 0004 (modulo `microsaas_app`, change 0033)**: nessuna variazione del floor. Il modulo aggiunge risorse
+  a costo ~$0 finché i task non girano: ECR (storage a consumo, lifecycle "ultime 10 immagini"), code SQS +
+  regole EventBridge (~$0 ai volumi GDPR), log group (retention 7/30gg), segreti per-app (~$0.40/segreto/mese
+  → ~$0.8/env con 2 servizi), Lambda `db-bootstrap` invocata solo agli apply (~$0, usa la **Data API** di
+  Aurora, gratuita — niente ENI/VPC). Il costo Fargate era già stimato (3 servizi × ~$10 prod on-demand;
+  test Spot+scale-to-0 ~$0 da idle): le istanze attive oggi sono **2** (platform, fatture) → prod ~$20/mese
+  quando acceso, meno con **ARM64/Graviton** (~−20%, task definition già ARM64). `test-stop` (cron in UC 0005)
+  rafforza il ~$0 di test.

@@ -30,3 +30,5 @@ evoluzione, **trigger** (quando farlo), costo/impatto.
 > Nota: E1–E7 = **modifiche Terraform**; E8–E15 = **CI/observability** (#07/#08); E16–E20 = **testing** (#10). App **non**
 > va re-instrumentata (strumentazione neutra OTel/Micrometer): le evoluzioni observability sono cambi di **backend/config**,
 > non di codice. Principio invariato: isolamento incrementale.
+
+| E21 | **Rotation credenziali DB per-app** | Password generata da Terraform in Secrets Manager, riallineabile ri-applicando (la Lambda `db-bootstrap` è idempotente); nessuna rotation automatica (UC 0004) | **Rotation automatica** Secrets Manager (Lambda di rotation dedicata) + restart/refresh dei task | Requisiti di sicurezza/compliance su rotazione periodica delle credenziali | Lambda rotation (~$0) + gestione grazia doppia-password |

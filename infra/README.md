@@ -20,29 +20,38 @@ infra/
 ├── modules/
 │   ├── env_baseline/     # fondamenta di un ambiente: VPC no-NAT, endpoint VPC,
 │   │                     # bucket export GDPR, baseline SSM
-│   └── platform_shared/  # risorse condivise di un ambiente (UC 0055): Aurora SsV2
-│                         # + RDS Proxy, cluster ECS, API GW + VPC Link + Cloud Map,
-│                         # bus EventBridge, 2 CloudFront SPA (app./admin.)
+│   ├── platform_shared/  # risorse condivise di un ambiente (UC 0055): Aurora SsV2
+│   │                     # + RDS Proxy, cluster ECS, API GW + VPC Link + Cloud Map,
+│   │                     # bus EventBridge, 2 CloudFront SPA (app./admin.),
+│   │                     # Lambda db-bootstrap, coda gdpr-export-results
+│   └── microsaas_app/    # IL mattone per-servizio (UC 0004, invariante #3):
+│                         # ECR, service ECS+Cloud Map, route API, ruolo+schema DB,
+│                         # code SQS GDPR, regola EventBridge, log group
 └── scripts/      # wrapper: NON si lanciano comandi terraform grezzi (#06 25)
 ```
 
 Regione unica: **eu-west-1** (#06 6). State remoto su S3 + lock DynamoDB, uno per stack:
 `destroy` su test non può toccare prod (#06 5).
 
-Il modulo **`microsaas_app`** (un'istanza = un microservizio: ECR, ECS, route API, schema DB,
-coda purge, …) arriva con **UC 0004** e si innesta su queste fondamenta. Non scrivere infra
-per-servizio a mano.
+Il modulo **`microsaas_app`** è l'**invariante #3**: un'istanza = un microservizio (ECR, ECS,
+route `/api/<app_id>/v1/*`, ruolo+schema DB, code GDPR, log group). Aggiungere un'app =
+aggiungere un blocco `module` negli env (lo genera `service-add`, normalmente invocato dalla
+skill `new-application`, UC 0046). **Non scrivere infra per-servizio a mano.**
 
 ## I comandi che userai (tutti con `--help`)
 
 | Comando | Cosa fa |
 |---|---|
-| `./infra/scripts/check` | valida tutto il codice **senza AWS** (fmt, validate, tflint, checkov) |
+| `./infra/scripts/check` | valida tutto il codice **senza AWS** (fmt, validate, terraform test dei moduli, tflint, checkov) |
 | `./infra/scripts/first-run` | **prima accensione** guidata: bootstrap → global → test |
 | `./infra/scripts/plan <env>` | anteprima modifiche (`test` \| `prod` \| `global`), non applica |
 | `./infra/scripts/up <env>` | applica uno stack (prod: conferma digitata, mai auto-approve) |
 | `./infra/scripts/down <env>` | distrugge uno stack (prod: doppia conferma digitata) |
 | `./infra/scripts/output <env>` | mostra gli output (name server, ARN, nomi bucket, …) |
+| `./infra/scripts/service-add <app_id>` | genera il blocco `module "app_<id>"` in test E prod (solo codice, niente AWS) |
+| `./infra/scripts/service-remove <app_id>` | rimuove il blocco (conferma digitata; schema/ruolo DB restano: pulizia manuale nel `--help`) |
+| `./infra/scripts/test-start [app_id …]` | riaccende i servizi ECS di **test** (desired count → 1) |
+| `./infra/scripts/test-stop [app_id …]` | spegne i servizi ECS di **test** (→ 0, idempotente; il cron CI è di UC 0005) |
 
 `bootstrap` esiste anche da solo, ma normalmente lo invoca `first-run`.
 
@@ -80,9 +89,11 @@ per-servizio a mano.
 ./infra/scripts/check     # ciò che esegue anche ./run-tests.sh infra
 ```
 
-`fmt -check` + `validate` (init senza backend: niente credenziali) su tutte le root, più
-**tflint** e **checkov** se installati (soppressioni inline documentate nel codice, es. subnet
-pubbliche by-design → evoluzione E1). `terraform plan` e Infracost girano in CI (**UC 0005**).
+`fmt -check` + `validate` (init senza backend: niente credenziali) su tutte le root, poi
+**`terraform test`** sui moduli con suite (`modules/microsaas_app/tests/`, #10 29: provider AWS
+**mock**, quindi offline), più **tflint** e **checkov** se installati (soppressioni inline
+documentate nel codice, es. subnet pubbliche by-design → evoluzione E1). `terraform plan` e
+Infracost girano in CI (**UC 0005**).
 
 Strumenti: `brew install hashicorp/tap/terraform` e `brew install checkov`; tflint non è più su
 Homebrew — binario dalle [release ufficiali](https://github.com/terraform-linters/tflint/releases)

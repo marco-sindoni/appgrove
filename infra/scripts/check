@@ -16,8 +16,10 @@ Cosa fa (in ordine; nessuna credenziale AWS necessaria, nessuna risorsa toccata)
   2. terraform validate    su ogni root (bootstrap, global, envs/test, envs/prod)
                            con `init -backend=false` (scarica solo i provider,
                            cache condivisa in ~/.terraform.d/plugin-cache)
-  3. tflint                se installato (lint aggiuntivo)
-  4. checkov               se installato (analisi statica di sicurezza; le
+  3. terraform test        sui moduli con test (microsaas_app, #10 29): plan
+                           con provider AWS FINTO (mock), quindi offline
+  4. tflint                se installato (lint aggiuntivo)
+  5. checkov               se installato (analisi statica di sicurezza; le
                            soppressioni inline sono documentate nel codice)
 
 Il `terraform plan` NON è incluso: richiede credenziali e state (→ CI, UC 0005,
@@ -33,16 +35,18 @@ if [ $# -gt 0 ]; then usage; die "argomento inatteso: $1"; fi
 require_terraform
 
 ROOTS=(bootstrap global envs/test envs/prod)
+# Moduli con suite `terraform test` (tests/*.tftest.hcl, provider mock → offline).
+TESTED_MODULES=(modules/microsaas_app)
 RC=0
 
-info "1/4 terraform fmt -check (tutto infra/)…"
+info "1/5 terraform fmt -check (tutto infra/)…"
 if terraform -chdir="$INFRA_DIR" fmt -check -recursive; then
   ok "fmt: formattazione canonica"
 else
   warn "fmt: file non formattati (fix: terraform -chdir=infra fmt -recursive)"; RC=1
 fi
 
-info "2/4 terraform validate (init senza backend, nessuna credenziale)…"
+info "2/5 terraform validate (init senza backend, nessuna credenziale)…"
 for root in "${ROOTS[@]}"; do
   if terraform -chdir="$INFRA_DIR/$root" init -backend=false -input=false >/dev/null \
      && terraform -chdir="$INFRA_DIR/$root" validate; then
@@ -52,7 +56,17 @@ for root in "${ROOTS[@]}"; do
   fi
 done
 
-info "3/4 tflint…"
+info "3/5 terraform test (moduli, provider mock: offline)…"
+for mod in "${TESTED_MODULES[@]}"; do
+  if terraform -chdir="$INFRA_DIR/$mod" init -backend=false -input=false >/dev/null \
+     && terraform -chdir="$INFRA_DIR/$mod" test; then
+    ok "test: $mod"
+  else
+    warn "terraform test FALLITO: $mod"; RC=1
+  fi
+done
+
+info "4/5 tflint…"
 if command -v tflint >/dev/null 2>&1; then
   for root in "${ROOTS[@]}"; do
     if tflint --chdir="$INFRA_DIR/$root" --call-module-type=all; then
@@ -65,7 +79,7 @@ else
   warn "tflint non installato: salto (vedi infra/README.md per l'installazione)."
 fi
 
-info "4/4 checkov…"
+info "5/5 checkov…"
 if command -v checkov >/dev/null 2>&1; then
   if checkov --config-file "$INFRA_DIR/.checkov.yaml" --directory "$INFRA_DIR"; then
     ok "checkov: nessun rilievo (o soppressioni documentate)"

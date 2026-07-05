@@ -65,17 +65,20 @@ Log group cifrati con retention (#08 26). Manifest GDPR: i dati personali nascon
 
 ## Punti aperti / decisioni differite
 
-- **Code SQS + bus EventBridge per il framework export/erasure (UC 0032)** _(tracciato dalla change
-  `0028-use-case-0032-…`)_. Il modulo crea già la "coda SQS (purge)" per-app; il framework UC 0032 fissa il
-  disegno completo del messaging GDPR, da riprodurre nel cloud **con gli stessi nomi usati in locale**
-  (`dev/elasticmq.conf`):
-  - per **ogni servizio** (core compreso): coda export `gdpr-export-<app_id>` + DLQ, e coda purge
-    `tenant-purge-<app_id>` + DLQ (sostituisce le vecchie code singole `gdpr-export`/`tenant-purge`);
-  - una coda condivisa **`gdpr-export-results`** + DLQ, consumata dal core (aggregazione job export);
-  - **bus EventBridge dedicato** con regola sull'evento **`tenant.offboarded`** → fan-in verso le code
-    `tenant-purge-<app_id>` di tutti i servizi (#06 H-19). In locale il bus non esiste: il publisher del core
-    invia direttamente alle code purge; nel cloud la stessa astrazione pubblica sul bus.
-  Differito perché il Terraform (modulo + bus) è di questo UC/0003; UC 0032 gira in locale su ElasticMQ.
+- **Code SQS + bus EventBridge per il framework export/erasure (UC 0032)** — ✅ **implementato dalla change
+  `0033-use-case-0004-…`** con una deviazione motivata sul naming: test e prod convivono nello stesso
+  account/regione AWS, quindi i nomi fisici delle code non possono coincidere con quelli locali — sono
+  **`appgrove-<env>-` + nome logico** (es. `appgrove-test-gdpr-export-fatture`). I nomi **logici** restano
+  quelli di `GdprQueues`/`dev/elasticmq.conf`; il prefisso arriva ai servizi a runtime (env var
+  `APPGROVE_SQS_QUEUE_PREFIX` nella task definition, vuoto in locale). Realizzato: code export+purge+DLQ
+  per-app (modulo `microsaas_app`), coda condivisa `gdpr-export-results`+DLQ (`platform_shared`), regola
+  EventBridge per-app su `tenant.offboarded` → coda purge, con `input_transformer` che consegna il solo
+  `detail` (stesso corpo del messaggio locale).
+- **Contratto dell'evento `tenant.offboarded` sul bus** _(tracciato dalla change `0033-use-case-0004-…`)_:
+  la regola EventBridge filtra oggi il solo `detail-type = "tenant.offboarded"`; `source` e struttura del
+  `detail` vanno confermati quando nasce il publisher cloud del core (l'astrazione che in locale invia
+  direttamente alle code purge). Differito perché il publisher è codice applicativo del framework
+  export/erasure. **Proprietà**: UC 0032/0035.
 - **CORS sulla HTTP API condivisa** _(tracciato dalla change `0032-use-case-0055-…`)_: le SPA girano su
   `app.`/`admin.<env>` e chiamano `api.<env>` — origini diverse, quindi il browser richiede una configurazione
   CORS (`cors_configuration` sull'API creata dal modulo `platform_shared`, UC 0055). Va decisa quando esistono

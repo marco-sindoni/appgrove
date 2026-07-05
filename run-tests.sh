@@ -102,13 +102,15 @@ run_frontend() {
 }
 
 run_infra() {
-  hdr "INFRA — infra/ (scripts/check: fmt + validate + tflint/checkov se presenti)"
+  hdr "INFRA — infra/ (scripts/check: fmt + validate + terraform test moduli + tflint/checkov se presenti)"
   if ! command -v terraform >/dev/null 2>&1; then
     warn "terraform non installato: salto (la validazione completa gira in CI, UC 0005)."; record infra SKIP; return
   fi
   # Delega a infra/scripts/check (UC 0003): fmt -check su tutto, validate su ogni
   # root (init -backend=false: nessuna credenziale AWS; i provider si scaricano
-  # una volta sola nella cache condivisa), più tflint e checkov se installati.
+  # una volta sola nella cache condivisa), terraform test sui moduli con suite
+  # (microsaas_app, provider mock: offline — UC 0004), più tflint e checkov se
+  # installati.
   if "$ROOT/infra/scripts/check"; then
     ok "infra: ok"; record infra OK
   else

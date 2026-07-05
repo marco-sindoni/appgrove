@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# service-add — aggiunge un microservizio: genera il blocco `module "app_<id>"`
+# (modulo microsaas_app, UC 0004) in ENTRAMBI gli env (test e prod). Non tocca
+# AWS: l'apply passa dal flusso PR→CI (#07 18) o da ./infra/scripts/up.
+# Normalmente lo invoca la skill `new-application` (UC 0046), non l'umano (#07 20).
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: service-add <app_id> [--port <porta>]
+
+Cosa fa
+  Genera il blocco `module "app_<app_id>"` (modulo microsaas_app) in
+  infra/envs/test/main.tf E infra/envs/prod/main.tf, delimitato dai marker
+  `service-add:begin|end <app_id>`. NON tocca AWS: crea solo codice.
+  Un'istanza del modulo = ECR + service ECS + route API /api/<app_id>/v1/* +
+  ruolo/schema DB + code SQS GDPR + regola EventBridge + log group (#06 22).
+
+Opzioni
+  --port <porta>  porta HTTP del container (default 8080; usare la stessa del
+                  profilo %dev locale, per simmetria — es. fatture = 8081)
+
+Dopo lo script (flusso normale: PR→CI, #07 18)
+  1. commit + PR: la CI mostra il plan;
+  2. al merge la CI applica su test; su prod al tag, con approvazione (#07 G18).
+  In locale: ./infra/scripts/plan test per vedere il piano.
+
+Esempi
+  ./infra/scripts/service-add note --port 8082
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'app_id (es. service-add note --port 8082)"; fi
+APP_ID="$1"; shift
+
+PORT=8080
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --port) PORT="${2:-}"; [[ "$PORT" =~ ^[0-9]+$ ]] || die "--port richiede un numero"; shift 2 ;;
+    *) usage; die "opzione sconosciuta: $1" ;;
+  esac
+done
+
+[[ "$APP_ID" =~ ^[a-z][a-z0-9_]{0,30}$ ]] \
+  || die "app_id non valido: '$APP_ID' (minuscole/cifre/underscore, iniziale alfabetica)"
+[ "$APP_ID" = "platform" ] && die "'platform' è il core: esiste già come istanza dedicata"
+
+require_terraform
+
+for ENV_NAME in test prod; do
+  MAIN_TF="$INFRA_DIR/envs/$ENV_NAME/main.tf"
+  if grep -q "service-add:begin $APP_ID " "$MAIN_TF"; then
+    die "il servizio '$APP_ID' esiste già in envs/$ENV_NAME/main.tf"
+  fi
+
+  # Flag per-ambiente (#06 10/24): Spot+teardown libero in test, on-demand+protetto in prod.
+  if [ "$ENV_NAME" = "test" ]; then
+    SPOT="true # test: Spot (#06 10)"
+    FORCE="true # test: teardown libero (#06 24)"
+  else
+    SPOT="false # prod: on-demand (#06 10)"
+    FORCE="false # prod: nessuno svuotamento automatico (#06 24)"
+  fi
+
+  cat >> "$MAIN_TF" <<EOF
+
+# ── service-add:begin $APP_ID ─────────────────────────────────────────────────
+module "app_$APP_ID" {
+  source = "../../modules/microsaas_app"
+
+  env            = "$ENV_NAME"
+  app_id         = "$APP_ID"
+  container_port = $PORT
+
+  use_fargate_spot = $SPOT
+  force_destroy    = $FORCE
+
+  shared = local.microsaas_shared
+}
+# ── service-add:end $APP_ID ───────────────────────────────────────────────────
+EOF
+  terraform fmt "$MAIN_TF" >/dev/null
+  ok "envs/$ENV_NAME/main.tf: aggiunto module \"app_$APP_ID\" (porta $PORT)"
+done
+
+info "Prossimi passi: commit + PR (plan in CI, #07 18); in locale: ./infra/scripts/plan test"
+ok "Servizio '$APP_ID' aggiunto al codice (nessuna risorsa AWS toccata)."
