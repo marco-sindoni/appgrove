@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# bootstrap — crea (una tantum) lo state remoto Terraform: bucket S3 + tabella
+# di lock DynamoDB. È il PRIMO comando in assoluto; manuale, MAI in CI (#07 5).
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: bootstrap [--help]
+
+Cosa fa
+  Crea le due risorse che ospitano lo "state" di tutti gli stack Terraform:
+    • bucket S3   appgrove-tfstate-<account-id>   (versionato, cifrato, privato)
+    • tabella DDB appgrove-tfstate-lock           (previene apply concorrenti)
+  Lo stack usa state LOCALE (infra/bootstrap/terraform.tfstate, fuori da git).
+  Idempotente: rilanciarlo a risorse già esistenti non cambia nulla.
+
+Prerequisiti
+  • terraform (brew install hashicorp/tap/terraform)
+  • AWS CLI con credenziali valide (aws sts get-caller-identity deve funzionare)
+
+Esempi
+  ./infra/scripts/bootstrap        # crea state bucket + lock (chiede conferma)
+
+Dopo di me
+  ./infra/scripts/up global        # zona DNS, certificati, ruoli CI
+  ./infra/scripts/up test          # fondamenta ambiente test
+  (oppure ./infra/scripts/first-run che orchestra tutto)
+
+Teardown completo (#06 24): queste risorse si eliminano PER ULTIME e a mano —
+il codice le protegge (prevent_destroy); istruzioni in infra/README.md.
+EOF
+}
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ $# -gt 0 ]; then usage; die "argomento inatteso: $1"; fi
+
+require_terraform
+require_aws
+
+info "Account AWS: $(aws_account_id) — regione: $REGION"
+info "Creo (se assenti): s3://$(state_bucket) + tabella $LOCK_TABLE"
+
+# Stack con state locale: è l'uovo che crea la gallina.
+terraform -chdir="$INFRA_DIR/bootstrap" init -input=false >/dev/null
+terraform -chdir="$INFRA_DIR/bootstrap" apply   # terraform chiede conferma (yes)
+
+ok "Bootstrap completato."
+terraform -chdir="$INFRA_DIR/bootstrap" output
+info "Prossimo passo: ./infra/scripts/up global (o ./infra/scripts/first-run)"

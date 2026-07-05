@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# up — crea/aggiorna uno stack (`terraform apply`) con i guardrail di #06 25:
+# ambiente sempre esplicito, prod con conferma digitata e MAI auto-approve.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: up <test|prod|global> [--yes] [--import-zone <ZONE_ID>]
+
+Cosa fa
+  `terraform apply` sullo stack indicato (dopo un init automatico del backend).
+  Mostra il piano e chiede conferma prima di applicare.
+
+Opzioni
+  --yes            applica senza conferma interattiva — SOLO test/global
+                   (su prod è vietato: mai auto-approve, #06 25)
+  --import-zone ID prima dell'apply importa nella gestione Terraform la hosted
+                   zone Route53 già esistente (solo per 'global': serve quando
+                   il dominio è stato registrato via Route53, che crea la zona
+                   da sé — vedere infra/global/route53.tf)
+
+Guardrail
+  • prod richiede di digitare 'prod' prima di procedere;
+  • su prod l'apply resta interattivo (confermi il piano digitando 'yes').
+
+Esempi
+  ./infra/scripts/up test
+  ./infra/scripts/up global --import-zone Z0123456789ABC
+  ./infra/scripts/up prod          # chiede: digita 'prod', poi conferma il piano
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
+ENV_NAME="$1"; shift
+
+AUTO_APPROVE=false
+IMPORT_ZONE_ID=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --yes) AUTO_APPROVE=true; shift ;;
+    --import-zone) IMPORT_ZONE_ID="${2:-}"; [ -n "$IMPORT_ZONE_ID" ] || die "--import-zone richiede l'ID della zona"; shift 2 ;;
+    *) usage; die "opzione sconosciuta: $1" ;;
+  esac
+done
+
+require_terraform
+require_aws
+
+DIR="$(stack_dir "$ENV_NAME")"
+
+# Guardrail prod: conferma digitata, mai auto-approve (#06 25).
+if [ "$ENV_NAME" = "prod" ]; then
+  $AUTO_APPROVE && die "--yes non è consentito su prod (mai auto-approve, #06 25)"
+  confirm_typed "prod" "Stai per APPLICARE modifiche all'ambiente di PRODUZIONE."
+fi
+
+tf_init "$ENV_NAME"
+
+# Import opzionale della hosted zone esistente (solo global, prima dell'apply).
+if [ -n "$IMPORT_ZONE_ID" ]; then
+  [ "$ENV_NAME" = "global" ] || die "--import-zone ha senso solo per lo stack 'global'"
+  if terraform -chdir="$DIR" state list 2>/dev/null | grep -q '^aws_route53_zone\.main$'; then
+    warn "aws_route53_zone.main è già nello state: salto l'import."
+  else
+    info "importo la hosted zone $IMPORT_ZONE_ID nella gestione Terraform…"
+    terraform -chdir="$DIR" import aws_route53_zone.main "$IMPORT_ZONE_ID"
+  fi
+fi
+
+info "apply di '$ENV_NAME'…"
+if $AUTO_APPROVE; then
+  terraform -chdir="$DIR" apply -auto-approve
+else
+  terraform -chdir="$DIR" apply   # terraform mostra il piano e chiede 'yes'
+fi
+ok "Stack '$ENV_NAME' applicato."

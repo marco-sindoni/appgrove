@@ -1,0 +1,10 @@
+# Configurazione checkov per infra/ (#10 H, 28).
+# Le soppressioni sono INLINE nel codice (#checkov:skip=… con motivazione):
+# qui solo il perimetro di scansione.
+framework:
+  - terraform
+quiet: true
+compact: true
+# Le cartelle di lavoro di terraform (provider scaricati) non vanno scansionate.
+skip-path:
+  - .terraform

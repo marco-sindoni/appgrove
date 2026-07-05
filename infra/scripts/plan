@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# plan — anteprima delle modifiche di uno stack, SENZA applicare nulla.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: plan <test|prod|global>
+
+Cosa fa
+  `terraform plan` sullo stack indicato: mostra cosa VERREBBE creato/modificato/
+  distrutto. Non tocca nulla: è sempre sicuro da lanciare.
+
+Prerequisiti
+  • bootstrap già eseguito (lo state remoto deve esistere)
+  • credenziali AWS valide
+
+Esempi
+  ./infra/scripts/plan test
+  ./infra/scripts/plan global
+EOF
+}
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
+ENV_NAME="$1"
+
+require_terraform
+require_aws
+
+tf_init "$ENV_NAME"
+info "plan di '$ENV_NAME' (nessuna modifica verrà applicata)…"
+terraform -chdir="$(stack_dir "$ENV_NAME")" plan

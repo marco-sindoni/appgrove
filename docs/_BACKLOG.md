@@ -283,6 +283,12 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   Resta l'**implementazione** degli script `infra/scripts/test-start|test-stop` + workflow.
 - **Workflow GitHub Actions** (YAML) da implementare: verifica-PR (`plan`+test), deploy-test, release-prod (tag+gate),
   flyway task ECS one-shot, frontend, cron `test-stop`. Specifica → [07-devops-cicd](07-devops-cicd.md).
+- **Drift regione: `eu-south-1` nei servizi vs `eu-west-1` deciso** _(rilevato dalla change `0031-use-case-0003-…`)_.
+  `appgrove.sqs.region=eu-south-1` nel profilo di default di `services/core` e `services/fatture` (e il commento
+  della console "Diritti GDPR" UC 0034 suggerisce `appgrove.aws-console.region=eu-south-1`), mentre #06 6 fissa
+  **eu-west-1** per tutta l'infrastruttura. In locale il valore è irrilevante (ElasticMQ/MinIO ignorano la regione),
+  ma va **corretto/iniettato per ambiente** quando si configura il deploy cloud (UC 0005): allineare i default (o
+  sovrascriverli via config per-env) a `eu-west-1`. Trasversale a più servizi, per questo tracciato qui.
 
 ## Dev locale — script `dev/` + README (#11)
 - Implementare gli script **`dev/`** (#11 C): `setup` (one-time idempotente), `up`/`down`, `seed`/`reset`/`migrate`,
