@@ -18,9 +18,9 @@ export function GdprExportDetail() {
   const request = detail.data?.request
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[22px]">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-fg">{t('admin.gdpr.exportDetailTitle')}</h1>
+        <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-fg">{t('admin.gdpr.exportDetailTitle')}</h1>
         <Link to="/gdpr" className="text-sm text-accent underline-offset-2 hover:underline">
           ← {t('admin.gdpr.title')}
         </Link>

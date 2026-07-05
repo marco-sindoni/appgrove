@@ -19,11 +19,16 @@ export default {
         surface: {
           DEFAULT: withAlpha('--ag-surface'),
           2: withAlpha('--ag-surface-2'),
+          3: withAlpha('--ag-surface-3'),
         },
-        line: withAlpha('--ag-border'),
+        line: {
+          DEFAULT: withAlpha('--ag-border'),
+          strong: withAlpha('--ag-border-strong'),
+        },
         fg: {
           DEFAULT: withAlpha('--ag-text'),
           muted: withAlpha('--ag-text-muted'),
+          faint: withAlpha('--ag-text-faint'),
         },
         accent: {
           DEFAULT: withAlpha('--ag-accent'),

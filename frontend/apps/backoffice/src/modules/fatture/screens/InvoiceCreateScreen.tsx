@@ -65,8 +65,8 @@ export function InvoiceCreateScreen() {
   })
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-fg">{t.editorTitle}</h1>
+    <div className="space-y-[22px]">
+      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t.editorTitle}</h1>
 
       {error && (
         <div role="alert" className="space-y-2 rounded-md border border-line bg-surface-2 p-3 text-sm">

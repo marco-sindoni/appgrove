@@ -164,9 +164,9 @@ export function MembersPage() {
     removeMember.isPending
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[22px]">
       <div>
-        <h1 className="text-2xl font-semibold text-fg">{t('members.title')}</h1>
+        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('members.title')}</h1>
         <p className="mt-1 text-sm text-fg-muted">{t('members.subtitle')}</p>
       </div>
 
@@ -256,19 +256,19 @@ export function MembersPage() {
               <p className="text-sm text-fg-muted">{t('members.noMembers')}</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-[13px]">
                   <thead>
-                    <tr className="border-b border-line text-fg-muted">
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colEmail')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colName')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colRole')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colStatus')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colActions')}</th>
+                    <tr>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colEmail')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colName')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colRole')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colStatus')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {memberList.map((u) => (
-                      <tr key={u.id} className="border-b border-line/60">
+                      <tr key={u.id} className="border-b border-line last:border-b-0">
                         <td className="py-2 pr-4">{u.email}</td>
                         <td className="py-2 pr-4 text-fg-muted">{u.displayName ?? '—'}</td>
                         <td className="py-2 pr-4">
@@ -349,18 +349,18 @@ export function MembersPage() {
               <p className="text-sm text-fg-muted">{t('members.noInvites')}</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-[13px]">
                   <thead>
-                    <tr className="border-b border-line text-fg-muted">
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colEmail')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colRole')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colExpires')}</th>
-                      <th scope="col" className="py-2 pr-4 font-medium">{t('members.colActions')}</th>
+                    <tr>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colEmail')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colRole')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colExpires')}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inviteList.map((inv) => (
-                      <tr key={inv.id} className="border-b border-line/60">
+                      <tr key={inv.id} className="border-b border-line last:border-b-0">
                         <td className="py-2 pr-4">{inv.email}</td>
                         <td className="py-2 pr-4">{roleLabel(t, inv.role)}</td>
                         <td className="py-2 pr-4 text-fg-muted">

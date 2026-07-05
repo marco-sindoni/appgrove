@@ -7,8 +7,8 @@ export function Dashboard() {
   const claims = useAuthStore((s) => s.claims)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-fg">{t('nav.dashboard')}</h1>
+    <div className="space-y-[22px]">
+      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('nav.dashboard')}</h1>
       <Card>
         <CardHeader>
           <CardTitle>{t('app.name')}</CardTitle>

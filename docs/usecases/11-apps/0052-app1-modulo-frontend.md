@@ -66,3 +66,9 @@ Nessuna persistenza client; legge/scrive via API backend (filtrate per tenant la
 - **i18n del modulo (EN/IT)** — le stringhe del modulo `fatture` sono **per-modulo inline in italiano** (come il modulo
   demo, #03 dec.6). La standardizzazione bilingue dei moduli app è **trasversale** e tracciata in
   [docs/_BACKLOG.md](../../_BACKLOG.md) → "App modules frontend (UC 0052+)". *Owner*: #03/#19.
+- **Elementi del mockup Invoices rimandati (change 0034 — fedeltà al design)** — la change 0034 ha allineato
+  la lista fatture al mockup (header con riquadro icona app, tabella card con avatar cliente e badge di
+  stato, banner quota in stile card), ma restano fuori (richiedono aggregati/comportamenti nuovi) gli
+  elementi del mockup che appartengono a **questo** UC: le quattro schede riassuntive (Outstanding / Paid
+  this month / Overdue / Drafts) sopra la tabella e i tab di filtro per stato (All/Paid/Pending/Overdue/
+  Draft) con pulsante "Filter".

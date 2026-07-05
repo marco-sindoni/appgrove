@@ -10,9 +10,9 @@ export default function DemoModule() {
   const shell = useShellContext()
 
   return (
-    <div data-testid="demo-module" className="space-y-6">
+    <div data-testid="demo-module" className="space-y-[22px]">
       <header>
-        <h1 className="text-2xl font-semibold text-fg">Demo app</h1>
+        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">Demo app</h1>
         <p className="text-sm text-fg-muted">
           Tenant <span className="font-mono">{shell.tenantId}</span> · utente{' '}
           <span className="font-mono">{shell.userId}</span>

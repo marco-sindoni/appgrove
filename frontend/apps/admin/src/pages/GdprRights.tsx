@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
+import { Button, Card, CardContent, CardHeader, CardTitle, PageHeader } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import {
   useAdminTickets,
@@ -28,11 +28,8 @@ export function GdprRights() {
   const { t } = useTranslation()
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-fg">{t('admin.gdpr.title')}</h1>
-        <p className="mt-1 text-sm text-fg-muted">{t('admin.gdpr.subtitle')}</p>
-      </div>
+    <div className="space-y-[22px]">
+      <PageHeader title={t('admin.gdpr.title')} subtitle={t('admin.gdpr.subtitle')} />
       <RequestsSection />
       <TicketsSection />
       <RestrictionsSection />
@@ -70,7 +67,7 @@ function RequestsSection() {
           </label>
           <select
             id="gdpr-type-filter"
-            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm"
             value={type}
             onChange={(e) => setType(e.target.value)}
           >
@@ -88,22 +85,22 @@ function RequestsSection() {
           onRetry={() => void requests.refetch()}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-line text-fg-muted">
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colType')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colAccount')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colApp')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colStatus')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colRequested')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colDue')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colCompleted')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colLinks')}</th>
+                <tr>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colType')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colAccount')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colApp')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colStatus')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colRequested')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colDue')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colCompleted')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colLinks')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((request, i) => (
-                  <tr key={`${request.type}-${request.refId}-${i}`} className="border-b border-line/60">
+                  <tr key={`${request.type}-${request.refId}-${i}`} className="border-b border-line last:border-b-0">
                     <td className="py-2 pr-4">{typeLabel(request.type)}</td>
                     <td className="py-2 pr-4">{request.accountName ?? request.tenantId ?? '—'}</td>
                     <td className="py-2 pr-4 text-fg-muted">{request.appId ?? '—'}</td>
@@ -163,12 +160,14 @@ function TicketsSection() {
 
   return (
     <Card>
-      <CardHeader title={t('admin.gdpr.ticketsHeading')} />
+      <CardHeader>
+        <CardTitle>{t('admin.gdpr.ticketsHeading')}</CardTitle>
+      </CardHeader>
       <CardContent className="py-4">
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <select
             aria-label={t('admin.gdpr.colType')}
-            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm"
             value={type}
             onChange={(e) => setType(e.target.value as '' | 'support' | 'privacy')}
           >
@@ -178,7 +177,7 @@ function TicketsSection() {
           </select>
           <select
             aria-label={t('admin.gdpr.colStatus')}
-            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm"
             value={status}
             onChange={(e) => setStatus(e.target.value as '' | 'open' | 'in_progress' | 'resolved' | 'closed')}
           >
@@ -196,20 +195,20 @@ function TicketsSection() {
           onRetry={() => void tickets.refetch()}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-line text-fg-muted">
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colSubject')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colAccount')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colType')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colPriority')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colStatus')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colDue')}</th>
+                <tr>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colSubject')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colAccount')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colType')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colPriority')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colStatus')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colDue')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-line/60">
+                  <tr key={ticket.id} className="border-b border-line last:border-b-0">
                     <td className="py-2 pr-4">
                       <Link
                         to={`/gdpr/tickets/${ticket.id}`}
@@ -278,7 +277,9 @@ function RestrictionsSection() {
 
   return (
     <Card>
-      <CardHeader title={t('admin.gdpr.restrictionsHeading')} />
+      <CardHeader>
+        <CardTitle>{t('admin.gdpr.restrictionsHeading')}</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-4 py-4">
         <p className="text-sm text-fg-muted">{t('admin.gdpr.restrictionsBody')}</p>
 
@@ -379,18 +380,18 @@ function RestrictionsSection() {
         {trail.length > 0 && (
           <div className="overflow-x-auto">
             <h3 className="mb-2 text-sm font-semibold text-fg">{t('admin.gdpr.auditHeading')}</h3>
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-line text-fg-muted">
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colWhen')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colTarget')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colAction')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colActor')}</th>
+                <tr>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colWhen')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colTarget')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colAction')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colActor')}</th>
                 </tr>
               </thead>
               <tbody>
                 {trail.map((entry) => (
-                  <tr key={entry.id} className="border-b border-line/60">
+                  <tr key={entry.id} className="border-b border-line last:border-b-0">
                     <td className="py-2 pr-4 text-fg-muted">{fmtDate(entry.executedAt)}</td>
                     <td className="py-2 pr-4">
                       {entry.targetKind} · {entry.targetId}
@@ -438,7 +439,9 @@ function PurgeAuditSection() {
 
   return (
     <Card>
-      <CardHeader title={t('admin.gdpr.purgeAuditHeading')} />
+      <CardHeader>
+        <CardTitle>{t('admin.gdpr.purgeAuditHeading')}</CardTitle>
+      </CardHeader>
       <CardContent className="py-4">
         <QueryState
           isLoading={audit.isLoading}
@@ -447,19 +450,19 @@ function PurgeAuditSection() {
           onRetry={() => void audit.refetch()}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-line text-fg-muted">
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colWhen')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colAccount')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colApp')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colReason')}</th>
-                  <th scope="col" className="py-2 pr-4 font-medium">{t('admin.gdpr.colDeleted')}</th>
+                <tr>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colWhen')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colAccount')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colApp')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colReason')}</th>
+                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colDeleted')}</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((entry) => (
-                  <tr key={entry.id} className="border-b border-line/60">
+                  <tr key={entry.id} className="border-b border-line last:border-b-0">
                     <td className="py-2 pr-4 text-fg-muted">{fmtDate(entry.executedAt)}</td>
                     <td className="py-2 pr-4">{entry.tenantId}</td>
                     <td className="py-2 pr-4 text-fg-muted">{entry.appId}</td>

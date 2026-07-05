@@ -35,9 +35,9 @@ export function Billing() {
   const [appSlug, setAppSlug] = useState<string | null>(null)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[22px]">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-fg">{t('checkout.title')}</h1>
+        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('checkout.title')}</h1>
         <p className="text-sm text-fg-muted">{t('checkout.subtitle')}</p>
       </header>
       {appSlug ? (

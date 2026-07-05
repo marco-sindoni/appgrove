@@ -103,3 +103,11 @@ _Aggiunti dalla change `0011-use-case-0020-…` (implementazione shell skeleton)
   auth-local); valorizzarli è degli UC auth cloud (☁0015/0016) + config per-env (#12).
 - **Code-splitting bundle** — il chunk principale supera 500 kB (warning Vite); valutare split di vendor/route quando il
   peso conta. Non bloccante per la shell skeleton.
+- **Componenti della shell del mockup rimandati (change 0034 — fedeltà al design)** — la change 0034 ha
+  allineato shell/sidebar/topbar al mockup `docs/frontend-design/v1/`, ma ha lasciato fuori (per scelta di
+  scope: richiedono dati/comportamenti nuovi) questi elementi che appartengono a **questo** UC:
+  ricerca globale nella sidebar ("Search apps & sections", scorciatoia ⌘K); selettore workspace nel blocco
+  brand (`unfold_more`); badge numerici sulle voci di menu e conteggi sulle sezioni app; stato **PAUSED**
+  delle app in sidebar (dipende dal lifecycle subscription). Nota: la change 0034 ha anche aggiornato la
+  nota sopra sui pattern tabella — il primitivo `Table` ora **esiste** nel design system (UC 0019) ed è usato
+  dalle liste di backoffice e admin.
