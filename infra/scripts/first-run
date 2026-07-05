@@ -35,7 +35,7 @@ Prerequisiti
     resterà in attesa della validazione DNS).
 
 Costi indicativi una volta acceso test (stima viva: docs/_COSTI-AWS.md)
-  • endpoint VPC: ~14 $/mese; il resto delle fondamenta ~0 da idle.
+  • floor always-on ~26 $/mese (endpoint VPC ~14 + RDS Proxy ~12); il resto ~0 da idle.
   • Per spegnere: ./infra/scripts/down test
 
 Esempi

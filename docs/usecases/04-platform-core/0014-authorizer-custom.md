@@ -71,3 +71,8 @@ _Tracciati dalla change `0014-use-case-0021-…` (console admin). Dettaglio in [
   questo UC (+ UC 0027 runtime). Implementare la lettura di `app.status` nell'authorizer e il rifiuto coerente.
 - **Override entitlement per-tenant.** Oggi l'entitlement è derivato **solo** da `subscription`. Se servirà una leva
   admin per-tenant-app (UC 0021 #16), va definita qui (modello gate) + schema in UC 0013.
+- **Autenticazione IAM delle Lambda verso il RDS Proxy** _(tracciato dalla change `0032-use-case-0055-…`)_:
+  il proxy (modulo `platform_shared`, UC 0055) nasce con `iam_auth = DISABLED` (le Lambda si autenticano con
+  le credenziali dal segreto). Passare a `REQUIRED` (token IAM, niente password nelle Lambda) è un hardening
+  da decidere qui, quando nascono le 3 Lambda (questo UC + 0015/0016), perché cambia il loro codice di
+  connessione e i permessi IAM.

@@ -68,7 +68,7 @@ AWS finché il prodotto non gira offline.
 | 28 | [0033](08-compliance-gdpr/0033-self-service-gdpr.md) | Self-service GDPR | Compliance & GDPR | 0032, 0020 | ✅ |
 | 29 | [0034](08-compliance-gdpr/0034-console-diritti-gdpr.md) | Console "Diritti GDPR" (admin) | Compliance & GDPR | 0032, 0021 | ✅ |
 | 30 | [0003](02-devops-infra/0003-fondamenta-terraform.md) | Terraform foundation | DevOps & Infra | — | ✅ |
-| 31 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | 🟡 |
+| 31 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | ✅ |
 | 32 | [0004](02-devops-infra/0004-modulo-microsaas-app.md) | Modulo `microsaas_app` | DevOps & Infra | 0003, 0055 | ⬜ |
 | 33 | [0006](02-devops-infra/0006-osservabilita-base.md) | Observability baseline | DevOps & Infra | 0003, 0004 | ⬜ |
 | 34 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ⬜ |

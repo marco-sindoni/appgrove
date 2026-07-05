@@ -18,8 +18,11 @@ infra/
 │   ├── test/     # ambiente test  (state separato: envs/test/terraform.tfstate)
 │   └── prod/     # ambiente prod  (state separato: envs/prod/terraform.tfstate)
 ├── modules/
-│   └── env_baseline/   # fondamenta di un ambiente: VPC no-NAT, endpoint VPC,
-│                       # bucket export GDPR, baseline SSM
+│   ├── env_baseline/     # fondamenta di un ambiente: VPC no-NAT, endpoint VPC,
+│   │                     # bucket export GDPR, baseline SSM
+│   └── platform_shared/  # risorse condivise di un ambiente (UC 0055): Aurora SsV2
+│                         # + RDS Proxy, cluster ECS, API GW + VPC Link + Cloud Map,
+│                         # bus EventBridge, 2 CloudFront SPA (app./admin.)
 └── scripts/      # wrapper: NON si lanciano comandi terraform grezzi (#06 25)
 ```
 
@@ -51,8 +54,9 @@ per-servizio a mano.
    zona viene creata ex novo, **puntare i name server del registrar** alla zona
    (`./infra/scripts/output global name_servers`) — finché gli NS non sono delegati, la validazione
    DNS dei certificati ACM resta in attesa.
-3. **Costi** una volta acceso test: ~14 $/mese (endpoint VPC); il resto ~0 da idle. Spegnere:
-   `./infra/scripts/down test`.
+3. **Costi** una volta acceso test: floor always-on ~26 $/mese (endpoint VPC ~14 + RDS Proxy ~12);
+   il resto ~0 da idle (Aurora scale-to-0, Fargate senza task, CloudFront/API GW a consumo).
+   Spegnere: `./infra/scripts/down test`.
 4. **Prod** non viene toccato da `first-run`: si accende esplicitamente (`up prod`, conferma digitata).
 
 ## Sicurezze di destroy / teardown completo (#06 24)
@@ -96,4 +100,9 @@ Homebrew — binario dalle [release ufficiali](https://github.com/terraform-lint
 - **CI senza chiavi AWS** (#07 25): ruoli OIDC `appgrove-github-actions-{test,prod}`; prod
   assumibile **solo da tag**.
 - **Convenzione SSM**: `/appgrove/<env>/<area>/<chiave>`; i servizi leggono a runtime, la CI mai
-  (#07 26). Credenziali DB in Secrets Manager, nasceranno col cluster Aurora.
+  (#07 26). Credenziali master DB in Secrets Manager, gestite da RDS (`manage_master_user_password`).
+- **Risorse condivise per-ambiente** (UC 0055, modulo `platform_shared`): Aurora Serverless v2
+  **scale-to-0** (min 0 ACU, auto-pause 5', max 2 ACU, PITR 7gg; prod protetta da deletion
+  protection + snapshot finale); **RDS Proxy solo per le Lambda auth** (#05 dec.3 — i task Fargate
+  e Flyway si connettono diretti); ingress **API GW HTTP + VPC Link + Cloud Map** (no ALB, E2);
+  bus EventBridge per la purge; 2 distribuzioni **CloudFront + S3 privato (OAC)** con fallback SPA.

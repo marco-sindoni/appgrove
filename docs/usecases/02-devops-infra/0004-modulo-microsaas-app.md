@@ -76,3 +76,9 @@ Log group cifrati con retention (#08 26). Manifest GDPR: i dati personali nascon
     `tenant-purge-<app_id>` di tutti i servizi (#06 H-19). In locale il bus non esiste: il publisher del core
     invia direttamente alle code purge; nel cloud la stessa astrazione pubblica sul bus.
   Differito perché il Terraform (modulo + bus) è di questo UC/0003; UC 0032 gira in locale su ElasticMQ.
+- **CORS sulla HTTP API condivisa** _(tracciato dalla change `0032-use-case-0055-…`)_: le SPA girano su
+  `app.`/`admin.<env>` e chiamano `api.<env>` — origini diverse, quindi il browser richiede una configurazione
+  CORS (`cors_configuration` sull'API creata dal modulo `platform_shared`, UC 0055). Va decisa quando esistono
+  le route e il modello cookie/credenziali dell'auth BFF (UC 0015): origini ammesse = i due domini SPA,
+  credenziali sì/no, header. Differita per non fissare un contratto browser↔API prima dell'auth. Proprietà:
+  questo UC (wiring route) insieme a UC 0015.

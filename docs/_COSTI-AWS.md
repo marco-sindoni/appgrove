@@ -17,7 +17,7 @@
 | Cognito | $0 | $0 | free tier 50k MAU; **niente pool per il locale** (dev 100% offline, #11) |
 | **ECS Fargate** | ~$30 | ~$0 | 3 servizi (core+2 app) × ~$10 (0.25 vCPU/0.5GB). Prod on-demand 24/7; **test Spot + scale-to-0 → ~$0 da idle** |
 | **Aurora Serverless v2** | ~$0 idle | ~$0 idle | ✅ scale-to-0 su **test e prod** (#06 E): ~$0 da idle + storage (~$1). Min>0 prod = evoluzione E4 (~$44) |
-| **RDS Proxy** (solo Lambda) | ~$10–15 | ~$10–15 | **da tenere d'occhio**: non gratis; valutare se serve in `test` |
+| **RDS Proxy** (solo Lambda) | ~$10–15 | ~$10–15 | ✅ deciso #06 15 (test+prod), implementato in UC 0055; **minimo di fatturazione da verificare alla prima accensione** |
 | **NAT Gateway** | **$0** | **$0** | ✅ deciso #06 B: niente NAT (subnet pubbliche + SG). Hardening = evoluzione E1 (~$32/mese) |
 | Load balancer (ingress) | **$0** | **$0** | ✅ deciso #06 B: VPC Link + Cloud Map, no ALB. ALB = evoluzione E2 (~$16/mese) |
 | State Terraform (S3+DynamoDB) | ~$0 | — | bucket S3 + tabella DynamoDB on-demand: pochi centesimi |
@@ -53,7 +53,8 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
 2. ✅ **Load balancer** — risolto (#06 B): no ALB (Cloud Map). Scaling = evoluzione E2.
 3. **Fargate sempre-on** — `test` con scaling a 0 task quando non si testa (scheduled/manuale).
 4. **Aurora scale-to-0** — già deciso (#12) per `test`; valutarlo anche per `prod` (evoluzione E4).
-5. **RDS Proxy** — confermare che serva (scelto per le Lambda); eventualmente solo in `prod`.
+5. **RDS Proxy** — ✅ deciso (#06 15: test+prod, solo Lambda) e implementato (UC 0055); resta da **verificare il
+   minimo di fatturazione** alla prima accensione — se elevato, riconsiderare il proxy in `test`.
 
 ## Changelog decisioni → costi
 - **#12** (env): Aurora Serverless v2 **scale-to-0** (test) → abbatte il costo DB idle. 3 tier; local $0.
@@ -61,6 +62,9 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
 - **#05/#04**: **RDS Proxy** (Lambda) → nuova voce ~$10–15/env, da monitorare.
 - **#04**: native GraalVM in prod → task Fargate piccoli (0.25 vCPU/0.5GB) → costo Fargate minimo. EventBridge/SQS per purge → ~$0.
 - **#03**: **app admin separata** (`admin.appgrove.app`) → seconda distribuzione S3+CloudFront per env (~$0, free tier); coperta dai wildcard ACM esistenti (nessun cert nuovo).
+- **UC 0055** (risorse condivise per-env, change 0032): nessuna voce nuova — conferma in codice di Aurora scale-to-0
+  (min 0 ACU/auto-pause 5', max 2), RDS Proxy test+prod, cluster ECS (Spot in test), API GW+VPC Link+Cloud Map,
+  bus EventBridge, 2 CloudFront (PriceClass_100). Il floor always-on ~$26/mese/env decorre dall'accensione dell'ambiente.
 - **#06 A**: regione **eu-west-1** (cost-min); state Terraform su S3+DynamoDB (~$0).
 - **#06 B**: **niente NAT** e **no ALB** (Cloud Map) → networking ~$0; entrambi tracciati come evoluzioni E1/E2 in [_EVOLUZIONI-DEVOPS.md](_EVOLUZIONI-DEVOPS.md).
 - **#06 C**: **Fargate Spot in test** (~−70%) + **test scale-to-0** da idle → costo Fargate test ~$0; prod on-demand (1 task/servizio, 0.25 vCPU/0.5GB).
