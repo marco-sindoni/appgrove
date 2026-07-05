@@ -40,7 +40,7 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | 0005 | 1 | Pipeline CI/CD (OIDC, terraform, backend build/test+`[graal]`, frontend, Flyway one-shot, prod gate, path-filter, Infracost) | 0003, 0004 | 🟢 |
 | 0006 | 1 | Observability baseline (log JSON+correlation, Micrometer/EMF, dashboard/alarm/SNS/Budgets, retention/archivio) | 0003 | 🟢 |
 | 0007 | 7 | Observability hardening (canary eu-central-1 prod, tuning Budgets) | 0006 | 🟢 |
-| 0055 | 1 | Risorse condivise per-env (Aurora SsV2+RDS Proxy/PITR, ECS cluster, API GW HTTP+VPC Link+Cloud Map, EventBridge bus, 2 CloudFront SPA) | 0003 | 🟡 |
+| 0055 | 1 | Risorse condivise per-env (Aurora SsV2+RDS Proxy/PITR, ECS cluster, API GW HTTP+VPC Link+Cloud Map, EventBridge bus, 2 CloudFront SPA) | 0003 | 🟢 |
 
 ### 03-local-dev
 | UC | Fase | Titolo | Dipendenze | Stato |
@@ -133,5 +133,5 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 **Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0057** sono appesi col prossimo `NNNN` libero
 (ID stabili, non riflettono l'area). **Ordine di implementazione**: dato dalla colonna **Fase** + **Dipendenze** (non dal numero).
 **Stato**: i drill-down sono **scritti** (🟢) tranne **0044** (`new-change`: hook privacy/RoPA + snapshot da wire-are in UC 0031),
-**0002** (documenti legali: impianto deciso, testi ancora da redigere) e i nuovi **0055/0056/0057** (🟡, drill-down scritto,
+**0002** (documenti legali: impianto deciso, testi ancora da redigere) e i nuovi **0056/0057** (🟡, drill-down scritto,
 implementazione da avviare). Implementazione successiva: una `new-change` per use case (folder `NNNN-use-case-YYYY-…`).

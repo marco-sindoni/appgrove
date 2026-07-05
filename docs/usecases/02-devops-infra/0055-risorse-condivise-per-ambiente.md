@@ -1,9 +1,9 @@
 # UC 0055 — Risorse condivise per-ambiente (Aurora SsV2 + RDS Proxy, ECS cluster, API GW HTTP + VPC Link + Cloud Map, EventBridge bus, CloudFront SPA)
 
-**Area**: 02-devops-infra · **Fase**: 1 · **Stato**: 🟡 in corso
+**Area**: 02-devops-infra · **Fase**: 1 · **Stato**: 🟢 deciso
 **Dipendenze**: UC [0003](0003-fondamenta-terraform.md) (foundation) — prerequisito di UC [0004](0004-modulo-microsaas-app.md)/[0005](0005-pipeline-cicd.md)/[0006](0006-osservabilita-base.md)
 **Fonte decisioni**: #06 (Aurora/ECS/API GW/EventBridge/CloudFront), #12 (DB test scale-to-0)
-**Ultimo aggiornamento**: 2026-06-21
+**Ultimo aggiornamento**: 2026-07-05
 **Aree collegate**: [06-infra-iac](../../06-infra-iac.md), [12-environments-config](../../12-environments-config.md), [_COSTI-AWS](../../_COSTI-AWS.md), [_EVOLUZIONI-DEVOPS](../../_EVOLUZIONI-DEVOPS.md)
 
 ## 1. Obiettivo / Scope

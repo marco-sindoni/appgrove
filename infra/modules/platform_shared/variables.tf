@@ -1,0 +1,48 @@
+variable "env" {
+  description = "Nome dell'ambiente (test | prod); entra nei nomi delle risorse e nei domini."
+  type        = string
+
+  validation {
+    condition     = contains(["test", "prod"], var.env)
+    error_message = "env deve essere \"test\" o \"prod\" (local non usa AWS, #12 1/3)."
+  }
+}
+
+variable "domain" {
+  description = "Dominio unico dell'iniziativa (#12 12); test vive sul sottodominio test.<domain> (#12 10)."
+  type        = string
+  default     = "appgrove.app"
+}
+
+variable "vpc_id" {
+  description = "VPC dell'ambiente (output di env_baseline)."
+  type        = string
+}
+
+variable "vpc_cidr" {
+  description = "CIDR della VPC: perimetro delle regole dei security group interni."
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "Subnet dell'ambiente (2 AZ, output di env_baseline) per Aurora/Proxy/VPC Link."
+  type        = list(string)
+}
+
+variable "deletion_protection" {
+  description = <<-EOT
+    Sicurezze di destroy sul cluster Aurora (#06 16/24): true su prod
+    (deletion protection + snapshot finale), false su test (destroy libero).
+  EOT
+  type        = bool
+}
+
+variable "force_destroy_buckets" {
+  description = "Come in env_baseline (#06 24): true su test (i bucket SPA si svuotano da soli), false su prod."
+  type        = bool
+}
+
+variable "use_fargate_spot" {
+  description = "Capacità ECS di default (#06 10): Fargate Spot in test (~-70%), on-demand in prod."
+  type        = bool
+}
