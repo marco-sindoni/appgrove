@@ -18,6 +18,15 @@ coverage/
 cdk.out/
 .cdk.staging/
 
+# --- Terraform (infra/) ---
+# .terraform.lock.hcl invece SI committa (versioni provider riproducibili).
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+
 # --- Java / Maven (services) ---
 target/
 *.class

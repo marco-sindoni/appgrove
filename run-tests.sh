@@ -5,7 +5,7 @@
 #   • backend  — services/* (Quarkus/Maven)  → `mvn test`  [richiede Docker/Colima: Testcontainers/Dev Services]
 #   • frontend — frontend/  (npm workspaces)  → `npm test` + `npm run e2e`  [vitest + Playwright L2 (UC 0029),
 #                browser chromium auto-installato se assente; la suite L3 sandbox NON è qui: è pre-release]
-#   • infra    — infra/     (Terraform)       → `terraform fmt -check` + `validate` (best-effort se inizializzato)
+#   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov se presenti)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
 #
@@ -102,19 +102,18 @@ run_frontend() {
 }
 
 run_infra() {
-  hdr "INFRA — infra/ (terraform fmt/validate)"
+  hdr "INFRA — infra/ (scripts/check: fmt + validate + tflint/checkov se presenti)"
   if ! command -v terraform >/dev/null 2>&1; then
     warn "terraform non installato: salto (la validazione completa gira in CI, UC 0005)."; record infra SKIP; return
   fi
-  local rc=0
-  terraform -chdir="$ROOT/infra" fmt -check -recursive || rc=1
-  # validate richiede `init` (provider): lo eseguiamo solo se già inizializzato, per non scaricare in rete.
-  if [ -d "$ROOT/infra/.terraform" ]; then
-    terraform -chdir="$ROOT/infra" validate || rc=1
+  # Delega a infra/scripts/check (UC 0003): fmt -check su tutto, validate su ogni
+  # root (init -backend=false: nessuna credenziale AWS; i provider si scaricano
+  # una volta sola nella cache condivisa), più tflint e checkov se installati.
+  if "$ROOT/infra/scripts/check"; then
+    ok "infra: ok"; record infra OK
   else
-    warn "infra non inizializzata (.terraform assente): eseguito solo fmt -check; 'validate' salta (init in CI)."
+    fail "infra: problemi (vedi output di scripts/check)"; record infra FAIL
   fi
-  if [ "$rc" -eq 0 ]; then ok "infra: ok"; record infra OK; else fail "infra: problemi (fmt/validate)"; record infra FAIL; fi
 }
 
 # Check compliance (UC 0030): parità lingue dei manifesti dati + freshness del RoPA generato.

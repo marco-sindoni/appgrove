@@ -1,42 +1,99 @@
 # infra — Terraform (HCL)
 
-Infrastruttura come codice per appgrove. Provisiona VPC, Cognito, CloudFront+S3 (×2 app),
-API Gateway v2 + Lambda authorizer, ECR, Aurora Serverless v2 + RDS Proxy, ECS Fargate,
-EventBridge/SQS, Route53/ACM, Secrets Manager/SSM. Decisioni: [docs/06-infra-iac.md](../docs/06-infra-iac.md).
+Infrastruttura come codice di appgrove, a **costo minimo** (→ [docs/_COSTI-AWS.md](../docs/_COSTI-AWS.md)).
+Decisioni: [docs/06-infra-iac.md](../docs/06-infra-iac.md) · use case fondativo:
+[UC 0003](../docs/usecases/02-devops-infra/0003-fondamenta-terraform.md).
 
-## Modulo riusabile `microsaas_app`
+> **Stato**: il codice è completo e validato, ma **nessuna risorsa AWS è stata creata**
+> (attivazione graduale degli ambienti, #12: prima si sviluppa in locale, il cloud si accende
+> a sviluppo finito). Quando si è pronti: `./infra/scripts/first-run`.
 
-Building block di tutto: aggiungere un microservizio = **istanziare il modulo** (nome, porta, schema DB,
-route API…). Eliminarlo = togliere il blocco e fare `apply`/`destroy` mirato. Non scrivere infra parallela a mano.
+## Struttura
 
-```hcl
-module "notes" {
-  source    = "./modules/microsaas_app"
-  app_id    = "notes"
-  port      = 8080
-  db_schema = "app_notes"
-}
+```
+infra/
+├── bootstrap/    # state backend (bucket S3 + lock DynamoDB) — one-time, state locale
+├── global/       # risorse condivise: zona Route53, certificati ACM, ruoli OIDC CI
+├── envs/
+│   ├── test/     # ambiente test  (state separato: envs/test/terraform.tfstate)
+│   └── prod/     # ambiente prod  (state separato: envs/prod/terraform.tfstate)
+├── modules/
+│   └── env_baseline/   # fondamenta di un ambiente: VPC no-NAT, endpoint VPC,
+│                       # bucket export GDPR, baseline SSM
+└── scripts/      # wrapper: NON si lanciano comandi terraform grezzi (#06 25)
 ```
 
-## Provisioning / deprovisioning
+Regione unica: **eu-west-1** (#06 6). State remoto su S3 + lock DynamoDB, uno per stack:
+`destroy` su test non può toccare prod (#06 5).
+
+Il modulo **`microsaas_app`** (un'istanza = un microservizio: ECR, ECS, route API, schema DB,
+coda purge, …) arriva con **UC 0004** e si innesta su queste fondamenta. Non scrivere infra
+per-servizio a mano.
+
+## I comandi che userai (tutti con `--help`)
+
+| Comando | Cosa fa |
+|---|---|
+| `./infra/scripts/check` | valida tutto il codice **senza AWS** (fmt, validate, tflint, checkov) |
+| `./infra/scripts/first-run` | **prima accensione** guidata: bootstrap → global → test |
+| `./infra/scripts/plan <env>` | anteprima modifiche (`test` \| `prod` \| `global`), non applica |
+| `./infra/scripts/up <env>` | applica uno stack (prod: conferma digitata, mai auto-approve) |
+| `./infra/scripts/down <env>` | distrugge uno stack (prod: doppia conferma digitata) |
+| `./infra/scripts/output <env>` | mostra gli output (name server, ARN, nomi bucket, …) |
+
+`bootstrap` esiste anche da solo, ma normalmente lo invoca `first-run`.
+
+## Prima accensione — cosa sapere
+
+1. **Credenziali**: AWS CLI autenticata (`aws sts get-caller-identity`).
+2. **Dominio**: `appgrove.app` deve essere registrato. Se è registrato **su Route53**, nell'account
+   esiste già una hosted zone: `first-run` la rileva e la **importa** (niente zone doppie). Se la
+   zona viene creata ex novo, **puntare i name server del registrar** alla zona
+   (`./infra/scripts/output global name_servers`) — finché gli NS non sono delegati, la validazione
+   DNS dei certificati ACM resta in attesa.
+3. **Costi** una volta acceso test: ~14 $/mese (endpoint VPC); il resto ~0 da idle. Spegnere:
+   `./infra/scripts/down test`.
+4. **Prod** non viene toccato da `first-run`: si accende esplicitamente (`up prod`, conferma digitata).
+
+## Sicurezze di destroy / teardown completo (#06 24)
+
+- **test**: destroy libero e pulito (bucket con `force_destroy`, niente protezioni).
+- **prod**: mai auto-approve, doppia conferma digitata; i bucket **non** si svuotano da soli;
+  le protezioni sui dati stateful (deletion protection + snapshot Aurora) nascono con il cluster.
+- **Spegnere l'iniziativa** (ordine obbligato): `down test` → `down prod` → `down global` → per
+  **ultimo** lo state. Bucket di state e tabella di lock sono protetti da `prevent_destroy`:
+  l'eliminazione finale è volutamente manuale —
+
+  ```bash
+  # SOLO come ultimissimo passo del teardown completo:
+  aws s3 rb "s3://appgrove-tfstate-<account-id>" --force
+  aws dynamodb delete-table --table-name appgrove-tfstate-lock
+  ```
+
+## Test (#10 H)
 
 ```bash
-terraform apply     # crea/aggiorna tutta l'infrastruttura
-terraform destroy   # smonta tutto (spegnere l'iniziativa senza residui che generano costi)
+./infra/scripts/check     # ciò che esegue anche ./run-tests.sh infra
 ```
 
-State remoto in **S3 + lock DynamoDB**, stati separati per ambiente (local/test/prod).
+`fmt -check` + `validate` (init senza backend: niente credenziali) su tutte le root, più
+**tflint** e **checkov** se installati (soppressioni inline documentate nel codice, es. subnet
+pubbliche by-design → evoluzione E1). `terraform plan` e Infracost girano in CI (**UC 0005**).
 
-## Scelte chiave
+Strumenti: `brew install hashicorp/tap/terraform` e `brew install checkov`; tflint non è più su
+Homebrew — binario dalle [release ufficiali](https://github.com/terraform-linters/tflint/releases)
+(in CI ci pensa l'action dedicata, UC 0005).
 
-- Persistenza cost-first: una istanza Aurora condivisa, **schema separato per app** (`app_notes`, …);
-  path verso istanze dedicate = modifica Terraform.
-- API Gateway con **custom Lambda authorizer** (JWT + entitlement). CloudWatch per logging.
-- **Principio costo-minimo** (→ [docs/_COSTI-AWS.md](../docs/_COSTI-AWS.md)): attenzione al NAT Gateway.
+## Scelte chiave (dettagli nei commenti del codice)
 
-## Test
-
-```bash
-terraform fmt -check && terraform validate
-terraform plan      # anteprima delle modifiche (no apply)
-```
+- **VPC senza NAT Gateway** (~32 $/mese risparmiati per ambiente): subnet pubbliche + security
+  group stretti; uscita via internet gateway; Cognito/Secrets Manager via **endpoint VPC**
+  (~14 $/mese/env). Hardening (subnet private + NAT) = evoluzione **E1**.
+- **Encryption ovunque** (#06 §20bis): SSE su tutti i bucket, TLS-only enforcement, chiavi KMS
+  gestite AWS (CMK solo se servirà).
+- **Bucket export GDPR** per ambiente (UC 0032): privato, cifrato, auto-cancellazione oggetti a
+  7 giorni; nome pubblicato su SSM (`/appgrove/<env>/gdpr/export-bucket`).
+- **CI senza chiavi AWS** (#07 25): ruoli OIDC `appgrove-github-actions-{test,prod}`; prod
+  assumibile **solo da tag**.
+- **Convenzione SSM**: `/appgrove/<env>/<area>/<chiave>`; i servizi leggono a runtime, la CI mai
+  (#07 26). Credenziali DB in Secrets Manager, nasceranno col cluster Aurora.

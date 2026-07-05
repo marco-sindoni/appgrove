@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# output — mostra gli output di uno stack (ID VPC, ARN certificati, ruoli CI, …).
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: output <test|prod|global> [<nome-output>]
+
+Cosa fa
+  Mostra gli output dello stack (sola lettura, non modifica nulla).
+  Con <nome-output> stampa solo quel valore (comodo negli script).
+
+Esempi
+  ./infra/scripts/output global
+  ./infra/scripts/output global name_servers
+  ./infra/scripts/output test gdpr_export_bucket
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
+ENV_NAME="$1"
+
+require_terraform
+require_aws
+
+tf_init "$ENV_NAME"
+if [ -n "${2:-}" ]; then
+  terraform -chdir="$(stack_dir "$ENV_NAME")" output "$2"
+else
+  terraform -chdir="$(stack_dir "$ENV_NAME")" output
+fi

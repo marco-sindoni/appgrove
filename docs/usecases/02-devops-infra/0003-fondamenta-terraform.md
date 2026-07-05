@@ -69,10 +69,19 @@ Nessun dato applicativo/personale: risorse infra. I bucket/log/DB sono **cifrati
 
 ## Punti aperti / decisioni differite
 
-- **Bucket S3 export GDPR** _(tracciato dalla change `0028-use-case-0032-…`)_. Il framework export/erasure
-  (UC 0032) richiede per ogni env un **bucket dedicato agli export**: privato, **SSE** (cifratura at rest),
-  **lifecycle di auto-cancellazione a 7 giorni** degli oggetti (#13 D22/E23), accesso solo dal ruolo dei
-  servizi (i download utente passano da presigned URL a 7 giorni generati dal core, mai accesso pubblico).
-  In locale il ruolo è svolto da MinIO (stack dev); nome bucket e endpoint sono letti dai servizi via config
-  (`appgrove.s3.*` — vedere la change 0028 per le chiavi esatte), quindi qui basta esporre gli stessi
-  parametri via SSM. Differito perché questo UC possiede le fondamenta S3/KMS; UC 0032 gira in locale senza cloud.
+- ✅ **Bucket S3 export GDPR** _(tracciato dalla change `0028-use-case-0032-…`, **risolto dalla change
+  `0031-use-case-0003-…`**)_. Implementato nel modulo `env_baseline`: bucket per env privato, SSE,
+  lifecycle 7 giorni, TLS-only; nome pubblicato su SSM (`/appgrove/<env>/gdpr/export-bucket`, letto dal
+  core come `appgrove.gdpr.export-bucket`). In locale resta MinIO (stack dev).
+- **Attivazione reale degli ambienti volutamente rimandata** _(tracciato dalla change
+  `0031-use-case-0003-…`)_. La change ha scritto e validato TUTTO il codice (bootstrap, global,
+  envs, wrapper) **senza creare risorse AWS** (attivazione graduale, #12: il cloud si accende a
+  sviluppo finito). La prima accensione è un comando unico e guidato: **`infra/scripts/first-run`**
+  (bootstrap → `up global` con import della zona se esiste → `up test`). Diventa necessaria **al più
+  tardi con UC 0005** (la pipeline CI/CD applica Terraform su ambienti reali) — la voce "state
+  remoto + lock attivi" della DoD si completa in quel momento. Prerequisito da ricordare: delega dei
+  name server del registrar alla hosted zone, altrimenti la validazione ACM resta in attesa.
+- **tflint non più installabile via Homebrew** _(rilevato dalla change `0031-use-case-0003-…`)_: la
+  formula è sparita dall'indice; in locale `scripts/check` lo salta con avviso (fmt/validate/checkov
+  restano attivi). In CI (UC 0005) usare l'action ufficiale `setup-tflint`; in locale, binario dalle
+  release GitHub (istruzioni in `infra/README.md`).

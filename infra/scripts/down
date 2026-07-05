@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# down — DISTRUGGE uno stack (`terraform destroy`), con le sicurezze di #06 24/25:
+# conferma digitata sempre, DOPPIA conferma su prod, mai auto-approve su prod.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: down <test|prod|global> [--yes]
+
+Cosa fa
+  `terraform destroy` sullo stack indicato: ELIMINA tutte le sue risorse AWS.
+  Pensato per spegnere l'ambiente di test quando non serve o per il teardown
+  completo dell'iniziativa.
+
+Opzioni
+  --yes   distrugge senza la conferma interattiva di terraform — SOLO test/global
+          (la conferma digitata del nome ambiente resta comunque obbligatoria)
+
+Guardrail (#06 24/25)
+  • conferma digitata del nome ambiente, sempre;
+  • prod chiede una DOPPIA conferma ('prod', poi 'distruggi prod') e resta
+    interattivo (mai auto-approve); le risorse protette (deletion protection,
+    prevent_destroy) fermano comunque il destroy finché non vengono sbloccate
+    esplicitamente nel codice;
+  • su prod i bucket NON si svuotano da soli: un destroy con bucket pieni si
+    ferma — svuotarli è un atto esplicito.
+
+Teardown completo ("spegnere l'iniziativa", ordine obbligato):
+  1. ./infra/scripts/down test
+  2. ./infra/scripts/down prod
+  3. ./infra/scripts/down global
+  4. per ULTIMO lo state (bootstrap): passo manuale documentato in infra/README.md
+
+Esempi
+  ./infra/scripts/down test
+  ./infra/scripts/down prod    # doppia conferma digitata
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
+ENV_NAME="$1"; shift
+
+AUTO_APPROVE=false
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --yes) AUTO_APPROVE=true; shift ;;
+    *) usage; die "opzione sconosciuta: $1" ;;
+  esac
+done
+
+require_terraform
+require_aws
+
+# Conferma digitata SEMPRE (destroy è irreversibile); doppia su prod (#06 K).
+confirm_typed "$ENV_NAME" "Stai per DISTRUGGERE tutte le risorse dello stack '$ENV_NAME'."
+if [ "$ENV_NAME" = "prod" ]; then
+  $AUTO_APPROVE && die "--yes non è consentito su prod (mai auto-approve, #06 25)"
+  confirm_typed "distruggi prod" "SECONDA conferma: eliminazione dell'ambiente di PRODUZIONE."
+fi
+
+tf_init "$ENV_NAME"
+
+info "destroy di '$ENV_NAME'…"
+if $AUTO_APPROVE; then
+  terraform -chdir="$(stack_dir "$ENV_NAME")" destroy -auto-approve
+else
+  terraform -chdir="$(stack_dir "$ENV_NAME")" destroy
+fi
+ok "Stack '$ENV_NAME' distrutto."

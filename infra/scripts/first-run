@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# first-run — PRIMA ACCENSIONE dell'infrastruttura cloud, guidata e nell'ordine
+# giusto: bootstrap dello state → stack global → ambiente test.
+#
+# Esiste perché la change 0031 (UC 0003) ha scritto tutto il codice SENZA creare
+# risorse (attivazione graduale degli ambienti, #12): quando si è pronti ad
+# accendere il cloud, si lancia QUESTO script — non serve ricordare i passi.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPTS_DIR/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: first-run [--help]
+
+Cosa fa (in ordine, chiedendo conferma a ogni passo)
+  1. bootstrap   — crea state bucket S3 + tabella di lock (salta se già fatto)
+  2. up global   — zona Route53, certificati ACM, ruoli OIDC per la CI
+                   (se nell'account esiste già la hosted zone appgrove.app,
+                   propone l'import automatico invece di crearne una doppia)
+  3. up test     — fondamenta dell'ambiente test (VPC no-NAT, endpoint VPC,
+                   bucket export GDPR, parametri SSM)
+
+Cosa NON fa
+  • non tocca prod (si accende a parte, quando serve: ./infra/scripts/up prod);
+  • non deploya servizi: qui nascono solo le fondamenta (UC 0003).
+
+Prerequisiti
+  • terraform + AWS CLI con credenziali valide;
+  • dominio appgrove.app registrato (la validazione dei certificati ACM richiede
+    che i name server del dominio puntino alla hosted zone: se la zona viene
+    creata ex novo, aggiorna gli NS sul registrar PRIMA del passo 2, o il passo
+    resterà in attesa della validazione DNS).
+
+Costi indicativi una volta acceso test (stima viva: docs/_COSTI-AWS.md)
+  • endpoint VPC: ~14 $/mese; il resto delle fondamenta ~0 da idle.
+  • Per spegnere: ./infra/scripts/down test
+
+Esempi
+  ./infra/scripts/first-run
+EOF
+}
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ $# -gt 0 ]; then usage; die "argomento inatteso: $1"; fi
+
+require_terraform
+require_aws
+
+ACCOUNT="$(aws_account_id)"
+info "Prima accensione dell'infrastruttura appgrove"
+info "Account AWS: $ACCOUNT — regione: $REGION"
+confirm_typed "ok" "Verranno CREATE risorse (con costi) su questo account, in 3 passi confermabili uno a uno."
+
+# ── 1. Bootstrap dello state (idempotente; salta se il bucket esiste già) ────
+if aws s3api head-bucket --bucket "$(state_bucket)" 2>/dev/null; then
+  ok "1/3 bootstrap: state bucket già esistente ($(state_bucket)) — salto."
+else
+  info "1/3 bootstrap: creo state bucket + tabella di lock…"
+  "$SCRIPTS_DIR/bootstrap"
+fi
+
+# ── 2. Stack global (con import della zona se già presente nell'account) ────
+info "2/3 stack global (zona DNS, certificati, ruoli CI)…"
+EXISTING_ZONE="$(aws route53 list-hosted-zones-by-name --dns-name appgrove.app --max-items 1 \
+  --query "HostedZones[?Name=='appgrove.app.'].Id | [0]" --output text 2>/dev/null | cut -d/ -f3)"
+if [ -n "$EXISTING_ZONE" ] && [ "$EXISTING_ZONE" != "None" ]; then
+  warn "Hosted zone appgrove.app già presente ($EXISTING_ZONE): la importo invece di crearne una doppia."
+  "$SCRIPTS_DIR/up" global --import-zone "$EXISTING_ZONE"
+else
+  warn "Nessuna hosted zone esistente: verrà creata. RICORDA di puntare i name server"
+  warn "del registrar alla nuova zona (./infra/scripts/output global name_servers),"
+  warn "altrimenti la validazione dei certificati ACM resta in attesa."
+  "$SCRIPTS_DIR/up" global
+fi
+
+# ── 3. Ambiente test ─────────────────────────────────────────────────────────
+info "3/3 fondamenta ambiente test…"
+"$SCRIPTS_DIR/up" test
+
+ok "Prima accensione completata."
+info "Riepilogo: ./infra/scripts/output global · ./infra/scripts/output test"
+info "Per spegnere test quando non serve: ./infra/scripts/down test"
