@@ -91,3 +91,10 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   sostituibile + `EntitlementService`/client in `commons`) è progettato per essere rimpiazzato dalla proiezione **senza
   toccare il codice di dominio dell'app**. UC 0054 (2ª app) **non deve perpetuare** la chiamata sincrona. **Proprietario**:
   UC 0046 (industrializzazione); il publisher di eventi lato core può anticiparsi se serve prima.
+- **Generazione del blocco `module "app_<id>"` nel formato della change 0033 (UC 0004)** _(tracciato
+  dalla change `0033-use-case-0004-…`)_: il modulo `infra/modules/microsaas_app` e lo script
+  `infra/scripts/service-add <app_id>` esistono e fissano il formato del blocco `module` negli env
+  `test`/`prod` (input: `app_id`, aggancio agli output di `platform_shared`/`baseline`). La skill
+  `new-application` **non deve reinventare il wiring**: genera il blocco riusando `service-add` (o lo
+  stesso template) insieme allo scaffold del codice, come da #07 20 ("non si lancia `service-add` a
+  mano"). Differito perché la skill è lo scope di questo UC; il mattone infra è già pronto.

@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# service-remove — rimuove un microservizio: toglie il blocco `module` dagli
+# env (test e prod). Le risorse AWS spariscono al successivo apply/destroy
+# mirato con le safety #06 K (#07 19): prod gated in CI, snapshot/conferme.
+# NON cancella ruolo/schema DB (pulizia manuale, vedi --help).
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: service-remove <app_id>
+
+Cosa fa
+  Rimuove il blocco `module "app_<app_id>"` da infra/envs/test/main.tf E
+  infra/envs/prod/main.tf (i blocchi sono delimitati dai marker
+  `service-add:begin|end`). NON tocca AWS: le risorse del servizio vengono
+  distrutte al successivo apply (o con un destroy mirato):
+    terraform -chdir=infra/envs/test destroy -target='module.app_<app_id>'
+  Il flusso normale resta PR→CI (#07 19): su prod l'apply è gated.
+
+Guardrail (#06 K)
+  • chiede di digitare l'app_id prima di toccare i file;
+  • test: teardown libero; prod: le protezioni (conferme CI, niente
+    force-destroy) restano sulle risorse;
+  • il ruolo e lo schema Postgres NON vengono cancellati (contengono dati:
+    la cancellazione è un atto manuale e deliberato):
+      1. esporta/archivia se serve (pg_dump --schema=app_<app_id>);
+      2. DROP SCHEMA app_<app_id> CASCADE; DROP ROLE app_<app_id>;
+      3. elimina il segreto appgrove/<env>/<app_id>/db (Secrets Manager).
+
+Esempi
+  ./infra/scripts/service-remove note
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+if [ -z "${1:-}" ]; then usage; die "manca l'app_id"; fi
+APP_ID="$1"; shift
+[ $# -gt 0 ] && { usage; die "argomento inatteso: $1"; }
+
+[ "$APP_ID" = "platform" ] && die "'platform' è il core della piattaforma: non si rimuove con questo script"
+
+require_terraform
+
+FOUND=false
+for ENV_NAME in test prod; do
+  grep -q "service-add:begin $APP_ID " "$INFRA_DIR/envs/$ENV_NAME/main.tf" && FOUND=true
+done
+$FOUND || die "servizio '$APP_ID' non trovato negli env (marker service-add assenti)"
+
+confirm_typed "$APP_ID" "Stai per rimuovere il servizio '$APP_ID' dal codice di test E prod (le risorse AWS spariranno al prossimo apply)."
+
+for ENV_NAME in test prod; do
+  MAIN_TF="$INFRA_DIR/envs/$ENV_NAME/main.tf"
+  if ! grep -q "service-add:begin $APP_ID " "$MAIN_TF"; then
+    warn "envs/$ENV_NAME/main.tf: blocco di '$APP_ID' assente, salto."
+    continue
+  fi
+  # Elimina il blocco delimitato dai marker (righe begin → end incluse).
+  awk -v id="$APP_ID" '
+    $0 ~ ("service-add:begin " id " ") { skip = 1 }
+    skip { if ($0 ~ ("service-add:end " id " ")) skip = 0; next }
+    { print }
+  ' "$MAIN_TF" > "$MAIN_TF.tmp" && mv "$MAIN_TF.tmp" "$MAIN_TF"
+  terraform fmt "$MAIN_TF" >/dev/null
+  ok "envs/$ENV_NAME/main.tf: rimosso module \"app_$APP_ID\""
+done
+
+warn "Ruolo/schema Postgres e segreto DB NON cancellati: vedi --help per la pulizia manuale."
+info "Prossimi passi: commit + PR (#07 19); destroy mirato: terraform -chdir=infra/envs/<env> destroy -target='module.app_$APP_ID'"
+ok "Servizio '$APP_ID' rimosso dal codice."

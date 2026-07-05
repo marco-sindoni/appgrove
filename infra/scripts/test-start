@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# test-start — riaccende i servizi ECS dell'ambiente TEST (desired count → 1).
+# Avvio MANUALE (#07 28): l'ambiente test si accende quando serve; a spegnerlo
+# ci pensa il cron giornaliero con test-stop (cablato in CI da UC 0005).
+# Aurora si risveglia da sé alla prima connessione (scale-to-0, #06 14).
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: test-start [app_id ...]
+
+Cosa fa
+  Porta a 1 il desired count dei service ECS del cluster appgrove-test
+  (#07 28). Senza argomenti agisce su TUTTI i servizi; con uno o più app_id
+  solo su quelli. Idempotente: chi è già a 1 non viene toccato.
+
+  Riguarda SOLO test: prod non si spegne/riaccende (per questo non esiste un
+  "prod-start"). Se il cluster non esiste (ambiente non ancora attivato), lo
+  script termina senza errore.
+
+Esempi
+  ./infra/scripts/test-start            # riaccende tutti i servizi
+  ./infra/scripts/test-start fatture    # riaccende solo fatture
+EOF
+}
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+
+require_aws
+exec "$(dirname "${BASH_SOURCE[0]}")/_scale-test" 1 "$@"

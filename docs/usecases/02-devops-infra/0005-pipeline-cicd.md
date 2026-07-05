@@ -93,3 +93,24 @@ _Tracciato dalla change `0025-use-case-0029-…` (test pagamenti L1/L2/L3)._
   `e2e-l3/README.md`). Restano a UC 0005: il job di release che la esegue contro l'ambiente deployato, l'esito che
   confluisce nel **gate di approvazione manuale** prod (#07 b1) e il meccanismo di **override manuale con motivazione
   registrata** (audit) quando il sandbox Paddle è down (#09 D20 L3). Prerequisito esterno: account sandbox (UC 0001).
+- **Cron giornaliero `test-stop` + `test-start` via `workflow_dispatch`** _(tracciato dalla change
+  `0033-use-case-0004-…`)_: la change 0033 implementa gli script `infra/scripts/test-stop` (desired
+  count → 0, idempotente) e `test-start` (→ 1) previsti da #07 28. Resta a UC 0005 il **cablaggio nei
+  workflow CI**: cron giornaliero a orario UTC fisso (~21:00 IT) che lancia `test-stop` sull'ambiente
+  test, e avvio manuale (`workflow_dispatch`) che lancia `test-start`. Differito perché i workflow
+  GitHub Actions sono lo scope di UC 0005; gli script sono già pronti per essere invocati dalla CI.
+- **Adeguamento cloud del client SQS dei servizi (`services/commons`)** _(tracciato dalla change
+  `0033-use-case-0004-…`)_: `SqsMessageQueues` oggi è cablato per il solo locale — credenziali statiche
+  "local/local", regione default `eu-south-1`, nessun prefisso sui nomi coda. Per girare nel cloud deve:
+  (a) usare la catena di credenziali di default quando manca l'endpoint override (i task hanno il task
+  role IAM); (b) leggere il **prefisso dei nomi coda** da config (`appgrove.sqs.queue-prefix`, ← env var
+  `APPGROVE_SQS_QUEUE_PREFIX` già impostata dalla task definition del modulo `microsaas_app`, vuoto in
+  locale); (c) regione da `APPGROVE_SQS_REGION` (idem). Differito perché i servizi girano nel cloud solo
+  col deploy: è il primo momento utile e naturale per il profilo cloud. Proprietà: UC 0005.
+- **Promozione immagini tra repo ECR per-ambiente + architettura ARM64** _(tracciato dalla change
+  `0033-use-case-0004-…`)_: il modulo `microsaas_app` crea un repo ECR **per ambiente**
+  (`appgrove-<env>-<app_id>`, nomi unici nello stesso account) e task definition **ARM64/Graviton**
+  (~-20% di costo; Fargate Spot supporta ARM64). La pipeline deve: buildare immagini native ARM64,
+  pushare su `appgrove-test-*` al merge e **promuovere** (retag/copy) su `appgrove-prod-*` al tag —
+  senza rebuild, stessa immagine. Lo schema di tagging (per-SHA vs `latest`, oggi tag mobile di
+  default con `image_tag` sovrascrivibile) si fissa qui. Proprietà: UC 0005 (già correlato a #07 H/E9).

@@ -106,6 +106,26 @@ output "rds_proxy_arn" {
   value       = aws_db_proxy.this.arn
 }
 
+output "db_bootstrap_lambda_name" {
+  description = "Nome della Lambda db-bootstrap (invocata da microsaas_app per ruolo+schema, UC 0004)."
+  value       = aws_lambda_function.db_bootstrap.function_name
+}
+
+output "sqs_queue_prefix" {
+  description = "Prefisso dei nomi fisici delle code SQS dell'ambiente (i nomi logici restano quelli locali)."
+  value       = local.sqs_queue_prefix
+}
+
+output "gdpr_export_results_queue_name" {
+  description = "Nome fisico della coda condivisa dei risultati export GDPR (consumata dal core, UC 0032)."
+  value       = aws_sqs_queue.gdpr_export_results.name
+}
+
+output "gdpr_export_results_queue_arn" {
+  description = "ARN della coda condivisa dei risultati export GDPR."
+  value       = aws_sqs_queue.gdpr_export_results.arn
+}
+
 output "spa_bucket_names" {
   description = "Bucket dei bundle SPA per distribuzione (backoffice/admin): destinazione della pipeline FE (UC 0005)."
   value       = { for k, b in aws_s3_bucket.spa : k => b.bucket }

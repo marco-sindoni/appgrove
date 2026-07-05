@@ -70,6 +70,10 @@ resource "aws_rds_cluster" "this" {
   storage_encrypted       = true
   copy_tags_to_snapshot   = true
 
+  # Data API (gratuita): la Lambda `db-bootstrap` (UC 0004) esegue l'SQL di
+  # creazione ruoli/schemi via API firmata, senza ENI in VPC né driver Postgres.
+  enable_http_endpoint = true
+
   # Sicurezze di destroy (#06 16/24): prod protetto + snapshot finale,
   # test libero.
   deletion_protection       = var.deletion_protection
