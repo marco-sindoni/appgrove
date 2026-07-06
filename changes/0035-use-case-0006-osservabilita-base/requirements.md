@@ -9,6 +9,14 @@
 audit/sicurezza conserva 12 mesi di eventi riferibili a persone (azioni admin, export/cancellazione GDPR). Si applica il
 gate privacy/RoPA di step-03 (UC 0031): scanner + eventuale aggiornamento manifesti/RoPA + classificazione MAJOR/MINOR.
 
+**Esito del gate (step-03)**: 10 segnali dello scanner = sole dipendenze **in-process** (Micrometer, OpenTelemetry API,
+estensioni Quarkus per log JSON/health/metriche): nessun dato lascia AWS, **nessun nuovo sub-responsabile**. Trattamenti:
+log strutturati e archivio audit 12 mesi **già dichiarati** nel manifesto (`logs.structured`, #13 E); **nuova voce**
+`logs.frontend_errors` (solo errori JS: messaggio/stack, rotta, build, id opachi; niente IP/user agent; base = legittimo
+interesse #08 H23; retention 7/30 gg) + RoPA rigenerato. **Classificazione: MINOR** (componente: platform core) — nessuna
+nuova finalità/base/categoria oltre la famiglia "sicurezza/diagnostica" già dichiarata, nessuna retention nuova; quando
+`content/legal/` esisterà (UC 0002), la voce vale come notice, non ri-accettazione.
+
 ## Problema / Obiettivo
 
 Stabilire la baseline di osservabilità cost-min e future-proof decisa in #08 (1–33): oggi i servizi loggano testo

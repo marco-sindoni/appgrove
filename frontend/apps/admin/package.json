@@ -16,6 +16,7 @@
   "dependencies": {
     "@appgrove/api-client": "*",
     "@appgrove/design-system": "*",
+    "@appgrove/error-reporter": "*",
     "@appgrove/i18n": "*",
     "@hookform/resolvers": "^3.10.0",
     "@tanstack/react-query": "^5.66.0",

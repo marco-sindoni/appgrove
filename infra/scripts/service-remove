@@ -64,6 +64,11 @@ for ENV_NAME in test prod; do
     skip { if ($0 ~ ("service-add:end " id " ")) skip = 0; next }
     { print }
   ' "$MAIN_TF" > "$MAIN_TF.tmp" && mv "$MAIN_TF.tmp" "$MAIN_TF"
+  # Toglie il servizio anche dalla lista `services` del modulo observability
+  # (riga aggiunta da service-add tra i marker obs-services, UC 0006). Pattern
+  # ANCORATO all'intera riga: non deve eliminare commenti/righe che citano il modulo.
+  grep -vE "^[[:space:]]*module\.app_${APP_ID}\.observability,[[:space:]]*$" "$MAIN_TF" > "$MAIN_TF.tmp" && mv "$MAIN_TF.tmp" "$MAIN_TF"
+
   terraform fmt "$MAIN_TF" >/dev/null
   ok "envs/$ENV_NAME/main.tf: rimosso module \"app_$APP_ID\""
 done

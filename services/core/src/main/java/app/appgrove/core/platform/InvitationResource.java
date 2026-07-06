@@ -1,5 +1,6 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.core.platform.InvitationDtos.CreateInvitation;
@@ -26,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -52,6 +54,9 @@ public class InvitationResource {
     @Inject
     CallerContext caller;
 
+    @Inject
+    AuditLogger audit;
+
     @POST
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
@@ -67,6 +72,11 @@ public class InvitationResource {
                 email, role, InvitationTokens.hash(token), Instant.now().plus(TTL), invitedBy);
         repository.persist(invitation);
         repository.flush(); // forza INSERT: id e tenant_id valorizzati prima della response
+        // evento audit (UC 0006): id invito e ruolo, MAI l'email dell'invitato (nessun dato personale, #08/5)
+        audit.success("member.invited", Map.of(
+                "invitation_id", invitation.getId().toString(),
+                "role", role.name(),
+                "actor", caller.subject()));
         return Response.status(Response.Status.CREATED)
                 .entity(InvitationView.created(invitation, token))
                 .build();
@@ -95,6 +105,9 @@ public class InvitationResource {
             throw new NotFoundException("Invito non trovato");
         }
         invitation.setStatus(InvitationStatus.revoked);
+        audit.success("member.invitation.revoked", Map.of(
+                "invitation_id", invitation.getId().toString(),
+                "actor", caller.subject()));
         return Response.noContent().build();
     }
 

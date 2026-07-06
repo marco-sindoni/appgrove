@@ -76,3 +76,18 @@ _Tracciati dalla change `0014-use-case-0021-…` (console admin). Dettaglio in [
   le credenziali dal segreto). Passare a `REQUIRED` (token IAM, niente password nelle Lambda) è un hardening
   da decidere qui, quando nascono le 3 Lambda (questo UC + 0015/0016), perché cambia il loro codice di
   connessione e i permessi IAM.
+
+_Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
+
+- **Eventi audit dei flussi auth con la convenzione `AuditLogger`.** UC 0006 fissa la convenzione: eventi
+  audit/sicurezza = log JSON con `log_type=audit` nell'MDC (API `AuditLogger` in `services/commons`), che il
+  subscription filter instrada all'archivio 12 mesi (#08 28/29). Login/logout, tentativi falliti, cambio
+  password/2FA, lockout devono emettere eventi con QUESTA convenzione quando nascono qui (le Lambda auth,
+  fuori da Quarkus, devono produrre lo stesso formato JSON). La sezione "auth/sicurezza" della dashboard e
+  l'allarme "picco login falliti" (#08 16) si completano qui.
+- **Esclusione health/Swagger dall'authorizer (#08 21).** Oggi gli health non sono raggiungibili dalle rotte
+  pubbliche (`/api/<app_id>/v1/*` non copre `/q/health/*`): quando l'authorizer nascerà, mantenere l'esclusione
+  (e il gate platform-admin su Swagger, #04 9).
+- **Propagazione del correlation id attraverso l'authorizer.** L'edge appende già `X-Correlation-Id`
+  (`$context.requestId`, `microsaas_app/api.tf`): l'authorizer deve preservarlo/propagarlo nei propri log
+  (stessa chiave MDC `correlation_id`, #08 4).

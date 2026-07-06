@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.gdpr.GdprQueues;
 import app.appgrove.commons.gdpr.TenantPurgeMessage;
 import app.appgrove.commons.messaging.MessageQueues;
@@ -28,6 +29,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
+import java.util.Map;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ResponseStatus;
 
@@ -70,6 +72,9 @@ public class GdprWithdrawalResource {
     @Inject
     CallerContext caller;
 
+    @Inject
+    AuditLogger audit;
+
     @POST
     @Transactional
     @ResponseStatus(202)
@@ -97,6 +102,12 @@ public class GdprWithdrawalResource {
 
         LOG.infof("gdpr.withdrawal tenant_id=%s app_id=%s user_id=%s export_job=%s",
                 caller.tenantId(), appSlug, caller.subject(), body.exportJobId());
+        // evento audit (UC 0006): recesso per-app = richiesta di erasure dei dati dell'app
+        audit.success("gdpr.erasure.requested", Map.of(
+                "tenant_id", caller.tenantId().toString(),
+                "user_id", caller.subject(),
+                "app_id", appSlug,
+                "export_job_id", body.exportJobId()));
         return new WithdrawalView(appSlug, "PURGE_REQUESTED");
     }
 

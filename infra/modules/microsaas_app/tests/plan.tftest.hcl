@@ -33,6 +33,10 @@ variables {
     gdpr_export_results_queue_arn = "arn:aws:sqs:eu-west-1:123456789012:appgrove-test-gdpr-export-results"
     gdpr_export_bucket            = "appgrove-test-gdpr-export"
     gdpr_export_bucket_arn        = "arn:aws:s3:::appgrove-test-gdpr-export"
+    alarm_topic_critical_arn      = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-critical"
+    alarm_topic_warning_arn       = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-warning"
+    audit_firehose_arn            = "arn:aws:firehose:eu-west-1:123456789012:deliverystream/appgrove-test-audit-archive"
+    logs_to_firehose_role_arn     = "arn:aws:iam::123456789012:role/appgrove-test-logs-to-firehose"
   }
 }
 
@@ -165,5 +169,90 @@ run "due_istanze_disgiunte" {
   assert {
     condition     = output.alpha_schema == "app_alpha" && output.beta_schema == "app_beta"
     error_message = "Ogni istanza deve avere il proprio schema app_<app_id>."
+  }
+}
+
+# ── Osservabilità per-servizio (UC 0006) ─────────────────────────────────────
+
+run "osservabilita_in_test" {
+  command = plan
+
+  # Correlation id generato all'edge (#08 4): API GW appende l'header che i
+  # servizi mettono nell'MDC (correlation_id).
+  assert {
+    condition     = aws_apigatewayv2_integration.this.request_parameters["overwrite:header.X-Correlation-Id"] == "$context.requestId"
+    error_message = "L'integrazione deve SOVRASCRIVERE X-Correlation-Id con $context.requestId (#08 4): mai preservare un header scelto dal client."
+  }
+
+  # Archivio audit (#08 28/29): a Firehose va SOLO ciò che ha log_type=audit
+  # (i log operativi non si archiviano: minimizzazione GDPR).
+  assert {
+    condition     = aws_cloudwatch_log_subscription_filter.audit.filter_pattern == "{ $.mdc.log_type = \"audit\" }"
+    error_message = "Il subscription filter deve selezionare solo gli eventi audit (log_type=audit)."
+  }
+  assert {
+    condition     = aws_cloudwatch_log_subscription_filter.audit.destination_arn == var.shared.audit_firehose_arn
+    error_message = "La destinazione dell'archivio audit è il Firehose condiviso (platform_shared)."
+  }
+
+  # Error tracking (#08 19): metrica dagli ERROR dei log JSON.
+  assert {
+    condition     = aws_cloudwatch_log_metric_filter.errors.pattern == "{ $.level = \"ERROR\" }"
+    error_message = "Il metric filter deve contare i log con level=ERROR."
+  }
+
+  # Allarmi SILENZIATI in test (#08 18): esistono ma non notificano.
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.errors.actions_enabled == false
+    error_message = "In test le azioni degli allarmi devono essere disattivate (#08 18)."
+  }
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.dlq_not_empty["gdpr-export"].actions_enabled == false
+    error_message = "In test anche gli allarmi DLQ devono essere silenziati (#08 18)."
+  }
+
+  # Nessun dato mancante ≠ guasto: lo scale-to-0 non deve generare falsi allarmi.
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.errors.treat_missing_data == "notBreaching"
+    error_message = "Gli allarmi devono trattare l'assenza di dati come non-allarme (scale-to-0, #08 18)."
+  }
+
+  # Livello log a runtime (#08 6): parametro SSM per-servizio, default INFO.
+  assert {
+    condition     = aws_ssm_parameter.log_level.name == "/appgrove/test/demo/log-level"
+    error_message = "Il parametro del livello log deve chiamarsi /appgrove/<env>/<app_id>/log-level."
+  }
+  assert {
+    condition     = aws_ssm_parameter.log_level.value == "INFO"
+    error_message = "Il livello log di default è INFO (#08 6)."
+  }
+}
+
+run "osservabilita_in_prod" {
+  command = plan
+
+  variables {
+    env              = "prod"
+    app_id           = "demo"
+    use_fargate_spot = false
+    force_destroy    = false
+  }
+
+  # Allarmi PIENI in prod (#08 18).
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.errors.actions_enabled == true
+    error_message = "In prod le azioni degli allarmi devono essere attive (#08 18)."
+  }
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.route_5xx.actions_enabled == true
+    error_message = "In prod l'allarme 5xx della route deve notificare (#08 16/18)."
+  }
+  assert {
+    condition     = contains(aws_cloudwatch_metric_alarm.errors.alarm_actions, var.shared.alarm_topic_warning_arn)
+    error_message = "Gli ERROR applicativi notificano sul topic warning (#08 15)."
+  }
+  assert {
+    condition     = contains(aws_cloudwatch_metric_alarm.dlq_not_empty["tenant-purge"].alarm_actions, var.shared.alarm_topic_critical_arn)
+    error_message = "Una DLQ non vuota notifica sul topic critical (#08 15/16)."
   }
 }

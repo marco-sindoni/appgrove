@@ -18,3 +18,17 @@ locals {
 
   sqs_arn_prefix = "arn:aws:sqs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}"
 }
+
+locals {
+  # Azioni di allarme (#08 18): pieni in prod, silenziati in test (override
+  # possibile via var.alarms_enabled, es. per prove mirate in test).
+  alarms_enabled = coalesce(var.alarms_enabled, var.env == "prod")
+
+  # Namespace/nome della metrica errori estratta dai log (#08 19).
+  metric_namespace  = "Appgrove/${var.env}"
+  error_metric_name = "log-errors-${var.app_id}"
+
+  # Nome del cluster ECS dal suo ARN (…:cluster/<nome>): serve alle dimensioni
+  # delle metriche AWS/ECS (widget e allarmi).
+  ecs_cluster_name = element(split("/", var.shared.ecs_cluster_arn), 1)
+}

@@ -13,6 +13,12 @@ export interface RuntimeConfig {
   coreBaseUrl: string
   /** Parametri Cognito cloud (placeholder in locale: si usa auth-local). */
   cognito: { userPoolId: string; clientId: string }
+  /**
+   * URL dell'ingest errori frontend (#08/23, UC 0006): in cloud `<api-domain>/ingest/errors`
+   * (iniettato dall'infra nel `config.json` per ambiente). Vuoto/assente in locale ed e2e:
+   * il reporter è inerte (nessun handler registrato).
+   */
+  errorIngestUrl: string
 }
 
 /** Carica e valida la config runtime prima del render dell'app. */
@@ -28,6 +34,7 @@ export async function loadConfig(): Promise<RuntimeConfig> {
     authBaseUrl: cfg.authBaseUrl,
     coreBaseUrl: cfg.coreBaseUrl,
     cognito: cfg.cognito ?? { userPoolId: '', clientId: '' },
+    errorIngestUrl: cfg.errorIngestUrl ?? '',
   }
 }
 

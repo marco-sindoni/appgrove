@@ -1,5 +1,6 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.core.platform.UserDtos.UpdateMe;
@@ -22,7 +23,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.jboss.logging.Logger;
 
@@ -43,6 +46,9 @@ public class UserResource {
 
     @Inject
     CallerContext caller;
+
+    @Inject
+    AuditLogger audit;
 
     @GET
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
@@ -106,6 +112,20 @@ public class UserResource {
         if (body.displayName() != null) {
             user.setDisplayName(body.displayName());
         }
+        // evento audit (UC 0006) solo per i cambi privilegiati (ruolo/stato), non per la
+        // rettifica del nome; details con soli identificativi opachi (mai email/nome).
+        if (body.role() != null || body.status() != null) {
+            Map<String, String> details = new HashMap<>();
+            details.put("user_id", user.getId().toString());
+            details.put("actor", caller.subject());
+            if (body.role() != null) {
+                details.put("role", body.role());
+            }
+            if (body.status() != null) {
+                details.put("status", body.status());
+            }
+            audit.success("member.updated", details);
+        }
         return UserView.from(user);
     }
 
@@ -116,6 +136,9 @@ public class UserResource {
     public Response delete(@PathParam("id") UUID id) {
         User user = require(id);
         user.markDeleted();
+        audit.success("member.removed", Map.of(
+                "user_id", user.getId().toString(),
+                "actor", caller.subject()));
         return Response.noContent().build();
     }
 

@@ -55,13 +55,49 @@ resource "aws_apigatewayv2_vpc_link" "this" {
   }
 }
 
+# Access log dell'edge (UC 0006, #08 4): JSON minimale — requestId (= il
+# correlation id propagato ai servizi via X-Correlation-Id, microsaas_app/api.tf),
+# rotta, esito, latenze. L'IP sorgente resta FUORI: minimizzazione (#13), il
+# triage passa da requestId/correlation_id nei log dei servizi.
+resource "aws_cloudwatch_log_group" "apigw_access" {
+  name              = "/appgrove/${var.env}/apigw-access"
+  retention_in_days = local.obs_log_retention_days
+
+  #checkov:skip=CKV_AWS_158:Cifratura at rest di default (chiavi gestite CloudWatch); CMK solo se servirà (#06 §20bis)
+  #checkov:skip=CKV_AWS_338:Retention 7gg test / 30gg prod by-design (#08 26, cost-min): non sono log di audit
+
+  tags = {
+    Name = "appgrove-${var.env}-apigw-access"
+  }
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.this.id
   name        = "$default"
   auto_deploy = true
 
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.apigw_access.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      requestTime             = "$context.requestTime"
+      httpMethod              = "$context.httpMethod"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      responseLength          = "$context.responseLength"
+      integrationLatency      = "$context.integrationLatency"
+      responseLatency         = "$context.responseLatency"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
+  }
+
+  # Metriche per-rotta (dimensione Route): servono agli allarmi 5xx/latenza
+  # per-servizio di microsaas_app (#08 16).
+  default_route_settings {
+    detailed_metrics_enabled = true
+  }
+
   #checkov:skip=CKV2_AWS_29:WAF rimandato by-design (evoluzione E6, #06 21)
-  #checkov:skip=CKV_AWS_76:Access logging API GW rimandato all'observability (UC 0006, cost-min)
 
   tags = {
     Name = "appgrove-${var.env}"

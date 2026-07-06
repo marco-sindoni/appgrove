@@ -83,6 +83,17 @@ module "app_$APP_ID" {
 }
 # ── service-add:end $APP_ID ───────────────────────────────────────────────────
 EOF
+  # Registra il servizio nella dashboard/query dell'ambiente (UC 0006): riga
+  # nella lista `services` del modulo observability (marker obs-services).
+  if grep -q "obs-services:end" "$MAIN_TF"; then
+    awk -v id="$APP_ID" '
+      /obs-services:end/ { print "    module.app_" id ".observability," }
+      { print }
+    ' "$MAIN_TF" > "$MAIN_TF.tmp" && mv "$MAIN_TF.tmp" "$MAIN_TF"
+  else
+    warn "envs/$ENV_NAME/main.tf: marker obs-services assenti — aggiungere a mano module.app_$APP_ID.observability alla lista services del modulo observability"
+  fi
+
   terraform fmt "$MAIN_TF" >/dev/null
   ok "envs/$ENV_NAME/main.tf: aggiunto module \"app_$APP_ID\" (porta $PORT)"
 done

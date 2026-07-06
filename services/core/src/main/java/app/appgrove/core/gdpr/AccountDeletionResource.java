@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.AccountDtos.AccountView;
 import app.appgrove.core.platform.AccountRepository;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Map;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ResponseStatus;
 
@@ -43,6 +45,9 @@ public class AccountDeletionResource {
     @Inject
     CallerContext caller;
 
+    @Inject
+    AuditLogger audit;
+
     /** Richiede l'eliminazione: disattivazione immediata + avvio della grace. 409 se già in corso. */
     @POST
     @Transactional
@@ -56,6 +61,10 @@ public class AccountDeletionResource {
         account.setDeletionRequestedAt(Instant.now());
         LOG.infof("gdpr.account-deletion.request tenant_id=%s user_id=%s effective_at=%s",
                 caller.tenantId(), caller.subject(), account.deletionEffectiveAt());
+        audit.success("gdpr.account-deletion.requested", Map.of(
+                "tenant_id", caller.tenantId().toString(),
+                "user_id", caller.subject(),
+                "effective_at", account.deletionEffectiveAt().toString()));
         return AccountView.from(account);
     }
 
@@ -71,6 +80,9 @@ public class AccountDeletionResource {
         account.setDeletionRequestedAt(null);
         LOG.infof("gdpr.account-deletion.cancel tenant_id=%s user_id=%s",
                 caller.tenantId(), caller.subject());
+        audit.success("gdpr.account-deletion.canceled", Map.of(
+                "tenant_id", caller.tenantId().toString(),
+                "user_id", caller.subject()));
         return AccountView.from(account);
     }
 

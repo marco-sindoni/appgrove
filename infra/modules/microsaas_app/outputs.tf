@@ -47,3 +47,32 @@ output "api_route" {
   description = "Route del servizio sull'API HTTP condivisa."
   value       = aws_apigatewayv2_route.this.route_key
 }
+
+output "gdpr_export_dlq_arn" {
+  description = "ARN della DLQ export GDPR (allarmi DLQ, UC 0006)."
+  value       = aws_sqs_queue.gdpr_export_dlq.arn
+}
+
+output "tenant_purge_dlq_arn" {
+  description = "ARN della DLQ purge per-tenant (allarmi DLQ, UC 0006)."
+  value       = aws_sqs_queue.tenant_purge_dlq.arn
+}
+
+output "log_group_arn" {
+  description = "ARN del log group del servizio."
+  value       = aws_cloudwatch_log_group.this.arn
+}
+
+output "log_level_parameter_name" {
+  description = "Parametro SSM del livello di log (#08 6): DEBUG a runtime senza rebuild."
+  value       = aws_ssm_parameter.log_level.name
+}
+
+output "observability" {
+  description = "Sezione osservabilità del servizio per la dashboard d'ambiente (modulo observability, UC 0006)."
+  value = {
+    app_id         = var.app_id
+    log_group_name = aws_cloudwatch_log_group.this.name
+    widgets        = local.dashboard_widgets
+  }
+}

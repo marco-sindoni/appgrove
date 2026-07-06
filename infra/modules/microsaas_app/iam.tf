@@ -133,3 +133,19 @@ resource "aws_iam_role_policy" "task_gdpr" {
     )
   })
 }
+
+# L'execution role inietta anche il livello di log dal Parameter Store (#08 6).
+resource "aws_iam_role_policy" "execution_ssm" {
+  name = "inject-log-level"
+  role = aws_iam_role.execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid      = "InjectLogLevel"
+      Effect   = "Allow"
+      Action   = ["ssm:GetParameters"]
+      Resource = aws_ssm_parameter.log_level.arn
+    }]
+  })
+}

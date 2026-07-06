@@ -46,3 +46,8 @@ variable "use_fargate_spot" {
   description = "Capacità ECS di default (#06 10): Fargate Spot in test (~-70%), on-demand in prod."
   type        = bool
 }
+
+variable "alert_email" {
+  description = "Destinatario email degli allarmi (#08 15): sottoscritto ai topic SNS critical/warning (la subscription va confermata via mail)."
+  type        = string
+}

@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.gdpr.GdprQueues;
 import app.appgrove.commons.gdpr.TenantPurgeMessage;
 import app.appgrove.commons.messaging.MessageQueues;
@@ -14,6 +15,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.jboss.logging.Logger;
 
 /**
@@ -42,6 +44,9 @@ public class TenantOffboarding {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    AuditLogger audit;
+
     /**
      * Avvia l'offboarding del tenant: un messaggio di purge per la piattaforma e per ogni app
      * attivata (incluse subscription soft-deleted: i dati dell'app possono ancora esistere).
@@ -55,6 +60,11 @@ public class TenantOffboarding {
             queues.send(GdprQueues.purgeQueue(target), serialize(new TenantPurgeMessage(tenantId, reason)));
         }
         LOG.infof("gdpr.offboard tenant_id=%s reason=%s targets=%s", tenantId, reason, targets);
+        // evento audit (UC 0006): gira anche fuori richiesta (sweeper) → tenant nei details
+        audit.success("tenant.offboarded", Map.of(
+                "tenant_id", tenantId,
+                "reason", reason,
+                "targets", String.join(",", targets)));
         return targets;
     }
 

@@ -95,5 +95,19 @@ variable "shared" {
     gdpr_export_results_queue_arn = string
     gdpr_export_bucket            = string
     gdpr_export_bucket_arn        = string
+    alarm_topic_critical_arn      = string
+    alarm_topic_warning_arn       = string
+    audit_firehose_arn            = string
+    logs_to_firehose_role_arn     = string
   })
+}
+
+variable "alarms_enabled" {
+  description = <<-EOT
+    Azioni di allarme attive (#08 18): pieni in prod, SILENZIATI in test (gli
+    allarmi esistono ma non notificano: lo scale-to-0/spegnimento notturno non
+    deve generare falsi allarmi). Default: derivato dall'ambiente (prod=true).
+  EOT
+  type        = bool
+  default     = null
 }

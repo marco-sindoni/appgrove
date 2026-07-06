@@ -100,3 +100,10 @@ i totali salgono sensibilmente. Era l'opzione **cost-min** rimandarlo (Lambda di
   test Spot+scale-to-0 ~$0 da idle): le istanze attive oggi sono **2** (platform, fatture) → prod ~$20/mese
   quando acceso, meno con **ARM64/Graviton** (~−20%, task definition già ARM64). `test-stop` (cron in UC 0005)
   rafforza il ~$0 di test.
+- **UC 0006** (osservabilità di base, change 0035): conferma in codice della stima #08 (~$2–6 prod, ~$0–1 test).
+  Voci concrete per env: **1 dashboard** (nei 3 gratuiti a livello account), **~12 allarmi** (i primi 10
+  dell'account gratis, poi $0.10/allarme → ~$1/mese), **2 topic SNS + email** (~$0), **metriche custom**
+  (1 metric filter ERROR per servizio + metriche EMF a bassa cardinalità: entro/appena oltre le 10 gratuite,
+  ~$0–1), **Firehose→S3→Glacier** per l'audit (volumi bassissimi, centesimi), **access log API GW** e **Lambda
+  ingest errori** (~$0, concorrenza riservata 2), **parametri SSM Standard** gratis, **AWS Budgets** (2 gratuiti,
+  1 usato). Tracce OTel strumentate ma **export spento** = $0 (E10). Nessuna CMK nuova (SSE gestita AWS).

@@ -13,6 +13,7 @@ const cfg: RuntimeConfig = {
   authBaseUrl: 'http://localhost',
   coreBaseUrl: 'http://localhost',
   cognito: { userPoolId: '', clientId: '' },
+  errorIngestUrl: '', // vuoto nei test: il reporter errori è inerte
 }
 
 const server = setupServer(

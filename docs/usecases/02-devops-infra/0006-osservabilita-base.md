@@ -73,10 +73,9 @@ mesi (#08 29, #13 E). I log operativi **non** si archiviano a lungo (minimizzazi
 
 _Tracciato dalla change `0033-use-case-0004-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
-- **Widget e allarmi base per-servizio sul log group del modulo `microsaas_app`.** La change 0033
-  (UC 0004) crea per ogni servizio il **log group** cifrato con retention esplicita (test 7 gg, prod
-  30 gg, #08 26) e le **DLQ** delle code SQS per-app, ma **non** i widget di dashboard né gli allarmi
-  (error rate, DLQ non vuota, task che non parte). Restano a questo UC, che possiede dashboard/alarm
-  as-code (#08): quando si implementa, agganciare le risorse già esposte dal modulo (nome log group,
-  ARN delle code/DLQ negli output). Differito perché gli allarmi appartengono al disegno complessivo
-  dell'osservabilità, non al mattone infra per-servizio.
+- **Widget e allarmi base per-servizio sul log group del modulo `microsaas_app`.** ✅ **Implementato
+  dalla change `0035-use-case-0006-…`**: il modulo genera per ogni servizio metric filter ERROR →
+  allarme, allarmi 5xx/latenza p95 della route, allarmi DLQ non vuote, subscription filter audit →
+  Firehose e i widget della sezione per-servizio della dashboard d'ambiente (output `observability`,
+  consumato dal modulo `infra/modules/observability`); "task che non parte" è una regola EventBridge
+  a livello ambiente (modulo observability). Azioni piene in prod, silenziate in test (#08 18).

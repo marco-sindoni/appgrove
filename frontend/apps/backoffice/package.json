@@ -17,6 +17,7 @@
   "dependencies": {
     "@appgrove/api-client": "*",
     "@appgrove/design-system": "*",
+    "@appgrove/error-reporter": "*",
     "@appgrove/i18n": "*",
     "@appgrove/paddle-stub": "*",
     "@hookform/resolvers": "^3.10.0",
