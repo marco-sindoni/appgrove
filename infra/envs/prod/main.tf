@@ -85,6 +85,14 @@ module "platform_shared" {
   deletion_protection   = true
   force_destroy_buckets = false
   use_fargate_spot      = false
+
+  alert_email = var.alert_email
+}
+
+variable "alert_email" {
+  description = "Destinatario email di allarmi SNS (#08 15); la subscription va confermata via mail."
+  type        = string
+  default     = "marcosindoni@gmail.com"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -115,6 +123,10 @@ locals {
     gdpr_export_results_queue_arn = module.platform_shared.gdpr_export_results_queue_arn
     gdpr_export_bucket            = module.baseline.gdpr_export_bucket
     gdpr_export_bucket_arn        = module.baseline.gdpr_export_bucket_arn
+    alarm_topic_critical_arn      = module.platform_shared.alarm_topic_critical_arn
+    alarm_topic_warning_arn       = module.platform_shared.alarm_topic_warning_arn
+    audit_firehose_arn            = module.platform_shared.audit_firehose_arn
+    logs_to_firehose_role_arn     = module.platform_shared.logs_to_firehose_role_arn
   }
 }
 
@@ -152,3 +164,30 @@ module "app_fatture" {
 }
 # ── service-add:end fatture ───────────────────────────────────────────────────
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Osservabilità dell'ambiente (UC 0006): dashboard unica, allarmi condivisi,
+# query salvate. La lista `services` è mantenuta dagli script service-add e
+# service-remove (marker obs-services): non rimuovere i marker.
+# ─────────────────────────────────────────────────────────────────────────────
+
+module "observability" {
+  source = "../../modules/observability"
+
+  env = "prod"
+
+  services = [
+    # ── obs-services:begin ──
+    module.app_platform.observability,
+    module.app_fatture.observability,
+    # ── obs-services:end ──
+  ]
+
+  api_id                      = module.platform_shared.api_id
+  aurora_cluster_identifier   = module.platform_shared.aurora_cluster_identifier
+  ecs_cluster_arn             = module.platform_shared.ecs_cluster_arn
+  alarm_topic_critical_arn    = module.platform_shared.alarm_topic_critical_arn
+  alarm_topic_warning_arn     = module.platform_shared.alarm_topic_warning_arn
+  error_ingest_lambda_name    = module.platform_shared.error_ingest_lambda_name
+  error_ingest_log_group_name = module.platform_shared.error_ingest_log_group_name
+}

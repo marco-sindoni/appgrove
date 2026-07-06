@@ -15,6 +15,7 @@ export const testConfig: RuntimeConfig = {
   authBaseUrl: 'http://localhost',
   coreBaseUrl: 'http://localhost',
   cognito: { userPoolId: '', clientId: '' },
+  errorIngestUrl: '', // vuoto nei test: il reporter errori è inerte
 }
 
 /** Codifica base64url (browser-safe, senza padding) per i payload dei JWT finti. */

@@ -16,7 +16,7 @@ Cosa fa (in ordine; nessuna credenziale AWS necessaria, nessuna risorsa toccata)
   2. terraform validate    su ogni root (bootstrap, global, envs/test, envs/prod)
                            con `init -backend=false` (scarica solo i provider,
                            cache condivisa in ~/.terraform.d/plugin-cache)
-  3. terraform test        sui moduli con test (microsaas_app, #10 29): plan
+  3. terraform test        sui moduli con test (microsaas_app, observability, #10 29): plan
                            con provider AWS FINTO (mock), quindi offline
   4. tflint                se installato (lint aggiuntivo)
   5. checkov               se installato (analisi statica di sicurezza; le
@@ -36,7 +36,7 @@ require_terraform
 
 ROOTS=(bootstrap global envs/test envs/prod)
 # Moduli con suite `terraform test` (tests/*.tftest.hcl, provider mock → offline).
-TESTED_MODULES=(modules/microsaas_app)
+TESTED_MODULES=(modules/microsaas_app modules/observability)
 RC=0
 
 info "1/5 terraform fmt -check (tutto infra/)…"

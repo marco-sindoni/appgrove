@@ -98,3 +98,9 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   `new-application` **non deve reinventare il wiring**: genera il blocco riusando `service-add` (o lo
   stesso template) insieme allo scaffold del codice, come da #07 20 ("non si lancia `service-add` a
   mano"). Differito perché la skill è lo scope di questo UC; il mattone infra è già pronto.
+- **Reporter errori frontend nello scaffold (#08 23)** _(tracciato dalla change `0035-use-case-0006-…`)_:
+  il package condiviso `@appgrove/error-reporter` esiste (UC 0006) ed è cablato in backoffice/admin; lo
+  scaffold dei nuovi moduli frontend deve installarlo allo stesso modo (`installErrorReporter` con
+  `appId` del modulo, endpoint da `errorIngestUrl` della config runtime). Lato backend, lo scaffold
+  eredita gratis MDC/health/EMF/audit da `services/commons` + le risorse per-servizio dal modulo
+  `microsaas_app` (che ora genera anche allarmi/widget/subscription filter, invariante #3).

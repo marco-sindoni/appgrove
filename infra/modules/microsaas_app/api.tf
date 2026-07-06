@@ -14,6 +14,15 @@ resource "aws_apigatewayv2_integration" "this" {
   connection_id   = var.shared.vpc_link_id
 
   payload_format_version = "1.0" # richiesto dalle integrazioni HTTP_PROXY private
+
+  # Correlation id generato all'EDGE (#08 4): l'id richiesta di API GW finisce
+  # nell'MDC dei servizi (correlation_id) e negli access log dello stage —
+  # stessa chiave, correlazione end-to-end. `overwrite` (NON `append`): un
+  # eventuale header fornito dal client va SOSTITUITO, mai preservato — il
+  # correlation id non deve essere scelto/avvelenato da fuori.
+  request_parameters = {
+    "overwrite:header.X-Correlation-Id" = "$context.requestId"
+  }
 }
 
 resource "aws_apigatewayv2_route" "this" {

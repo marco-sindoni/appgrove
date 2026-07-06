@@ -81,6 +81,9 @@ resource "aws_ecs_task_definition" "this" {
     # Contratto di configurazione dei servizi Quarkus (chiavi → env var):
     # il cablaggio lato servizi (profilo cloud) arriva con il deploy (UC 0005).
     environment = [
+      # Dimensione `env` delle metriche EMF (#08 9: bassa cardinalità) e
+      # contesto dei log: letta dai servizi come `appgrove.env`.
+      { name = "APPGROVE_ENV", value = var.env },
       { name = "QUARKUS_DATASOURCE_JDBC_URL", value = "jdbc:postgresql://${var.shared.aurora_endpoint}:${var.shared.aurora_port}/${var.shared.aurora_database_name}?currentSchema=${local.db_schema}" },
       { name = "QUARKUS_DATASOURCE_USERNAME", value = local.db_schema },
       { name = "APPGROVE_SQS_QUEUE_PREFIX", value = var.shared.sqs_queue_prefix },
@@ -90,7 +93,20 @@ resource "aws_ecs_task_definition" "this" {
 
     secrets = [
       { name = "QUARKUS_DATASOURCE_PASSWORD", valueFrom = "${aws_secretsmanager_secret.db.arn}:password::" },
+      # Livello log a runtime SENZA rebuild (#08 6): si cambia il parametro SSM
+      # e si forza un nuovo deployment del service (nessuna nuova immagine).
+      { name = "LOG_LEVEL", valueFrom = aws_ssm_parameter.log_level.arn },
     ]
+
+    # Liveness senza DB (#08 21): un blip del database non deve far uccidere i
+    # container. VINCOLO IMMAGINE (UC 0005): il container deve includere curl.
+    healthCheck = {
+      command     = ["CMD-SHELL", "curl -fsS http://localhost:${var.container_port}/q/health/live || exit 1"]
+      interval    = 30
+      timeout     = 5
+      retries     = 3
+      startPeriod = 30
+    }
 
     logConfiguration = {
       logDriver = "awslogs"

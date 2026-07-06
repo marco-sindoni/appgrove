@@ -102,6 +102,17 @@
       <artifactId>url-connection-client</artifactId>
     </dependency>
 
+    <!-- Osservabilità (UC 0006/#08): Micrometer per il bridge EMF (EmfMeterRegistry) e API OTel
+         per trace_id/span_id nell'MDC. Solo API/core: le estensioni Quarkus vivono nei servizi. -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-api</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>

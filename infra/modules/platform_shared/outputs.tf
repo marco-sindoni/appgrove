@@ -145,3 +145,38 @@ output "api_url" {
   description = "URL pubblico dell'API dell'ambiente."
   value       = "https://${local.api_host}"
 }
+
+output "alarm_topic_critical_arn" {
+  description = "Topic SNS degli allarmi critici (#08 15): destinazione delle alarm action."
+  value       = aws_sns_topic.alarms["critical"].arn
+}
+
+output "alarm_topic_warning_arn" {
+  description = "Topic SNS degli allarmi warning (#08 15)."
+  value       = aws_sns_topic.alarms["warning"].arn
+}
+
+output "audit_firehose_arn" {
+  description = "Firehose dell'archivio audit (#08 28): destinazione dei subscription filter per-servizio (microsaas_app)."
+  value       = aws_kinesis_firehose_delivery_stream.audit_archive.arn
+}
+
+output "logs_to_firehose_role_arn" {
+  description = "Ruolo che CloudWatch Logs assume per consegnare l'audit a Firehose (usato dai subscription filter di microsaas_app)."
+  value       = aws_iam_role.logs_to_firehose.arn
+}
+
+output "error_ingest_lambda_name" {
+  description = "Nome della Lambda di ingest errori frontend (allarmi nel modulo observability)."
+  value       = aws_lambda_function.error_ingest.function_name
+}
+
+output "error_ingest_log_group_name" {
+  description = "Log group con gli errori frontend normalizzati (widget dashboard, UC 0006)."
+  value       = aws_cloudwatch_log_group.error_ingest.name
+}
+
+output "apigw_access_log_group_name" {
+  description = "Log group degli access log dell'API condivisa (UC 0006)."
+  value       = aws_cloudwatch_log_group.apigw_access.name
+}

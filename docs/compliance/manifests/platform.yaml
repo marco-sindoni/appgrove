@@ -234,6 +234,31 @@ entries:
       it: Log applicativi prod 30 giorni; audit/sicurezza 12 mesi su S3→Glacier (#08 I26)
       en: Prod application logs 30 days; audit/security 12 months on S3→Glacier (#08 I26)
 
+  - key: logs.frontend_errors
+    location:
+      it: CloudWatch Logs (eu-west-1), log group dell'ingest errori (`/aws/lambda/appgrove-<env>-error-ingest`)
+      en: CloudWatch Logs (eu-west-1), error-ingest log group (`/aws/lambda/appgrove-<env>-error-ingest`)
+    data_subjects:
+      it: Utenti delle SPA (anche non autenticati)
+      en: SPA users (including unauthenticated)
+    data_category:
+      it: >-
+        Eventi di SOLO errore JavaScript (#08 H23): messaggio/stack, rotta, versione build,
+        identificativi opachi `user_id`/`tenant_id` se esiste una sessione. Niente IP, niente
+        user agent, nessun tracking comportamentale.
+      en: >-
+        JavaScript ERROR-only events (#08 H23): message/stack, route, build version, opaque
+        `user_id`/`tenant_id` when a session exists. No IP, no user agent, no behavioural tracking.
+    purpose:
+      it: "Diagnostica e stabilità del frontend (limitazione di finalità — solo errori, #13 B12)"
+      en: "Frontend diagnostics and stability (purpose limitation — errors only, #13 B12)"
+    legal_basis:
+      it: Legittimo interesse (art. 6.1.f GDPR — qualità e continuità del servizio)
+      en: Legitimate interest (art. 6(1)(f) GDPR — service quality and continuity)
+    retention:
+      it: Come i log applicativi (test 7 giorni, prod 30 giorni, #08 I26); nessun archivio lungo
+      en: Same as application logs (test 7 days, prod 30 days, #08 I26); no long-term archive
+
 sections:
   - key: recipients
     title:

@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.gdpr.ExportRequestMessage;
 import app.appgrove.commons.gdpr.GdprQueues;
 import app.appgrove.commons.messaging.MessageQueues;
@@ -13,6 +14,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.jboss.logging.Logger;
 
@@ -49,6 +51,9 @@ public class GdprExportService {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    AuditLogger audit;
+
     @Transactional
     public GdprExportJob start(GdprExportKind kind, String appSlug, String tenantId, String subject) {
         List<String> targets = targetsFor(kind, appSlug);
@@ -71,6 +76,13 @@ public class GdprExportService {
 
         LOG.infof("gdpr.export.start tenant_id=%s user_id=%s job_id=%s kind=%s targets=%s",
                 tenantId, subject, job.getId(), kind, targets);
+        // evento audit (UC 0006, archivio 12 mesi): soli identificativi opachi
+        audit.success("gdpr.export.requested", Map.of(
+                "tenant_id", tenantId,
+                "user_id", subject,
+                "job_id", job.getId().toString(),
+                "kind", kind.name(),
+                "targets", String.join(",", targets)));
         return job;
     }
 

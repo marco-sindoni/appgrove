@@ -114,3 +114,19 @@ _Tracciato dalla change `0025-use-case-0029-…` (test pagamenti L1/L2/L3)._
   pushare su `appgrove-test-*` al merge e **promuovere** (retag/copy) su `appgrove-prod-*` al tag —
   senza rebuild, stessa immagine. Lo schema di tagging (per-SHA vs `latest`, oggi tag mobile di
   default con `image_tag` sovrascrivibile) si fissa qui. Proprietà: UC 0005 (già correlato a #07 H/E9).
+
+_Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
+
+- **`curl` nell'immagine dei servizi (health check ECS).** La change 0035 (UC 0006) definisce nella task
+  definition l'health check del container (`curl -fsS http://localhost:<porta>/q/health/live`): l'immagine
+  costruita dalla pipeline DEVE includere `curl` (o un binario di probe equivalente — in tal caso adeguare
+  il comando in `infra/modules/microsaas_app/ecs.tf`). Nessun deploy esiste ancora, quindi il vincolo è
+  solo sul build dell'immagine. Proprietà: UC 0005.
+- **`VITE_BUILD_SHA` nel build frontend.** Il reporter errori (`frontend/packages/error-reporter`, #08 23)
+  marca ogni evento con lo SHA di build (`import.meta.env.VITE_BUILD_SHA`, fallback `dev` in locale): la
+  pipeline FE deve passarlo al build Vite (si sposa con l'artifact privato delle source map, #08 24, già
+  in carico a questo UC). Proprietà: UC 0005.
+- **`errorIngestUrl` nel `config.json` per-ambiente delle SPA.** Le app leggono l'endpoint di ingest
+  errori dalla config runtime (`errorIngestUrl`, vuoto in locale = reporter spento): il deploy FE deve
+  scrivere nel `config.json` per-env il valore `https://api.<env-prefix><domain>/ingest/errors` (rotta
+  creata da `platform_shared/error_ingest.tf`). Proprietà: UC 0005.

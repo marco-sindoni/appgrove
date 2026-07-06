@@ -36,6 +36,10 @@ locals {
     gdpr_export_results_queue_arn = "arn:aws:sqs:eu-west-1:123456789012:appgrove-test-gdpr-export-results"
     gdpr_export_bucket            = "appgrove-test-gdpr-export"
     gdpr_export_bucket_arn        = "arn:aws:s3:::appgrove-test-gdpr-export"
+    alarm_topic_critical_arn      = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-critical"
+    alarm_topic_warning_arn       = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-warning"
+    audit_firehose_arn            = "arn:aws:firehose:eu-west-1:123456789012:deliverystream/appgrove-test-audit-archive"
+    logs_to_firehose_role_arn     = "arn:aws:iam::123456789012:role/appgrove-test-logs-to-firehose"
   }
 }
 

@@ -1,5 +1,6 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.core.platform.AdminDtos.AccountDetailView;
 import app.appgrove.core.platform.AdminDtos.AdminAccountView;
 import app.appgrove.core.platform.AdminDtos.AdminUserView;
@@ -24,6 +25,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.jboss.logging.Logger;
@@ -50,6 +52,9 @@ public class AdminResource {
 
     @Inject
     CallerContext caller;
+
+    @Inject
+    AuditLogger audit;
 
     @GET
     @Path("/overview")
@@ -172,6 +177,11 @@ public class AdminResource {
         }
         // logging strutturato dell'azione admin (invariante #4): app_id + attore + esito
         LOG.infof("admin.disable-app app_id=%s status=%s actor=%s", id, body.status(), caller.subject());
+        // evento audit (UC 0006): il toggle di stato app cambia l'entitlement effettivo (gate 2)
+        audit.success("admin.app.status-changed", Map.of(
+                "app_id", id.toString(),
+                "status", body.status(),
+                "actor", caller.subject()));
         List<Object[]> r = rows(
                 "select id, slug, name, user_model, status from platform.app where id = :id", "id", id);
         Object[] a = r.get(0);

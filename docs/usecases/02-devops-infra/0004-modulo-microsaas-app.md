@@ -85,3 +85,8 @@ Log group cifrati con retention (#08 26). Manifest GDPR: i dati personali nascon
   le route e il modello cookie/credenziali dell'auth BFF (UC 0015): origini ammesse = i due domini SPA,
   credenziali sì/no, header. Differita per non fissare un contratto browser↔API prima dell'auth. Proprietà:
   questo UC (wiring route) insieme a UC 0015.
+  - _Aggiunta dalla change `0035-use-case-0006-…`_: nel frattempo l'**ingest errori frontend** (UC 0006,
+    rotta `POST /ingest/errors` su `api.<env>`) aggira l'assenza di CORS inviando una "simple request"
+    (`Content-Type: text/plain`, corpo JSON, risposta mai letta — commentato in
+    `frontend/packages/error-reporter/src/reporter.ts`). Quando il CORS verrà configurato qui, valutare il
+    ritorno a `application/json`.

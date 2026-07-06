@@ -1,5 +1,6 @@
 package app.appgrove.core.gdpr;
 
+import app.appgrove.commons.audit.AuditLogger;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -10,7 +11,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.jboss.logging.Logger;
 
@@ -65,6 +68,9 @@ public class GdprRestrictionService {
     @Inject
     AgroalDataSource ds;
 
+    @Inject
+    AuditLogger auditLog;
+
     /** Applica la limitazione: sospende il bersaglio con causale dedicata + prova nell'audit. */
     public Outcome apply(TargetKind kind, UUID targetId, UUID ticketId, String note, String actor) {
         try (Connection c = ds.getConnection()) {
@@ -85,6 +91,8 @@ public class GdprRestrictionService {
             c.commit();
             LOG.infof("gdpr.restriction applied target=%s target_id=%s tenant_id=%s actor=%s ticket_id=%s",
                     kind, targetId, tenantId, actor, ticketId);
+            auditLog.success("gdpr.restriction.applied",
+                    restrictionDetails(kind, targetId, tenantId, actor, ticketId));
             return Outcome.APPLIED;
         } catch (SQLException e) {
             throw new RuntimeException("applicazione limitazione fallita per " + kind + " " + targetId, e);
@@ -111,6 +119,8 @@ public class GdprRestrictionService {
             c.commit();
             LOG.infof("gdpr.restriction removed target=%s target_id=%s tenant_id=%s actor=%s",
                     kind, targetId, tenantId, actor);
+            auditLog.success("gdpr.restriction.removed",
+                    restrictionDetails(kind, targetId, tenantId, actor, null));
             return Outcome.REMOVED;
         } catch (SQLException e) {
             throw new RuntimeException("rimozione limitazione fallita per " + kind + " " + targetId, e);
@@ -172,6 +182,20 @@ public class GdprRestrictionService {
     }
 
     // ── helper ───────────────────────────────────────────────────────────────
+
+    /** Details per l'audit log: soli identificativi opachi (mai la nota libera, può portare dati personali). */
+    private static Map<String, String> restrictionDetails(
+            TargetKind kind, UUID targetId, String tenantId, String actor, UUID ticketId) {
+        Map<String, String> details = new HashMap<>();
+        details.put("target_kind", kind.name());
+        details.put("target_id", targetId.toString());
+        details.put("tenant_id", tenantId);
+        details.put("actor", actor);
+        if (ticketId != null) {
+            details.put("ticket_id", ticketId.toString());
+        }
+        return details;
+    }
 
     private ResultSet bind(PreparedStatement ps) throws SQLException {
         ps.setString(1, RESTRICTION_REASON);

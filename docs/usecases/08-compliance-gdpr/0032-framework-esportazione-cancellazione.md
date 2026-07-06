@@ -77,3 +77,13 @@ auto-delete 7gg, presigned in-app. **Purge** = hard-delete con audit (prova). Ma
   sono ancorate alle stesse annotazioni). `manifest()` è ora il metro del test di copertura #13 L74 (export/purge
   coprono ogni entità con dati personali). L'eventuale sfoltimento degli attributi testuali duplicati di
   `@PersonalData` è tracciato su UC 0030 ("Punti aperti").
+
+_Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
+
+- **Evento audit dell'ESECUZIONE della purge per-app anche nei log.** UC 0006 introduce la convenzione
+  `AuditLogger` (`log_type=audit` → archivio 12 mesi) e strumenta la RICHIESTA (`tenant.offboarded`,
+  `gdpr.erasure.requested`, …). L'esecuzione della purge nel consumer condiviso
+  (`services/commons` `TenantPurgeConsumer`) oggi ha il solo audit su DB (`gdpr_purge_audit`): se si vuole
+  anche l'evento nell'archivio log (utile per il forense unificato), è un'estensione del framework — usare
+  `AuditLogger` nel consumer con esito per-app. Differito perché tocca il contratto del framework GDPR,
+  non l'osservabilità. Proprietà: questo UC.

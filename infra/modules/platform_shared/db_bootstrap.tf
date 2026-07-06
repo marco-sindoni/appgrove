@@ -85,7 +85,7 @@ resource "aws_lambda_function" "db_bootstrap" {
   }
 
   #checkov:skip=CKV_AWS_117:Fuori VPC by-design: usa la Data API (rds-data), non una connessione di rete al DB
-  #checkov:skip=CKV_AWS_50:X-Ray spento (cost-min); tracing con l'observability (UC 0006)
+  #checkov:skip=CKV_AWS_50:X-Ray spento by-design: strumentazione pronta, export tracce = evoluzione E10 (#08 11)
   #checkov:skip=CKV_AWS_115:Nessun limite di concorrenza riservata: invocata solo da Terraform durante gli apply
   #checkov:skip=CKV_AWS_116:Niente DLQ: invocazione SINCRONA da Terraform, l'errore fallisce l'apply
   #checkov:skip=CKV_AWS_173:Le env var non contengono segreti (solo ARN/nomi): chiave gestita AWS sufficiente
