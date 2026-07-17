@@ -121,12 +121,53 @@ jobs:
             -t "$ECR:$TAG" "services/${{ matrix.service }}"
           docker push "$ECR:$TAG"
 
+  # ── Lambda BFF auth: nativa ARM64 SEMPRE (UC 0015) ─────────────────────────
+  # A differenza delle immagini ECS (JVM di default), il function.zip è sempre
+  # nativo: su Lambda il cold start JVM non è praticabile, e la chiave per-SHA
+  # deve esistere a ogni apply (chiave vuota = Lambda distrutta dal conditional).
+  build-auth:
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      lambda_key: ${{ steps.upload.outputs.lambda_key }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: graalvm-community
+          java-version: '21'
+          cache: maven
+      - name: mvn test + package Lambda (native GraalVM, profilo `lambda`)
+        working-directory: services
+        run: mvn -B -pl auth -am package -Plambda -Dnative
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-test
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Upload function.zip (bucket artefatti, chiave per-SHA)
+        id: upload
+        env:
+          BUCKET: appgrove-lambda-artifacts-test-${{ vars.AWS_ACCOUNT_ID }}
+          KEY: auth/${{ github.sha }}-native.zip
+        run: |
+          # Prima attivazione (bucket non ancora creato dall'apply): upload saltato,
+          # chiave vuota → l'apply non crea la Lambda; dal push successivo tutto pieno.
+          if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            aws s3 cp services/auth/target/function.zip "s3://$BUCKET/$KEY"
+            echo "lambda_key=$KEY" >> "$GITHUB_OUTPUT"
+            echo "Artefatto Lambda: s3://$BUCKET/$KEY"
+          else
+            echo "lambda_key=" >> "$GITHUB_OUTPUT"
+            echo "::warning::Bucket artefatti Lambda assente ($BUCKET): primo giro di attivazione, Lambda auth non deployata (ri-eseguire il deploy dopo l'apply)."
+          fi
+
   # ── Migrate → apply → health check → sync-pricing (#07 14/15) ──────────────
   deploy:
-    needs: [prepare, build]
+    needs: [prepare, build, build-auth]
     runs-on: ubuntu-latest
     env:
       IMAGE_TAG: ${{ needs.prepare.outputs.image_tag }}
+      AUTH_LAMBDA_KEY: ${{ needs.build-auth.outputs.lambda_key }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -154,7 +195,9 @@ jobs:
             [ -n "$app" ] && ./infra/scripts/oneshot test "$app" "$IMAGE_TAG" migrate
           done
       - name: terraform apply (stessi wrapper del locale, #07 6)
-        run: TF_VAR_image_tag="$IMAGE_TAG" ./infra/scripts/up test --yes
+        run: |
+          TF_VAR_image_tag="$IMAGE_TAG" TF_VAR_auth_lambda_s3_key="$AUTH_LAMBDA_KEY" \
+            ./infra/scripts/up test --yes
       - name: Flyway migrate post-apply (solo primo deploy di un servizio)
         run: |
           while read -r app; do

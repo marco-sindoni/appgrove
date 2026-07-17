@@ -13,14 +13,16 @@ import org.junit.jupiter.api.Test;
 class SqsMessageQueuesTest {
 
     @Test
-    void inLocaleSenzaPrefissoIlNomeFisicoCoincideColLogico() {
-        var queues = new SqsMessageQueues(Optional.of("http://localhost:9324"), "eu-south-1", "");
+    void senzaPrefissoConfiguratoIlNomeFisicoCoincideColLogico() {
+        // Optional.empty() = proprietà assente (profilo dev): non deve fallire l'avvio né
+        // aggiungere prefisso. Guardia del bug SRCFG00014 da defaultValue="" (change 0037).
+        var queues = new SqsMessageQueues(Optional.of("http://localhost:9324"), "eu-south-1", Optional.empty());
         assertEquals("gdpr-export-fatture", queues.physicalName("gdpr-export-fatture"));
     }
 
     @Test
     void nelCloudIlPrefissoPerAmbientePrecedeIlNomeLogico() {
-        var queues = new SqsMessageQueues(Optional.empty(), "eu-west-1", "appgrove-test-");
+        var queues = new SqsMessageQueues(Optional.empty(), "eu-west-1", Optional.of("appgrove-test-"));
         assertEquals("appgrove-test-gdpr-export-fatture", queues.physicalName("gdpr-export-fatture"));
     }
 }

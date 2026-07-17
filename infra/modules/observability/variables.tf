@@ -61,3 +61,8 @@ variable "error_ingest_log_group_name" {
   description = "Log group degli errori frontend normalizzati (widget auth/sicurezza)."
   type        = string
 }
+
+variable "auth_lambda_name" {
+  description = "Nome della Lambda BFF auth (UC 0015): allarme errori sui fallimenti di login/signup."
+  type        = string
+}

@@ -67,8 +67,18 @@ gestita su base **contratto** (#13 B). Secrets (app client) in Secrets Manager; 
 
 _Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
 
-- **Campi Cognito nel `config.json` per-ambiente.** L'output Terraform `spa_config` (in
-  `infra/envs/{test,prod}/outputs.tf`, UC 0005) genera il `config.json` runtime delle 2 SPA con
-  `cognito.userPoolId`/`cognito.clientId` **placeholder vuoti**: quando questo UC crea User Pool e app client,
-  quei campi vanno valorizzati dagli output reali (la pipeline li pubblica già a ogni deploy, nessun altro
-  cablaggio necessario). **Proprietario**: UC 0015.
+- ✅ **Campi Cognito nel `config.json` per-ambiente** — **risolto dalla change `0037-use-case-0015-…`**:
+  `spa_config` (in `infra/envs/{test,prod}/outputs.tf`) ora valorizza `cognito.userPoolId`/`clientId` dagli
+  output reali del modulo `platform_shared` (pool + app client creati da questo UC).
+
+_Aggiunti dalla change `0037-use-case-0015-…` (implementazione):_
+
+- **Contratto verify/reset in cloud: token opaco `base64url(email|codice)`.** Cognito conferma con
+  email+codice; per mantenere il contratto a token unico del provider locale, il provider Cognito decodifica
+  un token opaco. Il **link nelle email** con questo formato lo deve generare il **Custom Message Lambda**
+  (→ UC 0018, tracciato lì); con le email default Cognito il codice va composto a mano (solo fase pre-0018).
+- **Verify cloud senza auto-login.** Cognito non emette token alla conferma email (serve la password):
+  `POST /verify` col provider Cognito risponde `{status:"confirmed"}` e la SPA rimanda al login
+  (fallback implementato in `VerifyEmailPage`). Divergenza consapevole da UC 0017 UC1 step 4 (tracciata in UC 0017).
+- **Prima esecuzione live** (build nativa `function.zip` in CI, doppio giro per il bucket artefatti, smoke su
+  Cognito reale in test) → checklist di attivazione in [docs/_BACKLOG.md](../../_BACKLOG.md).

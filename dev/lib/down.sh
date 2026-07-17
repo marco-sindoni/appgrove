@@ -9,9 +9,9 @@ dev down [-v] — ferma lo stack locale (docker compose down).
 EOF
     return 0
   fi
-  # auth-local è un processo host (UC 0010): si ferma anche se l'engine è giù.
-  step "arresto auth-local"
-  auth_local_stop
+  # auth è un processo host (UC 0010): si ferma anche se l'engine è giù.
+  step "arresto auth"
+  auth_stop
   if ! engine_up; then
     info "Docker daemon non attivo: niente stack da fermare."
     return 0

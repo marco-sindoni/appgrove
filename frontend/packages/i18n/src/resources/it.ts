@@ -77,6 +77,7 @@ export const it: Resources = {
     resent: 'Se l’indirizzo esiste e non è verificato, è in arrivo un nuovo link.',
     verifying: 'Verifica della tua email…',
     failed: 'Questo link di verifica non è valido o è scaduto.',
+    confirmed: 'Email verificata! Accedi per continuare.',
   },
   workspace: {
     title: 'Dai un nome al workspace',

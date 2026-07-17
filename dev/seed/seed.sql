@@ -53,5 +53,5 @@ ON CONFLICT (id) DO UPDATE SET
 --   dagli YAML in services/core/src/main/resources/pricing/, con UUID DETERMINISTICI dalla chiave stabile
 --   (CatalogIds: UUIDv3 su 'app:<slug>' / 'tier:<slug>:<key>' / 'price:<slug>:<key>:<cycle>').
 -- • SUBSCRIPTION (dipendono dal catalogo via FK): vivono in `seed-subscriptions.sql`, applicato SOLO dove il
---   catalogo esiste (core @QuarkusTest, dev/E2E dopo `sync-pricing`). I servizi di sola identità (auth-local)
+--   catalogo esiste (core @QuarkusTest, dev/E2E dopo `sync-pricing`). I servizi di sola identità (auth)
 --   applicano SOLO questo seed.sql. Vedi dev/seed/README.md.

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 // Schemi Zod dei form auth, **allineati alle Bean Validation** del backend (@Email/@NotBlank) e alla
-// password policy di auth-local (PasswordPolicy: min 10, ≥1 maiuscola, ≥1 minuscola, ≥1 cifra) — #03 dec.7.
+// password policy del servizio auth (PasswordPolicy: min 10, ≥1 maiuscola, ≥1 minuscola, ≥1 cifra) — #03 dec.7.
 // Le factory prendono `t` per messaggi localizzati (EN/IT).
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

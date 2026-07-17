@@ -263,7 +263,7 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   Ora: solo toggle `app.status` + esclusione delle app `inactive` dalla matrice admin; **nessun blocco effettivo** dell'accesso tenant.
 - **#5 Provider entitlement reale del backoffice (sostituire `StubEntitlementsProvider`)** — può **riusare la derivazione**
   entitlement (tenant×app da `subscription` + `app.status`) introdotta qui nell'admin. Vedi anche il punto UC 0020 sopra. **Owner**: core/billing.
-- **#6 `platform-admin` in cloud → UC 0016** (pre-token-gen) **+ UC 0015** (Cognito BFF). Ora: in locale il claim arriva da auth-local (`admin@appgrove.test`).
+- **#6 `platform-admin` in cloud → UC 0016** (pre-token-gen) **+ UC 0015** (Cognito BFF). Ora: in locale il claim arriva dal provider locale del servizio auth (`admin@appgrove.test`).
 - **#7 SSO cross-sottodominio** (cookie su `api.appgrove.app` valido per `app.`+`admin.`) **→ UC 0015**. Ora: `admin.local` è origin separato → login proprio per-host.
 - **#8 Hosting prod SPA admin** (CloudFront+S3/OAC+alias Route53) **→ UC 0055** (già pianificato: "2 distribuzioni CloudFront, backoffice+admin") **+ ACM/zona UC 0003**. Ora: solo dev (Caddy `admin.local` + Vite :5174).
 - **#9 Pipeline FE pubblica il bundle admin → UC 0005** (CI/CD).
@@ -372,6 +372,13 @@ in ordine:
    apply → health), dispatch native, tag `v*` (gate native + piano salvato + approvazione + promozione). Verificare il
    criterio di accettazione di UC 0005: "una PR con violazione cross-tenant non passa".
 7. **Cron `env-ops`**: verificare che lo spegnimento notturno (20:00 UTC) agisca sul cluster `appgrove-test`.
+8. **Auth cloud (UC 0015, change `0037`)** — al primo giro il bucket artefatti Lambda non esiste ancora: il job
+   `build-auth` salta l'upload con warning e l'apply non crea la Lambda; dopo il primo apply **ri-eseguire
+   `deploy-test`** (upload → apply → Lambda + route `/api/auth/*` attive). Poi **smoke su Cognito reale in test**
+   (UC 0015 §9): signup+verifica (codice dall'email default Cognito, token `base64url(email|codice)`), login,
+   refresh con rotazione cookie, logout; verificare attributi cookie e CORS dal dominio `app.test.appgrove.app`.
+   La **prima build nativa** del `function.zip` (GraalVM ARM64, profilo Maven `lambda`) è anch'essa validata solo
+   dal vivo in CI: mai eseguita localmente.
 
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).

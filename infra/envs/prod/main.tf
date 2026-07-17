@@ -60,6 +60,12 @@ variable "image_tag" {
   default     = "latest"
 }
 
+variable "auth_lambda_s3_key" {
+  description = "Chiave S3 del function.zip della Lambda BFF auth (UC 0015: per-SHA, `TF_VAR_auth_lambda_s3_key` dalla pipeline). Vuota = Lambda e route /api/auth/* non create (attivazione a fasi)."
+  type        = string
+  default     = ""
+}
+
 module "baseline" {
   source = "../../modules/env_baseline"
 
@@ -93,6 +99,9 @@ module "platform_shared" {
   use_fargate_spot      = false
 
   alert_email = var.alert_email
+
+  # BFF auth (UC 0015): artefatto Lambda per-SHA pubblicato dalla CI.
+  auth_lambda_s3_key = var.auth_lambda_s3_key
 }
 
 variable "alert_email" {
@@ -198,4 +207,5 @@ module "observability" {
   alarm_topic_warning_arn     = module.platform_shared.alarm_topic_warning_arn
   error_ingest_lambda_name    = module.platform_shared.error_ingest_lambda_name
   error_ingest_log_group_name = module.platform_shared.error_ingest_log_group_name
+  auth_lambda_name            = module.platform_shared.auth_lambda_name
 }

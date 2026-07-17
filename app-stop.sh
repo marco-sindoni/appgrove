@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # app-stop.sh — ferma TUTTO lo stack appgrove avviato da app-start.sh.
 #
-# Di default spegne sia le applicazioni (auth-local, core, fatture, SPA) SIA lo stack Compose
+# Di default spegne sia le applicazioni (auth, core, fatture, SPA) SIA lo stack Compose
 # (Postgres, Caddy, Mailpit, MinIO, ElasticMQ). I dati restano (i volumi NON vengono cancellati).
 #
 # Uso:
@@ -18,7 +18,7 @@ DEV_DIR="$REPO_ROOT/dev"
 export REPO_ROOT DEV_DIR
 RUN_DIR="$DEV_DIR/.run"
 
-# helper condivisi (ok/warn/err, compose, auth_local_stop, AUTH_PID/AUTH_PORT; carica dev/.env)
+# helper condivisi (ok/warn/err, compose, auth_stop, AUTH_PID/AUTH_PORT; carica dev/.env)
 # shellcheck source=dev/lib/common.sh
 source "$DEV_DIR/lib/common.sh"
 
@@ -52,8 +52,8 @@ stop_port() {
 }
 
 step "Stop applicazioni host"
-auth_local_stop 2>/dev/null || true   # pidfile dedicato (dev/.auth-local.pid)
-stop_port auth-local "${AUTH_PORT:-9100}"
+auth_stop 2>/dev/null || true   # pidfile dedicato (dev/.auth.pid)
+stop_port auth "${AUTH_PORT:-9100}"
 stop_port core 8080
 stop_port fatture 8081
 stop_port backoffice 5173

@@ -180,3 +180,28 @@ output "apigw_access_log_group_name" {
   description = "Log group degli access log dell'API condivisa (UC 0006)."
   value       = aws_cloudwatch_log_group.apigw_access.name
 }
+
+output "cognito_user_pool_id" {
+  description = "User pool Cognito dell'ambiente (UC 0015): entra nel config.json delle SPA."
+  value       = aws_cognito_user_pool.this.id
+}
+
+output "cognito_client_id" {
+  description = "App client confidenziale del BFF auth (UC 0015): entra nel config.json delle SPA."
+  value       = aws_cognito_user_pool_client.bff.id
+}
+
+output "auth_lambda_artifacts_bucket" {
+  description = "Bucket degli artefatti Lambda (function.zip per-SHA): la CI ci carica la build del BFF auth."
+  value       = aws_s3_bucket.lambda_artifacts.id
+}
+
+output "auth_lambda_name" {
+  description = "Nome della Lambda BFF auth (per gli allarmi observability); la funzione esiste solo con auth_lambda_s3_key valorizzata."
+  value       = local.auth_lambda_name
+}
+
+output "auth_lambda_log_group_name" {
+  description = "Log group della Lambda BFF auth."
+  value       = aws_cloudwatch_log_group.auth_lambda.name
+}

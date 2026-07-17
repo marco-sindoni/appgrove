@@ -47,10 +47,10 @@ target/
 dev/certs/*
 !dev/certs/.gitkeep
 
-# --- auth-local (UC 0010): chiavi JWT locali + pid/log del processo host ---
+# --- auth (UC 0010): chiavi JWT locali + pid/log del processo host ---
 dev/auth/
-dev/.auth-local.pid
-dev/.auth-local.log
+dev/.auth.pid
+dev/.auth.log
 
 # --- app-start/app-stop: pid/log dei processi host ---
 dev/.run/

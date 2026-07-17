@@ -21,7 +21,7 @@ import { AcceptInvitePage } from '../pages/auth/AcceptInvitePage'
 /**
  * Albero route: **pubbliche auth** (login/signup/verify/forgot/reset/accept + forbidden) e area shell
  * protetta (`requireAuth`) con pagine nested e host dei moduli app **lazy** (`/app/:appId/*`).
- * Le route auth landing dei link email (`/verify|/reset|/accept`) sono dettate da auth-local (UC 0058).
+ * Le route auth landing dei link email (`/verify|/reset|/accept`) sono dettate dal servizio auth (UC 0058).
  */
 export const routes: RouteObject[] = [
   { path: '/login', element: <LoginPage /> },

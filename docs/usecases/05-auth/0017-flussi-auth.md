@@ -109,7 +109,13 @@ _Aggiunti dalla change `0012-use-case-0017-…` (implementazione UI auth contro 
 - **Stato "2FA attivo?"** per il banner di nudge — nessun endpoint/claim espone `totpEnabled`: il banner è **dismissibile**
   (localStorage) e non riflette la verità server. Serve un claim id-token o un `GET /me` → tracciato in **UC 0058**.
 - **Specificità prod Cognito** (challenge names, Custom Message Lambda EN/IT, throttling API GW) — la UI è
-  backend-agnostica (`/api/auth/*`); in locale gira su auth-local. *Owner:* ☁ UC 0015/0016/0018.
+  backend-agnostica (`/api/auth/*`); in locale gira sul provider locale del servizio auth. *Owner:* ☁ UC 0015/0016/0018.
+- **Verify cloud senza auto-login** _(tracciato dalla change `0037-use-case-0015-…`)_ — UC1 step 4 prevede
+  l'auto-login post-verifica, ma Cognito non emette token alla `ConfirmSignUp` (servirebbe la password): col
+  provider Cognito `POST /verify` risponde `{status:"confirmed"}` e `VerifyEmailPage` mostra "email verificata,
+  accedi" rimandando al login (fallback già implementato). Conseguenza: in cloud lo **step Workspace**
+  dell'onboarding parte **dopo il primo login**, non dal link email. Se si vorrà l'auto-login pieno anche in
+  cloud servirà un flusso custom (es. Cognito custom auth challenge) — da valutare qui. *Owner:* UC 0017.
 - **QR 2FA** — ✅ reso con `qrcode.react` nella pagina Sicurezza (oltre al secret in chiaro per inserimento manuale).
 - **Cambio email con verifica** _(tracciato dalla change `0029-use-case-0033-…`, rettifica art. 16)_ — la
   rettifica self-service di UC 0033 copre il **nome visualizzato** (`PATCH /users/me`); il **cambio

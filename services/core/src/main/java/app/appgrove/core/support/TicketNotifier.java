@@ -16,7 +16,7 @@ import org.jboss.logging.Logger;
 /**
  * Notifiche email del ticketing (UC 0034, #13 D21): alla casella di supporto quando nasce un
  * ticket o l'utente risponde; a chi ha aperto il ticket quando l'admin risponde o cambia lo stato.
- * In dev le email vanno a Mailpit (come auth-local); il relay SES nel cloud è infrastruttura
+ * In dev le email vanno a Mailpit (come il servizio auth in locale); il relay SES nel cloud è infrastruttura
  * tracciata (UC 0034 "Punti aperti"). <b>Fail-soft</b>: l'email è best-effort e non deve mai far
  * fallire l'operazione sul ticket — errori loggati e inghiottiti.
  */

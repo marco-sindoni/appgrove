@@ -8,13 +8,17 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
+#   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
+#                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
+#                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
+#                Chiude la classe di bug "l'app non parte fuori dal profilo test" (regressione queue-prefix).
 #
 # Esegue TUTTE le aree selezionate (non si ferma al primo errore), raccoglie gli esiti e ritorna
 # exit-code != 0 se QUALSIASI suite fallisce. È la SORGENTE DI VERITÀ unica per "lanciare tutti i test".
 #
 # Uso:
 #   ./run-tests.sh                 # tutte le aree
-#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance
+#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance | smoke
 #   ./run-tests.sh frontend infra
 #   ./run-tests.sh -h
 set -uo pipefail
@@ -33,12 +37,12 @@ usage() { sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 AREAS=()
 for a in "$@"; do
   case "$a" in
-    backend|frontend|infra|compliance) AREAS+=("$a") ;;
+    backend|frontend|infra|compliance|smoke) AREAS+=("$a") ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance)" >&2; exit 2 ;;
+    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | smoke)" >&2; exit 2 ;;
   esac
 done
-[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance)
+[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance smoke)
 
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
@@ -134,6 +138,16 @@ run_compliance() {
   ( cd "$ROOT/tools/compliance" && npm test ) || rc=1
   ( cd "$ROOT/tools/compliance" && npm run check ) || rc=1
   if [ "$rc" -eq 0 ]; then ok "compliance: ok"; record compliance OK; else fail "compliance: check falliti"; record compliance FAIL; fi
+}
+
+# Smoke di avvio (change 0037): artefatti reali nei profili reali. Vedi tools/smoke/*.sh.
+run_smoke() {
+  hdr "SMOKE — tools/smoke (boot artefatti nei profili di spedizione + stack headless dev)"
+  ensure_colima
+  local rc=0
+  "$ROOT/tools/smoke/boot-profiles.sh"   || rc=1
+  "$ROOT/tools/smoke/stack-headless.sh"  || rc=1
+  if [ "$rc" -eq 0 ]; then ok "smoke: ok"; record smoke OK; else fail "smoke: fallito"; record smoke FAIL; fi
 }
 
 for area in "${AREAS[@]}"; do "run_$area"; done

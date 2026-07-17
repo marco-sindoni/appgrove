@@ -38,6 +38,7 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       infra: ${{ steps.filter.outputs.infra }}
       workflows: ${{ steps.filter.outputs.workflows }}
+      smoke: ${{ steps.filter.outputs.smoke }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -53,6 +54,11 @@ jobs:
               - 'infra/**'
             workflows:
               - '.github/workflows/**'
+            smoke:
+              - 'services/**'
+              - 'dev/**'
+              - 'tools/smoke/**'
+              - 'run-tests.sh'
 
   # ── Backend: suite completa se toccato (#10 34) ────────────────────────────
   backend:
@@ -153,6 +159,29 @@ jobs:
           node-version: '24'
       - name: Check compliance
         run: ./run-tests.sh compliance
+
+  # ── Smoke di avvio (change 0037): artefatti reali nei profili reali ────────
+  # NON bloccante (continue-on-error) finché non dimostra stabilità: la promozione
+  # a check required è tracciata nei Punti aperti di UC 0005. Copre la classe di
+  # bug "l'app non parte fuori dal profilo test" (regressione queue-prefix, 0036).
+  smoke:
+    needs: changes
+    if: needs.changes.outputs.smoke == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Smoke boot profili + stack headless
+        run: ./run-tests.sh smoke
+      - name: Esito nel summary (job non bloccante)
+        if: always()
+        run: |
+          echo "### Smoke avvio: ${{ job.status }} (non bloccante — promozione a required tracciata in UC 0005)" >> "$GITHUB_STEP_SUMMARY"
 
   # ── oasdiff: breaking change API — SEMPRE bloccante (#10 35) ───────────────
   # Confronta gli spec OpenAPI committati (base della PR ↔ head): un breaking

@@ -5,7 +5,7 @@
 **Data**: 2026-07-17
 **Autore**: Platform Engineering
 **Use case sorgente**: [docs/usecases/05-auth/0015-cognito-auth-bff.md](../../docs/usecases/05-auth/0015-cognito-auth-bff.md)
-**Tocca dati personali?**: Sì — email e credenziali degli utenti transitano dal BFF verso Cognito (nuovo responsabile del trattamento lato cloud). Si applica il gate privacy/RoPA di step-03 (scanner UC 0031 + classificazione MAJOR/MINOR).
+**Tocca dati personali?**: Sì — email e credenziali degli utenti transitano dal BFF verso Cognito. **Esito gate privacy (step-03): MINOR.** Nessuna nuova categoria di dati, finalità, base giuridica o retention: il trattamento (`cognito.credentials`, user pool Cognito eu-west-1, base contratto) era **già censito nel manifesto/RoPA** in forma anticipata — questa change lo rende effettivo lato codice/infra. I segnali dello scanner (38) sono: dipendenze del pom "nuove" per effetto del rename della cartella (falsi positivi) + SDK AWS (Cognito/SES/SSM/Secrets Manager: stesso fornitore AWS eu-west-1 già in essere, nessun nuovo sub-processor) + host `app.local.appgrove.app` (config tecnica locale, falso positivo). Manifesto aggiornato (testo `services/auth`) e RoPA rigenerata (`npm run assemble`). Componente: platform core.
 
 ## Problema / Obiettivo
 
@@ -54,6 +54,26 @@ identico al provider locale**, così le UI già implementate (UC 0017) funzionan
   promozione stesso artefatto in `release-prod`, aggancio del deploy Lambda (coerente col pattern
   wrapper/one-shot esistente). **Ogni pezzo di cablaggio build/deploy non realizzabile in questa
   change va tracciato esplicitamente come rimando** (richiesta esplicita dello sviluppatore).
+- **Rafforzamento della suite di test (approvato in corso d'opera, discussione col Platform
+  Engineer)**: la regressione `queue-prefix` ha rivelato un punto cieco strutturale — nessun test
+  avvia l'app fuori dal profilo `test` (bean `@UnlessBuildProfile("test")` mai istanziati). Tre
+  guardie, decise a valle dell'analisi (#10 37bis): **(1)** regola ArchUnit anti
+  `@ConfigProperty(defaultValue = "")` in core/fatture/auth; **(2)** smoke di avvio degli artefatti
+  impacchettati nei profili di spedizione (`tools/smoke/boot-profiles.sh`: core/fatture → prod,
+  auth → cloud, config finta a specchio di task definition/Lambda); **(3)** la **fetta headless**
+  dell'opzione "app-start in CI" (`tools/smoke/stack-headless.sh`: Postgres+ElasticMQ reali,
+  migrate+seed, 3 servizi in profilo dev, health + login vero) — il full app-start con
+  browser/Caddy/TLS è stato **scartato** come gate di PR (fragilità/flakiness) e resta step manuale
+  del DoD. Nuova area `smoke` in `run-tests.sh`; job CI in verify-pr **non bloccante** finché non
+  dimostra stabilità (promozione tracciata in UC 0005).
+- **Bugfix incidentale (approvato in corso d'opera)**: durante la prova dal vivo con `app-start.sh`
+  è emersa una **regressione del profilo `dev` introdotta dalla change 0036** (UC 0005), estranea a
+  UC 0015 ma che rompe l'avvio locale di `fatture`/`sync-pricing`: `appgrove.sqs.queue-prefix` con
+  `@ConfigProperty(defaultValue = "")` non supera la validazione config di Quarkus (`SRCFG00014`)
+  nei profili dove i bean SQS sono attivi (dev); i test non la coprivano perché quei bean sono
+  `@UnlessBuildProfile("test")`. Su decisione dello sviluppatore la si corregge **in questa change**
+  (iniezione `Optional<String>` in `SqsMessageQueues` di commons e `SqsWebhookQueue` di core, come
+  già per `endpoint`), per non lasciare lo stack dev rotto.
 
 ## Fuori scope
 

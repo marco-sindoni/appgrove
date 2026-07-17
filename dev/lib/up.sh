@@ -16,8 +16,8 @@ EOF
   ok "stack su"
   compose ps --format 'table {{.Service}}\t{{.Status}}' || true
 
-  # Processi-app host (modello ibrido #11 §2): auth-local su :9100 (UC 0010).
+  # Processi-app host (modello ibrido #11 §2): auth su :9100 (UC 0010).
   # Gli altri servizi/app (selettivi via `dev service`) arrivano con UC 0046.
-  step "avvio auth-local (:$AUTH_PORT)"
-  auth_local_start
+  step "avvio auth (:$AUTH_PORT)"
+  auth_start
 }

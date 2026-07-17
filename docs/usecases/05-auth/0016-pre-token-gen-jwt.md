@@ -69,3 +69,14 @@ _Tracciato dalla change `0009-use-case-0010-…` (regola CLAUDE.md "Tracciamento
   smallrye-jwt), mentre #02 dec.10 prevede il claim **`roles`** con `quarkus.oidc.roles.role-claim-path=roles`. Il
   provider locale (UC 0010) emette **entrambi** per compatibilità. Quando atterra il Pre-Token-Gen reale + Quarkus OIDC,
   **riconciliare** su un unico claim (`roles`) e allineare il `core`. **Proprietario**: UC 0016.
+
+_Aggiunto dalla change `0037-use-case-0015-…` (Cognito + auth BFF):_
+
+- **Accesso DB delle Lambda auth: ruolo dedicato least-privilege.** La Lambda BFF (UC 0015) scrive lo schema
+  `platform` (signup/accept invito) autenticandosi al proxy RDS con le credenziali **master** Aurora — unico
+  secret attaccato al proxy (`platform_shared/rds_proxy.tf`), perché `db-bootstrap` sa creare solo ruoli con
+  privilegi sul **proprio** schema. Quando questo UC aggiunge il Pre-Token-Gen (lettura `platform`): creare un
+  **ruolo DB dedicato** alle Lambda auth (estendere `db-bootstrap` con una modalità *grant su schema altrui* +
+  `ALTER DEFAULT PRIVILEGES`), attaccarne il secret al proxy, e valutare l'**IAM auth** del proxy + la stretta
+  del security group del proxy alla sola SG delle Lambda (già annotata in `rds_proxy.tf` per UC 0014).
+  **Proprietario**: UC 0016 (con UC 0014). Vedi anche E23 in `_EVOLUZIONI-DEVOPS`.

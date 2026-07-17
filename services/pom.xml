@@ -14,7 +14,7 @@
   <modules>
     <module>commons</module>
     <module>core</module>
-    <module>auth-local</module>
+    <module>auth</module>
     <module>fatture</module>
   </modules>
 

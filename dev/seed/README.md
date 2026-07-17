@@ -60,7 +60,7 @@ YAML in `services/core/.../pricing/` per i valori.
 
 > File separato: **`seed-subscriptions.sql`** (dipende dal catalogo via FK). Applicato **solo** dove il catalogo
 > esiste — core `@QuarkusTest` (loader allo startup) e dev/E2E (dopo `sync-pricing`). I servizi di sola identità
-> (es. auth-local) applicano **solo** `seed.sql` (accounts/users/invitations), non le subscription.
+> (es. auth) applicano **solo** `seed.sql` (accounts/users/invitations), non le subscription.
 
 | Tenant | App | Tier | Stato | Note |
 |---|---|---|---|---|

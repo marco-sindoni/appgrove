@@ -123,3 +123,34 @@ resource "aws_cloudwatch_event_target" "ecs_task_failed_sns" {
   rule = aws_cloudwatch_event_rule.ecs_task_failed.name
   arn  = var.alarm_topic_critical_arn
 }
+
+# ── BFF auth: fallimenti della Lambda = utenti che non entrano (UC 0015) ─────
+# La metrica Errors conta solo i crash dell'invocazione (le 401/400 applicative
+# sono risposte regolari): qualunque valore > 0 merita attenzione.
+
+resource "aws_cloudwatch_metric_alarm" "auth_lambda_errors" {
+  alarm_name        = "${local.name_prefix}-auth-errors"
+  alarm_description = "Errori della Lambda BFF auth (${var.env}): login/signup potrebbero essere fuori uso"
+
+  namespace   = "AWS/Lambda"
+  metric_name = "Errors"
+  statistic   = "Sum"
+
+  dimensions = {
+    FunctionName = var.auth_lambda_name
+  }
+
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  actions_enabled = local.alarms_enabled
+  alarm_actions   = [var.alarm_topic_warning_arn]
+  ok_actions      = [var.alarm_topic_warning_arn]
+
+  tags = {
+    Name = "${local.name_prefix}-auth-errors"
+  }
+}

@@ -14,7 +14,7 @@ import { Field } from './auth/Field'
 
 /**
  * Setup 2FA TOTP dal profilo (UC 0017 UC10): enroll → QR/secret → verifica codice → attiva.
- * La **disattivazione** non è implementabile (auth-local non espone `/2fa/disable`) — rinvio tracciato.
+ * La **disattivazione** non è implementabile (il servizio auth non espone `/2fa/disable`) — rinvio tracciato.
  */
 export function SecurityPage() {
   const { t } = useTranslation()

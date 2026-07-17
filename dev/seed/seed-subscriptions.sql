@@ -5,7 +5,7 @@
 -- Applicarlo SOLO dove il catalogo esiste:
 --   • core (@QuarkusTest): catalogo dal loader allo startup → SeedDataTest/AdminApiTest applicano seed.sql + questo;
 --   • dev/E2E: `dev seed` esegue `sync-pricing` (loader) e poi applica seed.sql + questo.
--- I servizi di sola identità (es. auth-local) applicano SOLO seed.sql (accounts/users/invitations) e NON questo:
+-- I servizi di sola identità (es. auth) applicano SOLO seed.sql (accounts/users/invitations) e NON questo:
 -- non hanno il loader e non usano le subscription.
 --
 -- IDEMPOTENTE (ON CONFLICT) · DETERMINISTICO (UUID/timestamp fissi) · gli UUID di app/tier sono quelli

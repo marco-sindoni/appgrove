@@ -30,7 +30,9 @@ resource "aws_security_group" "vpc_endpoints" {
 
 locals {
   # Servizi raggiunti via endpoint privato con la topologia no-NAT (#06 18).
-  interface_endpoints = ["cognito-idp", "secretsmanager"]
+  # `ssm` aggiunto da UC 0015: la Lambda BFF auth (in VPC, niente uscita
+  # internet dalle ENI) legge il client secret Cognito da Parameter Store.
+  interface_endpoints = ["cognito-idp", "secretsmanager", "ssm"]
 }
 
 data "aws_region" "current" {}

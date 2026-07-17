@@ -26,13 +26,13 @@ CERT_CRT="$CERT_DIR/local.appgrove.app.pem"
 CERT_KEY="$CERT_DIR/local.appgrove.app-key.pem"
 DOMAINS=(local.appgrove.app app.local.appgrove.app admin.local.appgrove.app api.local.appgrove.app)
 
-# ── auth-local (UC 0010): provider auth come PROCESSO host su :9100 (modello ibrido #11 §2) ──
+# ── auth (UC 0010): provider auth come PROCESSO host su :9100 (modello ibrido #11 §2) ──
 AUTH_DIR="$DEV_DIR/auth"
 AUTH_PRIV="$AUTH_DIR/privateKey.pem"
 AUTH_PUB="$AUTH_DIR/publicKey.pem"
-AUTH_PID="$DEV_DIR/.auth-local.pid"
-AUTH_LOG="$DEV_DIR/.auth-local.log"
-AUTH_JAR="$REPO_ROOT/services/auth-local/target/quarkus-app/quarkus-run.jar"
+AUTH_PID="$DEV_DIR/.auth.pid"
+AUTH_LOG="$DEV_DIR/.auth.log"
+AUTH_JAR="$REPO_ROOT/services/auth/target/quarkus-app/quarkus-run.jar"
 AUTH_PORT=9100
 
 # Carica le porte da dev/.env (se presente) così doctor riflette la config reale.
@@ -92,27 +92,27 @@ port_in_use() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 host_mapped() { grep -qiE "^[[:space:]]*127\.0\.0\.1[[:space:]]+.*[[:space:]]$1([[:space:]]|\$)" /etc/hosts 2>/dev/null; }
 
-# ── auth-local lifecycle (UC 0010): host-process su :9100, raggiunto dal proxy via host.docker.internal ──
+# ── auth lifecycle (UC 0010): host-process su :9100, raggiunto dal proxy via host.docker.internal ──
 gen_jwt_keys() {
   [ -f "$AUTH_PRIV" ] && [ -f "$AUTH_PUB" ] && return 0
-  require_cmd openssl || { warn "openssl assente: chiavi JWT non generate (auth-local non partirà)."; return 1; }
+  require_cmd openssl || { warn "openssl assente: chiavi JWT non generate (auth non partirà)."; return 1; }
   mkdir -p "$AUTH_DIR"
   openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$AUTH_PRIV" 2>/dev/null \
     && openssl rsa -in "$AUTH_PRIV" -pubout -out "$AUTH_PUB" 2>/dev/null
 }
 
-auth_local_running() { [ -f "$AUTH_PID" ] && kill -0 "$(cat "$AUTH_PID")" 2>/dev/null; }
+auth_running() { [ -f "$AUTH_PID" ] && kill -0 "$(cat "$AUTH_PID")" 2>/dev/null; }
 
-auth_local_start() {
-  require_cmd java || { warn "java assente: salto auth-local (UC 0010)."; return 0; }
-  if auth_local_running; then ok "auth-local già attivo (pid $(cat "$AUTH_PID"))"; return 0; fi
+auth_start() {
+  require_cmd java || { warn "java assente: salto auth (UC 0010)."; return 0; }
+  if auth_running; then ok "auth già attivo (pid $(cat "$AUTH_PID"))"; return 0; fi
   if [ ! -f "$AUTH_PRIV" ] || [ ! -f "$AUTH_PUB" ]; then
-    gen_jwt_keys || { warn "chiavi JWT mancanti: esegui ./dev.sh setup. auth-local non avviato."; return 0; }
+    gen_jwt_keys || { warn "chiavi JWT mancanti: esegui ./dev.sh setup. auth non avviato."; return 0; }
   fi
   if [ ! -f "$AUTH_JAR" ]; then
-    step "build auth-local (prima esecuzione)"
-    ( cd "$REPO_ROOT/services" && mvn -q -pl auth-local -am -DskipTests package ) \
-      || { warn "build auth-local fallita: avvio saltato."; return 0; }
+    step "build auth (prima esecuzione)"
+    ( cd "$REPO_ROOT/services" && mvn -q -pl auth -am -DskipTests package ) \
+      || { warn "build auth fallita: avvio saltato."; return 0; }
   fi
   # profilo dev: applica i %dev (Flyway migrate auth_local, mailer→Mailpit, bypass 2FA).
   AUTH_LOCAL_PRIVATE_KEY="$AUTH_PRIV" AUTH_LOCAL_PUBLIC_KEY="$AUTH_PUB" \
@@ -121,12 +121,12 @@ auth_local_start() {
   QUARKUS_HTTP_PORT="$AUTH_PORT" \
   nohup java -Dquarkus.profile=dev -jar "$AUTH_JAR" >"$AUTH_LOG" 2>&1 &
   echo $! > "$AUTH_PID"
-  ok "auth-local avviato su :$AUTH_PORT (pid $(cat "$AUTH_PID"), log dev/.auth-local.log)"
+  ok "auth avviato su :$AUTH_PORT (pid $(cat "$AUTH_PID"), log dev/.auth.log)"
 }
 
-auth_local_stop() {
-  auth_local_running || { rm -f "$AUTH_PID"; return 0; }
+auth_stop() {
+  auth_running || { rm -f "$AUTH_PID"; return 0; }
   local pid; pid="$(cat "$AUTH_PID")"
-  kill "$pid" 2>/dev/null && ok "auth-local fermato (pid $pid)"
+  kill "$pid" 2>/dev/null && ok "auth fermato (pid $pid)"
   rm -f "$AUTH_PID"
 }

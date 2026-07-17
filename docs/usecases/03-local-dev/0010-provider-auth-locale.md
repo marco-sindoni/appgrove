@@ -18,6 +18,11 @@
 > **commentata** in `dev/Caddyfile` (snippet `(api_routes)` + per-host). Questo UC deve **scommentarli e riempirli**
 > (immagine/build, firma JWT/JWKS, claim dal DB, refresh cookie, TOTP, email su Mailpit) — non reinventare lo stack.
 
+> **Rename da change `0037-use-case-0015-…`.** Il servizio è stato rinominato **`services/auth`** (un nome che
+> finisce in prod non può chiamarsi "-local") e ristrutturato attorno alla **porta `IdentityProvider`** prevista
+> da §6: strato HTTP unico + impl `Local` (questo UC/UC 0058, comportamento invariato) e impl `Cognito` (UC 0015).
+> Lo schema DB dev-only resta `auth_local`.
+
 > **Open point da change 0004 (UC 0009).** Negli script `dev/` ci sono due agganci da riempire qui:
 > (1) `dev/lib/setup.sh` passo **"6/8 Chiavi JWT locali"** è uno **stub** — generare/persistere le chiavi JWT locali;
 > (2) `dev/lib/up.sh` ha un **hook "processi-app"** vuoto — avviare `auth-local` (scommentando il servizio in

@@ -62,8 +62,10 @@ Lo script **[run-tests.sh](run-tests.sh)** alla root è la **sorgente di verità
 di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via npm/vitest **+ Playwright e2e L2**, browser
 auto-installato — UC 0029; la suite L3 sandbox è pre-release e resta fuori), infra (`infra/` via Terraform), compliance
 (`tools/compliance` via Node — parità lingue dei manifesti dati + freshness RoPA, UC 0030, + test dello scanner segnali
-privacy `privacy-scan.mjs`, UC 0031; il check `@PersonalData`↔manifesto gira nei test backend). Esegue tutte le aree, non si ferma al primo errore e ritorna exit-code ≠ 0 se una qualsiasi suite è
-rossa (`./run-tests.sh` per tutto, oppure `./run-tests.sh backend|frontend|infra|compliance`).
+privacy `privacy-scan.mjs`, UC 0031; il check `@PersonalData`↔manifesto gira nei test backend), smoke (`tools/smoke` —
+avvio REALE degli artefatti nei profili di spedizione + stack backend headless con login vero, #10 37bis: chiude la
+classe "l'app non parte fuori dal profilo test"). Esegue tutte le aree, non si ferma al primo errore e ritorna exit-code ≠ 0 se una qualsiasi suite è
+rossa (`./run-tests.sh` per tutto, oppure `./run-tests.sh backend|frontend|infra|compliance|smoke`).
 
 **Va tenuto costantemente aggiornato**: ogni change che **aggiunge/rimuove un modulo** (`services/<app>`, package frontend) o
 **cambia il comando di test** di un'area DEVE aggiornare `run-tests.sh` nello stesso commit, così che resti l'unico entrypoint

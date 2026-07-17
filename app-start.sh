@@ -9,7 +9,7 @@
 #      → ripara il proxy Caddy se non risponde (es. immagine amd64 emulata che va in panic);
 #   4. seed idempotente (migrazioni Flyway + utenti seed);       [salta con --no-seed]
 #   5. build dipendenze (pom padre + commons in ~/.m2, npm install frontend); [salta con --no-build]
-#   6. auth-local (:9100), core (:8080), fatture (:8081);        [riavvia ciò che è morto]
+#   6. auth (:9100), core (:8080), fatture (:8081);        [riavvia ciò che è morto]
 #   7. SPA backoffice (:5173) + admin (:5174);                   [salta con --no-spa]
 #   8. health-check END-TO-END via Caddy/HTTPS (SPA, auth, core, fatture).
 #
@@ -28,7 +28,7 @@ export REPO_ROOT DEV_DIR
 RUN_DIR="$DEV_DIR/.run"
 mkdir -p "$RUN_DIR"
 
-# Helper condivisi (ok/warn/step/info/err/die, compose/ensure_engine/ensure_env/certs/auth_local_start;
+# Helper condivisi (ok/warn/step/info/err/die, compose/ensure_engine/ensure_env/certs/auth_start;
 # carica anche dev/.env → POSTGRES_*, porte). Vedi dev/lib/common.sh.
 # shellcheck source=dev/lib/common.sh
 source "$DEV_DIR/lib/common.sh"
@@ -106,11 +106,11 @@ wait_pg() {
   ok "Postgres healthy"
 }
 
-# ── auth-local sempre su (idempotente, ricostruisce il jar se manca) ───────────
-ensure_auth_local() {
-  if port_in_use "$AUTH_PORT"; then ok "auth-local già attivo (:$AUTH_PORT)"; return 0; fi
+# ── auth sempre su (idempotente, ricostruisce il jar se manca) ───────────
+ensure_auth() {
+  if port_in_use "$AUTH_PORT"; then ok "auth già attivo (:$AUTH_PORT)"; return 0; fi
   rm -f "$AUTH_PID"   # pid stantio (processo morto): ripulisci e riavvia
-  auth_local_start
+  auth_start
 }
 
 # ── health-check end-to-end via HTTPS (con retry: i servizi bootano lentamente) ─
@@ -170,9 +170,9 @@ if [ "$BUILD" -eq 1 ]; then
   fi
 fi
 
-# 6) auth-local + backend
-log "auth-local (:$AUTH_PORT)"
-ensure_auth_local
+# 6) auth + backend
+log "auth (:$AUTH_PORT)"
+ensure_auth
 
 #    core (:8080) e fatture (:8081) → Postgres CONDIVISO (no DevServices); debug 5005/5006 distinti.
 start_bg core 8080 bash -c "cd '$REPO_ROOT/services' && \
@@ -197,7 +197,7 @@ fi
 
 # 8) readiness porte (boot Quarkus/Vite)
 log "Attendo l'avvio dei processi…"
-wait_port "$AUTH_PORT" 60 && ok "auth-local pronto (:$AUTH_PORT)" || warn "auth-local non su :$AUTH_PORT — vedi dev/.auth-local.log"
+wait_port "$AUTH_PORT" 60 && ok "auth pronto (:$AUTH_PORT)" || warn "auth non su :$AUTH_PORT — vedi dev/.auth.log"
 wait_port 8080 && ok "core pronto (:8080)" || warn "core non pronto entro il timeout — vedi dev/.run/core.log"
 wait_port 8081 && ok "fatture pronto (:8081)" || warn "fatture non pronto entro il timeout — vedi dev/.run/fatture.log"
 if [ "$SPA" -eq 1 ]; then
@@ -207,7 +207,7 @@ fi
 
 # 9) health-check END-TO-END via Caddy/HTTPS (la verità che conta per il browser)
 log "Verifica end-to-end (via Caddy / HTTPS)"
-report "auth-local  /api/auth/jwks" "https://app.local.appgrove.app/api/auth/jwks" is200
+report "auth  /api/auth/jwks" "https://app.local.appgrove.app/api/auth/jwks" is200
 report "core        /api/platform/v1/" "https://app.local.appgrove.app/api/platform/v1/" reachable
 report "fatture     /api/fatture/v1/" "https://app.local.appgrove.app/api/fatture/v1/" reachable
 if [ "$SPA" -eq 1 ]; then
@@ -226,7 +226,7 @@ $( [ "$SPA" -eq 1 ] && echo "    • Console admin (single-origin) https://admin
 $( [ "$SPA" -eq 1 ] && echo "    • SPA dirette (no /api/*) ..... http://localhost:5173 · http://localhost:5174" )
     • core API (diretto) .......... http://localhost:8080/api/platform/v1/
     • fatture API (diretto) ....... http://localhost:8081/api/fatture/v1/   (app #1, UC 0051/0052)
-    • auth-local API (diretto) .... http://localhost:9100/api/auth/
+    • auth API (diretto) .... http://localhost:9100/api/auth/
 
   Utility / stack locale (Compose):
     • Mailpit (email) ....... http://localhost:${MAILPIT_UI_PORT:-8025}
@@ -238,7 +238,7 @@ $( [ "$SPA" -eq 1 ] && echo "    • SPA dirette (no /api/*) ..... http://localh
   Utenti seed (password Password1!): owner@acme.test · admin@acme.test · member@acme.test · bob@bob.test
                                      · admin@appgrove.test (platform-admin → console admin)
 
-  Log:  tail -f dev/.run/{core,fatture,backoffice,admin}.log  ·  auth-local: dev/.auth-local.log
+  Log:  tail -f dev/.run/{core,fatture,backoffice,admin}.log  ·  auth: dev/.auth.log
   Stop: ./app-stop.sh
 EOF
 

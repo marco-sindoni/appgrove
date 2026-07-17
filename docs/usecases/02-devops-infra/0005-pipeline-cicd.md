@@ -113,6 +113,11 @@ GitHub sono tracciate in [docs/_BACKLOG.md](../../_BACKLOG.md), sezione "Attivaz
 - **Secret Paddle per-env + secret GitHub `APPGROVE_L3_*`** → UC 0001.
 - **Liste per-servizio nei workflow** (matrix/loop `platform fatture`) da aggiornare a ogni nuova app → UC 0046
   (gli agganci Terraform sono già automatici via `service-add`: `image_tag`, marker `ci-services`, observability).
+- **Promozione del job `smoke` di verify-pr a check bloccante** _(tracciato dalla change `0037-use-case-0015-…`)_ —
+  il job (area `smoke` di `run-tests.sh`: boot artefatti nei profili di spedizione + stack headless dev, nato dalla
+  regressione `queue-prefix` di questo UC, #10 37bis) parte **non bloccante** (`continue-on-error`): dopo un periodo
+  di run stabili (indicativamente 2–3 settimane senza falsi rossi) va promosso a **required** in branch protection e
+  tolto il `continue-on-error`. **Proprietario**: UC 0005 (configurazione repo, vedi anche _BACKLOG "Attivazione").
 - **Prima esecuzione live + configurazione repo GitHub** (variabile `AWS_ACCOUNT_ID`, environment `prod`, branch
   protection/check required, `INFRACOST_API_KEY`, verifica fatturazione runner ARM64 su repo privato) →
   [docs/_BACKLOG.md](../../_BACKLOG.md), "Attivazione ambienti cloud".

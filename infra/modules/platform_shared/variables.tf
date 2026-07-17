@@ -51,3 +51,15 @@ variable "alert_email" {
   description = "Destinatario email degli allarmi (#08 15): sottoscritto ai topic SNS critical/warning (la subscription va confermata via mail)."
   type        = string
 }
+
+variable "auth_lambda_s3_key" {
+  description = <<-EOT
+    Chiave S3 (nel bucket artefatti per-env) del function.zip della Lambda BFF
+    auth, per-SHA come le immagini ECR (es. auth/<sha>-native.zip). La imposta
+    la CI via TF_VAR_auth_lambda_s3_key (UC 0005/0015). Vuota finché la prima
+    build non è pubblicata: Lambda e route /api/auth/* non vengono create
+    (attivazione a fasi, _BACKLOG).
+  EOT
+  type        = string
+  default     = ""
+}

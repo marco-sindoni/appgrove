@@ -19,7 +19,7 @@ import org.jboss.logging.Logger;
  * <p>Semantica errori: messaggio malformato → non confermato → redrive/DLQ; <b>export fallito</b> →
  * esito {@code FAILED} al core (job FAILED, #13 D22) e messaggio confermato; invio esito fallito
  * (coda giù) → non confermato → redrive (l'export è idempotente: il frammento si sovrascrive).
- * Nei servizi senza contratto (es. auth-local) il worker è inerte. Pattern poller/drain di
+ * Nei servizi senza contratto (es. auth col provider locale) il worker è inerte. Pattern poller/drain di
  * {@code PaddleWebhookConsumer} (in test lo scheduler è spento e {@link #drain()} è invocato).
  */
 @ApplicationScoped
@@ -31,7 +31,7 @@ public class GdprExportWorker {
     @Inject
     Instance<AppDataContract> contract;
 
-    // Instance<> (lazy): nei servizi SENZA AppDataContract (es. auth-local) il worker è inerte e
+    // Instance<> (lazy): nei servizi SENZA AppDataContract (es. auth col provider locale) il worker è inerte e
     // non deve richiedere code/storage — che nel profilo test esistono solo come @Mock dei servizi
     // che partecipano al framework GDPR.
     @Inject

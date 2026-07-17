@@ -1,4 +1,4 @@
-// Chiamate al provider auth (`/api/auth/*`, auth-local UC 0010/0058 in locale; auth BFF/Cognito in cloud).
+// Chiamate al provider auth (`/api/auth/*`, servizio auth: provider locale UC 0010/0058 in dev, provider Cognito UC 0015 in cloud).
 // Questi endpoint NON sono nello spec OpenAPI del core → fetch raw qui (non passano dall'api-client generato).
 // Gli errori del backend sono RFC 9457 problem+json → li mappiamo in `ApiError` con `toApiError`.
 // Il refresh token viaggia SOLO come cookie HttpOnly → `credentials: 'include'`.
@@ -115,10 +115,19 @@ export async function signup(
   await post(authBaseUrl, '/signup', body)
 }
 
-/** `POST /api/auth/verify` → verifica email + **auto-login** (token). */
-export async function verifyEmail(authBaseUrl: string, token: string): Promise<SessionTokens> {
+/**
+ * `POST /api/auth/verify` → verifica email. Col provider locale la risposta porta i token
+ * (**auto-login**); col provider Cognito (UC 0015) la conferma avviene senza credenziali e la
+ * risposta è `{status:"confirmed"}` → si ritorna `null` e la UI rimanda al login.
+ */
+export async function verifyEmail(
+  authBaseUrl: string,
+  token: string,
+): Promise<SessionTokens | null> {
   const res = await post(authBaseUrl, '/verify', { token })
-  return toSession((await res.json()) as TokenResponse)
+  const body = (await res.json()) as TokenResponse | { status: string }
+  if ('access_token' in body) return toSession(body)
+  return null
 }
 
 /** `POST /api/auth/verify/resend` → 202 (risposta neutra anti-enumeration). */
@@ -150,7 +159,7 @@ export async function acceptInvitation(
 
 /**
  * `POST /api/auth/invitations/send` — invia l'email d'invito dato il token grezzo del core (UC 0059).
- * In locale auth-local manda la mail a Mailpit; in cloud l'orchestrazione passa dal BFF (stesso path).
+ * In locale il servizio auth manda la mail a Mailpit; in cloud l'orchestrazione passa dal BFF (stesso path).
  */
 export async function sendInvitation(
   authBaseUrl: string,
