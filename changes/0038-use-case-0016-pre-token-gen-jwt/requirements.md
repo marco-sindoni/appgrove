@@ -37,7 +37,7 @@ Il risultato deve essere **comportamentalmente identico** a ciò che già fa il 
 
 ### 4. Validazione JWT nei servizi (`services/core`, `services/fatture`)
 - **Riconciliazione `groups` → `roles`** (decisione differita di proprietà di questo UC): impostare `smallrye.jwt.path.groups=roles` così `@RolesAllowed` matcha sul claim `roles` (#02 dec.10). Il provider Local emette già sia `groups` sia `roles` con lo stesso contenuto → nessun cambio al token; è un cambio di *dove* i servizi leggono i ruoli. Allineare il commento in `Roles.java` (core).
-- Aggiungere la config profilo cloud/prod: `mp.jwt.verify.issuer` = emittente del pool Cognito e `mp.jwt.verify.publickey.location` = URL JWKS del pool (iniettati per-ambiente). Manteniamo **smallrye-jwt** (già usato da tutti i servizi, stesso percorso della parità locale): la verifica di firma via JWKS + emittente soddisfa la decisione #02.11 "Quarkus OIDC" nella sostanza. Gli access token Cognito portano `client_id` (non `aud`): l'autenticità è data da emittente + firma + `token_use=access`; l'eventuale confronto su `client_id` è trattato in implementazione (un solo client confidenziale).
+- Aggiungere la config profilo cloud/prod: `mp.jwt.verify.issuer` = emittente del pool Cognito e `mp.jwt.verify.publickey.location` = URL JWKS del pool (iniettati per-ambiente). Manteniamo **smallrye-jwt** (già usato da tutti i servizi, stesso percorso della parità locale): la verifica di firma via JWKS + emittente soddisfa la decisione #02.11 "Quarkus OIDC" nella sostanza. Gli access token Cognito portano `client_id` (non `aud`): oltre a firma + emittente, i servizi verificano **`token_use = access`** (accettano solo access token, mai id token) e confrontano **`client_id`** con l'identificatore del client confidenziale (difesa in profondità sul "destinatario", fatta sul campo corretto per Cognito). Nel profilo locale la parità è garantita perché il provider Local emette gli stessi claim (`token_use=access`, ruoli in `roles`).
 
 ### 5. Documentazione e tracciamento (`docs/`)
 - Spostare la nota `groups`/`roles` nel documento UC 0016 da *differita* a **risolta in questa change**.
@@ -58,6 +58,7 @@ Il risultato deve essere **comportamentalmente identico** a ciò che già fa il 
 - [ ] Cognito: `user_pool_tier = ESSENTIALS` + trigger `pre_token_generation_config` `V2_0` cablato in modo condizionale; `terraform fmt/validate` puliti; nessuna risorsa creata finché la Lambda non esiste (attivazione a fasi conservata).
 - [ ] Ruolo DB `auth_lambdas` a privilegi minimi creato da `db-bootstrap` (idempotente), segreto agganciato al proxy; Pre-Token-Gen e BFF puntano al nuovo segreto (BFF senza modifiche di codice); le Lambda auth non usano più il master.
 - [ ] Servizi (`core`, `fatture`): `@RolesAllowed` matcha su `roles`; config cloud emittente/JWKS Cognito presente. Suite **security** verde: JWT senza `tenant_id` → negato; token forgiato/scaduto → negato; `tenant_id` in body/param **ignorato**.
+- [ ] Servizi: la validazione del token verifica **`token_use = access`** (un id token viene rifiutato) **e** `client_id` = client confidenziale atteso (token con `client_id` diverso → rifiutato). Coperto da test.
 - [ ] **Parità**: i claim del provider Local e quelli attesi dalla Pre-Token-Gen producono lo stesso comportamento di autorizzazione nei servizi (stesso percorso di codice).
 - [ ] Tutti i rimandi a UC 0014 / E23 tracciati nei file dei rispettivi UC/registro **prima** della chiusura (cancello di tracciamento).
 
@@ -71,7 +72,7 @@ Il risultato deve essere **comportamentalmente identico** a ciò che già fa il 
 ## Requisiti di test
 
 - **Lambda (Python)**: iniezione claim corretta dato un utente attivo; **fail-closed** senza membership / utente disattivato / `deleted_at` valorizzato; regola `platform-admin`. (Cablare l'area di test in `run-tests.sh` se introduce un comando nuovo.)
-- **Security nei servizi** (core/fatture): JWT privo di `tenant_id` → 401/403; token con firma non valida o scaduto → rifiutato; claim `tenant_id`/ruoli forniti in body/param → **ignorati** (letti solo dal token). Autorizzazione su `roles` (guard che il match non avvenga più su `groups`).
+- **Security nei servizi** (core/fatture): JWT privo di `tenant_id` → 401/403; token con firma non valida o scaduto → rifiutato; claim `tenant_id`/ruoli forniti in body/param → **ignorati** (letti solo dal token). Autorizzazione su `roles` (guard che il match non avvenga più su `groups`). Token con `token_use` ≠ `access` (es. id token) → rifiutato; token con `client_id` diverso da quello atteso → rifiutato.
 - **Parità**: un token in forma "locale" (claim `roles` + `tenant_id`) supera le stesse guardie di autorizzazione dei servizi.
 
 ## Valutazione di impatto
