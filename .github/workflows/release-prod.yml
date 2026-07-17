@@ -1,0 +1,266 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# release-prod — tag `v*` = release in PROD, manuale e controllata (#07 2/21).
+#
+# Promozione = stesso SHA congelato dal tag: immagini NATIVE già su ECR test
+# (gate bloccante #07 23, niente rebuild), stesso bundle frontend (copia S3
+# test→prod, cambia solo config.json, #07 13/22), stesso commit Terraform.
+# Flusso prod (#07 4): plan SALVATO → approvazione (GitHub Environment `prod`,
+# required reviewer) → apply di ESATTAMENTE quel piano.
+#
+# Smoke L3 Paddle pre-release (UC 0029): auto-skip finché i secret APPGROVE_L3_*
+# non esistono (account sandbox = UC 0001); override motivato via dispatch
+# (`gh workflow run release-prod.yml --ref vX.Y.Z -f l3_override_reason='…'`),
+# con la motivazione registrata nel summary della run (audit).
+#
+# Il ruolo OIDC prod è assumibile SOLO da ref di tag (#07 25): questo workflow
+# gira sempre sul ref del tag (anche in dispatch).
+# ─────────────────────────────────────────────────────────────────────────────
+name: release-prod
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      l3_override_reason:
+        description: motivazione dell'override del gate L3 (registrata; solo se il sandbox Paddle è down)
+        type: string
+        default: ''
+
+concurrency:
+  group: release-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC (#07 1/25): nessuna chiave AWS
+
+env:
+  AWS_REGION: eu-west-1
+
+jobs:
+  # ── Verifiche preliminari: tag su main + gate native bloccante (#07 23) ────
+  checks:
+    if: vars.AWS_ACCOUNT_ID != ''
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Metadati della release
+        id: meta
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          case "$TAG" in v*) ;; *) echo "::error::il ref '$TAG' non è un tag v*: lanciare sul ref del tag"; exit 1 ;; esac
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${GITHUB_SHA}-native" >> "$GITHUB_OUTPUT"
+      - name: Il commit taggato deve stare su main (#07 21)
+        run: |
+          git fetch origin main --quiet
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::il tag non punta a un commit di main"; exit 1; }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-test
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Gate native bloccante — immagini GraalVM su ECR test per questo SHA
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          MISSING=()
+          for app in platform fatture; do
+            aws ecr describe-images --repository-name "appgrove-test-$app" \
+              --image-ids imageTag="${GITHUB_SHA}-native" >/dev/null 2>&1 || MISSING+=("$app")
+          done
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            SHORT="${GITHUB_SHA::7}"
+            cat <<EOF
+          ════════════════════════════════════════════════════════════════════
+          ❌  RELEASE IN PROD BLOCCATA — manca l'immagine native (GraalVM)
+          ════════════════════════════════════════════════════════════════════
+          Tag: $TAG   Commit (SHA): $SHORT
+          Servizi senza immagine native su ECR: ${MISSING[*]}
+
+          Una release in prod promuove SOLO immagini GraalVM già costruite e testate.
+
+          ✅ COME SBLOCCARTI (consigliato — nessun commit aggiuntivo)
+            1. Actions → "deploy-test" → Run workflow
+            2. Branch: main (fermo su $SHORT)
+            3. ☑ build native (GraalVM)
+            4. Avvia; quando è verde, ri-crea il tag su $SHORT.
+
+          ↩️ Fallback: PR minima mergiata con [graal], poi tagga il nuovo commit.
+
+          Promemoria: fai SEMPRE l'ultimo merge pre-release con [graal].
+          ════════════════════════════════════════════════════════════════════
+          EOF
+            exit 1
+          fi
+          echo "Gate native OK: immagini ${GITHUB_SHA::7}-native presenti per tutti i servizi."
+
+  # ── Smoke L3 Paddle contro l'ambiente test deployato (UC 0029, #09 D20) ────
+  l3-smoke:
+    needs: checks
+    runs-on: ubuntu-latest
+    env:
+      APPGROVE_L3_BASE_URL: ${{ secrets.APPGROVE_L3_BASE_URL }}
+      APPGROVE_L3_USER_EMAIL: ${{ secrets.APPGROVE_L3_USER_EMAIL }}
+      APPGROVE_L3_USER_PASSWORD: ${{ secrets.APPGROVE_L3_USER_PASSWORD }}
+      OVERRIDE_REASON: ${{ inputs.l3_override_reason }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stato del gate L3
+        id: gate
+        run: |
+          if [ -z "$APPGROVE_L3_BASE_URL" ]; then
+            echo "::warning::L3 auto-skip: secret APPGROVE_L3_* assenti (account Paddle sandbox = UC 0001)."
+            echo "### Gate L3: SKIP (secret assenti — UC 0001)" >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$OVERRIDE_REASON" ]; then
+            echo "::warning::Gate L3 in OVERRIDE motivato: $OVERRIDE_REASON"
+            {
+              echo "### Gate L3: OVERRIDE MANUALE (audit)"
+              echo "- Motivazione: $OVERRIDE_REASON"
+              echo "- Autore: $GITHUB_ACTOR"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Smoke L3 (Paddle sandbox, ambiente test)
+        if: steps.gate.outputs.run == 'true'
+        # Con override motivato l'esito non blocca (sandbox down): resta registrato.
+        continue-on-error: ${{ inputs.l3_override_reason != '' }}
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test -c apps/backoffice/playwright.l3.config.ts
+
+  # ── Plan prod SALVATO (#07 4): si approva esattamente questo ───────────────
+  plan-prod:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-prod
+          aws-region: ${{ env.AWS_REGION }}
+      - name: terraform plan prod → file salvato
+        env:
+          TF_VAR_image_tag: ${{ needs.checks.outputs.image_tag }}
+        run: ./infra/scripts/plan prod --out "$RUNNER_TEMP/prod.tfplan" | tee plan-prod.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prod-tfplan-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/prod.tfplan
+            plan-prod.txt
+          retention-days: 7
+
+  # ── Gate di approvazione + release (#07 4/21/23) ───────────────────────────
+  # L'environment `prod` (required reviewer, setup manuale nel repo GitHub)
+  # ferma QUI la pipeline finché l'approver non dà l'OK guardando il plan.
+  release:
+    needs: [checks, l3-smoke, plan-prod]
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      IMAGE_TAG: ${{ needs.checks.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: prod-tfplan-${{ github.sha }}
+          path: ${{ runner.temp }}/plan
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-prod
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Promozione immagini native test→prod (stesso SHA, niente rebuild, #07 23)
+        env:
+          REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+        run: |
+          for app in platform fatture; do
+            docker pull "$REGISTRY/appgrove-test-$app:$IMAGE_TAG"
+            docker tag "$REGISTRY/appgrove-test-$app:$IMAGE_TAG" "$REGISTRY/appgrove-prod-$app:$IMAGE_TAG"
+            docker push "$REGISTRY/appgrove-prod-$app:$IMAGE_TAG"
+            echo "Promossa appgrove-prod-$app:$IMAGE_TAG"
+          done
+      - name: Flyway migrate PRIMA del deploy (task one-shot in VPC, #07 15)
+        run: |
+          PRE=(); POST=()
+          for app in platform fatture; do
+            if aws ecs describe-task-definition --task-definition "appgrove-prod-$app" >/dev/null 2>&1; then
+              PRE+=("$app")
+            else
+              POST+=("$app")
+            fi
+          done
+          printf '%s\n' "${POST[@]:-}" > /tmp/migrate-post
+          for app in "${PRE[@]:-}"; do
+            [ -n "$app" ] && ./infra/scripts/oneshot prod "$app" "$IMAGE_TAG" migrate
+          done
+      - name: Apply del piano APPROVATO (#07 4)
+        run: ./infra/scripts/up prod --plan "$RUNNER_TEMP/plan/prod.tfplan"
+      - name: Flyway migrate post-apply (solo primo deploy di un servizio)
+        run: |
+          while read -r app; do
+            [ -n "$app" ] && ./infra/scripts/oneshot prod "$app" "$IMAGE_TAG" migrate
+          done < /tmp/migrate-post
+      - name: sync-pricing verso Paddle production (#09 H37) — se i secret esistono
+        run: |
+          if aws secretsmanager describe-secret --secret-id appgrove/prod/paddle >/dev/null 2>&1; then
+            ./infra/scripts/oneshot prod platform "$IMAGE_TAG" sync-pricing
+          else
+            echo "::warning::sync-pricing saltata: secret 'appgrove/prod/paddle' assente (account Paddle = UC 0001)."
+          fi
+      - name: Health check — attesa servizi stabili
+        run: |
+          CI_DEPLOY=$(./infra/scripts/output prod ci_deploy --json)
+          CLUSTER=$(jq -r '.ecs_cluster_name' <<<"$CI_DEPLOY")
+          SERVICES=$(jq -r '.services[].ecs_service_name' <<<"$CI_DEPLOY" | xargs)
+          # shellcheck disable=SC2086
+          aws ecs wait services-stable --cluster "$CLUSTER" --services $SERVICES
+      - name: Frontend — stesso bundle test→prod, cambia solo config.json (#07 13/22)
+        run: |
+          TEST_BUCKETS=$(./infra/scripts/output test spa_bucket_names --json)
+          PROD_BUCKETS=$(./infra/scripts/output prod spa_bucket_names --json)
+          PROD_DISTS=$(./infra/scripts/output prod spa_distribution_ids --json)
+          PROD_CONFIG=$(./infra/scripts/output prod spa_config --json)
+          for app in backoffice admin; do
+            SRC=$(jq -r --arg a "$app" '.[$a]' <<<"$TEST_BUCKETS")
+            DST=$(jq -r --arg a "$app" '.[$a]' <<<"$PROD_BUCKETS")
+            DIST=$(jq -r --arg a "$app" '.[$a]' <<<"$PROD_DISTS")
+            aws s3 sync "s3://$SRC" "s3://$DST" --delete --exclude config.json
+            jq --arg a "$app" '.[$a]' <<<"$PROD_CONFIG" > "/tmp/config-$app.json"
+            aws s3 cp "/tmp/config-$app.json" "s3://$DST/config.json" \
+              --cache-control 'no-cache' --content-type application/json
+            aws cloudfront create-invalidation --distribution-id "$DIST" \
+              --paths '/index.html' '/config.json' >/dev/null
+            echo "SPA $app promossa (bundle test→prod + config.json prod)."
+          done
+      - name: Riepilogo release
+        run: |
+          {
+            echo "## Release ${{ needs.checks.outputs.tag }} in PROD ✅"
+            echo "- Commit: \`${GITHUB_SHA::7}\` — immagini \`$IMAGE_TAG\` promosse (stesso SHA, native)"
+            echo "- Ordine: migrate → apply del piano approvato → sync-pricing → frontend"
+          } >> "$GITHUB_STEP_SUMMARY"

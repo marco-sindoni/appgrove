@@ -65,8 +65,11 @@ Implementato dalla change `0025`: catena L1 completa (`WebhookEntitlementChainTe
 = vitest + Playwright e2e, chromium auto-installato), struttura L3 skip-by-default
 (`frontend/apps/backoffice/playwright.l3.config.ts` + `e2e-l3/` + runbook). Resta aperto:
 
-- **Cablaggio per-PR bloccante di L1/L2 + job L3 nella release con gate/override** → possiede **UC 0005** (dettaglio nella
-  sua sezione "Punti aperti"); qui L1/L2 sono già dietro `run-tests.sh`, manca solo la pipeline che lo esegue.
+- ~~**Cablaggio per-PR bloccante di L1/L2 + job L3 nella release con gate/override** → possiede **UC 0005**~~ —
+  **risolto dalla change `0036-use-case-0005-…`**: `verify-pr.yml` esegue per-PR le aree di `run-tests.sh`
+  (L1 nel backend, L2 negli E2E frontend **sempre** bloccanti, #10 35); `release-prod.yml` ha il job `l3-smoke`
+  pre-approvazione (auto-skip senza secret `APPGROVE_L3_*`, override motivato via dispatch registrato nel summary).
+  Restano i **secret reali** (account sandbox) → UC 0001.
 - **Account Paddle Sandbox** (prerequisito per eseguire L3) → possiede **UC 0001** (a valle del gate #14).
 - **Loader del vero Paddle.js e `PaddlePaymentProvider` reale** (oggi placeholder gated #14:
   `frontend/apps/backoffice/src/billing/paddle.ts` ritorna sempre lo stub; il provider backend lancia

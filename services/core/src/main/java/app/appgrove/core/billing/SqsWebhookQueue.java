@@ -1,5 +1,6 @@
 package app.appgrove.core.billing;
 
+import app.appgrove.commons.aws.AwsClientCredentials;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -8,8 +9,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -22,6 +21,10 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
  * Attiva fuori dal profilo {@code test} (dove la rimpiazza una coda in-memory). Il client è AWS SDK v2
  * con HTTP sync url-connection (leggero); l'URL della coda è risolto in lazy alla prima operazione, così
  * l'avvio non dipende dalla raggiungibilità di ElasticMQ.
+ *
+ * <p>Profilo cloud (UC 0005): senza endpoint override le credenziali vengono dalla catena di default
+ * (task role IAM) e il nome coda è prefissato con {@code appgrove.sqs.queue-prefix}
+ * (← env {@code APPGROVE_SQS_QUEUE_PREFIX}), come {@code SqsMessageQueues} del commons.
  */
 @ApplicationScoped
 @UnlessBuildProfile("test")
@@ -36,18 +39,18 @@ public class SqsWebhookQueue implements WebhookQueue {
     public SqsWebhookQueue(
             @ConfigProperty(name = "appgrove.sqs.endpoint") Optional<String> endpoint,
             @ConfigProperty(name = "appgrove.sqs.region", defaultValue = "eu-south-1") String region,
+            @ConfigProperty(name = "appgrove.sqs.queue-prefix", defaultValue = "") String queuePrefix,
             @ConfigProperty(name = "appgrove.payments.webhook-queue-name") String queueName) {
         this.endpoint = endpoint.orElse(null);
         this.region = region;
-        this.queueName = queueName;
+        this.queueName = queuePrefix + queueName;
     }
 
     @PostConstruct
     void init() {
         var builder = SqsClient.builder()
                 .region(Region.of(region))
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(AwsBasicCredentials.create("local", "local")))
+                .credentialsProvider(AwsClientCredentials.forEndpoint(endpoint, "local", "local"))
                 .httpClient(UrlConnectionHttpClient.create());
         if (endpoint != null) {
             builder.endpointOverride(URI.create(endpoint));

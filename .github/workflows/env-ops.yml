@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# env-ops — start/stop dell'ambiente test (#07 28, cost-min).
+#
+# • Cron giornaliero a orario UTC FISSO (20:00 UTC ≈ 21:00 IT; la deriva di 1h
+#   con l'ora legale è accettata: è solo una rete di sicurezza notturna) che
+#   lancia `test-stop` (desired count → 0, idempotente: se già a 0, no-op).
+# • Avvio MANUALE via workflow_dispatch (`test-start`): i task Fargate non si
+#   riaccendono da soli — si accende l'ambiente solo quando serve lavorare.
+# Aurora non c'entra: scale-to-0 automatico da idle. Stessi wrapper del locale
+# (#07 6): infra/scripts/test-stop | test-start.
+# ─────────────────────────────────────────────────────────────────────────────
+name: env-ops
+
+on:
+  schedule:
+    - cron: '0 20 * * *' # spegnimento notturno test (#07 28)
+  workflow_dispatch:
+    inputs:
+      action:
+        description: azione sull'ambiente test
+        type: choice
+        options: [start, stop]
+        default: start
+
+permissions:
+  contents: read
+  id-token: write # OIDC (#07 1/25): nessuna chiave AWS
+
+env:
+  AWS_REGION: eu-west-1
+
+jobs:
+  ops:
+    # Prima dell'attivazione degli ambienti (AWS_ACCOUNT_ID assente) è un no-op.
+    if: vars.AWS_ACCOUNT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-test
+          aws-region: ${{ env.AWS_REGION }}
+      - name: test-stop (cron o dispatch 'stop')
+        if: github.event_name == 'schedule' || inputs.action == 'stop'
+        run: ./infra/scripts/test-stop
+      - name: test-start (dispatch 'start')
+        if: github.event_name == 'workflow_dispatch' && inputs.action == 'start'
+        run: ./infra/scripts/test-start

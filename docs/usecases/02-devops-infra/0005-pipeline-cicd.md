@@ -43,7 +43,9 @@ già su ECR); **Infracost** sulle PR.
 - **Costi CI**: free tier via path-filter + caching `~/.m2`/npm + `concurrency` cancel + native solo on-demand (#07 27).
 
 ## 6. Risorse & runbook
-**File**: `.github/workflows/*.yml` (verifica PR, deploy test, release prod, native toggle dispatch, cron test-stop).
+**File**: `.github/workflows/` — `verify-pr.yml`, `deploy-test.yml` (il toggle native è la checkbox del suo
+`workflow_dispatch`, #07 9), `release-prod.yml`, `env-ops.yml` (cron test-stop + dispatch start/stop); task one-shot:
+`infra/scripts/oneshot`.
 **Runbook**: aprire PR → verde → squash-merge (deploy test) → quando pronto, **`[graal]` o native dispatch** sullo stesso
 commit → **tag `v*`** → approvare il gate → prod. **Secrets**: la CI **non legge mai** i segreti app; al più li gestisce via
 Terraform (genera password in Secrets Manager senza esporle) (#07 26).
@@ -72,61 +74,45 @@ drift). Coverage **riportata, non bloccante** (#10 36). Smoke E2E opzionale su t
 
 ## Punti aperti / decisioni differite
 
-_Tracciato dalla change `0019-use-case-0022-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+_Sezione aggiornata dalla change `0036-use-case-0005-…` (implementazione della pipeline): tutti i punti che questo UC
+possedeva sono stati **risolti a codice**; la lista storica è riassunta sotto con l'esito. La pipeline però **non è mai
+girata dal vivo** (ambienti spenti, attivazione per fasi #12): la prima esecuzione live + la configurazione del repo
+GitHub sono tracciate in [docs/_BACKLOG.md](../../_BACKLOG.md), sezione "Attivazione ambienti cloud"._
 
-- **Cablaggio dello step di sync pricing nei workflow CI.** UC 0022 (change `0019`) implementa il **motore di sync**
-  pricing-as-code → catalogo DB → Paddle (esercitabile offline contro lo stub) **e ne espone un entrypoint runnable in
-  command-mode Quarkus** (`sync-pricing`, non avvia il server HTTP). Quel che resta a UC 0005 è **solo** invocare quel comando
-  nel workflow **dopo il Flyway migrate**: **deploy su test → `sync-pricing` verso Paddle sandbox**, **tag→prod →
-  `sync-pricing` verso Paddle production** (#09 H37, #07), con i secret Paddle per-env (Secrets Manager, #09 I38). Non c'è
-  ancora `.github/workflows/`, quindi il cablaggio non è realizzabile finché UC 0005 non costruisce la pipeline.
-  **Proprietario** del cablaggio CI: UC 0005.
+**Risolti dalla change `0036` (in sintesi):**
 
-_Tracciato dalla change `0025-use-case-0029-…` (test pagamenti L1/L2/L3)._
+- **Sync pricing in CI** (da UC 0022): `sync-pricing` come task one-shot dopo il Flyway migrate — deploy test → Paddle
+  sandbox, tag→prod → Paddle production — **gated sull'esistenza del secret** `appgrove/<env>/paddle` (convenzione
+  fissata; la creazione dei secret è di UC 0001, vedi i suoi "Punti aperti"). Senza secret: skip con warning.
+- **L1/L2 per-PR bloccanti + job L3 in release** (da UC 0029): `verify-pr.yml` esegue le aree di `run-tests.sh` con
+  path-filter e invarianti #10 35 (security/E2E/oasdiff sempre); `release-prod.yml` ha il job `l3-smoke`
+  pre-approvazione con auto-skip senza secret e override motivato registrato (audit). Secret reali → UC 0001.
+- **Cron `test-stop` + `test-start` dispatch** (da UC 0004): workflow `env-ops.yml` (cron 20:00 UTC ≈ 21:00 IT;
+  dispatch start/stop), stessi wrapper `infra/scripts/`.
+- **Adeguamento cloud dei client AWS** (da UC 0004): `SqsMessageQueues`, `SqsWebhookQueue` e `S3ExportStorage` usano la
+  **catena di credenziali di default** senza endpoint override (task role IAM), prefisso code da
+  `appgrove.sqs.queue-prefix` (← `APPGROVE_SQS_QUEUE_PREFIX`), regioni da `APPGROVE_SQS_REGION`/`APPGROVE_S3_REGION`
+  (quest'ultima aggiunta alla task definition del modulo). Test JUnit dedicati.
+- **Promozione ECR + ARM64 + tagging** (da UC 0004): schema di tagging **fissato per-SHA** (`<sha>` JVM,
+  `<sha>-native` GraalVM; `TF_VAR_image_tag` pilota i root env — niente `latest` mobile); build su runner
+  `ubuntu-24.04-arm`; promozione test→prod = retag/push dello **stesso** manifest, nessun rebuild; gate prod
+  bloccante sui soli tag `-native` col messaggio guidato di #07 23.
+- **`curl` nell'immagine** (da UC 0006): Dockerfile JVM (ubi9/openjdk-21-runtime) e native (ubi9-minimal + microdnf)
+  con **verifica al build** (`RUN curl --version`): un cambio di base image rompe in build, non al deploy.
+- **`VITE_BUILD_SHA` + source map artifact** (da UC 0006/#08 24): build Vite con `VITE_BUILD_SHA=<sha>`, source map
+  `hidden` caricate come artifact privato CI (90 giorni) e rimosse prima del sync S3.
+- **`errorIngestUrl` nel `config.json`** (da UC 0006): l'output Terraform `spa_config` (envs test/prod) genera il
+  `config.json` per-SPA con `errorIngestUrl = <api_url>/ingest/errors`; la pipeline lo riscrive a ogni deploy.
+- **Flusso prod "piano salvato → approvazione → apply"**: wrapper estesi (`plan <env> --out`, `up <env> --plan`) +
+  environment GitHub `prod` con required reviewer; ordine `build → test → migrate → deploy` garantito dal task
+  one-shot `infra/scripts/oneshot` (clona la task definition del service con l'immagine nuova, senza toccare il service).
 
-- **Cablaggio per-PR bloccante di L1/L2 (UC 0029).** La change `0025` ha reso `run-tests.sh` il gate canonico completo:
-  l'area `frontend` esegue vitest **e** gli E2E Playwright L2 (browser auto-installato), il backend include la catena L1
-  `WebhookEntitlementChainTest`. Quel che resta a UC 0005 è **solo** eseguire `./run-tests.sh` per-PR e marcarlo required —
-  a quel punto la clausola "L1+L2 bloccanti per-PR" (#09 D20, #10 35) è soddisfatta per costruzione.
-- **Job L3 nella pipeline di release tag→prod + gate con override motivato (UC 0029).** La suite smoke sandbox esiste già
-  (`frontend/apps/backoffice/playwright.l3.config.ts` + `e2e-l3/`, auto-skip senza env `APPGROVE_L3_*`; runbook in
-  `e2e-l3/README.md`). Restano a UC 0005: il job di release che la esegue contro l'ambiente deployato, l'esito che
-  confluisce nel **gate di approvazione manuale** prod (#07 b1) e il meccanismo di **override manuale con motivazione
-  registrata** (audit) quando il sandbox Paddle è down (#09 D20 L3). Prerequisito esterno: account sandbox (UC 0001).
-- **Cron giornaliero `test-stop` + `test-start` via `workflow_dispatch`** _(tracciato dalla change
-  `0033-use-case-0004-…`)_: la change 0033 implementa gli script `infra/scripts/test-stop` (desired
-  count → 0, idempotente) e `test-start` (→ 1) previsti da #07 28. Resta a UC 0005 il **cablaggio nei
-  workflow CI**: cron giornaliero a orario UTC fisso (~21:00 IT) che lancia `test-stop` sull'ambiente
-  test, e avvio manuale (`workflow_dispatch`) che lancia `test-start`. Differito perché i workflow
-  GitHub Actions sono lo scope di UC 0005; gli script sono già pronti per essere invocati dalla CI.
-- **Adeguamento cloud del client SQS dei servizi (`services/commons`)** _(tracciato dalla change
-  `0033-use-case-0004-…`)_: `SqsMessageQueues` oggi è cablato per il solo locale — credenziali statiche
-  "local/local", regione default `eu-south-1`, nessun prefisso sui nomi coda. Per girare nel cloud deve:
-  (a) usare la catena di credenziali di default quando manca l'endpoint override (i task hanno il task
-  role IAM); (b) leggere il **prefisso dei nomi coda** da config (`appgrove.sqs.queue-prefix`, ← env var
-  `APPGROVE_SQS_QUEUE_PREFIX` già impostata dalla task definition del modulo `microsaas_app`, vuoto in
-  locale); (c) regione da `APPGROVE_SQS_REGION` (idem). Differito perché i servizi girano nel cloud solo
-  col deploy: è il primo momento utile e naturale per il profilo cloud. Proprietà: UC 0005.
-- **Promozione immagini tra repo ECR per-ambiente + architettura ARM64** _(tracciato dalla change
-  `0033-use-case-0004-…`)_: il modulo `microsaas_app` crea un repo ECR **per ambiente**
-  (`appgrove-<env>-<app_id>`, nomi unici nello stesso account) e task definition **ARM64/Graviton**
-  (~-20% di costo; Fargate Spot supporta ARM64). La pipeline deve: buildare immagini native ARM64,
-  pushare su `appgrove-test-*` al merge e **promuovere** (retag/copy) su `appgrove-prod-*` al tag —
-  senza rebuild, stessa immagine. Lo schema di tagging (per-SHA vs `latest`, oggi tag mobile di
-  default con `image_tag` sovrascrivibile) si fissa qui. Proprietà: UC 0005 (già correlato a #07 H/E9).
+**Restano aperti (proprietà altrui):**
 
-_Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
-
-- **`curl` nell'immagine dei servizi (health check ECS).** La change 0035 (UC 0006) definisce nella task
-  definition l'health check del container (`curl -fsS http://localhost:<porta>/q/health/live`): l'immagine
-  costruita dalla pipeline DEVE includere `curl` (o un binario di probe equivalente — in tal caso adeguare
-  il comando in `infra/modules/microsaas_app/ecs.tf`). Nessun deploy esiste ancora, quindi il vincolo è
-  solo sul build dell'immagine. Proprietà: UC 0005.
-- **`VITE_BUILD_SHA` nel build frontend.** Il reporter errori (`frontend/packages/error-reporter`, #08 23)
-  marca ogni evento con lo SHA di build (`import.meta.env.VITE_BUILD_SHA`, fallback `dev` in locale): la
-  pipeline FE deve passarlo al build Vite (si sposa con l'artifact privato delle source map, #08 24, già
-  in carico a questo UC). Proprietà: UC 0005.
-- **`errorIngestUrl` nel `config.json` per-ambiente delle SPA.** Le app leggono l'endpoint di ingest
-  errori dalla config runtime (`errorIngestUrl`, vuoto in locale = reporter spento): il deploy FE deve
-  scrivere nel `config.json` per-env il valore `https://api.<env-prefix><domain>/ingest/errors` (rotta
-  creata da `platform_shared/error_ingest.tf`). Proprietà: UC 0005.
+- **Campi Cognito nel `config.json`** → UC 0015 (placeholder vuoti oggi; vedi i suoi "Punti aperti").
+- **Secret Paddle per-env + secret GitHub `APPGROVE_L3_*`** → UC 0001.
+- **Liste per-servizio nei workflow** (matrix/loop `platform fatture`) da aggiornare a ogni nuova app → UC 0046
+  (gli agganci Terraform sono già automatici via `service-add`: `image_tag`, marker `ci-services`, observability).
+- **Prima esecuzione live + configurazione repo GitHub** (variabile `AWS_ACCOUNT_ID`, environment `prod`, branch
+  protection/check required, `INFRACOST_API_KEY`, verifica fatturazione runner ARM64 su repo privato) →
+  [docs/_BACKLOG.md](../../_BACKLOG.md), "Attivazione ambienti cloud".

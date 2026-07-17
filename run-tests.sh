@@ -5,7 +5,7 @@
 #   • backend  — services/* (Quarkus/Maven)  → `mvn test`  [richiede Docker/Colima: Testcontainers/Dev Services]
 #   • frontend — frontend/  (npm workspaces)  → `npm test` + `npm run e2e`  [vitest + Playwright L2 (UC 0029),
 #                browser chromium auto-installato se assente; la suite L3 sandbox NON è qui: è pre-release]
-#   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov se presenti)
+#   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
 #
@@ -102,7 +102,7 @@ run_frontend() {
 }
 
 run_infra() {
-  hdr "INFRA — infra/ (scripts/check: fmt + validate + terraform test moduli + tflint/checkov se presenti)"
+  hdr "INFRA — infra/ (scripts/check: fmt + validate + terraform test moduli + tflint/checkov/actionlint se presenti)"
   if ! command -v terraform >/dev/null 2>&1; then
     warn "terraform non installato: salto (la validazione completa gira in CI, UC 0005)."; record infra SKIP; return
   fi

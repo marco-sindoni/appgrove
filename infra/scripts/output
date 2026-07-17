@@ -7,29 +7,40 @@ source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 usage() {
   cat <<'EOF'
-Uso: output <test|prod|global> [<nome-output>]
+Uso: output <test|prod|global> [<nome-output>] [--json]
 
 Cosa fa
   Mostra gli output dello stack (sola lettura, non modifica nulla).
   Con <nome-output> stampa solo quel valore (comodo negli script).
+  Con --json stampa in JSON (per gli script/pipeline: jq, UC 0005).
 
 Esempi
   ./infra/scripts/output global
   ./infra/scripts/output global name_servers
   ./infra/scripts/output test gdpr_export_bucket
+  ./infra/scripts/output test ci_deploy --json
 EOF
 }
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
 if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
-ENV_NAME="$1"
+ENV_NAME="$1"; shift
+
+OUT_NAME=""
+JSON_FLAG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --json) JSON_FLAG="-json"; shift ;;
+    *) [ -z "$OUT_NAME" ] || die "argomento inatteso: $1"; OUT_NAME="$1"; shift ;;
+  esac
+done
 
 require_terraform
 require_aws
 
 tf_init "$ENV_NAME"
-if [ -n "${2:-}" ]; then
-  terraform -chdir="$(stack_dir "$ENV_NAME")" output "$2"
+if [ -n "$OUT_NAME" ]; then
+  terraform -chdir="$(stack_dir "$ENV_NAME")" output $JSON_FLAG "$OUT_NAME"
 else
-  terraform -chdir="$(stack_dir "$ENV_NAME")" output
+  terraform -chdir="$(stack_dir "$ENV_NAME")" output $JSON_FLAG
 fi

@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# oneshot — esegue un task ECS one-shot IN VPC per un servizio (UC 0005):
+# Flyway `migrate` prima del deploy (#07 14/15) o `sync-pricing` (#09 H37).
+#
+# Come funziona (nessuna modifica al service ECS):
+#   1. legge l'output `ci_deploy` dello stack (cluster, rete, task family);
+#   2. clona l'ULTIMA task definition del service in una family dedicata
+#      `<family>-oneshot`, sostituendo SOLO l'immagine con il tag richiesto
+#      (env var, secret, ruoli IAM e log restano identici al service);
+#   3. `aws ecs run-task` (Fargate on-demand: niente Spot per le migrazioni)
+#      con il comando in override; attende la fine e propaga l'exit code.
+#
+# Così la migrazione gira con l'IMMAGINE NUOVA **prima** che il service venga
+# portato sul nuovo tag dall'apply (ordine: build → test → migrate → deploy).
+# Al primissimo deploy (nessuna task definition esistente) fallisce con
+# indicazione: fare prima l'apply, poi rilanciare il one-shot.
+# ─────────────────────────────────────────────────────────────────────────────
+set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
+
+usage() {
+  cat <<'EOF'
+Uso: oneshot <test|prod> <app_id> <image_tag> <comando> [args…]
+
+Cosa fa
+  Lancia un task ECS one-shot in VPC per il servizio indicato, con l'immagine
+  ECR al tag richiesto e il comando in override (es. `migrate`, `sync-pricing`).
+  Attende il termine e ritorna l'exit code del container.
+
+Esempi
+  ./infra/scripts/oneshot test platform abc1234 migrate
+  ./infra/scripts/oneshot prod platform abc1234-native sync-pricing
+EOF
+}
+
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
+[ $# -ge 4 ] || { usage; die "servono: ambiente, app_id, image_tag, comando"; }
+ENV_NAME="$1"; APP_ID="$2"; IMAGE_TAG="$3"; shift 3
+COMMAND_JSON=$(printf '%s\n' "$@" | jq -R . | jq -s -c .)
+
+case "$ENV_NAME" in test | prod) ;; *) die "ambiente non valido: '$ENV_NAME' (usa: test | prod)" ;; esac
+
+require_terraform
+require_aws
+require_cmd jq jq
+
+# 1. Aggancio dallo stack: cluster, rete e dati del servizio (output ci_deploy).
+tf_init "$ENV_NAME"
+CI_DEPLOY=$(terraform -chdir="$(stack_dir "$ENV_NAME")" output -json ci_deploy)
+CLUSTER=$(jq -r '.ecs_cluster_name' <<<"$CI_DEPLOY")
+SUBNETS=$(jq -c '.subnet_ids' <<<"$CI_DEPLOY")
+SVC=$(jq -e --arg id "$APP_ID" '.services[$id]' <<<"$CI_DEPLOY") \
+  || die "servizio '$APP_ID' assente dall'output ci_deploy di $ENV_NAME"
+FAMILY=$(jq -r '.task_definition_family' <<<"$SVC")
+SG=$(jq -r '.security_group_id' <<<"$SVC")
+ECR_URL=$(jq -r '.ecr_repository_url' <<<"$SVC")
+ONESHOT_FAMILY="${FAMILY}-oneshot"
+
+# 2. Clona l'ultima task definition del service sostituendo solo l'immagine.
+BASE_DEF=$(aws ecs describe-task-definition --region "$REGION" --task-definition "$FAMILY" \
+  --query taskDefinition --output json 2>/dev/null) \
+  || die "task definition '$FAMILY' inesistente: primo deploy? Esegui prima l'apply, poi rilancia."
+NEW_DEF=$(jq --arg family "$ONESHOT_FAMILY" --arg image "$ECR_URL:$IMAGE_TAG" '
+  {
+    family: $family,
+    networkMode, requiresCompatibilities, cpu, memory,
+    executionRoleArn, taskRoleArn, runtimePlatform,
+    containerDefinitions: (.containerDefinitions | map(.image = $image | del(.healthCheck)))
+  } | with_entries(select(.value != null))' <<<"$BASE_DEF")
+REVISION_ARN=$(aws ecs register-task-definition --region "$REGION" \
+  --cli-input-json "$NEW_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
+info "task definition one-shot registrata: $REVISION_ARN (immagine :$IMAGE_TAG)"
+
+# 3. Esegue il task (Fargate on-demand; IP pubblico: topologia no-NAT, #06 18)
+#    e attende il termine propagando l'exit code del container.
+TASK_ARN=$(aws ecs run-task --region "$REGION" \
+  --cluster "$CLUSTER" \
+  --task-definition "$REVISION_ARN" \
+  --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=$SUBNETS,securityGroups=[$SG],assignPublicIp=ENABLED}" \
+  --overrides "{\"containerOverrides\":[{\"name\":\"$APP_ID\",\"command\":$COMMAND_JSON}]}" \
+  --query 'tasks[0].taskArn' --output text)
+[ -n "$TASK_ARN" ] && [ "$TASK_ARN" != "None" ] || die "run-task fallito (nessun task avviato)"
+info "task one-shot avviato: $TASK_ARN — attendo il termine…"
+
+aws ecs wait tasks-stopped --region "$REGION" --cluster "$CLUSTER" --tasks "$TASK_ARN"
+EXIT_CODE=$(aws ecs describe-tasks --region "$REGION" --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+  --query 'tasks[0].containers[0].exitCode' --output text)
+STOP_REASON=$(aws ecs describe-tasks --region "$REGION" --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+  --query 'tasks[0].stoppedReason' --output text)
+
+if [ "$EXIT_CODE" = "0" ]; then
+  ok "one-shot '$*' su $APP_ID ($ENV_NAME) completato."
+else
+  die "one-shot '$*' su $APP_ID ($ENV_NAME) FALLITO (exit=$EXIT_CODE, reason: $STOP_REASON) — log nel log group del servizio."
+fi

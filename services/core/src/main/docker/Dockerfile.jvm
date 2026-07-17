@@ -1,0 +1,25 @@
+# ── core — immagine JVM (default in test, #07 7) ─────────────────────────────
+# Build eseguito dalla pipeline (UC 0005) su runner Linux ARM64 (task ECS Graviton):
+#   mvn -pl core -am package   →   docker build -f core/src/main/docker/Dockerfile.jvm core
+# Base UBI9 con OpenJDK 21 runtime (multi-arch). L'health check ECS del modulo
+# microsaas_app usa `curl` dentro il container: la presenza è VERIFICATA al build
+# (RUN curl --version) così un cambio di base image rompe qui, non al deploy.
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.21
+
+RUN curl --version
+
+ENV LANGUAGE='en_US:en'
+# Il layout è il fast-jar di Quarkus; lib/ prima (layer stabile, cache di build).
+COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 target/quarkus-app/*.jar /deployments/
+COPY --chown=185 target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8080
+USER 185
+
+# Entrypoint esplicito in forma exec: gli argomenti del command override ECS (i task one-shot
+# `migrate` / `sync-pricing`, #07 14) si accodano come args dell'applicazione Quarkus.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", \
+  "-jar", "/deployments/quarkus-run.jar"]

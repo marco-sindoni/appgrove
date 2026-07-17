@@ -88,6 +88,9 @@ resource "aws_ecs_task_definition" "this" {
       { name = "QUARKUS_DATASOURCE_USERNAME", value = local.db_schema },
       { name = "APPGROVE_SQS_QUEUE_PREFIX", value = var.shared.sqs_queue_prefix },
       { name = "APPGROVE_SQS_REGION", value = data.aws_region.current.region },
+      # Regione del client S3 (export GDPR): senza endpoint override i servizi usano
+      # la catena di credenziali di default (task role) + questa regione (UC 0005).
+      { name = "APPGROVE_S3_REGION", value = data.aws_region.current.region },
       { name = "APPGROVE_GDPR_EXPORT_BUCKET", value = var.shared.gdpr_export_bucket },
     ]
 

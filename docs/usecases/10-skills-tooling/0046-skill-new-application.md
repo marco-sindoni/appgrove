@@ -104,3 +104,13 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   `appId` del modulo, endpoint da `errorIngestUrl` della config runtime). Lato backend, lo scaffold
   eredita gratis MDC/health/EMF/audit da `services/commons` + le risorse per-servizio dal modulo
   `microsaas_app` (che ora genera anche allarmi/widget/subscription filter, invariante #3).
+
+_Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
+
+- **Liste per-servizio nei workflow CI da aggiornare a ogni nuova app.** I workflow generati dalla change 0036
+  hanno i servizi **espliciti** in tre punti: matrix `build` di `deploy-test.yml` (coppie `service`/`app_id`),
+  loop `for app in platform fatture` (migrate/gate native/promozione in `deploy-test.yml` e `release-prod.yml`).
+  Gli agganci Terraform sono già automatici (`service-add` mantiene `image_tag`, marker `ci-services` in
+  `ci_deploy`, marker observability): resta ai workflow. Quando `new-application` scaffolda un'app DEVE
+  aggiornare anche queste liste (o, meglio, derivarle dall'output `ci_deploy` per eliminare la duplicazione).
+  **Proprietario**: UC 0046.

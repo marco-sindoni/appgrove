@@ -72,3 +72,15 @@ _Tracciato dalla change `0025-use-case-0029-…` (regola CLAUDE.md "Tracciamento
   (`frontend/apps/backoffice/e2e-l3/`, auto-skip senza env `APPGROVE_L3_*`) ma non è eseguibile finché questo UC non
   produce l'account Paddle (sandbox incluso, a valle del gate #14). Alla verifica dell'account, notificare UC 0029/0005
   per attivare lo smoke nella pipeline di release. **Proprietario** dell'account: UC 0001.
+
+_Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
+
+- **Secret Paddle per-ambiente in Secrets Manager (convenzione fissata: `appgrove/test/paddle` e
+  `appgrove/prod/paddle`).** La pipeline (workflow `deploy-test`/`release-prod`) esegue `sync-pricing` come task
+  one-shot **solo se il secret dell'ambiente esiste** (altrimenti skip con warning). Quando questo UC produce le
+  credenziali Paddle (sandbox → test, production → prod), vanno scritte in Secrets Manager con quei nomi (via
+  Terraform, #07 26: la CI non legge i segreti) e cablate nella config del servizio core (wiring per-env già
+  tracciato in UC 0025 "Punti aperti"). **Proprietario** delle credenziali: UC 0001.
+- **Secret GitHub `APPGROVE_L3_BASE_URL` / `APPGROVE_L3_USER_EMAIL` / `APPGROVE_L3_USER_PASSWORD`.** Il job L3 della
+  release (`release-prod.yml`, cablato dalla change `0036`) li legge dai secret del repo: finché mancano, auto-skip
+  registrato nel summary. Da valorizzare alla creazione dell'account sandbox e dell'utenza di smoke sull'ambiente test.

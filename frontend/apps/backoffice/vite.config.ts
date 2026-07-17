@@ -8,6 +8,10 @@ export default defineConfig({
   // host.docker.internal:5173 per il single-origin app.local.appgrove.app (UC 0009).
   // allowedHosts → Vite accetta l'Host inoltrato da Caddy (altrimenti 403 host-check).
   server: { port: 5173, host: true, allowedHosts: ['.local.appgrove.app'] },
+  // Source map 'hidden' (#08 24, UC 0005): generate nel build ma senza riferimento nei
+  // bundle. La pipeline le carica come ARTIFACT PRIVATO CI (de-minificazione offline
+  // degli errori frontend) e le rimuove prima del sync S3: mai pubblicate.
+  build: { sourcemap: 'hidden' },
   test: {
     globals: true,
     environment: 'jsdom',

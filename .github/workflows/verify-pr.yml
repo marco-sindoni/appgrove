@@ -1,0 +1,270 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# verify-pr — PR verso main: SOLO verifica, nessun deploy (#07 2/4).
+#
+# Path-filter per area (#10 34) con gli invarianti #10 35: la suite
+# security/multi-tenancy, gli E2E frontend e oasdiff girano SEMPRE e sono
+# bloccanti. Nessuna risorsa AWS viene toccata: il `terraform plan` di test è
+# read-only e commentato sulla PR; il plan di PROD non è possibile qui per
+# costruzione (il ruolo OIDC prod è assumibile solo da ref di tag, #07 25) e
+# avviene nel workflow release-prod.
+#
+# I job cloud (plan, Infracost) si attivano solo quando la variabile di repo
+# AWS_ACCOUNT_ID (rispettivamente il secret INFRACOST_API_KEY) è configurata:
+# fino all'attivazione degli ambienti restano skip (attivazione per fasi, #12).
+# ─────────────────────────────────────────────────────────────────────────────
+name: verify-pr
+
+on:
+  pull_request:
+    branches: [main]
+
+# Run superate cancellate: costi CI ≈ $0 (#07 27).
+concurrency:
+  group: verify-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+
+jobs:
+  # ── Path-filter (#10 34): quali aree tocca la PR ───────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      infra: ${{ steps.filter.outputs.infra }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'services/**'
+              - 'run-tests.sh'
+            frontend:
+              - 'frontend/**'
+            infra:
+              - 'infra/**'
+            workflows:
+              - '.github/workflows/**'
+
+  # ── Backend: suite completa se toccato (#10 34) ────────────────────────────
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Suite backend (mvn test via run-tests.sh)
+        run: ./run-tests.sh backend
+      # Coverage/report: riportati come artifact, NON bloccanti (#10 36).
+      - name: Report di test (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: services/**/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ── Backend: la suite security/multi-tenancy gira SEMPRE (#10 35) ──────────
+  # Quando il backend NON è toccato si eseguono comunque i test che proteggono
+  # gli invarianti (tenant_id dal JWT, filtro row-level, ArchUnit, fail-closed,
+  # check @PersonalData↔manifesto): mai esclusi dal path-filter.
+  backend-security:
+    needs: changes
+    if: needs.changes.outputs.backend != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Suite security/multi-tenancy (sempre bloccante)
+        working-directory: services
+        run: >
+          mvn -B test -pl commons,core,fatture -am
+          -Dtest='ArchitectureTest,MultiTenancyTest,FailClosedTest,JwtTenantResolverTest,PersonalDataManifestVerifierTest'
+          -Dsurefire.failIfNoSpecifiedTests=false
+
+  # ── Frontend: vitest se toccato; E2E Playwright SEMPRE (#10 35) ────────────
+  frontend:
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Dipendenze
+        working-directory: frontend
+        run: npm ci
+      - name: Unit/component (vitest)
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: frontend
+        run: npm test
+      - name: Browser Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: E2E L2 (sempre bloccanti, #10 35)
+        working-directory: frontend
+        run: npm run e2e
+
+  # ── Infra: validazione statica (fmt/validate/terraform test/tflint/checkov) ─
+  infra-check:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true' || needs.changes.outputs.workflows == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - name: Installa tflint + checkov + actionlint
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          pipx install checkov
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) latest /usr/local/bin >/dev/null
+      - name: Check statico (stessi wrapper del locale, #07 6)
+        run: ./infra/scripts/check
+
+  # ── Compliance: parità manifesti + freshness RoPA (UC 0030) — sempre ───────
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Check compliance
+        run: ./run-tests.sh compliance
+
+  # ── oasdiff: breaking change API — SEMPRE bloccante (#10 35) ───────────────
+  # Confronta gli spec OpenAPI committati (base della PR ↔ head): un breaking
+  # change fa fallire la PR. Il drift spec↔codice è già coperto da mvn test
+  # (store-schema + git diff, UC 0013).
+  oasdiff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .oasdiff-base
+      - name: Installa oasdiff
+        run: go install github.com/oasdiff/oasdiff@latest
+      - name: Breaking change sugli spec OpenAPI committati
+        run: |
+          rc=0
+          for spec in services/*/src/main/resources/META-INF/openapi/openapi.yaml; do
+            base=".oasdiff-base/$spec"
+            if [ ! -f "$base" ]; then
+              echo "::notice::$spec nuovo in questa PR: nessun confronto breaking."
+              continue
+            fi
+            echo "── oasdiff: $spec"
+            "$(go env GOPATH)/bin/oasdiff" breaking "$base" "$spec" --fail-on ERR || rc=1
+          done
+          exit $rc
+
+  # ── terraform plan di test, commentato sulla PR (#07 4) ────────────────────
+  # Solo quando l'infra è toccata E gli ambienti sono attivati (AWS_ACCOUNT_ID).
+  plan-test:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true' && vars.AWS_ACCOUNT_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC (#07 1/25): nessuna chiave AWS
+      pull-requests: write # commento del plan sulla PR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-test
+          aws-region: ${{ env.AWS_REGION }}
+      - name: terraform plan (test) — read-only, stessi wrapper del locale
+        id: plan
+        run: |
+          ./infra/scripts/plan test 2>&1 | tee plan.txt
+          echo "exitcode=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Commenta il plan sulla PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.slice(-60000) : plan;
+            const marker = '<!-- appgrove-plan-test -->';
+            const body = `${marker}\n### terraform plan — envs/test\n\n<details><summary>output</summary>\n\n\`\`\`\n${truncated}\n\`\`\`\n</details>`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }
+      - name: Esito del plan
+        if: steps.plan.outputs.exitcode != '0'
+        run: exit 1
+
+  # ── Infracost: delta costi sulla PR (#07, UC 0005) ─────────────────────────
+  # Attivo solo col secret INFRACOST_API_KEY configurato (passo manuale
+  # post-merge, tracciato); analisi HCL, nessuna credenziale AWS.
+  infracost:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+    steps:
+      - name: Verifica secret
+        id: key
+        run: |
+          if [ -n "$INFRACOST_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT";
+          else echo "::warning::INFRACOST_API_KEY assente: stima costi saltata (setup manuale tracciato in UC 0005)."; fi
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+      - uses: infracost/actions/setup@v3
+        if: steps.key.outputs.present == 'true'
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+      - name: Baseline (base della PR)
+        if: steps.key.outputs.present == 'true'
+        run: infracost breakdown --path base/infra/envs/test --format json --out-file /tmp/base.json
+      - uses: actions/checkout@v4
+        if: steps.key.outputs.present == 'true'
+        with:
+          clean: false
+      - name: Diff e commento sulla PR
+        if: steps.key.outputs.present == 'true'
+        run: |
+          infracost diff --path infra/envs/test --compare-to /tmp/base.json --format json --out-file /tmp/diff.json
+          infracost comment github --path /tmp/diff.json \
+            --repo "$GITHUB_REPOSITORY" --pull-request "${{ github.event.pull_request.number }}" \
+            --github-token "${{ github.token }}" --behavior update

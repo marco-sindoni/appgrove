@@ -53,6 +53,12 @@ variable "region" {
   default     = "eu-west-1"
 }
 
+variable "image_tag" {
+  description = "Tag delle immagini dei servizi su ECR (UC 0005: per-SHA, `TF_VAR_image_tag` dalla pipeline; `latest` solo come default fuori CI)."
+  type        = string
+  default     = "latest"
+}
+
 module "baseline" {
   source = "../../modules/env_baseline"
 
@@ -139,6 +145,7 @@ module "app_platform" {
   container_port   = 8080
   db_schema        = "platform"
   is_platform_core = true
+  image_tag        = var.image_tag
 
   use_fargate_spot = true # test: Spot (#06 10)
   force_destroy    = true # test: teardown libero (#06 24)
@@ -154,6 +161,7 @@ module "app_fatture" {
   env            = "test"
   app_id         = "fatture"
   container_port = 8081
+  image_tag      = var.image_tag
 
   use_fargate_spot = true # test: Spot (#06 10)
   force_destroy    = true # test: teardown libero (#06 24)

@@ -1,5 +1,6 @@
 package app.appgrove.commons.storage;
 
+import app.appgrove.commons.aws.AwsClientCredentials;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -8,8 +9,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -25,6 +24,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
  * proprietà del <b>bucket</b> (SSE di default, UC 0003 — MinIO locale non la applica), non del
  * singolo put; l'auto-cancellazione a 7 giorni degli oggetti è la lifecycle rule del bucket (UC 0003).
  * Path-style forzato con endpoint override (richiesto da MinIO). Attiva fuori dal profilo {@code test}.
+ * Profilo cloud (UC 0005): senza endpoint override le credenziali vengono dalla catena di default
+ * (task role IAM); le chiavi statiche di config valgono solo per MinIO locale.
  */
 @ApplicationScoped
 @UnlessBuildProfile("test")
@@ -53,7 +54,7 @@ public class S3ExportStorage implements ExportStorage {
 
     @PostConstruct
     void init() {
-        var credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey));
+        var credentials = AwsClientCredentials.forEndpoint(endpoint, accessKey, secretKey);
         var clientBuilder = S3Client.builder()
                 .region(Region.of(region))
                 .credentialsProvider(credentials)
