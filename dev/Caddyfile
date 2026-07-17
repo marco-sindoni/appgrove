@@ -11,7 +11,7 @@
 #          "local.appgrove.app" "*.local.appgrove.app"
 #
 # ── Convenzione porte processi host (consumata da UC 0009 + new-application #11 §11) ──
-#   auth-local ............... 9100   (UC 0010)
+#   auth ............... 9100   (UC 0010)
 #   <app_id> backend Quarkus . 8081+  (assegnazione in UC 0009)
 #   backoffice SPA (Vite) .... 5173   (UC 0009)
 #   admin SPA (Vite) ......... 5174   (UC 0009)
@@ -43,7 +43,7 @@
 # ── Backoffice cliente (un solo origin: SPA + /api/*) ────────────────────────
 app.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	import api_routes                          # /api/auth/* → auth-local :9100, /api/platform/* → core :8080
+	import api_routes                          # /api/auth/* → auth :9100, /api/platform/* → core :8080
 	reverse_proxy host.docker.internal:5173   # SPA backoffice (Vite) — tutto il resto
 }
 
@@ -57,14 +57,14 @@ local.appgrove.app {
 # ── Console admin (app separata) ─────────────────────────────────────────────
 admin.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	import api_routes                          # /api/auth/* → auth-local :9100, /api/platform/* → core :8080
+	import api_routes                          # /api/auth/* → auth :9100, /api/platform/* → core :8080
 	reverse_proxy host.docker.internal:5174   # admin SPA (Vite) — tutto il resto (UC 0021)
 }
 
 # ── Host API/auth canonico (≈ api.appgrove.app) ──────────────────────────────
 api.local.appgrove.app {
 	tls /etc/caddy/certs/local.appgrove.app.pem /etc/caddy/certs/local.appgrove.app-key.pem
-	import api_routes                          # /api/auth/* → auth-local :9100 (UC 0010)
+	import api_routes                          # /api/auth/* → auth :9100 (UC 0010)
 	respond "appgrove dev — API non avviata (UC 0009/0010)." 200
 }
 

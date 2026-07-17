@@ -43,6 +43,17 @@ resource "aws_apigatewayv2_api" "this" {
   name          = "appgrove-${var.env}"
   protocol_type = "HTTP"
   description   = "Ingress condiviso dei microservizi appgrove (${var.env}); route per-app da UC 0004"
+
+  # CORS con credenziali (UC 0015, #02 16): origin ESPLICITI (le 2 SPA
+  # dell'ambiente), mai wildcard — incompatibile con Allow-Credentials, e il
+  # cookie refresh viaggia proprio nelle fetch cross-sottodominio (app.* → api.*).
+  cors_configuration {
+    allow_origins     = [for host in values(local.spa_hosts) : "https://${host}"]
+    allow_methods     = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    allow_headers     = ["authorization", "content-type", "x-correlation-id"]
+    allow_credentials = true
+    max_age           = 3600
+  }
 }
 
 resource "aws_apigatewayv2_vpc_link" "this" {
@@ -95,6 +106,20 @@ resource "aws_apigatewayv2_stage" "default" {
   # per-servizio di microsaas_app (#08 16).
   default_route_settings {
     detailed_metrics_enabled = true
+  }
+
+  # Throttling dedicato su /api/auth/* (UC 0015, #06 26): 10 req/s burst 20;
+  # la protezione brute-force sul login resta il lockout integrato Cognito.
+  # Dinamico: la rotta esiste solo quando la Lambda auth è deployata.
+  dynamic "route_settings" {
+    for_each = local.auth_lambda_enabled ? ["POST /api/auth/{proxy+}"] : []
+
+    content {
+      route_key                = route_settings.value
+      throttling_rate_limit    = 10
+      throttling_burst_limit   = 20
+      detailed_metrics_enabled = true
+    }
   }
 
   #checkov:skip=CKV2_AWS_29:WAF rimandato by-design (evoluzione E6, #06 21)

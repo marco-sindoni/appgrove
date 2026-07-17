@@ -12,7 +12,7 @@ Dipendenze infrastrutturali in **Docker Compose**, 100% offline (**zero AWS**), 
 | `mailpit` | `axllent/mailpit` | SES | 1025 (SMTP), 8025 (UI) |
 | `minio` | `minio/minio` | S3 | 9000 (API), 9001 (console) |
 | `elasticmq` | `softwaremill/elasticmq-native` | SQS | 9324, 9325 (stats) |
-| `auth-local` | — | Cognito + auth Lambda | _placeholder, UC 0010_ |
+| `auth` | — | Cognito + auth Lambda | _placeholder, UC 0010_ |
 
 ## Cosa NON è qui (per design)
 

@@ -8,7 +8,9 @@ import { AuthLayout } from './AuthLayout'
 
 /**
  * Atterraggio del link di verifica email (`/verify?token=`): verifica server-side + auto-login, poi
- * prosegue allo step Workspace dell'onboarding (Opzione A). Su token invalido/scaduto mostra l'errore.
+ * prosegue allo step Workspace dell'onboarding (Opzione A). Col provider Cognito (UC 0015) la
+ * conferma avviene senza auto-login: si mostra l'esito e si rimanda al login. Su token
+ * invalido/scaduto mostra l'errore.
  */
 export function VerifyEmailPage() {
   const { t } = useTranslation()
@@ -17,23 +19,27 @@ export function VerifyEmailPage() {
   const [params] = useSearchParams()
   const token = params.get('token')
   const setSession = useAuthStore((s) => s.setSession)
-  const [failed, setFailed] = useState(false)
+  const [state, setState] = useState<'verifying' | 'confirmed' | 'failed'>('verifying')
   const ran = useRef(false)
 
   useEffect(() => {
     if (ran.current) return
     ran.current = true
     if (!token) {
-      setFailed(true)
+      setState('failed')
       return
     }
     void (async () => {
       try {
         const tokens = await verifyEmail(config.authBaseUrl, token)
-        setSession(tokens)
-        navigate('/signup?step=workspace', { replace: true })
+        if (tokens) {
+          setSession(tokens)
+          navigate('/signup?step=workspace', { replace: true })
+        } else {
+          setState('confirmed')
+        }
       } catch {
-        setFailed(true)
+        setState('failed')
       }
     })()
   }, [token, config.authBaseUrl, setSession, navigate])
@@ -47,9 +53,13 @@ export function VerifyEmailPage() {
         </Link>
       }
     >
-      {failed ? (
+      {state === 'failed' ? (
         <p role="alert" className="text-sm text-danger">
           {t('verify.failed')}
+        </p>
+      ) : state === 'confirmed' ? (
+        <p role="status" className="text-sm text-fg-muted">
+          {t('verify.confirmed')}
         </p>
       ) : (
         <p role="status" className="text-sm text-fg-muted">

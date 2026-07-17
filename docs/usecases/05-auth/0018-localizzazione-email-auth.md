@@ -63,3 +63,19 @@ _Tracciato dalla change `0010-use-case-0058-…` (regola CLAUDE.md "Tracciamento
   link/codice di verifica/reset/invito), senza il copy localizzato definitivo. I **template EN/IT** (lingua dal `locale`
   utente, mittente `noreply@appgrove.app`) sono materia di questo UC (in prod: Custom Message Lambda su Cognito; in
   locale: rendering dei template nel provider). **Proprietario**: UC 0018.
+
+_Aggiunti dalla change `0037-use-case-0015-…` (Cognito + auth BFF):_
+
+- **Formato dei link nelle email Cognito: token `base64url(email|codice)`.** Il BFF (provider Cognito, UC 0015)
+  espone verify/reset col contratto a token unico del locale, decodificando `base64url(email "|" codice)`
+  (`services/auth/.../cognito/OpaqueTokens.java`). Il **Custom Message Lambda** di questo UC deve generare nei
+  template i link `https://app.<env>…/verify?token=<base64url(email|codice)>` (e `/reset`) con questo schema —
+  è ciò che ripristina la parità completa del flusso via link. **Proprietario**: UC 0018.
+- **Infrastruttura SES + raggiungibilità dalla VPC.** L'email d'invito cloud parte dal BFF via **SES**
+  (`SesMailSender`, IAM `ses:SendEmail` già pronti) ma: (1) l'**identità di dominio** SES + DKIM (#06 26) non è
+  ancora provisionata; (2) la Lambda è **in VPC senza uscita internet** e l'API SESv2 non è raggiungibile senza
+  un endpoint dedicato → decidere qui (endpoint SMTP/SESv2, o spostare l'invio fuori VPC). Finché manca,
+  `POST /invitations/send` in cloud **fallisce visibilmente** (5xx nei log), non in silenzio. **Proprietario**: UC 0018.
+- **Email default Cognito fino a questo UC.** Verifica/reset in cloud usano il mittente default Cognito
+  (limite ~50 email/giorno, copy inglese non brandizzato): accettato per la fase pre-attivazione; questo UC
+  porta SES + template. **Proprietario**: UC 0018.

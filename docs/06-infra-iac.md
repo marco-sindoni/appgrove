@@ -51,7 +51,9 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 ### Terraform: state & struttura (topic A)
 4. **State remoto su S3 + lock DynamoDB** (un piccolo step di *bootstrap* crea bucket/tabella la prima volta).
 5. **Struttura per directory**: `envs/test` ed `envs/prod` con **state distinti** + uno stack **`global`** per le
-   risorse condivise (zona Route53, pool Cognito `dev`) + **moduli** riusabili (incl. `microsaas_app`). `local` non usa infra AWS.
+   risorse condivise (zona Route53) + **moduli** riusabili (incl. `microsaas_app`). `local` non usa infra AWS.
+   *(Il "pool Cognito `dev`" inizialmente previsto in `global` è superato: in locale l'auth è emulata — UC 0010 —
+   e i pool Cognito sono solo per-env test/prod, UC 0015.)*
    `destroy` su test non tocca prod.
 6. **Regione = `eu-west-1` (Irlanda)** — scelta **cost-min** (regione più economica e completa); la latenza per gli
    utenti italiani è mitigata da CloudFront (edge) per le SPA.

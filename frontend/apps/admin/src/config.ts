@@ -7,11 +7,11 @@ import { createContext, useContext } from 'react'
  */
 export interface RuntimeConfig {
   env: string
-  /** Base URL del provider auth (`/api/auth/*`). In locale: auth-local via Caddy. */
+  /** Base URL del provider auth (`/api/auth/*`). In locale: il servizio auth (provider locale) via Caddy. */
   authBaseUrl: string
   /** Base URL dell'API core (`/api/platform/v1/*`). */
   coreBaseUrl: string
-  /** Parametri Cognito cloud (placeholder in locale: si usa auth-local). */
+  /** Parametri Cognito cloud (in locale non usati: il provider è locale). */
   cognito: { userPoolId: string; clientId: string }
   /**
    * URL dell'ingest errori frontend (#08/23, UC 0006): in cloud `<api-domain>/ingest/errors`

@@ -28,6 +28,7 @@ variables {
   alarm_topic_warning_arn     = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-warning"
   error_ingest_lambda_name    = "appgrove-test-error-ingest"
   error_ingest_log_group_name = "/aws/lambda/appgrove-test-error-ingest"
+  auth_lambda_name            = "appgrove-test-auth"
 }
 
 run "ambiente_test_silenziato" {

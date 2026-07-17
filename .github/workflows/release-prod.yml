@@ -100,6 +100,30 @@ jobs:
             exit 1
           fi
           echo "Gate native OK: immagini ${GITHUB_SHA::7}-native presenti per tutti i servizi."
+      - name: Gate artefatto Lambda BFF auth — function.zip su S3 test per questo SHA (UC 0015)
+        env:
+          BUCKET: appgrove-lambda-artifacts-test-${{ vars.AWS_ACCOUNT_ID }}
+          KEY: auth/${{ github.sha }}-native.zip
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          if ! aws s3api head-object --bucket "$BUCKET" --key "$KEY" >/dev/null 2>&1; then
+            SHORT="${GITHUB_SHA::7}"
+            cat <<EOF
+          ════════════════════════════════════════════════════════════════════
+          ❌  RELEASE IN PROD BLOCCATA — manca il function.zip della Lambda auth
+          ════════════════════════════════════════════════════════════════════
+          Tag: $TAG   Commit (SHA): $SHORT
+          Atteso: s3://$BUCKET/$KEY
+
+          La Lambda BFF auth (UC 0015) si promuove per-SHA come le immagini:
+          il deploy-test di questo SHA deve aver caricato l'artefatto
+          (job build-auth — se al momento del push il bucket non esisteva
+          ancora, ri-esegui "deploy-test" su main fermo a $SHORT).
+          ════════════════════════════════════════════════════════════════════
+          EOF
+            exit 1
+          fi
+          echo "Gate Lambda OK: $KEY presente nel bucket artefatti test."
 
   # ── Smoke L3 Paddle contro l'ambiente test deployato (UC 0029, #09 D20) ────
   l3-smoke:
@@ -162,6 +186,7 @@ jobs:
       - name: terraform plan prod → file salvato
         env:
           TF_VAR_image_tag: ${{ needs.checks.outputs.image_tag }}
+          TF_VAR_auth_lambda_s3_key: auth/${{ github.sha }}-native.zip
         run: ./infra/scripts/plan prod --out "$RUNNER_TEMP/prod.tfplan" | tee plan-prod.txt
       - uses: actions/upload-artifact@v4
         with:
@@ -204,6 +229,16 @@ jobs:
             docker push "$REGISTRY/appgrove-prod-$app:$IMAGE_TAG"
             echo "Promossa appgrove-prod-$app:$IMAGE_TAG"
           done
+      - name: Promozione function.zip Lambda auth test→prod (stesso SHA, UC 0015)
+        env:
+          TEST_BUCKET: appgrove-lambda-artifacts-test-${{ vars.AWS_ACCOUNT_ID }}
+          PROD_BUCKET: appgrove-lambda-artifacts-prod-${{ vars.AWS_ACCOUNT_ID }}
+          KEY: auth/${{ github.sha }}-native.zip
+        run: |
+          # L'oggetto deve esistere in prod PRIMA dell'apply del piano (che
+          # referenzia questa chiave in aws_lambda_function.auth).
+          aws s3 cp "s3://$TEST_BUCKET/$KEY" "s3://$PROD_BUCKET/$KEY"
+          echo "Promosso s3://$PROD_BUCKET/$KEY"
       - name: Flyway migrate PRIMA del deploy (task one-shot in VPC, #07 15)
         run: |
           PRE=(); POST=()

@@ -43,10 +43,12 @@ public class SqsMessageQueues implements MessageQueues {
     public SqsMessageQueues(
             @ConfigProperty(name = "appgrove.sqs.endpoint") Optional<String> endpoint,
             @ConfigProperty(name = "appgrove.sqs.region", defaultValue = "eu-south-1") String region,
-            @ConfigProperty(name = "appgrove.sqs.queue-prefix", defaultValue = "") String queuePrefix) {
+            @ConfigProperty(name = "appgrove.sqs.queue-prefix") Optional<String> queuePrefix) {
         this.endpoint = endpoint.orElse(null);
         this.region = region;
-        this.queuePrefix = queuePrefix;
+        // Optional (non defaultValue=""): un default stringa-vuota non supera la validazione
+        // config di Quarkus all'avvio (SRCFG00014) nei profili dove il bean è attivo (dev).
+        this.queuePrefix = queuePrefix.orElse("");
     }
 
     @PostConstruct

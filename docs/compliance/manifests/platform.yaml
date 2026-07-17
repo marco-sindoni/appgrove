@@ -152,8 +152,8 @@ entries:
 
   - key: cognito.credentials
     location:
-      it: User pool Amazon Cognito (eu-west-1); in locale solo stub dev (`auth-local`, fuori RoPA)
-      en: Amazon Cognito user pool (eu-west-1); locally a dev-only stub (`auth-local`, out of RoPA scope)
+      it: User pool Amazon Cognito (eu-west-1); in locale solo provider dev (`services/auth`, fuori RoPA)
+      en: Amazon Cognito user pool (eu-west-1); locally a dev-only provider (`services/auth`, out of RoPA scope)
     data_subjects:
       it: Utenti registrati
       en: Registered users

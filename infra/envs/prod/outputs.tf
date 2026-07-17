@@ -65,15 +65,26 @@ output "event_bus_name" {
 # ── Pipeline CI/CD (UC 0005) ─────────────────────────────────────────────────
 
 output "spa_config" {
-  description = "config.json runtime per-SPA generato dall'infra (#07 12: unica fonte di verità, zero valori hardcoded). Cognito placeholder fino a UC 0015; errorIngestUrl = rotta di error_ingest.tf (UC 0006)."
+  description = "config.json runtime per-SPA generato dall'infra (#07 12: unica fonte di verità, zero valori hardcoded). Cognito dagli output reali (UC 0015); errorIngestUrl = rotta di error_ingest.tf (UC 0006)."
   value = {
     for app in ["backoffice", "admin"] : app => {
-      env            = "prod"
-      authBaseUrl    = module.platform_shared.api_url
-      coreBaseUrl    = module.platform_shared.api_url
-      cognito        = { userPoolId = "", clientId = "" }
+      env         = "prod"
+      authBaseUrl = module.platform_shared.api_url
+      coreBaseUrl = module.platform_shared.api_url
+      cognito = {
+        userPoolId = module.platform_shared.cognito_user_pool_id
+        clientId   = module.platform_shared.cognito_client_id
+      }
       errorIngestUrl = "${module.platform_shared.api_url}/ingest/errors"
     }
+  }
+}
+
+output "auth_lambda_deploy" {
+  description = "Aggancio CI del BFF auth (UC 0015): bucket dove caricare function.zip (chiave per-SHA via TF_VAR_auth_lambda_s3_key) e nome funzione."
+  value = {
+    artifacts_bucket = module.platform_shared.auth_lambda_artifacts_bucket
+    function_name    = module.platform_shared.auth_lambda_name
   }
 }
 

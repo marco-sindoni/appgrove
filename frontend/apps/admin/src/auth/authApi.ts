@@ -1,4 +1,4 @@
-// Chiamate al provider auth (`/api/auth/*`, auth-local UC 0010/0058 in locale; auth BFF/Cognito in cloud).
+// Chiamate al provider auth (`/api/auth/*`, servizio auth: provider locale UC 0010/0058 in dev, provider Cognito UC 0015 in cloud).
 // Questi endpoint NON sono nello spec OpenAPI del core → fetch raw qui (non passano dall'api-client generato).
 // Gli errori del backend sono RFC 9457 problem+json → li mappiamo in `ApiError` con `toApiError`.
 // Il refresh token viaggia SOLO come cookie HttpOnly → `credentials: 'include'`.

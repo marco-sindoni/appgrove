@@ -108,6 +108,18 @@ senso compliance/legale (→ #13).
     segnala se sotto il target soft 80–85%, ma non blocca. Bloccano i **test rossi**.
 37. **Al merge su `main`** (→ deploy test): opzionale **smoke E2E contro l'ambiente test** deployato (problemi
     env-specifici). **Al tag → prod**: gate = immagine native + approvazione (#07 H); si tagga solo un commit verde.
+37bis. **Smoke di avvio nei profili reali (change 0037, dalla regressione `queue-prefix` di UC 0005).** La suite gira
+    solo nel profilo `test`: i bean `@UnlessBuildProfile("test")` non venivano MAI istanziati e un errore di
+    validazione config all'avvio (SRCFG00014) in dev/prod era invisibile. Tre guardie complementari, tutte in
+    `run-tests.sh` (area **smoke**) o in `mvn test`: **(1)** regola ArchUnit che vieta `@ConfigProperty(defaultValue
+    = "")` — la stringa vuota equivale ad assente e fa fallire l'avvio (usare `Optional<String>` + `orElse("")`);
+    **(2)** `tools/smoke/boot-profiles.sh` — gli artefatti impacchettati si avviano nei profili di spedizione
+    (core/fatture → `prod` con le env della task definition finte, auth → `cloud` con le env della Lambda finte)
+    fino a "Listening on"; **(3)** `tools/smoke/stack-headless.sh` — la fetta headless di `app-start.sh`: Postgres +
+    ElasticMQ reali dal compose dev, `migrate` + seed, i 3 servizi in profilo `dev` (build-profile dev) su porte
+    alternative, health check + **login vero** col seed. Niente browser/Caddy/TLS (dove vive la fragilità): il full
+    `app-start.sh` resta step manuale del Definition of Done. In CI il job `smoke` di verify-pr è **non bloccante**
+    finché non dimostra stabilità (promozione tracciata in UC 0005).
 
 ### K. Performance/load & accessibilità
 38. **Load testing rimandato** (architettura scale-to-0/1-task in PoC → un load test ora non sarebbe rappresentativo e

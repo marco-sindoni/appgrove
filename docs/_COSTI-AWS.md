@@ -14,16 +14,16 @@
 | Route53 hosted zone | $0.50 | — | una zona per `appgrove.app` (test è sottodominio) |
 | Dominio `.app` | ~$1.2 | — | ~$14/anno |
 | ACM (certificati) | $0 | $0 | gratis con CloudFront/API GW |
-| Cognito | $0 | $0 | free tier 50k MAU; **niente pool per il locale** (dev 100% offline, #11) |
+| Cognito | $0 | $0 | free tier 50k MAU; **niente pool per il locale** (dev 100% offline, #11). Pool per-env implementati (UC 0015): MFA TOTP e rotazione refresh token senza costi; email default Cognito (~50/gg) fino a SES/UC 0018 |
 | **ECS Fargate** | ~$30 | ~$0 | 3 servizi (core+2 app) × ~$10 (0.25 vCPU/0.5GB). Prod on-demand 24/7; **test Spot + scale-to-0 → ~$0 da idle** |
 | **Aurora Serverless v2** | ~$0 idle | ~$0 idle | ✅ scale-to-0 su **test e prod** (#06 E): ~$0 da idle + storage (~$1). Min>0 prod = evoluzione E4 (~$44) |
 | **RDS Proxy** (solo Lambda) | ~$10–15 | ~$10–15 | ✅ deciso #06 15 (test+prod), implementato in UC 0055; **minimo di fatturazione da verificare alla prima accensione** |
 | **NAT Gateway** | **$0** | **$0** | ✅ deciso #06 B: niente NAT (subnet pubbliche + SG). Hardening = evoluzione E1 (~$32/mese) |
 | Load balancer (ingress) | **$0** | **$0** | ✅ deciso #06 B: VPC Link + Cloud Map, no ALB. ALB = evoluzione E2 (~$16/mese) |
 | State Terraform (S3+DynamoDB) | ~$0 | — | bucket S3 + tabella DynamoDB on-demand: pochi centesimi |
-| VPC endpoints (Lambda) | ~$14 | ~$14 | #06 G: Cognito-IDP + Secrets Manager (~$7 l'uno) per Lambda in VPC senza NAT (cmq < NAT $32) |
+| VPC endpoints (Lambda) | ~$22 | ~$22 | #06 G: Cognito-IDP + Secrets Manager + **SSM (aggiunto da UC 0015**: la Lambda auth legge il client secret da Parameter Store) (~$7,3 l'uno); cmq < NAT $32 |
 | API Gateway HTTP | <$1 | <$1 | $1/M richieste |
-| Lambda (auth, pre-token-gen, authorizer) | ~$0 | ~$0 | free tier |
+| Lambda (auth, pre-token-gen, authorizer) | ~$0 | ~$0 | free tier; auth BFF implementata (UC 0015, change 0037): nativa ARM64, 512 MB, concorrenza riservata 10; bucket S3 artefatti per-SHA ~centesimi |
 | EventBridge + SQS (purge) | ~$0 | ~$0 | free tier / pochi eventi |
 | CloudFront + S3 | ~$0–1 | ~$0–1 | **2 distribuzioni/env** (backoffice + console admin); free tier CloudFront 1TB/mese (primo anno) |
 | Secrets Manager | ~$1–2 | ~$1–2 | $0.40/secret (credenziali DB) |
@@ -34,11 +34,11 @@
 | Observability (#08) | ~$2–6 | ~$0 | Log JSON CloudWatch (retention test 7gg/prod 30gg), metriche tecniche native (gratis) + business via EMF (no `PutMetricData`), dashboard ≤3 gratuiti, allarmi/SNS, canary EventBridge+Lambda (eu-central-1), errori FE→CW. **Tracce SPENTE (C) = $0**. Archivio audit S3+Glacier ~centesimi |
 
 ## Totale indicativo (stato attuale delle decisioni)
-Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **RDS Proxy (~$12)** + **VPC endpoints (~$14)** ≈ **~$26/mese/env**.
+Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **RDS Proxy (~$12)** + **VPC endpoints (~$22)** ≈ **~$34/mese/env**.
 
-- **test ≈ $25–30/mese** — floor always-on (RDS Proxy + endpoints) + misc; Fargate/Aurora ~$0 da idle.
-- **prod ≈ $55–70/mese** — Fargate ~$30 + floor ~$26 + misc (~$8: Route53/dominio, Secrets, CloudWatch, ecc.).
-- **TOTALE AWS ≈ $80–100/mese.** (Il budget AWS $100, #08, è **solo-AWS**.)
+- **test ≈ $35–40/mese** — floor always-on (RDS Proxy + endpoints) + misc; Fargate/Aurora ~$0 da idle.
+- **prod ≈ $65–80/mese** — Fargate ~$30 + floor ~$34 + misc (~$8: Route53/dominio, Secrets, CloudWatch, ecc.).
+- **TOTALE AWS ≈ $100–120/mese.** (Il budget AWS $100, #08, è **solo-AWS**: all'attivazione rivedere le soglie o valutare se l'endpoint SSM sia sostituibile — vedi _EVOLUZIONI-DEVOPS.)
 - **Costi ricorrenti NON-AWS** (fuori dal budget AWS): **Plausible Cloud €9/mese** (analytics EU, #13); **fee Paddle** =
   revenue-based ~5%+$0.50/transazione (#09 K, non un costo fisso); **domiciliazione/virtual office** per la sede ditta
   individuale (#14 D, poche centinaia €/anno, prerequisito business).

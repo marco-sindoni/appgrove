@@ -75,6 +75,7 @@ export const en = {
     resent: 'If the address exists and is unverified, a new link is on its way.',
     verifying: 'Verifying your email…',
     failed: 'This verification link is invalid or expired.',
+    confirmed: 'Email verified! Sign in to continue.',
   },
   workspace: {
     title: 'Name your workspace',
