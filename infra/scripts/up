@@ -8,7 +8,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 usage() {
   cat <<'EOF'
-Uso: up <test|prod|global> [--yes] [--import-zone <ZONE_ID>]
+Uso: up <test|prod|global> [--yes] [--plan <file>] [--import-zone <ZONE_ID>]
 
 Cosa fa
   `terraform apply` sullo stack indicato (dopo un init automatico del backend).
@@ -17,6 +17,10 @@ Cosa fa
 Opzioni
   --yes            applica senza conferma interattiva — SOLO test/global
                    (su prod è vietato: mai auto-approve, #06 25)
+  --plan <file>    applica un PIANO SALVATO (da `plan <env> --out <file>`):
+                   si applica esattamente ciò che è nel piano, nient'altro.
+                   È il flusso prod della pipeline (UC 0005, #07 4): il piano
+                   passa dal gate di approvazione GitHub, poi viene applicato.
   --import-zone ID prima dell'apply importa nella gestione Terraform la hosted
                    zone Route53 già esistente (solo per 'global': serve quando
                    il dominio è stato registrato via Route53, che crea la zona
@@ -24,12 +28,16 @@ Opzioni
 
 Guardrail
   • prod richiede di digitare 'prod' prima di procedere;
-  • su prod l'apply resta interattivo (confermi il piano digitando 'yes').
+  • su prod l'apply resta interattivo (confermi il piano digitando 'yes');
+  • con --plan su prod: in terminale resta la conferma digitata; in CI
+    (nessun terminale) l'approvazione è già avvenuta al gate GitHub sul
+    piano salvato (#07 4) e non c'è prompt.
 
 Esempi
   ./infra/scripts/up test
   ./infra/scripts/up global --import-zone Z0123456789ABC
   ./infra/scripts/up prod          # chiede: digita 'prod', poi conferma il piano
+  ./infra/scripts/up prod --plan /tmp/prod.tfplan   # apply del piano approvato
 EOF
 }
 
@@ -39,23 +47,37 @@ ENV_NAME="$1"; shift
 
 AUTO_APPROVE=false
 IMPORT_ZONE_ID=""
+PLAN_FILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --yes) AUTO_APPROVE=true; shift ;;
+    --plan) PLAN_FILE="${2:-}"; [ -n "$PLAN_FILE" ] || die "--plan richiede il percorso del file"; shift 2 ;;
     --import-zone) IMPORT_ZONE_ID="${2:-}"; [ -n "$IMPORT_ZONE_ID" ] || die "--import-zone richiede l'ID della zona"; shift 2 ;;
     *) usage; die "opzione sconosciuta: $1" ;;
   esac
 done
+
+if [ -n "$PLAN_FILE" ]; then
+  $AUTO_APPROVE && die "--plan e --yes sono alternativi (un piano salvato si applica così com'è)"
+  [ -f "$PLAN_FILE" ] || die "piano salvato non trovato: $PLAN_FILE"
+  case "$PLAN_FILE" in /*) ;; *) PLAN_FILE="$PWD/$PLAN_FILE" ;; esac
+fi
 
 require_terraform
 require_aws
 
 DIR="$(stack_dir "$ENV_NAME")"
 
-# Guardrail prod: conferma digitata, mai auto-approve (#06 25).
+# Guardrail prod: conferma digitata, mai auto-approve (#06 25). Con un piano
+# salvato E senza terminale (CI) il prompt non è possibile né necessario:
+# l'approvazione umana è già avvenuta al gate GitHub su QUEL piano (#07 4).
 if [ "$ENV_NAME" = "prod" ]; then
   $AUTO_APPROVE && die "--yes non è consentito su prod (mai auto-approve, #06 25)"
-  confirm_typed "prod" "Stai per APPLICARE modifiche all'ambiente di PRODUZIONE."
+  if [ -n "$PLAN_FILE" ] && [ ! -t 0 ]; then
+    info "prod senza terminale: applico il piano salvato approvato al gate (#07 4)."
+  else
+    confirm_typed "prod" "Stai per APPLICARE modifiche all'ambiente di PRODUZIONE."
+  fi
 fi
 
 tf_init "$ENV_NAME"
@@ -72,7 +94,9 @@ if [ -n "$IMPORT_ZONE_ID" ]; then
 fi
 
 info "apply di '$ENV_NAME'…"
-if $AUTO_APPROVE; then
+if [ -n "$PLAN_FILE" ]; then
+  terraform -chdir="$DIR" apply -input=false "$PLAN_FILE"   # esattamente il piano approvato
+elif $AUTO_APPROVE; then
   terraform -chdir="$DIR" apply -auto-approve
 else
   terraform -chdir="$DIR" apply   # terraform mostra il piano e chiede 'yes'

@@ -348,3 +348,30 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   4) **conferma definitiva** digitando una **frase casuale generata dalla skill** (es. "oggi la temperatura esterna è gradevole").
   Rispetta le safety di [06-infra-iac](06-infra-iac.md) §K (in prod: valutare snapshot finale del DB prima del drop).
   Distinta da "disabilita applicazione" (reversibile, runtime). Dettaglio in memoria `skills-backlog`.
+
+## Attivazione ambienti cloud — prima esecuzione live della pipeline + configurazione repo GitHub (tracciato 2026-07-17)
+
+Sollevato dalla change `0036-use-case-0005-…` (pipeline CI/CD, UC 0005). La pipeline è **scritta e validata
+staticamente** (actionlint + suite verdi + build Docker locale) ma **mai eseguita dal vivo**: gli ambienti AWS sono
+spenti per scelta (attivazione per fasi, #12; cost-min). I workflow sono progettati per essere **inerti** finché la
+variabile di repo `AWS_ACCOUNT_ID` non esiste. All'attivazione degli ambienti (dopo `first-run`/bootstrap) vanno fatti,
+in ordine:
+
+1. **Variabile di repo GitHub `AWS_ACCOUNT_ID`** (Settings → Secrets and variables → Actions → Variables): accende i
+   job cloud (plan in PR, deploy-test, release-prod, env-ops). I ruoli OIDC `appgrove-github-actions-{test,prod}`
+   esistono già in `infra/global/oidc.tf`.
+2. **Environment GitHub `prod`** con **required reviewer** (gate di approvazione della release, #07 4/21).
+3. **Branch protection su `main`**: PR obbligatoria + check required = job di `verify-pr` (almeno: backend o
+   backend-security, frontend, oasdiff, compliance; infra-check e plan-test quando toccano infra). Squash-merge come
+   convenzione (#07 8).
+4. **Secret `INFRACOST_API_KEY`** (account Infracost free): senza, il job Infracost salta con warning. Nota
+   residency: l'analisi è su HCL (nessun dato personale); valutare comunque il fornitore (USA) secondo la preferenza UE.
+5. **Verifica fatturazione runner `ubuntu-24.04-arm`** su repo privato (build immagini ARM64): se fuori dal free
+   tier, valutare build JVM cross-arch via QEMU sul runner x64 (la native resta su runner ARM, on-demand) o repo pubblico.
+6. **Prima esecuzione live della pipeline**: PR di prova (plan commentato + suite), merge (deploy test: migrate →
+   apply → health), dispatch native, tag `v*` (gate native + piano salvato + approvazione + promozione). Verificare il
+   criterio di accettazione di UC 0005: "una PR con violazione cross-tenant non passa".
+7. **Cron `env-ops`**: verificare che lo spegnimento notturno (20:00 UTC) agisca sul cluster `appgrove-test`.
+
+Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
+con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).

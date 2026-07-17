@@ -75,6 +75,7 @@ module "app_$APP_ID" {
   env            = "$ENV_NAME"
   app_id         = "$APP_ID"
   container_port = $PORT
+  image_tag      = var.image_tag
 
   use_fargate_spot = $SPOT
   force_destroy    = $FORCE
@@ -96,6 +97,21 @@ EOF
 
   terraform fmt "$MAIN_TF" >/dev/null
   ok "envs/$ENV_NAME/main.tf: aggiunto module \"app_$APP_ID\" (porta $PORT)"
+
+  # Registra il servizio nell'output `ci_deploy` (UC 0005): riga one-line nella
+  # mappa services (marker ci-services), letta dalla pipeline per i task one-shot
+  # (migrate/sync-pricing) e il deploy.
+  OUTPUTS_TF="$INFRA_DIR/envs/$ENV_NAME/outputs.tf"
+  if grep -q "ci-services:end" "$OUTPUTS_TF"; then
+    awk -v id="$APP_ID" '
+      /ci-services:end/ { print "      " id " = { task_definition_family = module.app_" id ".task_definition_family, ecs_service_name = module.app_" id ".ecs_service_name, ecr_repository_url = module.app_" id ".ecr_repository_url, security_group_id = module.app_" id ".security_group_id }" }
+      { print }
+    ' "$OUTPUTS_TF" > "$OUTPUTS_TF.tmp" && mv "$OUTPUTS_TF.tmp" "$OUTPUTS_TF"
+    terraform fmt "$OUTPUTS_TF" >/dev/null
+    ok "envs/$ENV_NAME/outputs.tf: '$APP_ID' aggiunto all'output ci_deploy"
+  else
+    warn "envs/$ENV_NAME/outputs.tf: marker ci-services assenti — aggiungere a mano '$APP_ID' alla mappa services dell'output ci_deploy"
+  fi
 done
 
 info "Prossimi passi: commit + PR (plan in CI, #07 18); in locale: ./infra/scripts/plan test"

@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0028** (customer portal self-service); poi **UC 0029** (test pagamenti L1/L2/L3)
+## 👉 Prossimo da implementare: **UC 0015** (Cognito + auth BFF); poi **UC 0016** (Pre-Token-Gen Lambda + JWT)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -71,7 +71,7 @@ AWS finché il prodotto non gira offline.
 | 31 | [0055](02-devops-infra/0055-risorse-condivise-per-ambiente.md) | Risorse condivise per-ambiente | DevOps & Infra | 0003 | ✅ |
 | 32 | [0004](02-devops-infra/0004-modulo-microsaas-app.md) | Modulo `microsaas_app` | DevOps & Infra | 0003, 0055 | ✅ |
 | 33 | [0006](02-devops-infra/0006-osservabilita-base.md) | Observability baseline | DevOps & Infra | 0003, 0004 | ✅ |
-| 34 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ⬜ |
+| 34 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ✅ |
 | 35 | [0015](05-auth/0015-cognito-auth-bff.md) | Cognito + auth BFF | Auth | 0003, 0012 | ⬜ |
 | 36 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ⬜ |
 | 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Custom Lambda authorizer | Platform Core | 0013, 0016 | ⬜ |

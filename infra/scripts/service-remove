@@ -71,6 +71,16 @@ for ENV_NAME in test prod; do
 
   terraform fmt "$MAIN_TF" >/dev/null
   ok "envs/$ENV_NAME/main.tf: rimosso module \"app_$APP_ID\""
+
+  # Toglie il servizio dall'output `ci_deploy` (riga one-line aggiunta da
+  # service-add tra i marker ci-services, UC 0005). Pattern ancorato all'inizio
+  # della entry: "<app_id> = { task_definition_family = module.app_<app_id>...".
+  OUTPUTS_TF="$INFRA_DIR/envs/$ENV_NAME/outputs.tf"
+  if grep -qE "^[[:space:]]*${APP_ID}[[:space:]]*= \{ task_definition_family = module\.app_${APP_ID}\." "$OUTPUTS_TF"; then
+    grep -vE "^[[:space:]]*${APP_ID}[[:space:]]*= \{ task_definition_family = module\.app_${APP_ID}\." "$OUTPUTS_TF" > "$OUTPUTS_TF.tmp" && mv "$OUTPUTS_TF.tmp" "$OUTPUTS_TF"
+    terraform fmt "$OUTPUTS_TF" >/dev/null
+    ok "envs/$ENV_NAME/outputs.tf: '$APP_ID' rimosso dall'output ci_deploy"
+  fi
 done
 
 warn "Ruolo/schema Postgres e segreto DB NON cancellati: vedi --help per la pulizia manuale."

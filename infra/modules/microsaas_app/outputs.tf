@@ -76,3 +76,13 @@ output "observability" {
     widgets        = local.dashboard_widgets
   }
 }
+
+output "task_definition_family" {
+  description = "Family della task definition: i task one-shot della pipeline (Flyway migrate / sync-pricing, UC 0005) la lanciano via `aws ecs run-task` con command override (ultima revision ACTIVE)."
+  value       = aws_ecs_task_definition.this.family
+}
+
+output "security_group_id" {
+  description = "Security group del service (riusato dai task one-shot della pipeline per raggiungere Aurora in VPC, UC 0005)."
+  value       = aws_security_group.service.id
+}

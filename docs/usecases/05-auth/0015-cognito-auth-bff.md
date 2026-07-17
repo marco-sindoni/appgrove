@@ -62,3 +62,13 @@ gestita su base **contratto** (#13 B). Secrets (app client) in Secrets Manager; 
   2. Refresh token in cookie host-only HttpOnly; access/id in memoria; rotazione + TTL.
   3. CORS con credentials senza wildcard; throttling `/api/auth/*`.
   4. Contratto identico al provider locale (UC 0010) per la parità dev↔test.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
+
+- **Campi Cognito nel `config.json` per-ambiente.** L'output Terraform `spa_config` (in
+  `infra/envs/{test,prod}/outputs.tf`, UC 0005) genera il `config.json` runtime delle 2 SPA con
+  `cognito.userPoolId`/`cognito.clientId` **placeholder vuoti**: quando questo UC crea User Pool e app client,
+  quei campi vanno valorizzati dagli output reali (la pipeline li pubblica già a ogni deploy, nessun altro
+  cablaggio necessario). **Proprietario**: UC 0015.

@@ -30,7 +30,7 @@
 | SES (email) | ~$0 | ~$0 | ~$0.10/1000 email; verifica/reset/invito EN+IT (usecases/01) |
 | SSM Parameter Store | $0 | $0 | parametri standard gratis |
 | CloudWatch Logs | ~$1–5 | ~$1–5 | dipende dal volume log |
-| CI/CD (GitHub Actions) | ~$0 | ~$0 | #07 A: free tier 2.000 min/mese (repo privato); OIDC (no costi); native GraalVM solo on-demand (`[graal]`/release) |
+| CI/CD (GitHub Actions) | ~$0 | ~$0 | #07 A: free tier 2.000 min/mese (repo privato); OIDC (no costi); native GraalVM solo on-demand (`[graal]`/release). Implementata (UC 0005, change 0036): path-filter+cache+concurrency; workflow inerti finché la variabile `AWS_ACCOUNT_ID` non attiva gli ambienti. **Da verificare all'attivazione**: fatturazione runner `ubuntu-24.04-arm` su repo privato (build ARM64; vedi _BACKLOG "Attivazione ambienti cloud") |
 | Observability (#08) | ~$2–6 | ~$0 | Log JSON CloudWatch (retention test 7gg/prod 30gg), metriche tecniche native (gratis) + business via EMF (no `PutMetricData`), dashboard ≤3 gratuiti, allarmi/SNS, canary EventBridge+Lambda (eu-central-1), errori FE→CW. **Tracce SPENTE (C) = $0**. Archivio audit S3+Glacier ~centesimi |
 
 ## Totale indicativo (stato attuale delle decisioni)

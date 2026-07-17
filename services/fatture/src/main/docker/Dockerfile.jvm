@@ -1,0 +1,21 @@
+# ── fatture — immagine JVM (default in test, #07 7) ──────────────────────────
+# Stesso pattern di core/src/main/docker/Dockerfile.jvm (build dalla pipeline, UC 0005):
+#   mvn -pl fatture -am package   →   docker build -f fatture/src/main/docker/Dockerfile.jvm fatture
+# `curl` richiesto dall'health check ECS: presenza verificata al build.
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.21
+
+RUN curl --version
+
+ENV LANGUAGE='en_US:en'
+COPY --chown=185 target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=185 target/quarkus-app/*.jar /deployments/
+COPY --chown=185 target/quarkus-app/app/ /deployments/app/
+COPY --chown=185 target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8081
+USER 185
+
+# Forma exec: gli argomenti del command override ECS (task one-shot `migrate`) si accodano.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", \
+  "-jar", "/deployments/quarkus-run.jar"]

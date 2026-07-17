@@ -1,5 +1,6 @@
 package app.appgrove.commons.messaging;
 
+import app.appgrove.commons.aws.AwsClientCredentials;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -10,8 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -24,6 +23,12 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
  * stesse chiavi di config del {@code SqsWebhookQueue} di core ({@code appgrove.sqs.endpoint} /
  * {@code appgrove.sqs.region}); gli URL delle code sono risolti in lazy e cachati per nome, così
  * l'avvio non dipende dalla raggiungibilità di ElasticMQ. Attiva fuori dal profilo {@code test}.
+ *
+ * <p>Profilo cloud (UC 0005): senza endpoint override le credenziali vengono dalla catena di
+ * default (task role IAM) e i nomi logici delle code sono prefissati con
+ * {@code appgrove.sqs.queue-prefix} (← env {@code APPGROVE_SQS_QUEUE_PREFIX} iniettata dal modulo
+ * {@code microsaas_app}: le code fisiche sono {@code appgrove-<env>-...}). In locale il prefisso è
+ * vuoto e i nomi logici coincidono con quelli fisici di ElasticMQ.
  */
 @ApplicationScoped
 @UnlessBuildProfile("test")
@@ -31,27 +36,34 @@ public class SqsMessageQueues implements MessageQueues {
 
     private final String endpoint;
     private final String region;
+    private final String queuePrefix;
     private final Map<String, String> queueUrls = new ConcurrentHashMap<>();
     private SqsClient client;
 
     public SqsMessageQueues(
             @ConfigProperty(name = "appgrove.sqs.endpoint") Optional<String> endpoint,
-            @ConfigProperty(name = "appgrove.sqs.region", defaultValue = "eu-south-1") String region) {
+            @ConfigProperty(name = "appgrove.sqs.region", defaultValue = "eu-south-1") String region,
+            @ConfigProperty(name = "appgrove.sqs.queue-prefix", defaultValue = "") String queuePrefix) {
         this.endpoint = endpoint.orElse(null);
         this.region = region;
+        this.queuePrefix = queuePrefix;
     }
 
     @PostConstruct
     void init() {
         var builder = SqsClient.builder()
                 .region(Region.of(region))
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(AwsBasicCredentials.create("local", "local")))
+                .credentialsProvider(AwsClientCredentials.forEndpoint(endpoint, "local", "local"))
                 .httpClient(UrlConnectionHttpClient.create());
         if (endpoint != null) {
             builder.endpointOverride(URI.create(endpoint));
         }
         this.client = builder.build();
+    }
+
+    /** Nome fisico della coda: prefisso per-ambiente + nome logico (testabile senza client). */
+    String physicalName(String queueName) {
+        return queuePrefix + queueName;
     }
 
     @PreDestroy
@@ -63,7 +75,7 @@ public class SqsMessageQueues implements MessageQueues {
 
     private String queueUrl(String queueName) {
         return queueUrls.computeIfAbsent(
-                queueName, name -> client.getQueueUrl(b -> b.queueName(name)).queueUrl());
+                queueName, name -> client.getQueueUrl(b -> b.queueName(physicalName(name))).queueUrl());
     }
 
     @Override

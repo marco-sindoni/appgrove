@@ -61,3 +61,32 @@ output "event_bus_name" {
   value       = module.platform_shared.event_bus_name
   description = "Bus EventBridge dell'ambiente (regole purge per-app, UC 0004)."
 }
+
+# ── Pipeline CI/CD (UC 0005) ─────────────────────────────────────────────────
+
+output "spa_config" {
+  description = "config.json runtime per-SPA generato dall'infra (#07 12: unica fonte di verità, zero valori hardcoded). Cognito placeholder fino a UC 0015; errorIngestUrl = rotta di error_ingest.tf (UC 0006)."
+  value = {
+    for app in ["backoffice", "admin"] : app => {
+      env            = "test"
+      authBaseUrl    = module.platform_shared.api_url
+      coreBaseUrl    = module.platform_shared.api_url
+      cognito        = { userPoolId = "", clientId = "" }
+      errorIngestUrl = "${module.platform_shared.api_url}/ingest/errors"
+    }
+  }
+}
+
+output "ci_deploy" {
+  description = "Aggancio per la pipeline (UC 0005): cluster, rete e — per servizio — task family/service/ECR/SG per i task one-shot (migrate/sync-pricing) e il deploy. Le righe per-servizio sono mantenute da service-add/service-remove (marker ci-services)."
+  value = {
+    ecs_cluster_name = module.platform_shared.ecs_cluster_name
+    subnet_ids       = module.baseline.public_subnet_ids
+    services = {
+      # ── ci-services:begin ──
+      platform = { task_definition_family = module.app_platform.task_definition_family, ecs_service_name = module.app_platform.ecs_service_name, ecr_repository_url = module.app_platform.ecr_repository_url, security_group_id = module.app_platform.security_group_id }
+      fatture  = { task_definition_family = module.app_fatture.task_definition_family, ecs_service_name = module.app_fatture.ecs_service_name, ecr_repository_url = module.app_fatture.ecr_repository_url, security_group_id = module.app_fatture.security_group_id }
+      # ── ci-services:end ──
+    }
+  }
+}

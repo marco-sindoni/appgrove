@@ -7,11 +7,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/_lib.sh"
 
 usage() {
   cat <<'EOF'
-Uso: plan <test|prod|global>
+Uso: plan <test|prod|global> [--out <file>]
 
 Cosa fa
   `terraform plan` sullo stack indicato: mostra cosa VERREBBE creato/modificato/
   distrutto. Non tocca nulla: è sempre sicuro da lanciare.
+
+Opzioni
+  --out <file>  salva il piano su file (percorso risolto in assoluto). È il
+                flusso prod della pipeline (UC 0005, #07 4): plan salvato →
+                approvazione → `up prod --plan <file>` applica ESATTAMENTE
+                ciò che è stato approvato.
 
 Prerequisiti
   • bootstrap già eseguito (lo state remoto deve esistere)
@@ -20,15 +26,31 @@ Prerequisiti
 Esempi
   ./infra/scripts/plan test
   ./infra/scripts/plan global
+  ./infra/scripts/plan prod --out /tmp/prod.tfplan
 EOF
 }
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then usage; exit 0; fi
 if [ -z "${1:-}" ]; then usage; die "manca l'ambiente (test | prod | global)"; fi
-ENV_NAME="$1"
+ENV_NAME="$1"; shift
+
+PLAN_OUT=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out) PLAN_OUT="${2:-}"; [ -n "$PLAN_OUT" ] || die "--out richiede il percorso del file"; shift 2 ;;
+    *) usage; die "opzione sconosciuta: $1" ;;
+  esac
+done
 
 require_terraform
 require_aws
 
 tf_init "$ENV_NAME"
 info "plan di '$ENV_NAME' (nessuna modifica verrà applicata)…"
-terraform -chdir="$(stack_dir "$ENV_NAME")" plan
+if [ -n "$PLAN_OUT" ]; then
+  # Percorso assoluto: con -chdir i path relativi sarebbero risolti nello stack.
+  case "$PLAN_OUT" in /*) ;; *) PLAN_OUT="$PWD/$PLAN_OUT" ;; esac
+  terraform -chdir="$(stack_dir "$ENV_NAME")" plan -input=false -out="$PLAN_OUT"
+  ok "piano salvato in $PLAN_OUT"
+else
+  terraform -chdir="$(stack_dir "$ENV_NAME")" plan
+fi
