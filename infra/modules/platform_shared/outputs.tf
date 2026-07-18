@@ -208,12 +208,21 @@ output "cognito_client_id" {
 
 output "cognito_issuer" {
   description = "Emittente del pool Cognito (UC 0016): i servizi verificano mp.jwt.verify.issuer contro questo."
-  value       = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.this.id}"
+  value       = local.cognito_issuer
 }
 
 output "cognito_jwks_url" {
   description = "URL JWKS del pool Cognito (UC 0016): i servizi verificano la firma dei token contro queste chiavi."
-  value       = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.this.id}/.well-known/jwks.json"
+  value       = "${local.cognito_issuer}/.well-known/jwks.json"
+}
+
+output "authorizer_id" {
+  description = <<-EOT
+    Authorizer JWT dell'edge (UC 0014): `microsaas_app` lo aggancia alle route
+    `/api/<app_id>/v1/*` via l'oggetto `shared`, così ogni app è protetta per
+    costruzione. Vedi authorizer.tf per la scelta nativo-vs-Lambda.
+  EOT
+  value       = aws_apigatewayv2_authorizer.jwt.id
 }
 
 output "auth_lambda_artifacts_bucket" {

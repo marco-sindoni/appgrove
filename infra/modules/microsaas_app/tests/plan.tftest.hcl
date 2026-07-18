@@ -21,6 +21,7 @@ variables {
     ecs_cluster_arn               = "arn:aws:ecs:eu-west-1:123456789012:cluster/appgrove-test"
     cloud_map_namespace_id        = "ns-0000000000000000"
     api_id                        = "api00000"
+    authorizer_id                 = "auth0000"
     vpc_link_id                   = "vl-0000"
     vpc_link_security_group_id    = "sg-00000000"
     event_bus_name                = "appgrove-test"
@@ -83,6 +84,23 @@ run "app_di_default_in_test" {
     error_message = "La route deve essere ANY /api/<app_id>/v1/{proxy+}."
   }
 
+  # Gate 1 all'edge (UC 0014): la route nasce PROTETTA dall'authorizer JWT
+  # condiviso — una nuova app lo eredita dal modulo, senza infra su misura.
+  assert {
+    condition     = aws_apigatewayv2_route.this.authorization_type == "JWT"
+    error_message = "La route dell'app deve essere protetta dall'authorizer JWT (UC 0014)."
+  }
+  assert {
+    condition     = aws_apigatewayv2_route.this.authorizer_id == var.shared.authorizer_id
+    error_message = "La route deve agganciare l'authorizer condiviso passato in `shared`."
+  }
+
+  # Default sicuro: senza public_routes un'app non espone NULLA senza token.
+  assert {
+    condition     = length(aws_apigatewayv2_route.public) == 0
+    error_message = "Senza public_routes non deve esistere alcuna route scoperta."
+  }
+
   # Capacità: Spot in test (#06 10), 1 task (cost-min #06 9).
   assert {
     condition     = one(aws_ecs_service.this.capacity_provider_strategy).capacity_provider == "FARGATE_SPOT"
@@ -130,6 +148,25 @@ run "core_in_prod" {
     is_platform_core = true
     use_fargate_spot = false
     force_destroy    = false
+    public_routes    = ["POST /api/platform/v1/webhooks/paddle"]
+  }
+
+  # Eccezione all'authorizer (UC 0014): il webhook Paddle è chiamato senza
+  # access token (firma HMAC, UC 0025). Deve esistere come route DEDICATA e
+  # scoperta — più specifica del proxy generico, che resta protetto.
+  assert {
+    condition     = aws_apigatewayv2_route.public["POST /api/platform/v1/webhooks/paddle"].route_key == "POST /api/platform/v1/webhooks/paddle"
+    error_message = "Il webhook Paddle deve avere una route dedicata (UC 0014/0025)."
+  }
+  assert {
+    # Nessun authorizer configurato = attributo assente nel plan (API GW applica
+    # "NONE" lato servizio): è esattamente ciò che vogliamo verificare.
+    condition     = one(aws_apigatewayv2_route.public["POST /api/platform/v1/webhooks/paddle"].*.authorization_type) == null
+    error_message = "La route del webhook NON deve avere authorizer: Paddle non ha un access token."
+  }
+  assert {
+    condition     = aws_apigatewayv2_route.this.authorization_type == "JWT"
+    error_message = "L'eccezione del webhook non deve scoperchiare il proxy generico del core."
   }
 
   # Il core usa lo schema `platform`, non app_platform (#05 11).

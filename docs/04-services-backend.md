@@ -58,16 +58,19 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
 ### Enforcement entitlement (topic G — aggiorna #01/#02; **catena completa in #09 dec.30**)
 7. **Enforcement a livelli** (difesa in profondità). La catena autorevole è in **#09 dec.30** (authN → app abilitata →
    entitled → ruolo → quota); qui la mappatura edge/servizio:
-   - **Custom Lambda authorizer** (edge): verifica il **JWT**, poi due check **grossolani** di piattaforma —
-     **(a) app abilitata?** (flag disable-admin, **ha precedenza**, → **403**, #09 dec.30 gate 2) e **(b) il tenant ha
-     accesso all'app?** (entitlement **DERIVATO** da `platform.subscription`, status ∈ `{trialing,active,past_due}`,
-     → **402**/deny). **NON** legge una tabella `entitlements` (abolita, #09 dec.12): la **deriva** da `subscription`.
-     La derivazione è **economica** (tabelle piccole, #09 dec.12) → **nessuna cache attiva**; cache dell'authorizer =
-     **opzionale/futura** (solo se le letture diventano un collo di bottiglia; eventuale revoca con lag = TTL).
-     Sostituisce l'authorizer Cognito nativo.
-   - Il **servizio** (Quarkus OIDC) **ri-valida il JWT** e applica i **gate fini**: **ruolo** (`@RolesAllowed`) → 403,
-     **quota** (SPI flow/stock) → 429, e le **sfumature di stato/grace** → 402. I **diritti GDPR** restano **esenti** dai
-     gate (#09 F31).
+   - **Authorizer JWT nativo** (edge, UC 0014 — *rivisto dalla change 0039*): API Gateway verifica firma, emittente,
+     destinatario e **scadenza** del token prima del VPC Link. Token assente/invalido/scaduto → **401**.
+     **Perché nativo e non una Lambda nostra**: su **HTTP API v2** il rifiuto di un authorizer custom diventa **sempre
+     403**, non personalizzabile — un token scaduto darebbe 403 al posto di 401, rompendo il **refresh silenzioso** della
+     SPA, e un tenant senza abbonamento darebbe 403 al posto di 402, facendo sparire il banner "abbonamento richiesto".
+     In più il nativo costa **$0**, non ha avvio a freddo e non interroga il DB a ogni richiesta.
+     Eccezioni pubbliche = **route dedicate più specifiche** senza authorizer (oggi il solo webhook Paddle, firma HMAC).
+   - Il **servizio** (smallrye-jwt) **ri-valida il JWT** (`token_use`/`client_id`) e applica **tutti** i gate di business:
+     **app abilitata** e **entitled** — entitlement **DERIVATO** (`access = app.status==active && (subscription.grantsAccess()
+     ‖ baseline tier free)`, account in `pending_deletion` → zero entitlement), **NON** una tabella `entitlements`
+     (abolita, #09 dec.12) → **402**; poi **ruolo** (`@RolesAllowed`) → 403 e **quota** (SPI flow/stock) → 429.
+     La derivazione è **economica** (tabelle piccole) → **nessuna cache**; memoizzazione **per-richiesta** in
+     `RestEntitlementService`. I **diritti GDPR** restano **esenti** dai gate di enforcement (#09 F31), non dall'authN.
 
 ### Orchestrazione purge (topic H — aggiorna #05)
 8. **Eventi async (EventBridge)**: il core emette `tenant.offboarded`; ogni servizio **consuma e purga** i dati del
@@ -77,7 +80,7 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
 9. **OpenAPI + Swagger su tutti i backend** (core e app). Spec `/q/openapi` **sempre generata**; **Swagger UI**
    abilitata anche fuori dal dev mode (`quarkus.swagger-ui.always-include=true`). **Accesso solo `platform-admin`**
    (non admin di tenant): **libero in local** (dev mode), in **test+prod** esposto solo via route **gated platform-admin**
-   (il Lambda authorizer verifica il ruolo). Serving esatto (diretto vs via backoffice admin) → dettaglio impl/[03-frontend](03-frontend.md).
+   (il gate di ruolo è nel servizio, `@RolesAllowed(platform-admin)`). Serving esatto (diretto vs via backoffice admin) → dettaglio impl/[03-frontend](03-frontend.md).
 
 ## Questioni aperte
 _Nessuna sul backend. Trasporto eventi e provisioning authorizer/RDS Proxy → #06; dettagli logging/correlation → #08._
@@ -86,7 +89,7 @@ _Nessuna sul backend. Trasporto eventi e provisioning authorizer/RDS Proxy → #
 - **Reactive (Hibernate Reactive + Mutiny)** — scartato: complessità e multitenancy meno maturo, non giustificati ora.
 - **Commons come lib versionata a parte / nessuna condivisione** — scartati: il multi-module è più semplice e senza drift.
 - **Native ovunque / JVM ovunque** — scartati: JVM in dev (iterazione) + native in test/prod (costo/avvio) è l'equilibrio.
-- **Entitlement via claim JWT / via chiamata al core** — scartati a favore del Lambda authorizer (revoca più pronta del claim, niente service-to-service).
+- **Entitlement via claim JWT** — scartato: la revoca sarebbe in ritardo di una scadenza token. L'entitlement è **derivato** a ogni richiesta dal servizio (UC 0027). L'**authorizer edge che deriva l'entitlement** è a sua volta scartato (change 0039): su HTTP API v2 non può restituire 402/401 corretti.
 - **Purge via chiamata diretta core→app / manuale** — scartati a favore degli eventi EventBridge (disaccoppiamento).
 - **Package-by-feature / paginazione cursor** — scartati per semplicità nel PoC.
 

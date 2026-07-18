@@ -62,6 +62,21 @@ billing/quota (base contratto). Diritti GDPR sempre esercitabili (UC 0032/0033).
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0039-use-case-0014-…` (authorizer all'edge)._
+
+- **⚠️ `EntitlementClient` in cloud: usare l'indirizzo INTERNO, mai il dominio pubblico** *(owner: questo UC 0027)*.
+  `RestEntitlementService` chiama il core su `/api/platform/v1/me/entitlements` via
+  `@RegisterRestClient(configKey = "core-api")`. **In cloud non è ancora cablato**: nessuna variabile
+  `QUARKUS_REST_CLIENT_CORE_API_URL` è iniettata in `microsaas_app/ecs.tf` (in dev punta a `localhost:8080`), quindi oggi
+  non parte alcuna chiamata. **Quando verrà cablato**, il valore DEVE essere l'endpoint Cloud Map interno
+  (`platform.appgrove-<env>.internal:8080`) e **mai** `api.<env>.appgrove.app`: dalla change 0039 il dominio pubblico è
+  protetto dall'authorizer JWT dell'edge, che bloccherebbe la chiamata (e comunque farebbe un giro inutile fuori dalla VPC).
+  Il chiamante deve inoltre **propagare il JWT dell'utente** (l'endpoint è `@Authenticated`), come già fa.
+- **Costo per-richiesta del salto app→core** *(owner: questo UC 0027, preesistente)*. Il read-model è memoizzato **solo
+  per-richiesta**: ogni richiesta a un'app fa un salto HTTP verso il core più una lettura DB. La change 0039 ha scelto di
+  NON duplicare il gate all'edge (vedi UC 0014), quindi questo resta l'unico punto di valutazione: la cache cross-richiesta
+  a TTL o il disaccoppiamento a eventi restano evoluzioni tracciate (UC 0046 / `_BACKLOG`).
+
 - **Risoluzione del tetto di quota dall'entitlement** *(owner: questo UC 0027)*. La change
   `0015-use-case-0051-app1-backend` ha introdotto in `commons` il contratto quota SPI
   (`QuotaService`/`QuotaLimitSource`/`QuotaExceededException`) e l'ha implementato nell'app `fatture`

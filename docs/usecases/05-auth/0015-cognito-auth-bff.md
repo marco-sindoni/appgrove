@@ -65,6 +65,21 @@ gestita su base **contratto** (#13 B). Secrets (app client) in Secrets Manager; 
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0039-use-case-0014-…` (authorizer all'edge)._
+
+- **Eventi audit dei flussi auth con la convenzione `AuditLogger`** *(RIASSEGNATO qui da UC 0014)*. UC 0006 fissa la
+  convenzione: eventi audit/sicurezza = log JSON con `log_type=audit` nell'MDC (API `AuditLogger` in `services/commons`),
+  che il subscription filter instrada all'archivio 12 mesi (#08 28/29). Login/logout, tentativi falliti, cambio
+  password/2FA, lockout nascono **qui** (BFF auth) e devono emettere eventi con QUESTA convenzione — la Lambda gira su
+  Quarkus, quindi può usare `AuditLogger` direttamente. La sezione "auth/sicurezza" della dashboard e l'allarme "picco
+  login falliti" (#08 16) si completano di conseguenza. *Perché riassegnato:* il punto stava in UC 0014 perché si
+  prevedeva una Lambda authorizer scritta da noi; con l'authorizer **nativo** (change 0039) all'edge non c'è più codice
+  nostro, quindi l'unico posto dove quegli eventi possono nascere sono le Lambda auth.
+- **Vincolo sull'audience dell'authorizer dell'edge** *(nota di coerenza)*. L'authorizer JWT (UC 0014) valida
+  `client_id` = **questo** app client confidenziale (l'access token Cognito non porta `aud`). Se un domani nascesse un
+  secondo app client (es. per un'integrazione machine-to-machine), va aggiunto all'`audience` dell'authorizer
+  (`platform_shared/authorizer.tf`), altrimenti i suoi token verrebbero respinti con 401 all'edge.
+
 _Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
 
 - ✅ **Campi Cognito nel `config.json` per-ambiente** — **risolto dalla change `0037-use-case-0015-…`**:

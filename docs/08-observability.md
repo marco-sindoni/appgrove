@@ -25,7 +25,7 @@ in [_EVOLUZIONI-DEVOPS](_EVOLUZIONI-DEVOPS.md)).
    `request_id` agganciati **automaticamente** a ogni log → invariante #4 garantita dal framework, non dal singolo dev.
 3. **Nomi campo secondo le semantic conventions OTel** (incl. `trace_id`/`span_id`, `service.name`): rende i log
    pronti per Loki/Grafana senza toccare il codice (future-proof).
-4. **Correlation id** generato all'**edge** (API GW) e **propagato** a valle (authorizer → servizio → SQS).
+4. **Correlation id** generato all'**edge** (API GW) e **propagato** a valle (servizio → SQS). L'authorizer JWT nativo non è un punto di propagazione: non esegue codice nostro (UC 0014).
 5. **No PII in chiaro** nei log: identificativi **opachi** (`user_id` = sub/UUID, mai email/nome). Masking dove serve.
    Linea guida da imporre subito (ripulire dopo è costoso; lega a #13).
 6. **Livelli**: `INFO` in test/prod, `DEBUG` attivabile via config/SSM senza rebuild; `local` può stare a `DEBUG`.
@@ -42,7 +42,7 @@ in [_EVOLUZIONI-DEVOPS](_EVOLUZIONI-DEVOPS.md)).
 
 ### C. Tracing distribuito
 11. **Strumentazione OTel attiva ora** (`quarkus-opentelemetry`) + **propagazione W3C trace context** (`traceparent`)
-    attraverso API GW → authorizer → servizio → SQS; `trace_id`/`span_id` nei log (A). **MA export tracce SPENTO,
+    attraverso API GW → servizio → SQS; `trace_id`/`span_id` nei log (A). **MA export tracce SPENTO,
     nessun collector** (c1) → **costo $0**, nessuna infra. Per debug si usano log + `correlation_id`.
 12. **Accensione tracce = evoluzione E10**: deploy collector **ADOT → X-Ray** (c2), oppure **OTel Collector → Grafana
     Cloud/Tempo**, abilitando l'exporter **via config (nessuna modifica al codice)**.
@@ -72,7 +72,7 @@ in [_EVOLUZIONI-DEVOPS](_EVOLUZIONI-DEVOPS.md)).
 ### G. Health & uptime
 21. **Health interni (ECS)** via `quarkus-smallrye-health`: **liveness** (`/q/health/live`) **senza DB** (un blip DB non
     deve killare i container); **readiness** (`/q/health/ready`) col DB ma **tarata sul cold start** Aurora scale-to-0
-    (~10-15s). Endpoint **esclusi dall'authorizer** e non loggati rumorosamente. ECS riavvia i task malati; allarme su
+    (~10-15s). Endpoint **non esposti** dall'edge (la route copre solo `/api/<app_id>/v1/*`, UC 0014) e non loggati rumorosamente. ECS riavvia i task malati; allarme su
     fallimenti ripetuti (E).
 22. **Uptime esterno = canary AWS-native cross-region**: **EventBridge schedulato → Lambda di ping** sull'health endpoint
     pubblico leggero → metrica → **SNS**, **interamente in eu-central-1 (Francoforte)**, separato da eu-west-1 (così

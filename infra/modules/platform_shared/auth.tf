@@ -116,3 +116,9 @@ resource "aws_ssm_parameter" "auth_client_secret" {
     Name = "/appgrove/${var.env}/auth/client-secret"
   }
 }
+
+locals {
+  # Issuer del pool: usato dall'authorizer JWT dell'edge (UC 0014), dagli output
+  # per i servizi (validazione in profondità, UC 0016) e per l'URL delle JWKS.
+  cognito_issuer = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.this.id}"
+}

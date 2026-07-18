@@ -23,8 +23,8 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 
 ## Vincoli ereditati (da concretizzare qui)
 - Aurora Serverless v2 (scale-to-0 su test), **RDS Proxy** per le Lambda, **ruolo DB per servizio** (least privilege).
-- API Gateway v2 (HTTP API) + **custom Lambda authorizer** (JWT + entitlement). Cognito (pool dev/test/prod).
-- Lambda: auth BFF, pre-token-gen, authorizer (in VPC, accesso DB via RDS Proxy).
+- API Gateway v2 (HTTP API) + **authorizer JWT nativo** (solo JWT; l'entitlement è nel servizio — UC 0014, change 0039). Cognito (pool dev/test/prod).
+- Lambda: auth BFF, pre-token-gen (in VPC, accesso DB via RDS Proxy). **Nessuna Lambda authorizer**: l'edge usa l'authorizer JWT nativo.
 - **EventBridge + SQS** per la purge per-tenant. **2 distribuzioni S3/CloudFront** per env (backoffice + admin).
 - Route53 (`appgrove.app`) + ACM (wildcard `*.appgrove.app`, `*.test.appgrove.app`). Secrets: SSM + Secrets Manager (DB).
 - **Principio costo-minimo** (→ [_COSTI-AWS.md](_COSTI-AWS.md)): leva grossa = **NAT Gateway** (~$32/mese, evitabile).
@@ -36,7 +36,7 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 - **C. Compute (ECS Fargate)** — dove girano i container dei servizi: cluster, task definition, service, autoscaling.
 - **D. Container registry (ECR)** — dove stanno le immagini Docker dei servizi; lifecycle policy.
 - **E. Database (Aurora + RDS Proxy)** — cluster Aurora Serverless v2, scale-to-0, RDS Proxy, ruoli/grant per servizio, backup/PITR, deletion protection.
-- **F. Edge & DNS** — S3+CloudFront (×2 app), API Gateway + authorizer, Route53, ACM.
+- **F. Edge & DNS** — S3+CloudFront (×2 app), API Gateway + authorizer JWT nativo, Route53, ACM.
 - **G. Auth infra** — Cognito pool, le 3 Lambda, loro accesso a VPC/DB.
 - **H. Messaging** — EventBridge bus + code SQS per la purge.
 - **I. Secrets/config** — SSM Parameter Store + Secrets Manager per env.
@@ -83,10 +83,10 @@ Il recap indicava **AWS CDK (TypeScript)** con *construct* `MicroSaasApp`. **Dec
 
 ### Edge & DNS (topic F)
 17. **S3 privato (OAC) + CloudFront** ×2 app ×env; fallback SPA (403/404 → `index.html`). **Cert CloudFront in `us-east-1`**
-    (requisito AWS), cert regionali (API GW) in `eu-west-1`. **API Gateway HTTP API + custom Lambda authorizer**. Record Route53 alias.
+    (requisito AWS), cert regionali (API GW) in `eu-west-1`. **API Gateway HTTP API + authorizer JWT nativo** (UC 0014). Record Route53 alias.
 
 ### Auth infra (topic G)
-18. **Cognito user pool per env** (dev/test/prod). **3 Lambda** (auth BFF, pre-token-gen, authorizer) **in VPC** (DB via RDS Proxy).
+18. **Cognito user pool per env** (dev/test/prod). **2 Lambda** (auth BFF, pre-token-gen) **in VPC** (DB via RDS Proxy; il loro SG è l'unico ammesso in ingresso sul proxy, E23-b). L'authorizer è **nativo**, non una Lambda (UC 0014).
     Per la connettività con **no-NAT**: **VPC endpoints** (Cognito-IDP + Secrets Manager), ~$14/mese/env.
     **MFA TOTP opzionale** (opt-in da profilo → [usecases/01-auth-registrazione](usecases/01-auth-registrazione.md)).
 
