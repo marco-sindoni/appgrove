@@ -74,7 +74,7 @@ AWS finché il prodotto non gira offline.
 | 34 | [0005](02-devops-infra/0005-pipeline-cicd.md) | Pipeline CI/CD | DevOps & Infra | 0003, 0004, 0055, 0006 | ✅ |
 | 35 | [0015](05-auth/0015-cognito-auth-bff.md) | Cognito + auth BFF | Auth | 0003, 0012 | ✅ |
 | 36 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ✅ |
-| 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Custom Lambda authorizer | Platform Core | 0013, 0016 | ⬜ |
+| 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Custom Lambda authorizer | Platform Core | 0013, 0016 | 🟡 |
 | 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ⬜ |
 | 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ⬜ |
 | 40 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ⬜ |
