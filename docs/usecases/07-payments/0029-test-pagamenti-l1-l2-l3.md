@@ -58,6 +58,18 @@ verde con Paddle.js mockato; L3 smoke verde (o override motivato se sandbox down
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0039-use-case-0014-…` (authorizer all'edge)._
+
+- **L3 è il "canarino" dell'eccezione sul webhook Paddle** *(owner: questo UC 0029)*. Dalla change 0039 le route
+  `/api/<app_id>/v1/*` sono protette dall'authorizer JWT dell'edge, con **una sola eccezione dichiarativa**:
+  `POST /api/platform/v1/webhooks/paddle` (Paddle non ha un access token, si autentica con la firma HMAC). Se quella route
+  dedicata sparisse o smettesse di essere più specifica del proxy generico, Paddle riceverebbe **401** e le subscription
+  non si attiverebbero più — **in silenzio**, perché il webhook è fire-and-forget con retry che si esauriscono.
+  `e2e-l3/checkout-smoke.spec.ts` attende l'attivazione via webhook reale, quindi **fallirebbe in timeout**: è oggi l'unica
+  verifica end-to-end di quell'eccezione (le suite Terraform verificano la configurazione, non il comportamento).
+  *Da valutare qui:* un assert esplicito e un messaggio di errore che punti a questa causa, così il timeout non venga letto
+  come "sandbox lenta".
+
 _Aggiornato dalla change `0025-use-case-0029-…` (implementazione, perimetro "test nel repo")._
 
 Implementato dalla change `0025`: catena L1 completa (`WebhookEntitlementChainTest`: webhook firmato → pipeline reale →

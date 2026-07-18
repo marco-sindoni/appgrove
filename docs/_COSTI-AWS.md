@@ -23,7 +23,7 @@
 | State Terraform (S3+DynamoDB) | ~$0 | — | bucket S3 + tabella DynamoDB on-demand: pochi centesimi |
 | VPC endpoints (Lambda) | ~$22 | ~$22 | #06 G: Cognito-IDP + Secrets Manager + **SSM (aggiunto da UC 0015**: la Lambda auth legge il client secret da Parameter Store) (~$7,3 l'uno); cmq < NAT $32 |
 | API Gateway HTTP | <$1 | <$1 | $1/M richieste |
-| Lambda (auth, pre-token-gen, authorizer) | ~$0 | ~$0 | free tier; auth BFF implementata (UC 0015, change 0037): nativa ARM64, 512 MB, concorrenza riservata 10; bucket S3 artefatti per-SHA ~centesimi |
+| Lambda (auth, pre-token-gen) | ~$0 | ~$0 | free tier; auth BFF implementata (UC 0015, change 0037): nativa ARM64, 512 MB, concorrenza riservata 10; bucket S3 artefatti per-SHA ~centesimi. **Nessuna Lambda authorizer** (UC 0014, change 0039): l'authorizer JWT nativo costa $0 e risparmia un'invocazione + una query DB **per ogni richiesta API** |
 | EventBridge + SQS (purge) | ~$0 | ~$0 | free tier / pochi eventi |
 | CloudFront + S3 | ~$0–1 | ~$0–1 | **2 distribuzioni/env** (backoffice + console admin); free tier CloudFront 1TB/mese (primo anno) |
 | Secrets Manager | ~$1–2 | ~$1–2 | $0.40/secret (credenziali DB) |

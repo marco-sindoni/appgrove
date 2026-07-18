@@ -24,6 +24,7 @@ locals {
     ecs_cluster_arn               = "arn:aws:ecs:eu-west-1:123456789012:cluster/appgrove-test"
     cloud_map_namespace_id        = "ns-0000000000000000"
     api_id                        = "api00000"
+    authorizer_id                 = "auth0000"
     vpc_link_id                   = "vl-0000"
     vpc_link_security_group_id    = "sg-00000000"
     event_bus_name                = "appgrove-test"

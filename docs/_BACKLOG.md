@@ -259,8 +259,11 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   Billing admin mostra solo lo **stato locale**, non il drift vs Paddle.
 - **#2 Catalogo app (`app`/`app_tier`/`app_price`): dominio/entità → UC 0022** (pricing-as-code). Ora: lettura native + `UPDATE app.status`.
 - **#3 Creazione/modifica subscription (checkout) → UC 0024**. Ora: l'admin vede le subscription esistenti (seed), non le crea.
-- **#4 Enforcement gate disable-app (403 runtime) → UC 0014** (Lambda authorizer "app-abilitata") **+ UC 0027** (enforcement runtime).
-  Ora: solo toggle `app.status` + esclusione delle app `inactive` dalla matrice admin; **nessun blocco effettivo** dell'accesso tenant.
+- ✅ **#4 Enforcement gate disable-app** — **chiuso dalla change `0039-use-case-0014-…`** *(collocazione rivista)*: il blocco NON
+  sta all'edge (l'authorizer è **JWT nativo** e non legge il DB — vedi UC 0014) ma **nel servizio**, dove `EntitlementReadModel`
+  già scarta le app con `status != active` (UC 0027). Il toggle admin resta la leva. **Rinuncia consapevole**: il traffico di
+  un'app disabilitata raggiunge comunque il container; se servirà un kill-switch a monte, le strade sono tracciate in UC 0014
+  §Punti aperti ("blocco all'edge").
 - **#5 Provider entitlement reale del backoffice (sostituire `StubEntitlementsProvider`)** — può **riusare la derivazione**
   entitlement (tenant×app da `subscription` + `app.status`) introdotta qui nell'admin. Vedi anche il punto UC 0020 sopra. **Owner**: core/billing.
 - **#6 `platform-admin` in cloud → UC 0016** (pre-token-gen) **+ UC 0015** (Cognito BFF). Ora: in locale il claim arriva dal provider locale del servizio auth (`admin@appgrove.test`).
@@ -273,7 +276,8 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
 - **#13 Integrazione SPA admin nel comando canonico `dev`/`dev service` → UC 0009/0046**. Ora: solo `app-start.sh` (:5174) + blocco Caddy `admin.local`.
 - **#14 Formalizzazione pattern "endpoint admin non-tenant-scoped" → UC 0013 / doc #02 auth-sicurezza**: come/dove disabilitare in sicurezza il filtro `@TenantId`, test anti-leak sistematici. Ora: query native + gating `platform-admin` (eccezione esplicita all'invariante #2).
 - **#15 Console "Diritti GDPR" → UC 0034** (già escluso da UC 0021; nessuna azione, solo confine).
-- **#16 Override/toggle entitlement per-tenant** (dettaglio Account, oggi **read-only**) **→ UC 0014/0027** (modello) **+ UC 0013** (schema). Nel modello attuale l'entitlement per-tenant ha **una sola leva** (la subscription): un override per-tenant-app non esiste in schema → decisione di data-model rimandata ai gate.
+- **#16 Override/toggle entitlement per-tenant** (dettaglio Account, oggi **read-only**) **→ UC 0027** (modello; non più UC 0014,
+  che dalla change 0039 non ospita più i gate di business) **+ UC 0013** (schema). Nel modello attuale l'entitlement per-tenant ha **una sola leva** (la subscription): un override per-tenant-app non esiste in schema → decisione di data-model rimandata ai gate.
 - **#17 Azione admin sulla subscription** (sospendi/cancella per tenant) **→ UC 0024/0025** (Paddle-coupled).
 - **#18 Estrazione runtime auth/sessione condiviso backoffice+admin** — oggi **duplicato** il sottoinsieme minimo in `apps/admin` (config/auth/api). **Owner**: frontend condiviso (rinvio UC 0020) — valutare un pacchetto `@appgrove/app-runtime`.
 
@@ -393,8 +397,36 @@ in ordine:
      mitigazione (min capacity Aurora / keep-warm / retry lato SPA).
    - **Smoke Cognito reale**: login → l'access token porta `tenant_id`+`roles`; utente senza membership → negato
      (fail-closed); i servizi accettano solo `token_use=access` col `client_id` del pool.
-   - **E23 residua** (autenticazione IAM del proxy + stretta del suo security group alle sole SG delle Lambda auth):
-     hardening di **UC 0014**, da fare quando nasce l'authorizer.
+   - **E23 residua** — la **stretta del security group** del proxy è ✅ **chiusa dalla change `0039-use-case-0014-…`**
+     (ingress alle sole SG `auth-lambda` + `pre-token-gen-lambda`). Resta **E23-a**: `iam_auth = REQUIRED` sul proxy,
+     **volutamente rimandato a dopo la prima accensione riuscita** (cambia il codice di connessione di entrambe le Lambda
+     e non è provabile in locale: mescolarlo alla prima accensione renderebbe la diagnosi molto più difficile).
+     Dettaglio in UC 0014 §Punti aperti.
+
+10. **Authorizer all'edge (UC 0014, change `0039`)** — la configurazione è coperta dalle suite Terraform, ma il
+    **comportamento** è verificabile solo dal vivo (in locale non c'è API Gateway: il dev stack passa da Caddy).
+    Alla prima accensione di `test`, con `API=https://api.test.appgrove.app`:
+    - **Senza token → 401** (l'header manca: API GW risponde da sé, non valuta nemmeno l'authorizer):
+      `curl -si $API/api/platform/v1/me/entitlements | head -1` → `HTTP/2 401`.
+    - **Token malformato/scaduto → 401** (NON 403: è il codice su cui poggia il refresh silenzioso della SPA):
+      `curl -si -H 'Authorization: Bearer abc.def.ghi' $API/api/platform/v1/me/entitlements | head -1` → `HTTP/2 401`.
+      ⚠️ Se qui esce **403**, l'authorizer non è quello nativo o l'audience/issuer non combaciano: **fermarsi**, perché
+      il refresh silenzioso si romperebbe in modo silenzioso e quotidiano.
+    - **Token valido → passa** e il 402/403/429 arriva **dal servizio** con corpo strutturato (non `{"message":"Forbidden"}`
+      generato dal gateway): login vero dalla SPA e verifica che il banner "abbonamento richiesto" compaia per un tenant
+      senza abbonamento (questo è il test che distingue il gate del servizio da un rifiuto del gateway).
+    - **Webhook Paddle raggiungibile senza token** (eccezione dichiarativa): un POST con firma non valida deve dare
+      **401 dal servizio** (`PaddleSignature`), **non** 401/403 dal gateway — si distinguono dal corpo. Verifica reale:
+      un evento dalla sandbox Paddle deve attivare la subscription (è il canarino: se manca l'eccezione, i webhook
+      falliscono **in silenzio**, con i retry di Paddle che si esauriscono). Vedi UC 0029 §Punti aperti.
+    - **Rotte pubbliche per progetto intatte**: `POST /api/auth/login` e `POST /ingest/errors` devono continuare a
+      rispondere senza token.
+    - **Health non esposti** (deve restare vero per costruzione): `curl -so /dev/null -w '%{http_code}' $API/q/health/live`
+      → `404` dal gateway (nessuna rotta lo intercetta), **non** 200.
+    - **Stretta del proxy DB (E23-b)**: dopo l'apply, verificare che le due Lambda auth si colleghino ancora
+      (login reale = prova end-to-end). Se il login fallisce con errore di connessione al DB, la causa più probabile è
+      il security group del proxy: controllare che le SG `auth-lambda` e `pre-token-gen-lambda` siano quelle allegate
+      alle Lambda in esecuzione.
 
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).

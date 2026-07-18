@@ -1,23 +1,31 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# RDS Proxy — SOLO per le Lambda auth/pre-token-gen/authorizer (#05 dec.3,
-# #06 15): pooling delle connessioni per componenti effimeri. I task Fargate
-# — incluso il Flyway one-shot — si connettono DIRETTI al cluster (Agroal).
+# RDS Proxy — SOLO per le Lambda auth: BFF auth (UC 0015) e Pre-Token-Gen
+# (UC 0016) (#05 dec.3, #06 15): pooling delle connessioni per componenti
+# effimeri. Nessun authorizer fra i client: UC 0014 usa l'authorizer JWT nativo,
+# che non tocca il DB (vedi authorizer.tf). I task Fargate — incluso il Flyway
+# one-shot — si connettono DIRETTI al cluster (Agroal).
 # Voce di costo da monitorare (~$12/mese/env, floor always-on → _COSTI-AWS).
 # ─────────────────────────────────────────────────────────────────────────────
 
 resource "aws_security_group" "rds_proxy" {
   name        = "appgrove-${var.env}-rds-proxy"
-  description = "RDS Proxy: riceve dalle Lambda auth (UC 0014) e parla solo con Aurora"
+  description = "RDS Proxy: riceve SOLO dalle Lambda auth e parla solo con Aurora"
   vpc_id      = var.vpc_id
 
   ingress {
-    # Le Lambda auth non esistono ancora (UC 0014): perimetro = VPC intera;
-    # UC 0014 potrà stringere al solo security group delle Lambda.
-    description = "Postgres dalla VPC (Lambda auth, UC 0014)"
+    # E23-b chiuso (UC 0014, change 0039): perimetro stretto dalla VPC intera ai
+    # SOLI security group che usano davvero il proxy — il BFF auth (UC 0015) e il
+    # Pre-Token-Gen (UC 0016). I task Fargate NON passano di qui: si connettono
+    # diretti al cluster (microsaas_app/ecs.tf, QUARKUS_DATASOURCE_JDBC_URL su
+    # aurora_endpoint), quindi la stretta non li tocca.
+    description = "Postgres dalle sole Lambda auth (BFF auth + Pre-Token-Gen)"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
+    security_groups = [
+      aws_security_group.auth_lambda.id,
+      aws_security_group.pre_token_gen.id,
+    ]
   }
 
   egress {
@@ -99,8 +107,11 @@ resource "aws_db_proxy" "this" {
   auth {
     auth_scheme = "SECRETS"
     secret_arn  = aws_rds_cluster.this.master_user_secret[0].secret_arn
-    # IAM auth delle Lambda verso il proxy: decisione di UC 0014 (per ora
-    # autenticazione con credenziali dal segreto).
+    # Autenticazione con credenziali dal segreto. Il passaggio a IAM (token
+    # temporaneo, niente password in circolazione) è il residuo E23-a: rimandato
+    # dalla change 0039 perché cambia il codice di connessione di ENTRAMBE le
+    # Lambda (pg8000 e Agroal), non è provabile in locale e mescolerebbe due
+    # classi di guasto alla prima accensione cloud. Tracciato in UC 0014.
     iam_auth = "DISABLED"
   }
 

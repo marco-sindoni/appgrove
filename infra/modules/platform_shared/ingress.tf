@@ -3,8 +3,8 @@
 # Cloud Map (service discovery). NIENTE ALB (evoluzione E2).
 #   • le ROUTE `/api/<app_id>/v1/*` e le integrazioni verso i servizi le crea
 #     il modulo `microsaas_app` (UC 0004);
-#   • l'authorizer custom (Lambda) arriva con UC 0014;
-#   • il throttling su `/api/auth/*` (#06 26) arriva con le route auth (UC 0014).
+#   • l'authorizer JWT che le protegge sta in `authorizer.tf` (UC 0014);
+#   • il throttling su `/api/auth/*` (#06 26) è nello stage, qui sotto.
 # Custom domain: api.<env-prefix><domain> (#12 9/10) con certificato regionale
 # eu-west-1 emesso dallo stack `global`.
 # ─────────────────────────────────────────────────────────────────────────────

@@ -124,6 +124,7 @@ locals {
     ecs_cluster_arn               = module.platform_shared.ecs_cluster_arn
     cloud_map_namespace_id        = module.platform_shared.cloud_map_namespace_id
     api_id                        = module.platform_shared.api_id
+    authorizer_id                 = module.platform_shared.authorizer_id
     vpc_link_id                   = module.platform_shared.vpc_link_id
     vpc_link_security_group_id    = module.platform_shared.vpc_link_security_group_id
     event_bus_name                = module.platform_shared.event_bus_name
@@ -161,6 +162,11 @@ module "app_platform" {
 
   use_fargate_spot = true # test: Spot (#06 10)
   force_destroy    = true # test: teardown libero (#06 24)
+
+  # Eccezione all'authorizer (UC 0014): Paddle chiama senza access token e si
+  # autentica con la firma HMAC del messaggio (PaddleSignature, UC 0025). Rotta
+  # più specifica del proxy generico, quindi vince il routing di API GW.
+  public_routes = ["POST /api/platform/v1/webhooks/paddle"]
 
   shared = local.microsaas_shared
 }

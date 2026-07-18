@@ -63,6 +63,24 @@ I claim contengono `tenant_id`/`roles` (no PII sensibile; `sub` opaco). Cred DB 
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0039-use-case-0014-…` (authorizer all'edge)._
+
+- **Eventi audit del Pre-Token-Gen con la convenzione `AuditLogger`** *(RIASSEGNATO qui da UC 0014)*. La Lambda gira in
+  Python, **fuori da Quarkus**, quindi deve produrre a mano lo **stesso formato JSON** della convenzione `AuditLogger`
+  (`log_type=audit` nell'MDC, #08 28/29) per gli eventi di sicurezza che nascono qui — in particolare il **fail-closed**
+  quando non esiste membership attiva (oggi è un `WARN` operativo: da valutare se promuoverlo a evento audit). *Perché
+  riassegnato:* il punto stava in UC 0014 perché si prevedeva una Lambda authorizer scritta da noi; con l'authorizer
+  **nativo** (change 0039) all'edge non c'è più codice nostro. Vedi anche UC 0015 per gli eventi del BFF auth.
+- **Drift documentale: "Quarkus OIDC" nei documenti di area** *(rilevato dalla change 0039, non corretto qui)*.
+  [04-services-backend](../../04-services-backend.md) (Vincoli ereditati) e [02-auth-sicurezza](../../02-auth-sicurezza.md)
+  citano ancora **Quarkus OIDC** per la validazione del token nei servizi, mentre l'implementazione usa **smallrye-jwt**
+  (decisione già registrata nei punti risolti qui sotto). *Perché non corretto in questa change:* è una modifica ai
+  **documenti di decisione di area**, di competenza dell'utente nel processo "un argomento alla volta". Da allineare alla
+  prossima revisione di #02/#04.
+- **Difesa in profondità confermata** *(nota)*. Dalla change 0039 l'edge verifica firma/issuer/audience/scadenza **prima**
+  del servizio, ma `AccessTokenGuardFilter` (`token_use` + `client_id`) resta necessario e **non va rimosso**: i servizi
+  sono raggiungibili anche dalla rete interna (VPC Link, chiamate app→core) senza passare dall'edge.
+
 ### Risolti dalla change `0038-use-case-0016-…`
 
 - ✅ **Claim ruoli `groups` → `roles`.** Riconciliato: i servizi (`core`, `fatture`) mappano `@RolesAllowed` sul claim

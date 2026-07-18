@@ -83,6 +83,7 @@ variable "shared" {
     ecs_cluster_arn               = string
     cloud_map_namespace_id        = string
     api_id                        = string
+    authorizer_id                 = string
     vpc_link_id                   = string
     vpc_link_security_group_id    = string
     event_bus_name                = string
@@ -105,6 +106,19 @@ variable "shared" {
     cognito_jwks_url  = string
     cognito_client_id = string
   })
+}
+
+variable "public_routes" {
+  description = <<-EOT
+    Route dell'app esposte SENZA authorizer (UC 0014): eccezione DICHIARATIVA
+    per chiamanti che non hanno un access token e si autenticano in altro modo.
+    Devono essere più specifiche del proxy generico e stare nel prefisso
+    dell'app (`<METODO> /api/<app_id>/v1/...`, verificato da precondizione).
+    Oggi l'unico caso è il webhook Paddle del core (firma HMAC, UC 0025).
+    Default vuoto: un'app nasce interamente protetta.
+  EOT
+  type        = list(string)
+  default     = []
 }
 
 variable "alarms_enabled" {

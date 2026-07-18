@@ -56,7 +56,7 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 |---|---|---|---|---|
 | 0012 | 2 | Core service + multitenancy (Quarkus, TenantResolver, discriminator, schema `platform`, Flyway, audit/soft-delete) | 0004 | 🟢 |
 | 0013 | 2 | Accounts/Users/Invitations + core REST API (problem+json, OpenAPI) | 0012 | 🟢 |
-| 0014 | 2 | Custom Lambda authorizer (app-abilitata + entitlement grossolano derivato; catena gate) | 0013, 0016 | 🟢 |
+| 0014 | 2 | Authorizer all'edge (gate 1: token verificato prima del servizio; JWT nativo) | 0013, 0016 | 🟢 |
 | 0056 | 3 | Ri-accettazione ToU/PP a runtime (derivazione al login + schermata bloccante + log accettazione) | 0002, 0013, 0020 | 🟡 |
 
 ### 05-auth
