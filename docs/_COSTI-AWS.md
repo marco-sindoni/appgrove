@@ -14,7 +14,7 @@
 | Route53 hosted zone | $0.50 | — | una zona per `appgrove.app` (test è sottodominio) |
 | Dominio `.app` | ~$1.2 | — | ~$14/anno |
 | ACM (certificati) | $0 | $0 | gratis con CloudFront/API GW |
-| Cognito | $0 | $0 | free tier 50k MAU; **niente pool per il locale** (dev 100% offline, #11). Pool per-env implementati (UC 0015): MFA TOTP e rotazione refresh token senza costi; email default Cognito (~50/gg) fino a SES/UC 0018 |
+| Cognito | $0 | $0 | piano **ESSENTIALS** (UC 0016: prerequisito per personalizzare l'access token dal Pre-Token-Gen, evento V2_0) — **10.000 utenti attivi/mese gratuiti**, poi ~$0,015/utente attivo: a scala PoC = $0. **Niente pool per il locale** (dev 100% offline, #11). MFA TOTP e rotazione refresh token senza costi; email default Cognito (~50/gg) fino a SES/UC 0018 |
 | **ECS Fargate** | ~$30 | ~$0 | 3 servizi (core+2 app) × ~$10 (0.25 vCPU/0.5GB). Prod on-demand 24/7; **test Spot + scale-to-0 → ~$0 da idle** |
 | **Aurora Serverless v2** | ~$0 idle | ~$0 idle | ✅ scale-to-0 su **test e prod** (#06 E): ~$0 da idle + storage (~$1). Min>0 prod = evoluzione E4 (~$44) |
 | **RDS Proxy** (solo Lambda) | ~$10–15 | ~$10–15 | ✅ deciso #06 15 (test+prod), implementato in UC 0055; **minimo di fatturazione da verificare alla prima accensione** |

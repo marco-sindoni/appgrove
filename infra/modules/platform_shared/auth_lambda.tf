@@ -131,14 +131,14 @@ data "aws_iam_policy_document" "auth_lambda" {
     resources = [aws_ssm_parameter.auth_client_secret.arn]
   }
 
-  # Credenziali DB per il proxy RDS: il segreto MASTER gestito da RDS è l'unico
-  # attaccato al proxy (rds_proxy.tf). Ruolo DB dedicato least-privilege per le
-  # Lambda auth (+ IAM auth del proxy) → decisione UC 0014/0016.
+  # Credenziali DB per il proxy RDS: ruolo dedicato least-privilege delle Lambda
+  # auth (auth_db_role.tf, UC 0016/E23-B) — non più il segreto master. IAM auth
+  # del proxy → parte residua di E23, UC 0014.
   statement {
     sid       = "ReadDbSecret"
     effect    = "Allow"
     actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_rds_cluster.this.master_user_secret[0].secret_arn]
+    resources = [aws_secretsmanager_secret.auth_lambdas_db.arn]
   }
 
   statement {
@@ -216,7 +216,7 @@ resource "aws_lambda_function" "auth" {
       QUARKUS_PROFILE             = "cloud"
       QUARKUS_DATASOURCE_JDBC_URL = "jdbc:postgresql://${aws_db_proxy.this.endpoint}:5432/${aws_rds_cluster.this.database_name}?ssl=true&sslmode=require"
 
-      AUTH_DB_SECRET_ARN               = aws_rds_cluster.this.master_user_secret[0].secret_arn
+      AUTH_DB_SECRET_ARN               = aws_secretsmanager_secret.auth_lambdas_db.arn
       AUTH_COGNITO_REGION              = data.aws_region.current.region
       AUTH_COGNITO_USER_POOL_ID        = aws_cognito_user_pool.this.id
       AUTH_COGNITO_CLIENT_ID           = aws_cognito_user_pool_client.bff.id

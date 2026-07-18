@@ -154,3 +154,34 @@ resource "aws_cloudwatch_metric_alarm" "auth_lambda_errors" {
     Name = "${local.name_prefix}-auth-errors"
   }
 }
+
+# ── Pre-Token-Gen: fallimenti = login che non completano l'iniezione claim ────
+# (UC 0016). Un errore dell'invocazione lascia il token senza tenant_id/roles →
+# accesso negato dai servizi: qualunque valore > 0 merita attenzione.
+
+resource "aws_cloudwatch_metric_alarm" "pre_token_gen_errors" {
+  alarm_name        = "${local.name_prefix}-pre-token-gen-errors"
+  alarm_description = "Errori della Lambda Pre-Token-Gen (${var.env}): i login potrebbero uscire senza tenant_id/roles"
+
+  namespace   = "AWS/Lambda"
+  metric_name = "Errors"
+  statistic   = "Sum"
+
+  dimensions = {
+    FunctionName = var.pre_token_gen_lambda_name
+  }
+
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  actions_enabled = local.alarms_enabled
+  alarm_actions   = [var.alarm_topic_warning_arn]
+  ok_actions      = [var.alarm_topic_warning_arn]
+
+  tags = {
+    Name = "${local.name_prefix}-pre-token-gen-errors"
+  }
+}

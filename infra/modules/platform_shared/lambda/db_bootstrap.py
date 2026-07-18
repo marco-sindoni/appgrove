@@ -10,10 +10,23 @@ database, nessun driver Postgres da impacchettare. Se il cluster è in pausa
 (scale-to-0, #06 14) la prima chiamata lo risveglia: si riprova finché non
 risponde (cold-start ~10-15s).
 
-Input (JSON): {"role_name": "...", "schema_name": "...", "secret_arn": "..."}
-  - role_name / schema_name: identificatori [a-z][a-z0-9_]* (coincidono per
-    convenzione: il ruolo possiede il proprio schema);
-  - secret_arn: segreto Secrets Manager per-app con chiave "password".
+Due modalità:
+
+1. **ruolo+schema di servizio** (default, UC 0004) — input:
+   {"role_name": "...", "schema_name": "...", "secret_arn": "..."}
+   crea il ruolo login e lo schema di sua proprietà (least-privilege sul solo
+   schema). role_name/schema_name coincidono per convenzione.
+
+2. **grant su schema altrui** (UC 0016, opzione B di E23) — input:
+   {"mode": "grant", "role_name": "auth_lambdas", "secret_arn": "...",
+    "grants": {"schema": "platform", "owner_role": "platform",
+               "select_all": true, "write_tables": ["accounts", "users", ...]}}
+   crea il ruolo login delle Lambda auth (NON possiede schema) e gli concede i
+   privilegi minimi su uno schema di proprietà di un ALTRO ruolo. I grant sono
+   idempotenti e ri-eseguiti a ogni apply (input legato a image_tag) così da
+   coprire le tabelle aggiunte da nuove migrazioni Flyway.
+
+secret_arn: segreto Secrets Manager con chiavi "username"/"password".
 """
 
 import json
@@ -60,22 +73,19 @@ def _quote_literal(value):
     return "'" + value.replace("'", "''") + "'"
 
 
-def handler(event, _context):
-    role = event["role_name"]
-    schema = event["schema_name"]
-    secret_arn = event["secret_arn"]
+def _check_identifier(name):
+    if not IDENTIFIER.match(name):
+        raise ValueError(f"identificatore non valido: {name!r}")
 
-    for name in (role, schema):
-        if not IDENTIFIER.match(name):
-            raise ValueError(f"identificatore non valido: {name!r}")
 
-    password = json.loads(
+def _read_password(secret_arn):
+    return json.loads(
         secrets.get_secret_value(SecretId=secret_arn)["SecretString"]
     )["password"]
-    pw = _quote_literal(password)
 
-    # Ruolo di servizio: login, nessun privilegio globale; se esiste già si
-    # riallinea solo la password (idempotente, ri-eseguibile a ogni apply).
+
+def _upsert_login_role(role, pw):
+    """Crea il ruolo login (idempotente); se esiste, riallinea solo la password."""
     _execute(
         f"""
         DO $$
@@ -88,6 +98,17 @@ def handler(event, _context):
         """
     )
 
+
+def _handle_service(event):
+    """Modalità 1: ruolo login + schema di sua proprietà (least-privilege)."""
+    role = event["role_name"]
+    schema = event["schema_name"]
+    _check_identifier(role)
+    _check_identifier(schema)
+
+    pw = _quote_literal(_read_password(event["secret_arn"]))
+    _upsert_login_role(role, pw)
+
     # Schema vuoto di proprietà del ruolo (#06 23): i privilegi restano confinati
     # al proprio schema (#05 11); le tabelle le creerà Flyway (UC 0005/0012).
     _execute(f"CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {role}")
@@ -96,3 +117,46 @@ def handler(event, _context):
     _execute(f"REVOKE CREATE ON SCHEMA public FROM {role}")
 
     return {"role": role, "schema": schema, "status": "ok"}
+
+
+def _handle_grant(event):
+    """Modalità 2 (UC 0016, E23-B): ruolo login delle Lambda auth + privilegi
+    minimi su uno schema di proprietà di un ALTRO ruolo. Il ruolo NON possiede
+    schemi: solo USAGE + SELECT (lettura pre-token-gen) e, sulle tabelle scritte
+    dal BFF, anche INSERT/UPDATE. Idempotente e ri-eseguibile."""
+    role = event["role_name"]
+    grants = event["grants"]
+    schema = grants["schema"]
+    owner = grants["owner_role"]
+    write_tables = grants.get("write_tables", [])
+
+    _check_identifier(role)
+    _check_identifier(schema)
+    _check_identifier(owner)
+    for table in write_tables:
+        _check_identifier(table)
+
+    pw = _quote_literal(_read_password(event["secret_arn"]))
+    _upsert_login_role(role, pw)
+
+    # Niente diritto di creare oggetti nello schema public (difesa in profondità).
+    _execute(f"REVOKE CREATE ON SCHEMA public FROM {role}")
+
+    _execute(f"GRANT USAGE ON SCHEMA {schema} TO {role}")
+    if grants.get("select_all"):
+        # Lettura di tutte le tabelle (pre-token-gen). Ri-concessa a ogni apply:
+        # copre le tabelle aggiunte da nuove migrazioni (input legato a image_tag).
+        _execute(f"GRANT SELECT ON ALL TABLES IN SCHEMA {schema} TO {role}")
+    for table in write_tables:
+        # Scritture del BFF (signup/accept invito): solo le tabelle necessarie.
+        _execute(
+            f"GRANT SELECT, INSERT, UPDATE ON {schema}.{table} TO {role}"
+        )
+
+    return {"role": role, "granted_on": schema, "status": "ok"}
+
+
+def handler(event, _context):
+    if event.get("mode") == "grant":
+        return _handle_grant(event)
+    return _handle_service(event)

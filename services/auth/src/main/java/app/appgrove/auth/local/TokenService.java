@@ -60,6 +60,11 @@ public class TokenService {
     @ConfigProperty(name = "auth.local.platform-admin-subjects", defaultValue = "seed-platform-admin")
     List<String> platformAdminSubjects;
 
+    // Parità col cloud (UC 0016): l'access token porta il claim `client_id`, che i servizi
+    // confrontano con `appgrove.auth.expected-client-id` (in cloud = client Cognito).
+    @ConfigProperty(name = "auth.local.client-id", defaultValue = "appgrove-local-bff")
+    String clientId;
+
     @ConfigProperty(name = "auth.local.private-key-location")
     String privateKeyLocation;
 
@@ -114,6 +119,7 @@ public class TokenService {
                 .groups(groups)
                 .claim("roles", new ArrayList<>(groups))
                 .claim("token_use", "access")
+                .claim("client_id", clientId)
                 .expiresIn(accessTtl)
                 .jws().keyId(kid).sign(privateKey);
     }

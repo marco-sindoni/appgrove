@@ -12,9 +12,24 @@
 resource "aws_cognito_user_pool" "this" {
   name = "appgrove-${var.env}-users"
 
+  # Piano funzionalità ESSENTIALS (UC 0016): prerequisito per personalizzare
+  # l'ACCESS token dal Pre-Token-Gen (evento trigger V2_0). Fascia gratuita di
+  # 10.000 utenti attivi/mese, è già il piano di default dei nuovi pool (#02 11,
+  # costi → _COSTI-AWS).
+  user_pool_tier = "ESSENTIALS"
+
   # Login con la propria email (case-insensitive); verifica email automatica.
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
+
+  # Pre-Token-Generation (UC 0016): inietta tenant_id/roles nell'access token.
+  # V2_0 = personalizzazione dell'access token (richiede il piano ESSENTIALS).
+  lambda_config {
+    pre_token_generation_config {
+      lambda_arn     = aws_lambda_function.pre_token_gen.arn
+      lambda_version = "V2_0"
+    }
+  }
 
   username_configuration {
     case_sensitive = false

@@ -26,6 +26,9 @@ cdk.out/
 *.tfplan
 # Zip Lambda generati da archive_file al plan/apply (il sorgente .py si committa).
 infra/**/lambda/*.zip
+# Cache bytecode Python dei test delle Lambda (il vendor pg8000 sotto lambda/*/vendor si committa).
+__pycache__/
+*.pyc
 crash.log
 crash.*.log
 

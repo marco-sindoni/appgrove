@@ -40,6 +40,9 @@ locals {
     alarm_topic_warning_arn       = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-warning"
     audit_firehose_arn            = "arn:aws:firehose:eu-west-1:123456789012:deliverystream/appgrove-test-audit-archive"
     logs_to_firehose_role_arn     = "arn:aws:iam::123456789012:role/appgrove-test-logs-to-firehose"
+    cognito_issuer                = "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_test"
+    cognito_jwks_url              = "https://cognito-idp.eu-west-1.amazonaws.com/eu-west-1_test/.well-known/jwks.json"
+    cognito_client_id             = "test-client-id"
   }
 }
 

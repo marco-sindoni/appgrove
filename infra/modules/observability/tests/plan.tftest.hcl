@@ -29,6 +29,7 @@ variables {
   error_ingest_lambda_name    = "appgrove-test-error-ingest"
   error_ingest_log_group_name = "/aws/lambda/appgrove-test-error-ingest"
   auth_lambda_name            = "appgrove-test-auth"
+  pre_token_gen_lambda_name   = "appgrove-test-pre-token-gen"
 }
 
 run "ambiente_test_silenziato" {

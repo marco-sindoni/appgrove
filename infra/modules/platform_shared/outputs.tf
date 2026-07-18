@@ -111,6 +111,21 @@ output "db_bootstrap_lambda_name" {
   value       = aws_lambda_function.db_bootstrap.function_name
 }
 
+output "pre_token_gen_lambda_name" {
+  description = "Nome della Lambda Pre-Token-Gen (UC 0016): allarme errori in observability."
+  value       = aws_lambda_function.pre_token_gen.function_name
+}
+
+output "auth_lambdas_db_secret_arn" {
+  description = "ARN del segreto del ruolo DB dedicato delle Lambda auth (UC 0016/E23-B): l'invocazione grant nel root env vi crea il ruolo Postgres."
+  value       = aws_secretsmanager_secret.auth_lambdas_db.arn
+}
+
+output "auth_lambdas_db_secret_version_id" {
+  description = "Versione del segreto del ruolo DB auth: cambia con la password → ri-innesca l'invocazione grant."
+  value       = aws_secretsmanager_secret_version.auth_lambdas_db.version_id
+}
+
 output "sqs_queue_prefix" {
   description = "Prefisso dei nomi fisici delle code SQS dell'ambiente (i nomi logici restano quelli locali)."
   value       = local.sqs_queue_prefix
@@ -189,6 +204,16 @@ output "cognito_user_pool_id" {
 output "cognito_client_id" {
   description = "App client confidenziale del BFF auth (UC 0015): entra nel config.json delle SPA."
   value       = aws_cognito_user_pool_client.bff.id
+}
+
+output "cognito_issuer" {
+  description = "Emittente del pool Cognito (UC 0016): i servizi verificano mp.jwt.verify.issuer contro questo."
+  value       = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.this.id}"
+}
+
+output "cognito_jwks_url" {
+  description = "URL JWKS del pool Cognito (UC 0016): i servizi verificano la firma dei token contro queste chiavi."
+  value       = "https://cognito-idp.${data.aws_region.current.region}.amazonaws.com/${aws_cognito_user_pool.this.id}/.well-known/jwks.json"
 }
 
 output "auth_lambda_artifacts_bucket" {
