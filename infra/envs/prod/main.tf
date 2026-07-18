@@ -142,6 +142,9 @@ locals {
     alarm_topic_warning_arn       = module.platform_shared.alarm_topic_warning_arn
     audit_firehose_arn            = module.platform_shared.audit_firehose_arn
     logs_to_firehose_role_arn     = module.platform_shared.logs_to_firehose_role_arn
+    cognito_issuer                = module.platform_shared.cognito_issuer
+    cognito_jwks_url              = module.platform_shared.cognito_jwks_url
+    cognito_client_id             = module.platform_shared.cognito_client_id
   }
 }
 
@@ -208,4 +211,34 @@ module "observability" {
   error_ingest_lambda_name    = module.platform_shared.error_ingest_lambda_name
   error_ingest_log_group_name = module.platform_shared.error_ingest_log_group_name
   auth_lambda_name            = module.platform_shared.auth_lambda_name
+  pre_token_gen_lambda_name   = module.platform_shared.pre_token_gen_lambda_name
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ruolo DB dedicato delle Lambda auth (UC 0016, opzione B di E23): crea il ruolo
+# Postgres `auth_lambdas` e i grant least-privilege sullo schema `platform`.
+# Gira DOPO app_platform (che crea lo schema) e dopo che Flyway ha applicato le
+# migrazioni (CI, prima dell'apply). L'input include `image_tag` così i grant si
+# riallineano a ogni deploy, coprendo le tabelle di nuove migrazioni.
+# ─────────────────────────────────────────────────────────────────────────────
+resource "aws_lambda_invocation" "auth_lambdas_grants" {
+  function_name = module.platform_shared.db_bootstrap_lambda_name
+
+  input = jsonencode({
+    mode       = "grant"
+    role_name  = "auth_lambdas"
+    secret_arn = module.platform_shared.auth_lambdas_db_secret_arn
+    grants = {
+      schema       = "platform"
+      owner_role   = "platform"
+      select_all   = true
+      write_tables = ["accounts", "users", "invitations"]
+    }
+    # Solo per ri-innescare l'invocazione (la Lambda li ignora): la password e
+    # ogni deploy (nuove tabelle) devono riconciliare i grant.
+    secret_version_id = module.platform_shared.auth_lambdas_db_secret_version_id
+    image_tag         = var.image_tag
+  })
+
+  depends_on = [module.app_platform]
 }

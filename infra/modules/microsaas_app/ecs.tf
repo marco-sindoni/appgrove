@@ -92,6 +92,11 @@ resource "aws_ecs_task_definition" "this" {
       # la catena di credenziali di default (task role) + questa regione (UC 0005).
       { name = "APPGROVE_S3_REGION", value = data.aws_region.current.region },
       { name = "APPGROVE_GDPR_EXPORT_BUCKET", value = var.shared.gdpr_export_bucket },
+      # Validazione JWT contro il pool Cognito (UC 0016): emittente + chiavi JWKS
+      # reali; i servizi verificano token_use=access e questo client_id atteso.
+      { name = "MP_JWT_VERIFY_ISSUER", value = var.shared.cognito_issuer },
+      { name = "MP_JWT_VERIFY_PUBLICKEY_LOCATION", value = var.shared.cognito_jwks_url },
+      { name = "APPGROVE_AUTH_EXPECTED_CLIENT_ID", value = var.shared.cognito_client_id },
     ]
 
     secrets = [

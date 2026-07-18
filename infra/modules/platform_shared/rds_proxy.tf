@@ -53,10 +53,14 @@ resource "aws_iam_role" "rds_proxy" {
 
 data "aws_iam_policy_document" "rds_proxy_secret" {
   statement {
-    sid       = "GetDbSecret"
-    effect    = "Allow"
-    actions   = ["secretsmanager:GetSecretValue"]
-    resources = [aws_rds_cluster.this.master_user_secret[0].secret_arn]
+    sid     = "GetDbSecret"
+    effect  = "Allow"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      aws_rds_cluster.this.master_user_secret[0].secret_arn,
+      # Ruolo DB dedicato least-privilege delle Lambda auth (UC 0016, E23-B).
+      aws_secretsmanager_secret.auth_lambdas_db.arn,
+    ]
   }
 
   statement {
@@ -98,6 +102,15 @@ resource "aws_db_proxy" "this" {
     # IAM auth delle Lambda verso il proxy: decisione di UC 0014 (per ora
     # autenticazione con credenziali dal segreto).
     iam_auth = "DISABLED"
+  }
+
+  # Ruolo DB dedicato least-privilege delle Lambda auth (UC 0016, E23-B): le
+  # Lambda auth (pre-token-gen + BFF) si autenticano con QUESTO segreto, non più
+  # col master. Il ruolo Postgres lo crea db-bootstrap (modalità grant).
+  auth {
+    auth_scheme = "SECRETS"
+    secret_arn  = aws_secretsmanager_secret.auth_lambdas_db.arn
+    iam_auth    = "DISABLED"
   }
 
   tags = {

@@ -71,11 +71,15 @@ _Tracciati dalla change `0014-use-case-0021-…` (console admin). Dettaglio in [
   questo UC (+ UC 0027 runtime). Implementare la lettura di `app.status` nell'authorizer e il rifiuto coerente.
 - **Override entitlement per-tenant.** Oggi l'entitlement è derivato **solo** da `subscription`. Se servirà una leva
   admin per-tenant-app (UC 0021 #16), va definita qui (modello gate) + schema in UC 0013.
-- **Autenticazione IAM delle Lambda verso il RDS Proxy** _(tracciato dalla change `0032-use-case-0055-…`)_:
+- **Autenticazione IAM delle Lambda verso il RDS Proxy + stretta del security group del proxy**
+  _(tracciato dalla change `0032-use-case-0055-…`; aggiornato dalla change `0038-use-case-0016-…`)_:
   il proxy (modulo `platform_shared`, UC 0055) nasce con `iam_auth = DISABLED` (le Lambda si autenticano con
-  le credenziali dal segreto). Passare a `REQUIRED` (token IAM, niente password nelle Lambda) è un hardening
-  da decidere qui, quando nascono le 3 Lambda (questo UC + 0015/0016), perché cambia il loro codice di
-  connessione e i permessi IAM.
+  le credenziali dal segreto) e il suo security group accetta l'**intera VPC**. Con UC 0016 (change 0038) il
+  Pre-Token-Gen e il BFF hanno **security group dedicati** (`pre-token-gen-lambda`, `auth-lambda`) e un **ruolo
+  DB dedicato** least-privilege (`auth_lambdas`, non più il master). Restano da fare **qui**: (a) passare il proxy
+  a `iam_auth = REQUIRED` (token IAM, niente password nelle Lambda — cambia il codice di connessione + permessi
+  IAM); (b) **stringere l'ingress del SG del proxy** alle sole SG delle Lambda auth (oggi = `var.vpc_cidr` in
+  `rds_proxy.tf`). Vedi E23 in `_EVOLUZIONI-DEVOPS`.
 
 _Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
 

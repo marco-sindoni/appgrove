@@ -115,11 +115,28 @@ run_infra() {
   # una volta sola nella cache condivisa), terraform test sui moduli con suite
   # (microsaas_app, provider mock: offline — UC 0004), più tflint e checkov se
   # installati.
+  local infra_ok=1
   if "$ROOT/infra/scripts/check"; then
-    ok "infra: ok"; record infra OK
+    ok "infra (terraform): ok"
   else
-    fail "infra: problemi (vedi output di scripts/check)"; record infra FAIL
+    fail "infra (terraform): problemi (vedi output di scripts/check)"; infra_ok=0
   fi
+
+  # Test unitari delle Lambda Python (db-bootstrap UC 0004 + pre-token-gen UC 0016):
+  # logica pura con DB/Data API mockati, nessun cloud, solo stdlib (unittest).
+  if command -v python3 >/dev/null 2>&1; then
+    if ( cd "$ROOT/infra/modules/platform_shared/lambda" \
+          && python3 -m unittest test_db_bootstrap \
+          && ( cd pre_token_gen && python3 -m unittest test_handler ) ); then
+      ok "infra (lambda python): ok"
+    else
+      fail "infra (lambda python): test rossi"; infra_ok=0
+    fi
+  else
+    warn "python3 non disponibile: salto i test delle Lambda Python."
+  fi
+
+  if [ "$infra_ok" -eq 1 ]; then record infra OK; else record infra FAIL; fi
 }
 
 # Check compliance (UC 0030): parità lingue dei manifesti dati + freshness del RoPA generato.

@@ -99,6 +99,11 @@ variable "shared" {
     alarm_topic_warning_arn       = string
     audit_firehose_arn            = string
     logs_to_firehose_role_arn     = string
+    # Validazione JWT nei servizi (UC 0016): emittente/JWKS del pool Cognito +
+    # app client atteso (difesa in profondità sul destinatario dell'access token).
+    cognito_issuer    = string
+    cognito_jwks_url  = string
+    cognito_client_id = string
   })
 }
 

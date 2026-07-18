@@ -66,3 +66,8 @@ variable "auth_lambda_name" {
   description = "Nome della Lambda BFF auth (UC 0015): allarme errori sui fallimenti di login/signup."
   type        = string
 }
+
+variable "pre_token_gen_lambda_name" {
+  description = "Nome della Lambda Pre-Token-Gen (UC 0016): allarme errori sull'iniezione claim in fase di login."
+  type        = string
+}

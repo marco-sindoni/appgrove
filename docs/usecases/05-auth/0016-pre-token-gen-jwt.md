@@ -63,20 +63,28 @@ I claim contengono `tenant_id`/`roles` (no PII sensibile; `sub` opaco). Cred DB 
 
 ## Punti aperti / decisioni differite
 
-_Tracciato dalla change `0009-use-case-0010-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+### Risolti dalla change `0038-use-case-0016-…`
 
-- **Claim ruoli: `groups` vs `roles`.** Il `core` (UC 0013) mappa `@RolesAllowed` sul claim **`groups`** (default
-  smallrye-jwt), mentre #02 dec.10 prevede il claim **`roles`** con `quarkus.oidc.roles.role-claim-path=roles`. Il
-  provider locale (UC 0010) emette **entrambi** per compatibilità. Quando atterra il Pre-Token-Gen reale + Quarkus OIDC,
-  **riconciliare** su un unico claim (`roles`) e allineare il `core`. **Proprietario**: UC 0016.
+- ✅ **Claim ruoli `groups` → `roles`.** Riconciliato: i servizi (`core`, `fatture`) mappano `@RolesAllowed` sul claim
+  **`roles`** via `smallrye.jwt.path.groups=roles` (#02 dec.10). Il provider locale (UC 0010) emette già `roles`; il
+  Pre-Token-Gen inietta `roles`. Manteniamo **smallrye-jwt** (non `quarkus-oidc`): la verifica firma/JWKS + emittente
+  soddisfa #02 dec.11 nella sostanza.
+- ✅ **Ruolo DB dedicato least-privilege delle Lambda auth (parte "ruolo" di E23, opzione B).** `db-bootstrap` ha una
+  **modalità grant su schema altrui**; crea il ruolo `auth_lambdas` con `SELECT` su `platform` (pre-token-gen) +
+  `INSERT/UPDATE` su `accounts/users/invitations` (BFF). Il secret è agganciato al proxy accanto al master; sia la
+  Pre-Token-Gen sia il BFF puntano al nuovo secret (BFF senza modifiche di codice). Le Lambda auth **non usano più il
+  master**.
 
-_Aggiunto dalla change `0037-use-case-0015-…` (Cognito + auth BFF):_
+### Ancora aperti
 
-- **Accesso DB delle Lambda auth: ruolo dedicato least-privilege.** La Lambda BFF (UC 0015) scrive lo schema
-  `platform` (signup/accept invito) autenticandosi al proxy RDS con le credenziali **master** Aurora — unico
-  secret attaccato al proxy (`platform_shared/rds_proxy.tf`), perché `db-bootstrap` sa creare solo ruoli con
-  privilegi sul **proprio** schema. Quando questo UC aggiunge il Pre-Token-Gen (lettura `platform`): creare un
-  **ruolo DB dedicato** alle Lambda auth (estendere `db-bootstrap` con una modalità *grant su schema altrui* +
-  `ALTER DEFAULT PRIVILEGES`), attaccarne il secret al proxy, e valutare l'**IAM auth** del proxy + la stretta
-  del security group del proxy alla sola SG delle Lambda (già annotata in `rds_proxy.tf` per UC 0014).
-  **Proprietario**: UC 0016 (con UC 0014). Vedi anche E23 in `_EVOLUZIONI-DEVOPS`.
+- **Autenticazione IAM del proxy RDS + stretta del security group del proxy** alla sola SG delle Lambda auth (parte
+  residua di E23). Oggi il proxy autentica con credenziali dal secret e il suo SG accetta l'intera VPC.
+  **Proprietario**: **UC 0014** (dove atterra l'authorizer edge). Tracciato anche lì e in `rds_proxy.tf` / E23.
+- **Cold-start Aurora vs limite 5s di Cognito.** Il trigger Pre-Token-Gen è sincrono e Cognito lo taglia a ~5s; se
+  Aurora è in pausa (scale-to-0) il primo login dopo la pausa può superarlo → login fallito al primo tentativo.
+  Mitigazioni possibili (min capacity Aurora / keep-warm / retry lato SPA) da valutare **all'accensione ambienti**.
+  **Proprietario**: UC 0016 (con le evoluzioni DevOps).
+- **Sorgente `platform-admin` in cloud.** `platform.users.role` è solo tenant-level (owner/admin/member): `platform-admin`
+  non è derivabile da lì. La Pre-Token-Gen replica l'allow-list di `sub` del locale via env `PLATFORM_ADMIN_SUBS`
+  (oggi **vuota**). Va popolata col `sub` reale del platform-admin alla sua creazione su Cognito; valutare una
+  **tabella dedicata** (`platform.platform_admins`) come fonte pulita. **Proprietario**: UC 0016 (con UC 0021).

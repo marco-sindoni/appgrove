@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"PROMEMORIA VINCOLANTE (CLAUDE.md, regola non negoziabile Lingua): rispondi SEMPRE e SOLO in italiano — documenti, chat, messaggi di stato, requirements, log, commenti PR e ogni testo rivolto all utente. Restano in inglese solo gli identificatori tecnici intrinseci: codice, nomi di simboli/file/branch, comandi, chiavi di config e citazioni letterali di output di tool. Parla chiaro, senza acronimi ne slang non spiegati.\"}}'",
+            "statusMessage": "Promemoria lingua italiana"
+          }
+        ]
+      }
+    ]
+  }
+}
