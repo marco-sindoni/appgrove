@@ -379,6 +379,22 @@ in ordine:
    refresh con rotazione cookie, logout; verificare attributi cookie e CORS dal dominio `app.test.appgrove.app`.
    La **prima build nativa** del `function.zip` (GraalVM ARM64, profilo Maven `lambda`) è anch'essa validata solo
    dal vivo in CI: mai eseguita localmente.
+9. **Pre-Token-Gen + validazione JWT (UC 0016, change `0038`)** — tutto il percorso cloud è mai stato acceso. Alla
+   prima accensione di `test`:
+   - **Ruolo DB `auth_lambdas`**: l'invocazione `aws_lambda_invocation.auth_lambdas_grants` deve girare **dopo** lo
+     schema `platform` (dipende da `module.app_platform`) e **dopo** che Flyway ha applicato le migrazioni (la
+     pipeline fa `migrate` prima dell'apply). Verificare che il ruolo esista e abbia i grant attesi (`SELECT` su
+     `platform`, `INSERT/UPDATE` su `accounts/users/invitations`) e che il proxy si autentichi col nuovo secret.
+   - **Popolare `PLATFORM_ADMIN_SUBS`** (env della Lambda pre-token-gen) col `sub` Cognito reale del platform-admin:
+     oggi è **vuota** → nessun claim `platform-admin` finché non la si valorizza. Valutare la tabella dedicata
+     `platform.platform_admins` come fonte pulita (punto aperto UC 0016, con UC 0021).
+   - **Cold-start Aurora vs limite ~5s di Cognito**: il trigger è sincrono; se Aurora è in pausa (scale-to-0) il
+     primo login dopo la pausa può superare i 5s → login fallito al primo tentativo. Provare dal vivo e decidere la
+     mitigazione (min capacity Aurora / keep-warm / retry lato SPA).
+   - **Smoke Cognito reale**: login → l'access token porta `tenant_id`+`roles`; utente senza membership → negato
+     (fail-closed); i servizi accettano solo `token_use=access` col `client_id` del pool.
+   - **E23 residua** (autenticazione IAM del proxy + stretta del suo security group alle sole SG delle Lambda auth):
+     hardening di **UC 0014**, da fare quando nasce l'authorizer.
 
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).
