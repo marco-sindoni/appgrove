@@ -21,24 +21,24 @@
 | **NAT Gateway** | **$0** | **$0** | ✅ deciso #06 B: niente NAT (subnet pubbliche + SG). Hardening = evoluzione E1 (~$32/mese) |
 | Load balancer (ingress) | **$0** | **$0** | ✅ deciso #06 B: VPC Link + Cloud Map, no ALB. ALB = evoluzione E2 (~$16/mese) |
 | State Terraform (S3+DynamoDB) | ~$0 | — | bucket S3 + tabella DynamoDB on-demand: pochi centesimi |
-| VPC endpoints (Lambda) | ~$22 | ~$22 | #06 G: Cognito-IDP + Secrets Manager + **SSM (aggiunto da UC 0015**: la Lambda auth legge il client secret da Parameter Store) (~$7,3 l'uno); cmq < NAT $32 |
+| VPC endpoints (Lambda) | ~$29 | ~$29 | #06 G: Cognito-IDP + Secrets Manager + **SSM (aggiunto da UC 0015**: la Lambda auth legge il client secret da Parameter Store) + **SES (aggiunto da UC 0018**: l'email di invito parte dal backend in rete privata, che senza uscita a internet non raggiungerebbe SES) (~$7,3 l'uno); cmq < NAT $32 |
 | API Gateway HTTP | <$1 | <$1 | $1/M richieste |
 | Lambda (auth, pre-token-gen) | ~$0 | ~$0 | free tier; auth BFF implementata (UC 0015, change 0037): nativa ARM64, 512 MB, concorrenza riservata 10; bucket S3 artefatti per-SHA ~centesimi. **Nessuna Lambda authorizer** (UC 0014, change 0039): l'authorizer JWT nativo costa $0 e risparmia un'invocazione + una query DB **per ogni richiesta API** |
 | EventBridge + SQS (purge) | ~$0 | ~$0 | free tier / pochi eventi |
 | CloudFront + S3 | ~$0–1 | ~$0–1 | **2 distribuzioni/env** (backoffice + console admin); free tier CloudFront 1TB/mese (primo anno) |
 | Secrets Manager | ~$1–2 | ~$1–2 | $0.40/secret (credenziali DB) |
-| SES (email) | ~$0 | ~$0 | ~$0.10/1000 email; verifica/reset/invito EN+IT (usecases/01) |
+| SES (email) | ~$0 | ~$0 | ~$0.10/1000 email; verifica/reset/invito EN+IT (UC 0018, change 0040). Identità di dominio + firma DKIM: **gratuite**. Il costo vero non è l'invio ma l'**accesso di rete** dalla rete privata, contato nella riga "VPC endpoints". **Vincolo non economico**: SES parte in modalità di prova (solo destinatari verificati) — l'uscita è una richiesta manuale ad AWS, da avviare in anticipo (checklist accensione in `_BACKLOG`) |
 | SSM Parameter Store | $0 | $0 | parametri standard gratis |
 | CloudWatch Logs | ~$1–5 | ~$1–5 | dipende dal volume log |
 | CI/CD (GitHub Actions) | ~$0 | ~$0 | #07 A: free tier 2.000 min/mese (repo privato); OIDC (no costi); native GraalVM solo on-demand (`[graal]`/release). Implementata (UC 0005, change 0036): path-filter+cache+concurrency; workflow inerti finché la variabile `AWS_ACCOUNT_ID` non attiva gli ambienti. **Da verificare all'attivazione**: fatturazione runner `ubuntu-24.04-arm` su repo privato (build ARM64; vedi _BACKLOG "Attivazione ambienti cloud") |
 | Observability (#08) | ~$2–6 | ~$0 | Log JSON CloudWatch (retention test 7gg/prod 30gg), metriche tecniche native (gratis) + business via EMF (no `PutMetricData`), dashboard ≤3 gratuiti, allarmi/SNS, canary EventBridge+Lambda (eu-central-1), errori FE→CW. **Tracce SPENTE (C) = $0**. Archivio audit S3+Glacier ~centesimi |
 
 ## Totale indicativo (stato attuale delle decisioni)
-Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **RDS Proxy (~$12)** + **VPC endpoints (~$22)** ≈ **~$34/mese/env**.
+Anche con tutto a scale-to-zero, esiste un **floor always-on** per ambiente: **RDS Proxy (~$12)** + **VPC endpoints (~$29)** ≈ **~$41/mese/env**.
 
-- **test ≈ $35–40/mese** — floor always-on (RDS Proxy + endpoints) + misc; Fargate/Aurora ~$0 da idle.
-- **prod ≈ $65–80/mese** — Fargate ~$30 + floor ~$34 + misc (~$8: Route53/dominio, Secrets, CloudWatch, ecc.).
-- **TOTALE AWS ≈ $100–120/mese.** (Il budget AWS $100, #08, è **solo-AWS**: all'attivazione rivedere le soglie o valutare se l'endpoint SSM sia sostituibile — vedi _EVOLUZIONI-DEVOPS.)
+- **test ≈ $42–47/mese** — floor always-on (RDS Proxy + endpoints) + misc; Fargate/Aurora ~$0 da idle.
+- **prod ≈ $72–87/mese** — Fargate ~$30 + floor ~$41 + misc (~$8: Route53/dominio, Secrets, CloudWatch, ecc.).
+- **TOTALE AWS ≈ $115–135/mese.** (Il budget AWS $100, #08, è **solo-AWS** ed è ora **superato dalla stima**: all'attivazione rivedere le soglie o ridurre gli accessi di rete — l'endpoint SSM e quello SES sono i due candidati, vedi _EVOLUZIONI-DEVOPS.)
 - **Costi ricorrenti NON-AWS** (fuori dal budget AWS): **Plausible Cloud €9/mese** (analytics EU, #13); **fee Paddle** =
   revenue-based ~5%+$0.50/transazione (#09 K, non un costo fisso); **domiciliazione/virtual office** per la sede ditta
   individuale (#14 D, poche centinaia €/anno, prerequisito business).

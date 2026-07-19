@@ -428,5 +428,24 @@ in ordine:
       il security group del proxy: controllare che le SG `auth-lambda` e `pre-token-gen-lambda` siano quelle allegate
       alle Lambda in esecuzione.
 
+11. **Email di autenticazione via SES (UC 0018, change `0040`)** — template e Lambda sono coperti dai test, ma la
+    consegna reale è verificabile solo dal vivo. Alla prima accensione di `test`:
+    - **Uscita dalla modalità di prova di SES (sandbox)** — è il vincolo con il tempo di attesa più lungo, e **non è
+      risolvibile da codice**: un account SES nuovo può spedire **solo a indirizzi verificati a mano**. L'uscita si
+      chiede ad AWS a mano (motivazione d'uso, gestione dei rimbalzi) e la risposta può richiedere **giorni**.
+      Va **avviata in anticipo**, non il giorno del go-live: finché non è concessa, registrazione e reset password
+      funzionano solo verso indirizzi verificati, e **ogni altro destinatario riceve un errore**.
+    - **Verifica del dominio + firma DKIM**: dopo l'apply, controllare che l'identità `appgrove.app` risulti
+      *verified* e che le tre chiavi di firma siano attive su Route53. Senza firma, la posta finisce nello spam.
+    - **Primo invio reale nelle due lingue**: registrazione con lingua italiana e con lingua inglese → verificare che
+      arrivino i testi giusti, dal mittente `noreply@appgrove.app`, e che il collegamento nel messaggio apra davvero
+      la pagina di verifica (formato del token `base64url(email|codice)`).
+    - **Email di invito dalla rete privata**: è l'unica che parte dal nostro backend e non da Cognito. Se fallisce con
+      un errore di rete o un timeout, la causa più probabile è il punto di accesso a SES (`email-smtp` / API SESv2)
+      o il security group associato. Sintomo tipico: `POST /api/auth/invitations/send` va in errore 5xx dopo alcuni
+      secondi di attesa.
+    - **Rimbalzi e reclami**: SES chiude l'account se il tasso di rimbalzo resta alto. Non c'è oggi alcuna gestione
+      delle notifiche di rimbalzo (punto aperto tracciato in UC 0018).
+
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).

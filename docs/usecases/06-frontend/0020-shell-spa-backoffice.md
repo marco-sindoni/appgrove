@@ -111,3 +111,12 @@ _Aggiunti dalla change `0011-use-case-0020-…` (implementazione shell skeleton)
   delle app in sidebar (dipende dal lifecycle subscription). Nota: la change 0034 ha anche aggiornato la
   nota sopra sui pattern tabella — il primitivo `Table` ora **esiste** nel design system (UC 0019) ed è usato
   dalle liste di backoffice e admin.
+
+_Aggiunto dalla change `0040-use-case-0018-…` (localizzazione email auth):_
+
+- **Lingua utente persistita e modificabile dalle impostazioni.** La change 0040 introduce `locale` come
+  **attributo dell'utente** su `platform.users` (unica fonte di verità, usato per scegliere la lingua delle
+  email di autenticazione) e lo valorizza alla registrazione dalla lingua attiva dell'interfaccia. Restano
+  fuori scope, e appartengono a **questo** UC (che possiede la topbar col selettore lingua): (1) rendere il
+  selettore lingua della topbar **persistente** sull'utente invece che solo di sessione; (2) esporre la lingua
+  come campo modificabile nella **pagina impostazioni utente**. **Proprietario**: UC 0020.
