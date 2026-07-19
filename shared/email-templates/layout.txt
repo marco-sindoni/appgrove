@@ -1,0 +1,10 @@
+{{brand}}
+
+{{heading}}
+
+{{intro}}
+
+{{actionLabel}}:
+{{actionUrl}}
+
+{{footer}}

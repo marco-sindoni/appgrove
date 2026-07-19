@@ -3,6 +3,7 @@ package app.appgrove.auth.cognito;
 import app.appgrove.auth.EmailService;
 import app.appgrove.auth.IdentityProvider;
 import app.appgrove.auth.InvalidTokenException;
+import app.appgrove.auth.Locales;
 import app.appgrove.auth.PlatformWriter;
 import app.appgrove.auth.PlatformWriter.CreatedUser;
 import app.appgrove.auth.PlatformWriter.InviteRow;
@@ -158,7 +159,8 @@ public class CognitoIdentityProvider implements IdentityProvider {
     }
 
     @Override
-    public void signup(String emailAddr, String password, String displayName) {
+    public void signup(String emailAddr, String password, String displayName, String locale) {
+        String lang = Locales.normalize(locale);
         String sub;
         try {
             sub = client().signUp(b -> {
@@ -166,19 +168,27 @@ public class CognitoIdentityProvider implements IdentityProvider {
                         .secretHash(secretHash(emailAddr))
                         .username(emailAddr)
                         .password(password)
-                        .userAttributes(userAttributes(emailAddr, displayName));
+                        .userAttributes(userAttributes(emailAddr, displayName))
+                        // La lingua deve viaggiare QUI: Cognito manda l'email di verifica durante
+                        // questa chiamata, quando la riga in platform.users non esiste ancora.
+                        .clientMetadata(localeMetadata(lang));
             }).userSub();
         } catch (UsernameExistsException e) {
             throw status(Response.Status.CONFLICT, "Email già registrata.");
         }
         try {
-            platform.createAccountWithOwner(sub, emailAddr, displayName);
+            platform.createAccountWithOwner(sub, emailAddr, displayName, lang);
         } catch (RuntimeException e) {
             // Compensazione: niente utente Cognito orfano se la membership non è scrivibile.
             deleteQuietly(emailAddr);
             throw e;
         }
-        // L'email col codice di verifica la manda Cognito (template default; localizzate → UC 0018).
+        // L'email col codice di verifica la manda Cognito, resa dal Custom Message Lambda (UC 0018).
+    }
+
+    @Override
+    public String emailActionToken(String emailAddr, String code) {
+        return OpaqueTokens.join(emailAddr, code);
     }
 
     @Override
@@ -200,11 +210,13 @@ public class CognitoIdentityProvider implements IdentityProvider {
 
     @Override
     public void resendVerification(String emailAddr) {
+        Map<String, String> metadata = localeMetadata(platform.localeOf(emailAddr));
         try {
             client().resendConfirmationCode(b -> b
                     .clientId(config.clientId())
                     .secretHash(secretHash(emailAddr))
-                    .username(emailAddr));
+                    .username(emailAddr)
+                    .clientMetadata(metadata));
         } catch (UserNotFoundException | NotAuthorizedException e) {
             // risposta neutra anti-enumeration (il resource risponde comunque 202)
         }
@@ -212,11 +224,13 @@ public class CognitoIdentityProvider implements IdentityProvider {
 
     @Override
     public void forgotPassword(String emailAddr) {
+        Map<String, String> metadata = localeMetadata(platform.localeOf(emailAddr));
         try {
             client().forgotPassword(b -> b
                     .clientId(config.clientId())
                     .secretHash(secretHash(emailAddr))
-                    .username(emailAddr));
+                    .username(emailAddr)
+                    .clientMetadata(metadata));
         } catch (UserNotFoundException | NotAuthorizedException e) {
             // neutra (anti-enumeration)
         }
@@ -238,7 +252,7 @@ public class CognitoIdentityProvider implements IdentityProvider {
     }
 
     @Override
-    public Session acceptInvitation(InviteRow invite, String password, String displayName) {
+    public Session acceptInvitation(InviteRow invite, String password, String displayName, String locale) {
         String sub;
         try {
             // Email provata dal link d'invito (#02 / UC 0017 UC7) → utente creato già confermato,
@@ -261,8 +275,8 @@ public class CognitoIdentityProvider implements IdentityProvider {
         } catch (UsernameExistsException e) {
             throw status(Response.Status.CONFLICT, "Email già registrata.");
         }
-        CreatedUser createdUser =
-                platform.createUserInTenant(sub, invite.tenantId(), invite.email(), displayName, invite.role());
+        CreatedUser createdUser = platform.createUserInTenant(
+                sub, invite.tenantId(), invite.email(), displayName, invite.role(), locale);
         platform.markInvitationAccepted(invite.id(), createdUser.id());
         LoginResult login = login(invite.email(), password); // auto-login come membro
         if (login instanceof LoginResult.Ok ok) {
@@ -352,6 +366,18 @@ public class CognitoIdentityProvider implements IdentityProvider {
         } catch (RuntimeException e) {
             Log.warnf("Compensazione signup: AdminDeleteUser fallita per %s: %s", username, e.toString());
         }
+    }
+
+    /**
+     * Contesto applicativo passato a Cognito e inoltrato tale e quale al Custom Message Lambda
+     * (UC 0018), che ne ricava la lingua del template.
+     *
+     * <p>Cognito <b>non memorizza</b> questi valori: valgono per la singola chiamata. Se un
+     * messaggio venisse generato senza una nostra chiamata, la Lambda non li troverebbe e
+     * ripiegherebbe sull'inglese — comportamento voluto, non una svista.
+     */
+    private static Map<String, String> localeMetadata(String locale) {
+        return Map.of("locale", Locales.normalize(locale));
     }
 
     private java.util.List<AttributeType> userAttributes(String emailAddr, String displayName) {

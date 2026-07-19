@@ -3,7 +3,7 @@
 **Area**: 05-auth · **Fase**: 2 · **Stato**: 🟢 deciso (resta la stesura dei testi)
 **Dipendenze**: UC [0015](0015-cognito-auth-bff.md) (Cognito/SES)
 **Fonte decisioni**: #02 §6 (email/template), #06 §26 (SES/DKIM/Custom Message Lambda), #14 (i18n tono)
-**Ultimo aggiornamento**: 2026-06-21
+**Ultimo aggiornamento**: 2026-07-19
 **Aree collegate**: [02-auth-sicurezza](../../02-auth-sicurezza.md), [06-infra-iac](../../06-infra-iac.md), [0017-flussi-auth](0017-flussi-auth.md)
 
 ## 1. Obiettivo / Scope
@@ -66,16 +66,41 @@ _Tracciato dalla change `0010-use-case-0058-…` (regola CLAUDE.md "Tracciamento
 
 _Aggiunti dalla change `0037-use-case-0015-…` (Cognito + auth BFF):_
 
-- **Formato dei link nelle email Cognito: token `base64url(email|codice)`.** Il BFF (provider Cognito, UC 0015)
-  espone verify/reset col contratto a token unico del locale, decodificando `base64url(email "|" codice)`
-  (`services/auth/.../cognito/OpaqueTokens.java`). Il **Custom Message Lambda** di questo UC deve generare nei
-  template i link `https://app.<env>…/verify?token=<base64url(email|codice)>` (e `/reset`) con questo schema —
-  è ciò che ripristina la parità completa del flusso via link. **Proprietario**: UC 0018.
-- **Infrastruttura SES + raggiungibilità dalla VPC.** L'email d'invito cloud parte dal BFF via **SES**
-  (`SesMailSender`, IAM `ses:SendEmail` già pronti) ma: (1) l'**identità di dominio** SES + DKIM (#06 26) non è
-  ancora provisionata; (2) la Lambda è **in VPC senza uscita internet** e l'API SESv2 non è raggiungibile senza
-  un endpoint dedicato → decidere qui (endpoint SMTP/SESv2, o spostare l'invio fuori VPC). Finché manca,
-  `POST /invitations/send` in cloud **fallisce visibilmente** (5xx nei log), non in silenzio. **Proprietario**: UC 0018.
-- **Email default Cognito fino a questo UC.** Verifica/reset in cloud usano il mittente default Cognito
-  (limite ~50 email/giorno, copy inglese non brandizzato): accettato per la fase pre-attivazione; questo UC
-  porta SES + template. **Proprietario**: UC 0018.
+- ~~**Formato dei link nelle email Cognito: token `base64url(email|codice)`.**~~ ✅ **CHIUSO — e la soluzione
+  ipotizzata si è rivelata NON REALIZZABILE** (change `0040`). Quando Cognito invoca il Custom Message Lambda **il
+  codice non esiste ancora**: la Lambda riceve solo il segnaposto `{####}`, che Cognito sostituisce *dopo* aver
+  ricevuto il messaggio. Costruire lì `base64url(email|codice)` incapsulerebbe il segnaposto dentro la codifica,
+  Cognito non lo riconoscerebbe più e il collegamento arriverebbe **rotto**. Soluzione adottata: il collegamento
+  porta **due parametri distinti** (`?email=…&code={####}`), così il segnaposto resta in chiaro; la ricomposizione
+  del token avviene **nel backend**, che accetta la coppia `email`+`code` in alternativa al `token` unico
+  (`IdentityProvider.emailActionToken`). Il contratto a token unico resta valido e continua a servire il provider
+  locale — nessuna rottura. Presidiato da `test_handler.py` (il segnaposto deve arrivare non codificato) e da
+  `CognitoEmailLinkTest`.
+- ~~**Infrastruttura SES + raggiungibilità dalla VPC.**~~ ✅ **CHIUSO** (change `0040`). (1) Identità di dominio
+  SES + firma DKIM provisionate in `infra/global/ses.tf` (una sola per dominio: test e prod spediscono entrambi da
+  `noreply@appgrove.app`), con i record su Route53 e una politica DMARC in sola osservazione. (2) Aggiunto
+  l'endpoint di rete `email` in `env_baseline/endpoints.tf` (~$7/mese/ambiente, in `_COSTI-AWS`). Verificato che
+  **non esistono scorciatoie**: qualunque altra via (spedire da una funzione fuori dalla rete, passare da una coda)
+  richiede comunque un endpoint dello stesso tipo e costo, perché la rete non ha uscita a internet. L'unico modo di
+  toglierlo è far generare anche l'invito a Cognito, che significa riprogettare il flusso inviti (oggi token, ruolo,
+  tenant e scadenza sono **nostri** in `platform.invitations`): tracciato come evoluzione **E24**.
+- ~~**Email default Cognito fino a questo UC.**~~ ✅ **CHIUSO** (change `0040`): il pool è configurato con
+  `email_sending_account = "DEVELOPER"` e spedisce via SES da `noreply@appgrove.app`, con testo e lingua resi dal
+  Custom Message Lambda. Il tetto di ~50 email/giorno del mittente di default non c'è più.
+
+_Aggiornamento dalla change `0040-use-case-0018-…` — punti aperti NUOVI:_
+
+- **Uscita dalla modalità di prova di SES (sandbox).** Non risolvibile da codice: un account SES nuovo spedisce solo
+  a indirizzi verificati a mano, e l'uscita è una **richiesta manuale ad AWS** che può richiedere giorni. Va avviata
+  **in anticipo** rispetto al go-live. Tracciata nella checklist di prima accensione (`docs/_BACKLOG.md`, voce 11).
+  **Proprietario**: fase di messa in cloud.
+- **Gestione dei rimbalzi e dei reclami SES.** Oggi non esiste: nessuna notifica di rimbalzo, nessuna lista di
+  soppressione, nessun monitoraggio del tasso. Non è un dettaglio operativo — SES **sospende l'account** se il tasso
+  di rimbalzo resta alto, e la sospensione blocca registrazioni e reimpostazioni password per tutti. Da affrontare
+  prima di volumi reali (probabile aggancio con l'osservabilità, UC 0006). **Proprietario**: UC 0018 (residuo).
+- **Irrigidimento della politica DMARC.** Oggi `p=none` (sola osservazione) e nessun indirizzo per i rapporti
+  aggregati, perché punterebbe a una casella inesistente. Dopo aver osservato il traffico reale: attivare i rapporti
+  su una casella vera e valutare il passaggio a quarantena/rifiuto. **Proprietario**: UC 0018 (residuo).
+- **Lingua modificabile dall'utente.** La colonna `locale` si valorizza alla registrazione e non è più modificabile
+  da nessuna interfaccia. Renderla persistente dal selettore in topbar ed esporla nelle impostazioni utente è
+  tracciato in **UC 0020**, che possiede quella parte di interfaccia.

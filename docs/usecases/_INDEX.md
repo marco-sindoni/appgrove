@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0018** (localizzazione email auth); poi **UC 0046** (skill `new-application`)
+## 👉 Prossimo da implementare: **UC 0046** (skill `new-application`); poi **UC 0054** (App #2 B2B via `new-application`)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -75,7 +75,7 @@ AWS finché il prodotto non gira offline.
 | 35 | [0015](05-auth/0015-cognito-auth-bff.md) | Cognito + auth BFF | Auth | 0003, 0012 | ✅ |
 | 36 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ✅ |
 | 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Authorizer all'edge (JWT nativo) | Platform Core | 0013, 0016 | ✅ |
-| 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ⬜ |
+| 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ✅ |
 | 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ⬜ |
 | 40 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ⬜ |
 | 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ⬜ |

@@ -353,6 +353,50 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   Rispetta le safety di [06-infra-iac](06-infra-iac.md) §K (in prod: valutare snapshot finale del DB prima del drop).
   Distinta da "disabilita applicazione" (reversibile, runtime). Dettaglio in memoria `skills-backlog`.
 
+## Recapito delle email transazionali (SES) — tracciato 2026-07-19 (change `0040`, UC 0018)
+
+La change 0040 ha portato le email di autenticazione su SES con firma DKIM e testi EN/IT. Restano **due lavori che il
+codice non può fare** e che, se ignorati, si manifestano come "gli utenti non ricevono le email" — un guasto che
+blocca registrazioni e reimpostazioni password per **tutti**, senza che nulla vada in errore da nessuna parte.
+
+### 1. Uscita dalla modalità di prova di SES (sandbox) — BLOCCANTE PER IL GO-LIVE ⏳
+
+**Cosa**: un account SES nuovo può spedire **solo a indirizzi verificati a mano**. Ogni altro destinatario riceve un
+errore. Serve chiedere ad AWS il passaggio all'accesso in produzione.
+
+**Perché è qui e non nel codice**: è una **richiesta manuale** dal pannello AWS, con motivazione d'uso e descrizione
+di come gestiamo i rimbalzi. La risposta arriva **in giorni**, non in minuti, e può essere respinta con richiesta di
+chiarimenti.
+
+**Quando**: **in anticipo** rispetto al go-live, non il giorno stesso. È il vincolo con il tempo di attesa più lungo
+di tutta la messa in produzione, ed è anche quello che si scopre più facilmente all'ultimo momento.
+
+**Nota**: la richiesta è più solida se presentata *dopo* aver predisposto la gestione dei rimbalzi (punto 2) —
+è una delle cose che AWS chiede esplicitamente.
+
+**Proprietario**: fase di messa in cloud. Riferimento: checklist di prima accensione (voce 11, sotto).
+
+### 2. Gestione di rimbalzi e reclami SES — DA FARE PRIMA DI VOLUMI REALI
+
+**Cosa**: oggi non esiste nulla. Nessuna notifica di rimbalzo, nessuna lista di soppressione degli indirizzi che
+falliscono, nessun monitoraggio del tasso di rimbalzo e di reclamo.
+
+**Perché conta davvero**: SES **sospende l'account** se il tasso di rimbalzo o di reclamo supera le sue soglie. Non è
+un degrado graduale: da un momento all'altro smettono di partire *tutte* le email, comprese verifica indirizzo e
+reimpostazione password. Chi si registra in quel momento resta bloccato fuori dal prodotto.
+
+**Cosa serve, in ordine di valore**:
+1. destinazione delle notifiche di rimbalzo e reclamo (SES → argomento di notifica → consumo);
+2. lista di soppressione: smettere di riscrivere a indirizzi che rimbalzano stabilmente;
+3. allarme sul tasso, prima che scatti la soglia di AWS (aggancio naturale con l'osservabilità, UC 0006).
+
+**Quando**: prima di traffico reale. Con volumi da prova il rischio è teorico; al primo elenco di indirizzi non
+validi diventa concreto.
+
+**Proprietario**: UC 0018 (residuo) con UC 0006 per la parte di allarmi.
+
+---
+
 ## Attivazione ambienti cloud — prima esecuzione live della pipeline + configurazione repo GitHub (tracciato 2026-07-17)
 
 Sollevato dalla change `0036-use-case-0005-…` (pipeline CI/CD, UC 0005). La pipeline è **scritta e validata
@@ -427,6 +471,25 @@ in ordine:
       (login reale = prova end-to-end). Se il login fallisce con errore di connessione al DB, la causa più probabile è
       il security group del proxy: controllare che le SG `auth-lambda` e `pre-token-gen-lambda` siano quelle allegate
       alle Lambda in esecuzione.
+
+11. **Email di autenticazione via SES (UC 0018, change `0040`)** — template e Lambda sono coperti dai test, ma la
+    consegna reale è verificabile solo dal vivo. Alla prima accensione di `test`:
+    - **Uscita dalla modalità di prova di SES (sandbox)** — è il vincolo con il tempo di attesa più lungo, e **non è
+      risolvibile da codice**: un account SES nuovo può spedire **solo a indirizzi verificati a mano**. L'uscita si
+      chiede ad AWS a mano (motivazione d'uso, gestione dei rimbalzi) e la risposta può richiedere **giorni**.
+      Va **avviata in anticipo**, non il giorno del go-live: finché non è concessa, registrazione e reset password
+      funzionano solo verso indirizzi verificati, e **ogni altro destinatario riceve un errore**.
+    - **Verifica del dominio + firma DKIM**: dopo l'apply, controllare che l'identità `appgrove.app` risulti
+      *verified* e che le tre chiavi di firma siano attive su Route53. Senza firma, la posta finisce nello spam.
+    - **Primo invio reale nelle due lingue**: registrazione con lingua italiana e con lingua inglese → verificare che
+      arrivino i testi giusti, dal mittente `noreply@appgrove.app`, e che il collegamento nel messaggio apra davvero
+      la pagina di verifica (formato del token `base64url(email|codice)`).
+    - **Email di invito dalla rete privata**: è l'unica che parte dal nostro backend e non da Cognito. Se fallisce con
+      un errore di rete o un timeout, la causa più probabile è il punto di accesso a SES (`email-smtp` / API SESv2)
+      o il security group associato. Sintomo tipico: `POST /api/auth/invitations/send` va in errore 5xx dopo alcuni
+      secondi di attesa.
+    - **Rimbalzi e reclami**: SES chiude l'account se il tasso di rimbalzo resta alto. Non c'è oggi alcuna gestione
+      delle notifiche di rimbalzo (punto aperto tracciato in UC 0018).
 
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).

@@ -97,13 +97,20 @@ public class LocalIdentityProvider implements IdentityProvider {
     }
 
     @Override
-    public void signup(String emailAddr, String password, String displayName) {
+    public void signup(String emailAddr, String password, String displayName, String locale) {
         if (directory.findByEmail(emailAddr).isPresent()) {
             throw status(Response.Status.CONFLICT, "Email già registrata.");
         }
-        CreatedUser created = platform.createAccountWithOwner(localSub(), emailAddr, displayName);
+        CreatedUser created = platform.createAccountWithOwner(localSub(), emailAddr, displayName, locale);
         credentials.create(created.user().sub(), Passwords.hash(password), false);
-        email.sendVerify(emailAddr, tokens.emailVerifyToken(created.user().sub()));
+        email.sendVerify(emailAddr, created.user().locale(), tokens.emailVerifyToken(created.user().sub()));
+    }
+
+    @Override
+    public String emailActionToken(String emailAddr, String code) {
+        // Il provider locale conia i propri token e li mette per intero nel collegamento: la forma
+        // indirizzo+codice esiste solo per i messaggi generati da Cognito (UC 0018).
+        throw status(Response.Status.BAD_REQUEST, "Token di verifica non valido o scaduto.");
     }
 
     @Override
@@ -117,13 +124,13 @@ public class LocalIdentityProvider implements IdentityProvider {
     public void resendVerification(String emailAddr) {
         directory.findByEmail(emailAddr).ifPresent(u ->
                 credentials.find(u.sub()).filter(c -> !c.emailVerified())
-                        .ifPresent(c -> email.sendVerify(u.email(), tokens.emailVerifyToken(u.sub()))));
+                        .ifPresent(c -> email.sendVerify(u.email(), u.locale(), tokens.emailVerifyToken(u.sub()))));
     }
 
     @Override
     public void forgotPassword(String emailAddr) {
         directory.findByEmail(emailAddr)
-                .ifPresent(u -> email.sendReset(u.email(), tokens.passwordResetToken(u.sub())));
+                .ifPresent(u -> email.sendReset(u.email(), u.locale(), tokens.passwordResetToken(u.sub())));
     }
 
     @Override
@@ -133,9 +140,9 @@ public class LocalIdentityProvider implements IdentityProvider {
     }
 
     @Override
-    public Session acceptInvitation(InviteRow invite, String password, String displayName) {
-        CreatedUser created =
-                platform.createUserInTenant(localSub(), invite.tenantId(), invite.email(), displayName, invite.role());
+    public Session acceptInvitation(InviteRow invite, String password, String displayName, String locale) {
+        CreatedUser created = platform.createUserInTenant(
+                localSub(), invite.tenantId(), invite.email(), displayName, invite.role(), locale);
         credentials.create(created.user().sub(), Passwords.hash(password), true); // link prova l'email
         platform.markInvitationAccepted(invite.id(), created.id());
         return session(created.user()); // auto-login come membro

@@ -1,0 +1,30 @@
+{
+  "language": "it",
+  "brand": "appgrove",
+  "messages": {
+    "verify": {
+      "subject": "Conferma il tuo indirizzo email",
+      "heading": "Conferma il tuo indirizzo email",
+      "intro": "Benvenuto su appgrove. Conferma questo indirizzo per attivare il tuo account.",
+      "actionLabel": "Conferma l'indirizzo",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Se non hai creato un account appgrove, puoi ignorare questo messaggio."
+    },
+    "reset": {
+      "subject": "Reimposta la password",
+      "heading": "Reimposta la password",
+      "intro": "Abbiamo ricevuto una richiesta di reimpostazione della password del tuo account appgrove.",
+      "actionLabel": "Scegli una nuova password",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Se non hai richiesto tu la reimpostazione, puoi ignorare questo messaggio: la password resta invariata."
+    },
+    "invite": {
+      "subject": "Sei stato invitato su appgrove",
+      "heading": "Sei stato invitato su appgrove",
+      "intro": "Sei stato invitato a entrare in uno spazio di lavoro su appgrove come {{role}}. Accetta l'invito per scegliere la password e iniziare.",
+      "actionLabel": "Accetta l'invito",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Se non ti aspettavi questo invito, puoi ignorare questo messaggio."
+    }
+  }
+}

@@ -39,8 +39,26 @@ public interface IdentityProvider {
     /** Revoca il refresh token (Cognito {@code RevokeToken}); il clear del cookie è del resource. */
     void logout(String refreshValue);
 
-    /** Crea identità + account/owner nello schema platform; invia (o fa inviare) l'email di verifica. */
-    void signup(String email, String password, String displayName);
+    /**
+     * Crea identità + account/owner nello schema platform; invia (o fa inviare) l'email di verifica.
+     *
+     * @param locale lingua dell'email di verifica (UC 0018). Serve come parametro e non si legge dal
+     *     DB perché al momento dell'invio l'utente <b>non è ancora stato scritto</b>: col provider
+     *     Cognito l'email parte dalla chiamata di registrazione stessa.
+     */
+    void signup(String email, String password, String displayName, String locale);
+
+    /**
+     * Ricompone il token di verifica/reimpostazione dalla coppia indirizzo + codice (UC 0018).
+     *
+     * <p>Esiste perché il collegamento generato dal Custom Message Lambda porta i due valori
+     * separati: quando la Lambda compone il messaggio il codice non esiste ancora (Cognito
+     * sostituisce il segnaposto dopo), quindi non può produrre un token unico. Il formato del token
+     * resta un dettaglio interno del provider — il resource non lo conosce.
+     *
+     * @throws jakarta.ws.rs.WebApplicationException 400 se il provider non usa questa forma
+     */
+    String emailActionToken(String email, String code);
 
     /**
      * Conferma l'email. Ritorna la sessione se il provider può auto-loggare l'utente (Local);
@@ -58,7 +76,7 @@ public interface IdentityProvider {
      * Accept invito: crea l'identità (email già provata dal link → confermata), l'utente nel tenant
      * invitante col ruolo dell'invito, marca l'invito accettato e auto-logga.
      */
-    Session acceptInvitation(InviteRow invite, String password, String displayName);
+    Session acceptInvitation(InviteRow invite, String password, String displayName, String locale);
 
     Enrollment startTotpEnrollment(String bearerToken, String sub);
 

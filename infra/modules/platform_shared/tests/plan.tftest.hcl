@@ -20,6 +20,14 @@ mock_provider "aws" {
     }
   }
 
+  # Identità SES creata in `global` (UC 0018): l'ARN è validato dal provider già in
+  # plan, quindi va fornito in forma plausibile come per i certificati.
+  mock_data "aws_sesv2_email_identity" {
+    defaults = {
+      arn = "arn:aws:ses:eu-west-1:123456789012:identity/appgrove.app"
+    }
+  }
+
   # Il segreto master di Aurora è gestito da RDS (blocco calcolato): senza
   # valore finto il modulo non può referenziarlo.
   mock_resource "aws_rds_cluster" {
@@ -87,6 +95,14 @@ override_resource {
   override_during = plan
   values = {
     id = "sg-000000000000000b2"
+  }
+}
+
+override_resource {
+  target          = aws_lambda_function.custom_message
+  override_during = plan
+  values = {
+    arn = "arn:aws:lambda:eu-west-1:123456789012:function:appgrove-test-custom-message"
   }
 }
 
@@ -188,5 +204,54 @@ run "proxy_db_raggiungibile_solo_dalle_lambda_auth" {
   assert {
     condition     = aws_db_proxy.this.require_tls == true
     error_message = "Il proxy deve imporre TLS (#06 §20bis)."
+  }
+}
+
+# ── Email di autenticazione (UC 0018, change 0040) ───────────────────────────
+#
+# Queste verifiche presidiano cose che in locale non si rompono mai: in locale le
+# email le manda il servizio Java verso Mailpit. Una regressione qui si vedrebbe
+# soltanto in cloud, e soltanto a utente reale.
+
+run "email_auth_via_ses_e_custom_message" {
+  command = plan
+
+  # Senza il trigger cablato, Cognito manda i suoi testi di default: inglese non
+  # brandizzato e nessuna localizzazione. È il cuore dello use case.
+  assert {
+    condition     = one(aws_cognito_user_pool.this.lambda_config).custom_message == aws_lambda_function.custom_message.arn
+    error_message = "Il trigger Custom Message deve essere cablato sul pool (UC 0018)."
+  }
+
+  # DEVELOPER = spedisce SES con la nostra identità. Il default (COGNITO_DEFAULT)
+  # ha un tetto di circa 50 email al giorno: superato quello, le registrazioni
+  # smettono di funzionare senza che nulla nel nostro codice sia cambiato.
+  assert {
+    condition     = one(aws_cognito_user_pool.this.email_configuration).email_sending_account == "DEVELOPER"
+    error_message = "Le email del pool devono partire da SES, non dal mittente di default di Cognito."
+  }
+  assert {
+    condition     = one(aws_cognito_user_pool.this.email_configuration).from_email_address == "noreply@appgrove.app"
+    error_message = "Il mittente deve essere noreply@<domain> (identità verificata con DKIM)."
+  }
+
+  # Fuori dalla VPC by-design: non tocca il database (la lingua le arriva come
+  # parametro della chiamata). Rimetterla in rete privata aggiungerebbe avvio a
+  # freddo su ogni email, contro un trigger che Cognito taglia a 5 secondi.
+  assert {
+    condition     = length(aws_lambda_function.custom_message.vpc_config) == 0
+    error_message = "Il Custom Message Lambda non deve stare in VPC: non accede al database (UC 0018)."
+  }
+
+  # Non spedisce lei (spedisce Cognito) e non legge segreti: il solo ruolo dei log.
+  assert {
+    condition     = aws_iam_role_policy_attachment.custom_message_logs.policy_arn == "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    error_message = "Il Custom Message Lambda deve avere i soli permessi di log."
+  }
+
+  # Cognito deve poterla invocare, e solo dal NOSTRO pool.
+  assert {
+    condition     = aws_lambda_permission.custom_message_cognito.source_arn == aws_cognito_user_pool.this.arn
+    error_message = "L'invocazione deve essere autorizzata al solo user pool dell'ambiente."
   }
 }

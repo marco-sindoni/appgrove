@@ -12,6 +12,12 @@ data "aws_route53_zone" "main" {
   name = var.domain
 }
 
+# Identità di dominio SES (UC 0018): creata una volta sola in `global` perché il
+# dominio è uno solo — test e prod spediscono entrambi da noreply@<domain>.
+data "aws_sesv2_email_identity" "main" {
+  email_identity = var.domain
+}
+
 locals {
   # #12 9/10: prod sui sottodomini diretti (app./admin./api.appgrove.app),
   # test sul segmento dedicato (app./admin./api.test.appgrove.app).

@@ -16,7 +16,7 @@ public class MailerMailSender implements MailSender {
     Mailer mailer;
 
     @Override
-    public void send(String to, String subject, String textBody) {
-        mailer.send(Mail.withText(to, subject, textBody));
+    public void send(String to, String subject, String textBody, String htmlBody) {
+        mailer.send(Mail.withText(to, subject, textBody).setHtml(htmlBody));
     }
 }

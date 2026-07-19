@@ -7,9 +7,12 @@ import { OnboardingWizard } from './OnboardingWizard'
 import { useAuthStore } from '../../auth/authStore'
 import { renderWithProviders } from '../../test/utils'
 
+let lastSignupBody: Record<string, unknown> | null = null
+
 const server = setupServer(
   http.post('http://localhost/api/auth/signup', async ({ request }) => {
     const body = (await request.json()) as { email: string }
+    lastSignupBody = body as Record<string, unknown>
     if (body.email === 'taken@x.io') {
       return HttpResponse.json({ title: 'Conflict', detail: 'già registrata' }, { status: 409 })
     }
@@ -38,6 +41,16 @@ describe('OnboardingWizard', () => {
     expect(
       await screen.findByText('We sent a verification link to new@x.io. Open it to continue.'),
     ).toBeInTheDocument()
+  })
+
+  // UC 0018: senza questo la lingua non arriverebbe mai al backend, e ogni email di ogni utente
+  // sarebbe in inglese — senza che nulla fallisca da nessuna parte.
+  it('la registrazione trasmette la lingua attiva dell’interfaccia', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<OnboardingWizard />, { route: '/signup' })
+    await fillAccount(user, 'lang@x.io')
+    await screen.findByText(/We sent a verification link/)
+    expect(lastSignupBody?.locale).toBe('en')
   })
 
   it('email già registrata (409) → mostra errore e resta su Account', async () => {
