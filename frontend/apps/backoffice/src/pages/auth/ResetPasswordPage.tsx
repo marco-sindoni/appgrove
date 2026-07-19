@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Button } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useConfig } from '../../config'
-import { resetPassword } from '../../auth/authApi'
+import { emailActionLinkFrom, resetPassword } from '../../auth/authApi'
 import { resetSchema } from '../../auth/schemas'
 import { authErrorMessage } from '../../auth/authErrors'
 import { AuthLayout } from './AuthLayout'
@@ -16,7 +16,8 @@ export function ResetPasswordPage() {
   const { t } = useTranslation()
   const config = useConfig()
   const [params] = useSearchParams()
-  const token = params.get('token')
+  // Entrambe le forme del collegamento (UC 0018): `?token=` locale, `?email=&code=` da Cognito.
+  const link = emailActionLinkFrom(params)
   const [done, setDone] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -31,7 +32,7 @@ export function ResetPasswordPage() {
     </Link>
   )
 
-  if (!token) {
+  if (!link) {
     return (
       <AuthLayout title={t('reset.title')} footer={loginLink}>
         <p role="alert" className="text-sm text-danger">
@@ -44,7 +45,7 @@ export function ResetPasswordPage() {
   const onSubmit = form.handleSubmit(async (values) => {
     setFormError(null)
     try {
-      await resetPassword(config.authBaseUrl, { token, password: values.password })
+      await resetPassword(config.authBaseUrl, { link, password: values.password })
       setDone(true)
     } catch (err) {
       setFormError(authErrorMessage(err, t, { 400: t('reset.invalid') }))

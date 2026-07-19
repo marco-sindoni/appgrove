@@ -120,7 +120,7 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response signup(@Valid SignupRequest body) {
         PasswordPolicy.validate(body.password());
-        provider().signup(body.email(), body.password(), body.displayName());
+        provider().signup(body.email(), body.password(), body.displayName(), body.locale());
         return Response.status(Response.Status.CREATED).entity(new SignupResponse("verification_required")).build();
     }
 
@@ -128,7 +128,8 @@ public class AuthResource {
     @Path("/verify")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response verify(@Valid VerifyRequest body) {
-        Optional<Session> session = provider().verifyEmail(body.token());
+        Optional<Session> session =
+                provider().verifyEmail(emailActionToken(body.token(), body.email(), body.code()));
         // Local: auto-login post-verifica (UC1 step 4). Cognito: conferma senza credenziali →
         // la SPA rimanda al login (nessun token nella risposta).
         return session.map(this::tokenResponse)
@@ -156,7 +157,7 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response resetPassword(@Valid ResetRequest body) {
         PasswordPolicy.validate(body.password());
-        provider().resetPassword(body.token(), body.password());
+        provider().resetPassword(emailActionToken(body.token(), body.email(), body.code()), body.password());
         return Response.noContent().build();
     }
 
@@ -173,7 +174,7 @@ public class AuthResource {
         if (inv.isExpired(Instant.now())) {
             throw status(Response.Status.GONE, "Invito scaduto.");
         }
-        return tokenResponse(provider().acceptInvitation(inv, body.password(), body.displayName()));
+        return tokenResponse(provider().acceptInvitation(inv, body.password(), body.displayName(), body.locale()));
     }
 
     @POST
@@ -181,7 +182,8 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response sendInvitation(@Valid InviteSendRequest body) {
         String role = body.role() != null && !body.role().isBlank() ? body.role() : "member";
-        email.sendInvite(body.email(), body.token(), role);
+        // Lingua di chi invita: l'invitato non è ancora un utente, non ha una preferenza da leggere.
+        email.sendInvite(body.email(), body.locale(), body.token(), role);
         return Response.accepted().build();
     }
 
@@ -203,6 +205,28 @@ public class AuthResource {
     }
 
     // ── helper ─────────────────────────────────────────────────────────────
+
+    /**
+     * Riconduce a un token unico le <b>due forme</b> del collegamento di verifica/reimpostazione
+     * (UC 0018): {@code token} da solo, oppure {@code email} + {@code code}.
+     *
+     * <p>La seconda esiste perché il Custom Message Lambda compone il messaggio <b>prima</b> che il
+     * codice esista (Cognito sostituisce il segnaposto dopo): non può quindi produrre un token
+     * unico. La ricomposizione la fa il provider, così il formato del token resta un suo dettaglio.
+     *
+     * <p>Il messaggio d'errore è il medesimo delle altre condizioni di token non valido: non
+     * distinguere "forma sbagliata" da "codice sbagliato" evita di dare indizi a chi tenta.
+     */
+    private String emailActionToken(String token, String emailAddr, String code) {
+        if (token != null && !token.isBlank()) {
+            return token;
+        }
+        if (emailAddr == null || emailAddr.isBlank() || code == null || code.isBlank()) {
+            throw status(Response.Status.BAD_REQUEST, "Token di verifica non valido o scaduto.");
+        }
+        return provider().emailActionToken(emailAddr, code);
+    }
+
     private Response tokenResponse(Session session) {
         TokenResponse body = new TokenResponse(
                 session.accessToken(), session.idToken(), "Bearer", session.expiresInSeconds());

@@ -14,7 +14,7 @@ import { AuthLayout } from './AuthLayout'
 import { Field } from './Field'
 
 export function AcceptInvitePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const config = useConfig()
   const [params] = useSearchParams()
   const token = params.get('token')
@@ -46,6 +46,9 @@ export function AcceptInvitePage() {
         token,
         password: values.password,
         displayName: values.displayName || undefined,
+        // Qui l'invitato sceglie la propria lingua per la prima volta (UC 0018): sta compilando il
+        // modulo nella lingua che gli va bene, ed è quella che vogliamo per le sue email future.
+        locale: i18n.language,
       })
       setSession(tokens)
     } catch (err) {

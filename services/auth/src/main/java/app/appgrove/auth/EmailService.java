@@ -3,12 +3,18 @@ package app.appgrove.auth;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
- * Email funzionali del BFF (portano il link/token); il copy localizzato EN/IT definitivo è UC 0018.
- * Il trasporto è la porta {@link MailSender}: Mailpit in locale, SES in cloud. Le email di
- * verifica/reset in cloud le manda Cognito (qui passa solo l'invito).
+ * Email di autenticazione del BFF: sceglie la lingua, rende il template (UC 0018) e costruisce il
+ * collegamento. Il trasporto è la porta {@link MailSender}: Mailpit in locale, SES in cloud.
+ *
+ * <p>In cloud passa di qui il <b>solo invito</b>: verifica e reimpostazione password le compone il
+ * Custom Message Lambda dentro Cognito. I testi però sono gli stessi — vengono dalla medesima
+ * sorgente {@code shared/email-templates}.
  */
 @ApplicationScoped
 public class EmailService {
@@ -17,25 +23,37 @@ public class EmailService {
     @Inject
     Instance<MailSender> sender;
 
+    @Inject
+    EmailTemplates templates;
+
     @ConfigProperty(name = "auth.app-base-url")
     String baseUrl;
 
-    public void sendVerify(String email, String token) {
-        sender.get().send(email, "Verifica la tua email appgrove",
-                "Conferma il tuo indirizzo: " + link("/verify", token));
+    public void sendVerify(String email, String locale, String token) {
+        send(email, locale, "verify", Map.of("actionUrl", tokenLink("/verify", token)));
     }
 
-    public void sendReset(String email, String token) {
-        sender.get().send(email, "Reimposta la password appgrove",
-                "Reimposta la password: " + link("/reset", token));
+    public void sendReset(String email, String locale, String token) {
+        send(email, locale, "reset", Map.of("actionUrl", tokenLink("/reset", token)));
     }
 
-    public void sendInvite(String email, String token, String role) {
-        sender.get().send(email, "Sei stato invitato su appgrove",
-                "Sei stato invitato come " + role + ". Accetta l'invito: " + link("/accept", token));
+    public void sendInvite(String email, String locale, String token, String role) {
+        send(email, locale, "invite", Map.of("actionUrl", tokenLink("/accept", token), "role", role));
     }
 
-    private String link(String path, String token) {
-        return baseUrl + path + "?token=" + token;
+    private void send(String to, String locale, String messageKey, Map<String, String> values) {
+        EmailTemplates.Rendered rendered = templates.render(locale, messageKey, values);
+        sender.get().send(to, rendered.subject(), rendered.text(), rendered.html());
+    }
+
+    /**
+     * Collegamento a token unico: è la forma del provider locale, che conia i propri token e li
+     * conosce già quando compone l'email. In cloud verifica e reimpostazione usano invece la forma a
+     * due parametri ({@code ?email=…&code={####}}), perché quando il Custom Message Lambda compone
+     * il messaggio <b>il codice non esiste ancora</b>. Entrambe le forme sono accettate dagli
+     * endpoint (vedi {@link AuthResource}).
+     */
+    private String tokenLink(String path, String token) {
+        return baseUrl + path + "?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
     }
 }

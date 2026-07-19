@@ -60,10 +60,12 @@ public class PlatformDataContract implements AppDataContract {
                 "id", "name", "status", "paddle_customer_id", "created_at"));
 
         entities.put("users", query(
-                "select id, cognito_sub, email, display_name, role, status, created_at"
+                // `locale` (UC 0018) è un dato personale dell'utente: va esportato come gli altri,
+                // o la portabilità (art. 20) restituirebbe un profilo incompleto.
+                "select id, cognito_sub, email, display_name, locale, role, status, created_at"
                         + " from platform.users where tenant_id = ? order by email",
                 scope.tenantId(),
-                "id", "cognito_sub", "email", "display_name", "role", "status", "created_at"));
+                "id", "cognito_sub", "email", "display_name", "locale", "role", "status", "created_at"));
 
         entities.put("invitations", query(
                 "select id, email, role, status, expires_at, created_at"

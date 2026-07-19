@@ -27,6 +27,27 @@ export interface EnrollResult {
   otpauthUri: string
 }
 
+/**
+ * Le due forme del collegamento di verifica/reimpostazione (UC 0018).
+ *
+ * Col provider locale il collegamento porta un `token` unico. In cloud il messaggio lo compone il
+ * Custom Message Lambda dentro Cognito, che quando lo compone **non conosce ancora il codice**
+ * (Cognito lo sostituisce dopo): il collegamento porta quindi `email` e `code` separati, e il
+ * backend li ricompone. Le pagine accettano entrambe le forme, così un utente non resta bloccato
+ * per quale ambiente ha generato il suo collegamento.
+ */
+export type EmailActionLink = { token: string } | { email: string; code: string }
+
+/** Legge dalla query string la forma presente, o null se non c'è nessuna delle due. */
+export function emailActionLinkFrom(params: URLSearchParams): EmailActionLink | null {
+  const token = params.get('token')
+  if (token) return { token }
+  const email = params.get('email')
+  const code = params.get('code')
+  if (email && code) return { email, code }
+  return null
+}
+
 const toSession = (body: TokenResponse): SessionTokens => ({
   accessToken: body.access_token,
   idToken: body.id_token ?? null,
@@ -107,10 +128,14 @@ export async function loginTwoFa(
 
 // ── Flussi (UC 0058) ────────────────────────────────────────────────────────
 
-/** `POST /api/auth/signup` → 201 (verifica email richiesta). Solleva ApiError 409 se email già registrata. */
+/**
+ * `POST /api/auth/signup` → 201 (verifica email richiesta). Solleva ApiError 409 se email già
+ * registrata. `locale` (UC 0018) è la lingua attiva dell'interfaccia: diventa la lingua delle email
+ * dell'utente e viene memorizzata sul suo profilo.
+ */
 export async function signup(
   authBaseUrl: string,
-  body: { email: string; password: string; displayName?: string },
+  body: { email: string; password: string; displayName?: string; locale?: string },
 ): Promise<void> {
   await post(authBaseUrl, '/signup', body)
 }
@@ -122,9 +147,9 @@ export async function signup(
  */
 export async function verifyEmail(
   authBaseUrl: string,
-  token: string,
+  link: EmailActionLink,
 ): Promise<SessionTokens | null> {
-  const res = await post(authBaseUrl, '/verify', { token })
+  const res = await post(authBaseUrl, '/verify', link)
   const body = (await res.json()) as TokenResponse | { status: string }
   if ('access_token' in body) return toSession(body)
   return null
@@ -140,18 +165,18 @@ export async function forgotPassword(authBaseUrl: string, email: string): Promis
   await post(authBaseUrl, '/password/forgot', { email })
 }
 
-/** `POST /api/auth/password/reset` → 204. */
+/** `POST /api/auth/password/reset` → 204. Accetta entrambe le forme del collegamento (UC 0018). */
 export async function resetPassword(
   authBaseUrl: string,
-  body: { token: string; password: string },
+  body: { link: EmailActionLink; password: string },
 ): Promise<void> {
-  await post(authBaseUrl, '/password/reset', body)
+  await post(authBaseUrl, '/password/reset', { ...body.link, password: body.password })
 }
 
 /** `POST /api/auth/invitations/accept` → **auto-login** come member. */
 export async function acceptInvitation(
   authBaseUrl: string,
-  body: { token: string; password: string; displayName?: string },
+  body: { token: string; password: string; displayName?: string; locale?: string },
 ): Promise<SessionTokens> {
   const res = await post(authBaseUrl, '/invitations/accept', body)
   return toSession((await res.json()) as TokenResponse)
@@ -163,7 +188,7 @@ export async function acceptInvitation(
  */
 export async function sendInvitation(
   authBaseUrl: string,
-  body: { email: string; token: string; role?: string },
+  body: { email: string; token: string; role?: string; locale?: string },
 ): Promise<void> {
   await post(authBaseUrl, '/invitations/send', body)
 }

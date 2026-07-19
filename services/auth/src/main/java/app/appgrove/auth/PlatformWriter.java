@@ -24,10 +24,11 @@ public class PlatformWriter {
     AgroalDataSource ds;
 
     /** Signup: crea un nuovo account (tenant) + utente owner. {@code sub} = identità del provider. */
-    public CreatedUser createAccountWithOwner(String sub, String email, String displayName) {
+    public CreatedUser createAccountWithOwner(String sub, String email, String displayName, String locale) {
         UUID accountId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         String name = displayName != null && !displayName.isBlank() ? displayName : email;
+        String lang = Locales.normalize(locale);
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
             try {
@@ -37,24 +38,47 @@ public class PlatformWriter {
                             ps.setObject(1, accountId);
                             ps.setString(2, name);
                         });
-                insertUser(c, userId, accountId.toString(), sub, email, displayName, "owner");
+                insertUser(c, userId, accountId.toString(), sub, email, displayName, "owner", lang);
                 c.commit();
             } catch (SQLException e) {
                 c.rollback();
                 throw e;
             }
-            return new CreatedUser(userId, new AuthUser(sub, accountId.toString(), "owner", "active", email, displayName));
+            return new CreatedUser(
+                    userId, new AuthUser(sub, accountId.toString(), "owner", "active", email, displayName, lang));
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     /** Accept invito: crea l'utente nel tenant invitante col ruolo dell'invito. */
-    public CreatedUser createUserInTenant(String sub, String tenantId, String email, String displayName, String role) {
+    public CreatedUser createUserInTenant(
+            String sub, String tenantId, String email, String displayName, String role, String locale) {
         UUID userId = UUID.randomUUID();
+        String lang = Locales.normalize(locale);
         try (Connection c = ds.getConnection()) {
-            insertUser(c, userId, tenantId, sub, email, displayName, role);
-            return new CreatedUser(userId, new AuthUser(sub, tenantId, role, "active", email, displayName));
+            insertUser(c, userId, tenantId, sub, email, displayName, role, lang);
+            return new CreatedUser(userId, new AuthUser(sub, tenantId, role, "active", email, displayName, lang));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Lingua dell'utente per le email transazionali (UC 0018). Usata dai flussi che partono da un
+     * solo indirizzo (rinvio verifica, password dimenticata), dove non c'è altro contesto.
+     *
+     * <p>Ritorna sempre una lingua supportata: un indirizzo sconosciuto dà {@code en}, come un
+     * utente senza preferenza. Non distinguere i due casi è deliberato — questi flussi rispondono in
+     * modo neutro per non rivelare se un indirizzo è registrato.
+     */
+    public String localeOf(String email) {
+        String sql = "select locale from platform.users where lower(email) = lower(?) and deleted_at is null";
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                return Locales.normalize(rs.next() ? rs.getString("locale") : null);
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -95,9 +119,10 @@ public class PlatformWriter {
     }
 
     private void insertUser(Connection c, UUID userId, String tenantId, String sub, String email,
-            String displayName, String role) throws SQLException {
-        exec(c, "insert into platform.users(id, tenant_id, cognito_sub, email, display_name, role, status, "
-                        + "created_at, updated_at, created_by) values (?, ?, ?, ?, ?, ?, 'active', now(), now(), 'auth')",
+            String displayName, String role, String locale) throws SQLException {
+        exec(c, "insert into platform.users(id, tenant_id, cognito_sub, email, display_name, role, locale, status, "
+                        + "created_at, updated_at, created_by) "
+                        + "values (?, ?, ?, ?, ?, ?, ?, 'active', now(), now(), 'auth')",
                 ps -> {
                     ps.setObject(1, userId);
                     ps.setString(2, tenantId);
@@ -105,6 +130,7 @@ public class PlatformWriter {
                     ps.setString(4, email);
                     ps.setString(5, displayName);
                     ps.setString(6, role);
+                    ps.setString(7, locale);
                 });
     }
 

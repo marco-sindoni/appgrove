@@ -40,6 +40,17 @@ public class User extends BaseTenantEntity {
     @Column(name = "display_name")
     private String displayName;
 
+    /**
+     * Lingua dell'utente per le email transazionali (UC 0018): fonte di verità unica, letta dal
+     * servizio auth per scegliere il template EN/IT. Mai nulla: chi non l'ha espressa è {@code en}.
+     */
+    @PersonalData(
+            category = "preferenza (lingua)",
+            purpose = "lingua delle email transazionali di autenticazione",
+            retention = "account attivo + grace 14gg (#13 E25)")
+    @Column(nullable = false, length = 8)
+    private String locale = "en";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
@@ -84,6 +95,14 @@ public class User extends BaseTenantEntity {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 
     public UserRole getRole() {

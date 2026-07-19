@@ -188,6 +188,38 @@
 
   <build>
     <plugins>
+      <!--
+        Template delle email di autenticazione (UC 0018): la SORGENTE UNICA è
+        shared/email-templates alla radice del repo, resa anche dal Custom Message Lambda
+        in Python. Qui viene copiata nell'artefatto invece di essere duplicata: due copie
+        del copy divergerebbero in silenzio (si corregge una frase da una parte e l'email
+        sbagliata parte dall'altra).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-email-templates</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}/email-templates</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/../../shared/email-templates</directory>
+                  <includes>
+                    <include>*.json</include>
+                    <include>layout.*</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>

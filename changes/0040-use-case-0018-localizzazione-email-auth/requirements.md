@@ -6,8 +6,23 @@
 **Autore**: Platform Engineering
 **Use case sorgente**: [docs/usecases/05-auth/0018-localizzazione-email-auth.md](../../docs/usecases/05-auth/0018-localizzazione-email-auth.md)
 **Tocca dati personali?**: **Sì** — si aggiunge `locale` come attributo dell'utente (dato personale nuovo su
-`platform.users`) e si formalizza il trattamento "email transazionali di autenticazione" (base **contratto**, #13 B).
-Si applica il gate privacy/RoPA di step-03: aggiornamento manifesto + RoPA e classificazione MAJOR/MINOR motivata.
+`platform.users`), sotto il trattamento "email transazionali di autenticazione" (base **contratto**, #13 B).
+
+**Esito del gate privacy/RoPA (step-03)** — classificazione **MINORE**, componente **nucleo di piattaforma**,
+confermata dallo sviluppatore. Motivazione: il campo non introduce **finalità** nuove (le comunicazioni di servizio
+erano già dichiarate sotto l'indirizzo email: scegliere in che lingua scriverle serve quella stessa finalità), né
+**base giuridica** nuova (contratto, distinto dal consenso della newsletter #13 F29), né **conservazione** diversa
+(account attivo + 14 giorni di grazia, come gli altri campi utente), né **destinatari** nuovi (SES e Cognito sono
+AWS, già nell'infrastruttura). L'unica novità è una **categoria di dato** in più — una preferenza di interfaccia
+espressa dall'utente stesso, non sensibile — al servizio di un trattamento già dichiarato. Quindi **avviso
+informativo**, non ri-accettazione (UC 0056). Nota dello sviluppatore: la distinzione è comunque priva di effetti
+pratici finché non si è in produzione.
+
+Manifesto e RoPA aggiornati (voce `users.locale` in entrambe le lingue, `npm run assemble` rieseguito); campo
+annotato `@PersonalData` e **aggiunto all'esportazione** (`PlatformDataContract`), altrimenti la portabilità
+(art. 20) avrebbe restituito un profilo incompleto. **Nessun nuovo sub-processor**: lo scanner segnala
+`maven-resources-plugin`, ma è un componente di compilazione che copia file nell'artefatto, non un servizio esterno
+a cui arrivino dati.
 
 ## Problema / Obiettivo
 

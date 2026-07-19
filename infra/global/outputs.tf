@@ -22,3 +22,8 @@ output "github_actions_role_arns" {
   description = "ARN dei ruoli OIDC della CI (da referenziare nei workflow, UC 0005)."
   value       = { for k, r in aws_iam_role.github_actions : k => r.arn }
 }
+
+output "ses_identity_arn" {
+  description = "ARN dell'identità di dominio SES (UC 0018): usato dagli ambienti per autorizzare Cognito a spedire come noreply@<domain>."
+  value       = aws_sesv2_email_identity.main.arn
+}

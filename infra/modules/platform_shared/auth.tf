@@ -4,8 +4,8 @@
 # (con secret) usato dal solo BFF auth server-side — niente SRP nel browser
 # (#02 2/4). Il secret vive in SSM SecureString (#02 15, store #12): la Lambda
 # lo legge a runtime, mai in chiaro nelle env.
-# Le email (verifica/reset) partono col mittente DEFAULT Cognito: SES +
-# localizzazione EN/IT arrivano con UC 0018 (Custom Message Lambda).
+# Le email (verifica/reset) partono da SES come `noreply@<domain>` con firma DKIM,
+# testo e lingua EN/IT dal Custom Message Lambda (UC 0018).
 # L'iniezione dei claim tenant_id/roles è del Pre-Token-Gen (UC 0016).
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -24,11 +24,26 @@ resource "aws_cognito_user_pool" "this" {
 
   # Pre-Token-Generation (UC 0016): inietta tenant_id/roles nell'access token.
   # V2_0 = personalizzazione dell'access token (richiede il piano ESSENTIALS).
+  # Custom Message (UC 0018): compone testo e lingua delle email prima dell'invio.
   lambda_config {
     pre_token_generation_config {
       lambda_arn     = aws_lambda_function.pre_token_gen.arn
       lambda_version = "V2_0"
     }
+
+    custom_message = aws_lambda_function.custom_message.arn
+  }
+
+  # Invio via SES con la NOSTRA identità di dominio (UC 0018, #06 26) invece del
+  # mittente di default di Cognito, che ha copy inglese non brandizzato e un tetto
+  # di circa 50 email al giorno — inutilizzabile oltre la fase di prova.
+  #
+  # `from_email_address` è ciò che vede il destinatario; l'identità è verificata con
+  # firma DKIM nello stack `global` (una sola per dominio, condivisa fra ambienti).
+  email_configuration {
+    email_sending_account = "DEVELOPER"
+    source_arn            = data.aws_sesv2_email_identity.main.arn
+    from_email_address    = "noreply@${var.domain}"
   }
 
   username_configuration {

@@ -54,7 +54,7 @@ type Confirm =
  * profondità; l'enforcement vero è nel core via @RolesAllowed). EN/IT, a11y.
  */
 export function MembersPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const config = useConfig()
 
   const me = useCurrentUser()
@@ -97,7 +97,14 @@ export function MembersPage() {
       const link = `${window.location.origin}/accept?token=${token}`
       let emailed = true
       try {
-        await sendInvitation(config.authBaseUrl, { email: values.email, token, role: values.role })
+        // Lingua di chi invita (UC 0018): l'invitato non è ancora un utente, non ha una preferenza
+        // da leggere. È l'approssimazione migliore disponibile al momento dell'invio.
+        await sendInvitation(config.authBaseUrl, {
+          email: values.email,
+          token,
+          role: values.role,
+          locale: i18n.language,
+        })
       } catch {
         emailed = false
       }

@@ -19,7 +19,7 @@ import java.util.Optional;
 public class UserDirectory {
 
     private static final String COLUMNS =
-            "cognito_sub, tenant_id, role, status, email, display_name";
+            "cognito_sub, tenant_id, role, status, email, display_name, locale";
 
     @Inject
     AgroalDataSource ds;
@@ -46,7 +46,8 @@ public class UserDirectory {
                         rs.getString("role"),
                         rs.getString("status"),
                         rs.getString("email"),
-                        rs.getString("display_name")));
+                        rs.getString("display_name"),
+                        rs.getString("locale")));
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

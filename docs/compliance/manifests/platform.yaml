@@ -63,6 +63,32 @@ entries:
       it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
       en: While the account is active + 14-day grace period after deletion (#13 E25)
 
+  - key: users.locale
+    entity: app.appgrove.core.platform.User
+    field: locale
+    location:
+      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti registrati
+      en: Registered users
+    data_category:
+      it: Preferenza dell'utente (lingua)
+      en: User preference (language)
+    purpose:
+      it: >-
+        Scelta della lingua (inglese/italiano) delle email transazionali di autenticazione
+        (verifica indirizzo, reimpostazione password, invito) — UC 0018
+      en: >-
+        Language selection (English/Italian) for transactional authentication emails
+        (address verification, password reset, invitation) — UC 0018
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR) — email transazionali, distinte dalla newsletter (consenso separato, #13 F29)
+      en: Contract (art. 6(1)(b) GDPR) — transactional emails, distinct from the newsletter (separate consent, #13 F29)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
+      en: While the account is active + 14-day grace period after deletion (#13 E25)
+
   - key: users.cognito_sub
     entity: app.appgrove.core.platform.User
     field: cognitoSub

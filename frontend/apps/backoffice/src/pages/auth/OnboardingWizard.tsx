@@ -85,7 +85,7 @@ export function OnboardingWizard() {
 }
 
 function AccountStep({ onDone }: { onDone: (email: string) => void }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const config = useConfig()
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<z.infer<ReturnType<typeof signupSchema>>>({
@@ -100,6 +100,10 @@ function AccountStep({ onDone }: { onDone: (email: string) => void }) {
         email: values.email,
         password: values.password,
         displayName: values.displayName || undefined,
+        // Lingua attiva dell'interfaccia (UC 0018): diventa la lingua delle email dell'utente e
+        // resta memorizzata sul profilo — la reimpostazione password parte da un solo indirizzo,
+        // senza contesto, e non avrebbe altro modo di sapere in che lingua scrivere.
+        locale: i18n.language,
       })
       onDone(values.email)
     } catch (err) {

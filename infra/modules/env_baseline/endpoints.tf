@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # VPC endpoint "interface" (#06 18): con la scelta no-NAT, i componenti in VPC
-# (le 3 Lambda auth) raggiungono Cognito e Secrets Manager attraverso questi
-# endpoint privati (~7 $/mese l'uno → ~14 $/mese/ambiente, già in _COSTI-AWS).
+# raggiungono Cognito, Secrets Manager, Parameter Store e SES attraverso questi
+# endpoint privati (~7 $/mese l'uno → ~29 $/mese/ambiente, già in _COSTI-AWS).
 #
 # Cost-min: UNA sola subnet/AZ per endpoint. Il private DNS vale per tutta la
 # VPC (il traffico cross-AZ ha un costo trascurabile ai volumi del PoC);
@@ -32,7 +32,12 @@ locals {
   # Servizi raggiunti via endpoint privato con la topologia no-NAT (#06 18).
   # `ssm` aggiunto da UC 0015: la Lambda BFF auth (in VPC, niente uscita
   # internet dalle ENI) legge il client secret Cognito da Parameter Store.
-  interface_endpoints = ["cognito-idp", "secretsmanager", "ssm"]
+  # `email` aggiunto da UC 0018: l'email di INVITO è l'unica che parte dal nostro
+  # backend (verifica e reimpostazione le spedisce Cognito, da fuori la nostra
+  # rete). Senza questo endpoint la chiamata a SES resta appesa fino al timeout.
+  # Rimuoverlo è possibile solo facendo generare anche l'invito a Cognito, cosa
+  # che richiede di riprogettare il flusso inviti (evoluzione E24).
+  interface_endpoints = ["cognito-idp", "secretsmanager", "ssm", "email"]
 }
 
 data "aws_region" "current" {}
