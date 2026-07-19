@@ -1,7 +1,7 @@
 # Change 0041: skill `new-application` — scaffolding di una nuova app + industrializzazione degli agganci
 
 **Branch**: `change/0041-use-case-0046-skill-new-application`
-**Aree**: `.claude/skills/`, `tools/` (generatore), `services/commons`, `services/core`, `services/fatture`, `frontend/`, `infra/`, `.github/workflows/`, `dev/`, `run-tests.sh`, `docs/`
+**Aree**: `.claude/skills/` (nuova `new-application` + varco in `new-change`), `tools/` (generatore), `services/commons`, `services/core`, `services/fatture`, `frontend/`, `infra/`, `.github/workflows/`, `dev/`, `run-tests.sh`, `docs/` (+ `CLAUDE.md`)
 **Data**: 2026-07-19
 **Autore**: Platform Engineering
 **Use case sorgente**: [docs/usecases/10-skills-tooling/0046-skill-new-application.md](../../docs/usecases/10-skills-tooling/0046-skill-new-application.md)
@@ -88,7 +88,38 @@ Postura decisa al gate: **cache con rete di sicurezza**.
 Nuova area **`tooling`** in `run-tests.sh` (invocabile da sola; inclusa nell'esecuzione completa, fuori da
 `./run-tests.sh backend` per non rallentare i cicli rapidi): genera un'app di prova in cartella temporanea,
 **ne esegue l'intera suite** e verifica il verde, poi ripulisce. È la dimostrazione letterale della promessa
-"l'app generata nasce con suite verde" e la guardia contro la deriva dei modelli-sorgente.
+"l'app generata nasce con suite verde".
+
+### 6. Presidio anti-invecchiamento dei modelli-sorgente — tre strati
+
+Il rischio principale della skill non è che si rompa, ma che **invecchi in silenzio**: il codice evolve, i
+modelli-sorgente restano indietro e continuano a generare un pattern vecchio ma ancora funzionante (tutto
+verde, app nuove già antiquate). Il collaudo del punto 5 coglie solo la divergenza *dura* (non compila, test
+rossi). Servono tre strati, dal più automatico al più umano:
+
+**Strato 1 — collaudo di parità (deterministico).** Un test confronta **strutturalmente** i modelli-sorgente
+con l'app #1 `fatture`: stesso insieme di file (a meno dei segnaposto), stesse dipendenze dichiarate nel
+`pom.xml`, stesse annotazioni portanti sulle classi corrispondenti, stessi blocchi di `application.properties`.
+Se `fatture` guadagna un file, una dipendenza o una convenzione che il modello non ha, il test **diventa rosso
+da solo**. Vive nell'area `tooling`.
+
+**Strato 2 — varco in `new-change` (deterministico nella rilevazione).** Elenco dichiarato dei **percorsi-sorgente**
+che alimentano i modelli (`services/fatture`, `services/commons`, il modulo frontend d'esempio, i workflow, gli
+script di sviluppo). Uno script confronta i percorsi toccati dalla change con quell'elenco; se c'è intersezione,
+step-04 di `new-change` obbliga a **o** aggiornare i modelli nello stesso commit, **o** motivare per iscritto
+perché non serve, registrando la motivazione nello strato 3. Simmetrico al varco già esistente per le decisioni
+differite.
+
+**Strato 3 — registro `docs/_PARITA-SCAFFOLD.md`.** Verbale delle **deviazioni consapevoli**, cioè di ciò che i
+primi due strati non possono esprimere: perché il modello resta indietro di proposito, quali novità di `fatture`
+sono specifiche del suo dominio e non vanno generalizzate. Lo legge la skill `new-application` **prima** di
+generare, e lo legge chi tocca un percorso-sorgente. È il verbale, non la guardia.
+
+**Richiamo**: puntatore in `CLAUDE.md` (già letto a ogni sessione) più i due richiami mirati — la skill al punto
+di generazione, il varco di `new-change` al punto di modifica. Deciso in dialogo di **non** aggiungere un aggancio
+automatico per sessione come per la regola della lingua: quella è una direttiva di comportamento che si logora a
+ogni messaggio, questo file serve invece in due momenti precisi e caricarlo sempre lo farebbe pesare sempre e
+servire quasi mai.
 
 ## Fuori scope
 
@@ -112,6 +143,11 @@ Nuova area **`tooling`** in `run-tests.sh` (invocabile da sola; inclusa nell'ese
       `tools/smoke/*.sh` né i tre workflow: quei file si configurano per scoperta automatica o da sorgente unica.
 - [ ] L'app `fatture` legge diritti e tetti di consumo dalla **proiezione locale**; la chiamata sincrona al core
       resta solo come rete di sicurezza per il caso "cliente sconosciuto" ed è **strumentata con allarmi**.
+- [ ] Il **collaudo di parità** diventa rosso se si aggiunge a `fatture` un file o una dipendenza che i
+      modelli-sorgente non hanno (verificato provocando la divergenza durante l'implementazione).
+- [ ] Toccare un **percorso-sorgente** fa scattare il varco in step-04 di `new-change`: o i modelli sono
+      aggiornati nello stesso commit, o la motivazione è registrata in `docs/_PARITA-SCAFFOLD.md`.
+- [ ] `CLAUDE.md` punta al registro; la skill `new-application` lo legge prima di generare.
 - [ ] Tutte le aree di `run-tests.sh` restano verdi.
 
 ## Invarianti appgrove toccati
@@ -143,6 +179,11 @@ per costruzione.
   stantia, ricorso alla rete di sicurezza).
 - **Guardia dei workflow**: un test verifica che le liste dei servizi siano derivate e non divergano dai servizi
   realmente presenti in `services/`.
+- **Parità modelli ↔ app #1**: il test di parità va verificato **provocando volutamente** una divergenza
+  (aggiunta temporanea di un file/dipendenza a `fatture`) e controllando che diventi rosso — un presidio che non
+  si è mai visto fallire non è un presidio.
+- **Rilevatore dei percorsi-sorgente**: dato un insieme di percorsi modificati, lo script segnala l'intersezione
+  con l'elenco dichiarato e resta silenzioso quando non c'è.
 - **Regola baseline visive** (#10 F): nessuna baseline di istantanea aggiornata alla cieca.
 
 ## Valutazione di impatto
