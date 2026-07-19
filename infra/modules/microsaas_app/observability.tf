@@ -119,13 +119,18 @@ resource "aws_cloudwatch_metric_alarm" "route_latency_p95" {
 # ── DLQ non vuote (#08 16): un messaggio in DLQ è SEMPRE azionabile ──────────
 
 resource "aws_cloudwatch_metric_alarm" "dlq_not_empty" {
-  for_each = {
-    gdpr-export  = aws_sqs_queue.gdpr_export_dlq.name
-    tenant-purge = aws_sqs_queue.tenant_purge_dlq.name
-  }
+  for_each = merge(
+    {
+      gdpr-export  = aws_sqs_queue.gdpr_export_dlq.name
+      tenant-purge = aws_sqs_queue.tenant_purge_dlq.name
+    },
+    local.has_entitlement_queue ? {
+      entitlement = aws_sqs_queue.entitlement_dlq[0].name
+    } : {}
+  )
 
   alarm_name        = "${local.name}-dlq-${each.key}"
-  alarm_description = "Messaggi nella DLQ ${each.value} (${var.env}): elaborazione GDPR fallita dopo i retry"
+  alarm_description = "Messaggi nella DLQ ${each.value} (${var.env}): elaborazione fallita dopo i retry"
 
   namespace   = "AWS/SQS"
   metric_name = "ApproximateNumberOfMessagesVisible"
@@ -217,4 +222,119 @@ locals {
       }
     },
   ]
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Scostamenti della proiezione entitlement (UC 0046)
+#
+# La proiezione locale toglie il core dal percorso caldo, ma introduce un rischio
+# nuovo: decidere su dati vecchi. Senza misure, un canale di eventi rotto resta
+# invisibile finche' non arrivano i reclami — l'app continua a funzionare, solo
+# con la verita' sbagliata. Questi allarmi rendono visibile quel silenzio.
+#
+# Le metriche sono emesse via EMF da EntitlementProjectionMetrics (commons), con
+# le dimensioni comuni app_id/env/service.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Ricorso alla rete di sicurezza: fisiologico se raro (primo accesso di un
+# tenant, o subito dopo un cambio di abbonamento). Se e' ALTO e COSTANTE gli
+# eventi non stanno arrivando e siamo tornati di fatto al comportamento sincrono
+# di UC 0027 — senza che nessuno se ne accorga. Soglia larga di proposito: qui
+# interessa la tendenza, non il singolo caso.
+resource "aws_cloudwatch_metric_alarm" "entitlement_safety_net" {
+  count = local.has_entitlement_queue ? 1 : 0
+
+  alarm_name        = "${local.name}-entitlement-safety-net"
+  alarm_description = "Ricorso frequente alla chiamata sincrona a core per gli entitlement di ${var.app_id} (${var.env}): probabile canale di invalidazione non funzionante"
+
+  namespace   = local.metric_namespace
+  metric_name = "appgrove.entitlement.projection.safety_net"
+  statistic   = "Sum"
+
+  dimensions = {
+    app_id = var.app_id
+    env    = var.env
+  }
+
+  period              = 300
+  evaluation_periods  = 3
+  datapoints_to_alarm = 3
+  threshold           = 100
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching" # scale-to-0: nessun traffico != guasto
+
+  actions_enabled = local.alarms_enabled
+  alarm_actions   = [var.shared.alarm_topic_warning_arn]
+  ok_actions      = [var.shared.alarm_topic_warning_arn]
+
+  tags = {
+    Name = "${local.name}-entitlement-safety-net"
+  }
+}
+
+# Proiezione vecchia servita: stiamo decidendo su dati non freschi perche' il
+# rinfresco e' fallito. E' la postura scelta (meglio servire che bloccare), ma
+# non deve diventare la normalita': un solo caso e' tollerabile, una serie no.
+resource "aws_cloudwatch_metric_alarm" "entitlement_stale_served" {
+  count = local.has_entitlement_queue ? 1 : 0
+
+  alarm_name        = "${local.name}-entitlement-stale"
+  alarm_description = "Entitlement di ${var.app_id} (${var.env}) risolti su proiezione vecchia: core irraggiungibile al rinfresco"
+
+  namespace   = local.metric_namespace
+  metric_name = "appgrove.entitlement.projection.stale_served"
+  statistic   = "Sum"
+
+  dimensions = {
+    app_id = var.app_id
+    env    = var.env
+  }
+
+  period              = 300
+  evaluation_periods  = 2
+  datapoints_to_alarm = 2
+  threshold           = 10
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  actions_enabled = local.alarms_enabled
+  alarm_actions   = [var.shared.alarm_topic_warning_arn]
+  ok_actions      = [var.shared.alarm_topic_warning_arn]
+
+  tags = {
+    Name = "${local.name}-entitlement-stale"
+  }
+}
+
+# Accesso negato per assenza di qualunque base (proiezione assente E core
+# irraggiungibile): l'unico caso in cui un utente legittimo viene respinto.
+# Soglia bassa e canale critico: qui ogni occorrenza e' un utente bloccato.
+resource "aws_cloudwatch_metric_alarm" "entitlement_denied_unknown" {
+  count = local.has_entitlement_queue ? 1 : 0
+
+  alarm_name        = "${local.name}-entitlement-denied-unknown"
+  alarm_description = "Accessi negati su ${var.app_id} (${var.env}) per proiezione assente e core irraggiungibile: utenti legittimi bloccati"
+
+  namespace   = local.metric_namespace
+  metric_name = "appgrove.entitlement.projection.denied_unknown"
+  statistic   = "Sum"
+
+  dimensions = {
+    app_id = var.app_id
+    env    = var.env
+  }
+
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "notBreaching"
+
+  actions_enabled = local.alarms_enabled
+  alarm_actions   = [var.shared.alarm_topic_critical_arn]
+  ok_actions      = [var.shared.alarm_topic_critical_arn]
+
+  tags = {
+    Name = "${local.name}-entitlement-denied-unknown"
+  }
 }

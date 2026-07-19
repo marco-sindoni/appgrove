@@ -70,14 +70,32 @@ Skill di tooling: l'app generata deve nascere con suite verde (unit/integration/
 
 ## Punti aperti / decisioni differite
 
+> **Stato dopo la change `0041-use-case-0046-…`.** I punti sotto marcati **✅ chiuso** sono stati
+> risolti da quella change; restano in elenco (non cancellati) perché il *perché* della soluzione è
+> parte della memoria del caso d'uso. I punti senza marcatura sono ancora aperti.
+
 _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
+- ✅ **chiuso dalla change 0041** — la scoperta automatica è reale: `dev/lib/services.sh` deriva la mappa
+  servizio → identificativo app → porta → schema dagli `application.properties` già presenti nei servizi, e
+  `dev migrate`/`dev service`/`app-start.sh`/`app-stop.sh`/`dev/Caddyfile`/`tools/smoke` la consumano. Il
+  generatore **non tocca** quei file. Testo originale del punto:
 - **Industrializzazione di `dev migrate` multi-servizio.** La change 0008 rende `dev migrate` reale ma **solo per
   `services/core`** (one-shot del container `flyway/flyway` sulle migrazioni di core), perché è l'unico servizio con
   migrazioni e il seed (UC 0011) ne ha bisogno. La versione **multi-servizio** — scoperta di tutti i `services/<app>`
   con `db/migration`, ordinamento, e l'aggancio automatico quando `new-application` genera una nuova app — va
   industrializzata **qui**. **Proprietario**: UC 0046 (comando `dev migrate` di base: UC 0009).
 
+- ✅ **chiuso dalla change 0041**, con una postura decisa esplicitamente col Platform Engineer: **cache con
+  rete di sicurezza**. L'app legge la **proiezione locale** (`app_<id>.entitlement_projection`); core pubblica
+  un **evento sottile** di invalidazione (solo "i diritti del tenant T sono cambiati") sulla coda
+  `entitlement-<app_id>`, così la derivazione degli entitlement resta in **un solo posto**. Tre situazioni:
+  riga fresca → si usa senza soglia di scadenza; riga da rinfrescare → si tenta il rinfresco e, se core non
+  risponde, **si serve il valore vecchio** (un guasto di core non blocca i paganti); riga assente → rinfresco
+  obbligatorio, e solo se core è irraggiungibile si nega. La chiamata sincrona **non sparisce**: retrocede a
+  rete di sicurezza (`@SafetyNet`) per il caso "tenant sconosciuto". Scostamenti strumentati con misure e
+  allarmi (`safety_net`, `stale_served`, `denied_unknown`, coda degli scarti) nel modulo `microsaas_app`.
+  Testo originale del punto:
 - **Disaccoppiamento entitlement: ritirare la chiamata sincrona app→core (da UC 0027).** _Tracciato dalla change
   `0023-use-case-0027-…` (enforcement entitlement/quota); rationale completo in [docs/_BACKLOG.md](../../_BACKLOG.md),
   sezione "Architettura di piattaforma — accoppiamento inter-servizio app↔core"._ UC 0027 sblocca l'enforcement reale
@@ -107,6 +125,10 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
 
 _Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
 
+- ✅ **chiuso dalla change 0041** — le liste sono **derivate**, non più duplicate: `tools/ci/services.sh`
+  (che riusa la stessa scoperta di `dev/lib/services.sh`) alimenta la matrice di build e i cicli per-servizio
+  dei tre workflow. Restano volutamente espliciti i cicli `for app in backoffice admin`: sono le due SPA
+  fissate da `platform_shared`, non crescono con le app del marketplace. Testo originale del punto:
 - **Liste per-servizio nei workflow CI da aggiornare a ogni nuova app.** I workflow generati dalla change 0036
   hanno i servizi **espliciti** in tre punti: matrix `build` di `deploy-test.yml` (coppie `service`/`app_id`),
   loop `for app in platform fatture` (migrate/gate native/promozione in `deploy-test.yml` e `release-prod.yml`).

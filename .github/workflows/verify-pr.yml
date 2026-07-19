@@ -101,10 +101,16 @@ jobs:
           cache: maven
       - name: Suite security/multi-tenancy (sempre bloccante)
         working-directory: services
-        run: >
-          mvn -B test -pl commons,core,fatture -am
-          -Dtest='ArchitectureTest,MultiTenancyTest,FailClosedTest,JwtTenantResolverTest,PersonalDataManifestVerifierTest'
-          -Dsurefire.failIfNoSpecifiedTests=false
+        run: |
+          # Moduli DERIVATI dalla sorgente unica: librerie condivise (commons) +
+          # servizi schierabili. Nessuna lista da aggiornare a mano qui.
+          # Nota: questo job gira senza credenziali AWS e senza stato Terraform,
+          # perciò la lista non può venire dall'output `ci_deploy`.
+          MODULES="$(../tools/ci/services.sh maven-modules)"
+          echo "Moduli: $MODULES"
+          mvn -B test -pl "$MODULES" -am \
+            -Dtest='ArchitectureTest,MultiTenancyTest,FailClosedTest,JwtTenantResolverTest,PersonalDataManifestVerifierTest' \
+            -Dsurefire.failIfNoSpecifiedTests=false
 
   # ── Frontend: vitest se toccato; E2E Playwright SEMPRE (#10 35) ────────────
   frontend:

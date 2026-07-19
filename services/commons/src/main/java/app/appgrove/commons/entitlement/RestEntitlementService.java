@@ -13,11 +13,18 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
  * Implementazione di {@link EntitlementService} che legge il read-model da <b>core</b> via
  * {@link EntitlementClient}, propagando il JWT del chiamante (invariante #1). {@code @RequestScoped}:
  * il risultato è <b>memoizzato per richiesta</b> (più gate/quota nella stessa richiesta = una sola
- * chiamata a core). La cache cross-richiesta a TTL e, soprattutto, il disaccoppiamento event-driven
- * sono evoluzioni tracciate (UC 0046 / {@code docs/_BACKLOG.md}).
+ * chiamata a core).
+ *
+ * <p><b>Da UC 0027 a UC 0046: da percorso principale a rete di sicurezza.</b> Questa era
+ * l'implementazione predefinita, invocata a ogni gate di ogni richiesta di ogni app — un fan-in
+ * sincrono che metteva core sul percorso caldo. Ora è qualificata {@link SafetyNet} e il bean
+ * predefinito è {@code ProjectedEntitlementService}, che legge la proiezione locale dell'app e
+ * ricade qui <b>solo</b> quando la proiezione non basta a decidere (riga assente o da rinfrescare).
+ * Il codice di dominio delle app non è cambiato: continua a iniettare {@code EntitlementService}.
  */
 @RequestScoped
-public class RestEntitlementService implements EntitlementService {
+@SafetyNet
+public class RestEntitlementService implements EntitlementService, EntitlementViewSource {
 
     @Inject
     @RestClient
@@ -34,6 +41,11 @@ public class RestEntitlementService implements EntitlementService {
             cache = client.getMyEntitlements("Bearer " + jwt.getRawToken());
         }
         return cache;
+    }
+
+    @Override
+    public Optional<EntitlementView> viewFor(String appSlug) {
+        return find(appSlug);
     }
 
     private Optional<EntitlementView> find(String appSlug) {

@@ -46,6 +46,7 @@ jobs:
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
       tag: ${{ steps.meta.outputs.tag }}
+      app_ids: ${{ steps.services.outputs.app_ids }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,6 +58,13 @@ jobs:
           case "$TAG" in v*) ;; *) echo "::error::il ref '$TAG' non è un tag v*: lanciare sul ref del tag"; exit 1 ;; esac
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "image_tag=${GITHUB_SHA}-native" >> "$GITHUB_OUTPUT"
+      - name: Lista servizi dalla sorgente unica (tools/ci/services.sh)
+        id: services
+        run: |
+          # Sorgente UNICA: derivata da services/*/…/application.properties
+          # (`appgrove.app-id`) — vedi l'intestazione dello script.
+          echo "app_ids=$(./tools/ci/services.sh app-ids | xargs)" >> "$GITHUB_OUTPUT"
+          ./tools/ci/services.sh list
       - name: Il commit taggato deve stare su main (#07 21)
         run: |
           git fetch origin main --quiet
@@ -69,9 +77,10 @@ jobs:
       - name: Gate native bloccante — immagini GraalVM su ECR test per questo SHA
         env:
           TAG: ${{ steps.meta.outputs.tag }}
+          APP_IDS: ${{ steps.services.outputs.app_ids }}
         run: |
           MISSING=()
-          for app in platform fatture; do
+          for app in $APP_IDS; do
             aws ecr describe-images --repository-name "appgrove-test-$app" \
               --image-ids imageTag="${GITHUB_SHA}-native" >/dev/null 2>&1 || MISSING+=("$app")
           done
@@ -222,8 +231,9 @@ jobs:
       - name: Promozione immagini native test→prod (stesso SHA, niente rebuild, #07 23)
         env:
           REGISTRY: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          APP_IDS: ${{ needs.checks.outputs.app_ids }}
         run: |
-          for app in platform fatture; do
+          for app in $APP_IDS; do
             docker pull "$REGISTRY/appgrove-test-$app:$IMAGE_TAG"
             docker tag "$REGISTRY/appgrove-test-$app:$IMAGE_TAG" "$REGISTRY/appgrove-prod-$app:$IMAGE_TAG"
             docker push "$REGISTRY/appgrove-prod-$app:$IMAGE_TAG"
@@ -240,9 +250,11 @@ jobs:
           aws s3 cp "s3://$TEST_BUCKET/$KEY" "s3://$PROD_BUCKET/$KEY"
           echo "Promosso s3://$PROD_BUCKET/$KEY"
       - name: Flyway migrate PRIMA del deploy (task one-shot in VPC, #07 15)
+        env:
+          APP_IDS: ${{ needs.checks.outputs.app_ids }}
         run: |
           PRE=(); POST=()
-          for app in platform fatture; do
+          for app in $APP_IDS; do
             if aws ecs describe-task-definition --task-definition "appgrove-prod-$app" >/dev/null 2>&1; then
               PRE+=("$app")
             else

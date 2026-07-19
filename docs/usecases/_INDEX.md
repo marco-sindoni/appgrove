@@ -76,7 +76,7 @@ AWS finché il prodotto non gira offline.
 | 36 | [0016](05-auth/0016-pre-token-gen-jwt.md) | Pre-Token-Gen Lambda + JWT validation | Auth | 0012, 0015 | ✅ |
 | 37 | [0014](04-platform-core/0014-authorizer-custom.md) | Authorizer all'edge (JWT nativo) | Platform Core | 0013, 0016 | ✅ |
 | 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ✅ |
-| 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | 🟡 |
+| 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ✅ |
 | 40 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ⬜ |
 | 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ⬜ |
 | 42 | [0047](10-skills-tooling/0047-skill-pricing-change.md) | skill `pricing-change` | Skills & Tooling | 0022 | ⬜ |
@@ -121,6 +121,9 @@ AWS finché il prodotto non gira offline.
    alimentata da eventi di lifecycle subscription (bus SQS già da UC 0025), eliminando la chiamata sincrona. UC 0054 non
    deve perpetuarla. Dettaglio nei "Punti aperti" di [UC 0046](10-skills-tooling/0046-skill-new-application.md) e in
    [docs/_BACKLOG.md](../_BACKLOG.md).
+   ✅ **Fatto** nella change `0041-use-case-0046-…`: la proiezione locale esiste ed è il percorso predefinito; la
+   chiamata sincrona sopravvive **solo** come rete di sicurezza per il tenant sconosciuto. UC 0054 la eredita dallo
+   scaffold e non deve fare nulla di speciale.
 
 ## Note
 

@@ -73,3 +73,9 @@ dati per-app (categorie/finalità/base/retention) generato da `new-application`.
 - **Niente chiamata sincrona app→core**: l'enforcement dell'app #2 **non deve perpetuare** la chiamata HTTP sincrona
   `app → core` introdotta da UC 0027 — va costruito sulla **proiezione locale** event-driven industrializzata da UC 0046
   (vedi [_INDEX.md](../_INDEX.md) Eccezioni #5 e [_BACKLOG.md](../../_BACKLOG.md)).
+  ✅ **Risolto a monte** dalla change `0041-use-case-0046-…`: la proiezione locale è il percorso **predefinito** dello
+  scaffold, quindi l'app #2 la eredita senza fare nulla. Attenzione a **non regredire**: se durante UC 0054 vien voglia
+  di iniettare la lettura sincrona (`@SafetyNet`) nel codice di dominio per "semplificare", è un passo indietro —
+  quel qualificatore esiste apposta per rendere esplicito chi chiede una chiamata di rete sul percorso caldo.
+  Nota per i **posti (seat)**, metrica a giacenza: la proiezione riporta il tetto, ma il **conteggio** dei posti
+  occupati resta un dato dell'app; non tentare di leggerlo dalla proiezione.

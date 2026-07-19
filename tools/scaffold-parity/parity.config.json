@@ -1,0 +1,106 @@
+{
+  "_commento": [
+    "Configurazione del collaudo di parità (strato 1 del presidio anti-invecchiamento, UC 0046).",
+    "Dichiara: dove vivono i modelli-sorgente, quali coppie 'modello ↔ app #1' vanno confrontate,",
+    "quali segnaposto usa il generatore e quali annotazioni sono considerate portanti.",
+    "Le DEVIAZIONI CONSAPEVOLI non si dichiarano qui ma in docs/_PARITA-SCAFFOLD.md (strato 3):",
+    "qui sta solo ciò che non è una deviazione (rumore di build, convenzioni di denominazione)."
+  ],
+
+  "templatesRoot": "tools/new-application/templates",
+  "registro": "docs/_PARITA-SCAFFOLD.md",
+
+  "suffissiModello": [".tmpl", ".template", ".mustache", ".hbs", ".ejs"],
+
+  "segnaposto": {
+    "_commento": [
+      "Token del generatore → valore corrispondente nell'app #1. La convenzione in uso è @@TOKEN@@;",
+      "le forme alternative restano riconosciute perché un cambio di convenzione nel generatore non",
+      "deve far crollare il collaudo in modo incomprensibile. Qui servono i soli token che compaiono",
+      "nei NOMI dei file, nelle chiavi di application.properties o nel pom: quelli puramente di",
+      "contenuto (@@METRIC@@, @@PD_PURPOSE@@, …) non incidono su nessuno dei quattro confronti."
+    ],
+    "app_id": {
+      "valore": "fatture",
+      "token": ["@@APP_ID@@", "__app_id__", "{{app_id}}", "<app_id>"]
+    },
+    "app_name": {
+      "valore": "fatture",
+      "token": ["@@APP_NAME@@"]
+    },
+    "AppClass": {
+      "valore": "Fatture",
+      "token": ["@@APP_CLASS@@", "__App__", "{{App}}", "<App>"]
+    },
+    "schema": {
+      "valore": "app_fatture",
+      "token": ["@@SCHEMA@@", "__schema__", "{{schema}}"]
+    },
+    "http_port": {
+      "valore": "8081",
+      "token": ["@@HTTP_PORT@@"]
+    }
+  },
+
+  "dominio": {
+    "_commento": [
+      "Corrispondenza di RUOLO fra il dominio segnaposto dei modelli e il dominio reale dell'app #1.",
+      "Non è un segnaposto del generatore: `Item` resta `Item` nell'app generata, perché lo scaffold",
+      "consegna un dominio di esempio da sostituire col business vero. Serve solo al collaudo, per",
+      "sapere che ItemRepository e InvoiceRepository sono lo stesso file nei due mondi, e si applica",
+      "ai soli NOMI dei file — mai al contenuto, dove genererebbe confronti falsi.",
+      "Contact ↔ Customer per lo stesso motivo: le persone di cui l'app #1 tratta i dati sono i suoi",
+      "`customer`, ma un'app generica non ha clienti — ha contatti. Chiamarli `customer` nel modello",
+      "consegnerebbe a ogni app nuova il vocabolario delle fatture."
+    ],
+    "Item": "Invoice",
+    "item": "invoice",
+    "Contact": "Customer",
+    "contact": "customer"
+  },
+
+  "annotazioniPortanti": [
+    "RequiresEntitlement",
+    "PersonalData",
+    "Authenticated",
+    "RolesAllowed",
+    "PermitAll",
+    "DenyAll",
+    "ApplicationScoped",
+    "RequestScoped",
+    "Singleton",
+    "Transactional",
+    "Entity",
+    "Table",
+    "SQLRestriction",
+    "TenantId",
+    "QuarkusMain",
+    "Path",
+    "Produces",
+    "Consumes",
+    "RegisterRestClient",
+    "Scheduled",
+    "Observes"
+  ],
+
+  "coppie": [
+    {
+      "id": "backend",
+      "titolo": "Servizio Quarkus — modello ↔ services/fatture",
+      "riferimento": "services/fatture",
+      "marcatore": "pom.xml",
+      "ignora": ["target/**", "**/.DS_Store"],
+      "controlli": ["file", "pom", "properties", "annotazioni"],
+      "pom": "pom.xml",
+      "properties": "src/main/resources/application.properties"
+    },
+    {
+      "id": "frontend",
+      "titolo": "Modulo backoffice — modello ↔ frontend/apps/backoffice/src/modules/fatture",
+      "riferimento": "frontend/apps/backoffice/src/modules/fatture",
+      "marcatore": "manifest.ts",
+      "ignora": ["**/.DS_Store"],
+      "controlli": ["file"]
+    }
+  ]
+}

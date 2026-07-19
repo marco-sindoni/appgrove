@@ -72,3 +72,39 @@ resource "aws_sqs_queue_policy" "tenant_purge_from_eventbridge" {
     }]
   })
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Coda di invalidazione entitlement (UC 0046): una per APP di marketplace.
+# Il core vi pubblica un evento sottile ("i diritti del tenant T sono cambiati")
+# quando lo stato di billing o dell'account cambia; l'app marca la propria
+# proiezione locale da rinfrescare. Sostituisce, sul percorso caldo, la chiamata
+# sincrona app→core di UC 0027.
+# Il core non ha una propria coda: è il produttore, non un consumatore.
+# ─────────────────────────────────────────────────────────────────────────────
+
+resource "aws_sqs_queue" "entitlement_dlq" {
+  count = local.has_entitlement_queue ? 1 : 0
+
+  name                    = "${local.entitlement_queue_name}-dlq"
+  sqs_managed_sse_enabled = true
+
+  tags = {
+    Name = "${local.entitlement_queue_name}-dlq"
+  }
+}
+
+resource "aws_sqs_queue" "entitlement" {
+  count = local.has_entitlement_queue ? 1 : 0
+
+  name                    = local.entitlement_queue_name
+  sqs_managed_sse_enabled = true
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.entitlement_dlq[0].arn
+    maxReceiveCount     = 5
+  })
+
+  tags = {
+    Name = local.entitlement_queue_name
+  }
+}

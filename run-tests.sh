@@ -8,6 +8,12 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
+#   • tooling  — tools/new-application + tools/scaffold-parity (UC 0046) → collaudo della skill `new-application`:
+#                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
+#                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
+#                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
+#                DURA (non compila più). È lenta e volutamente FUORI da `./run-tests.sh backend`, per non
+#                appesantire i cicli rapidi; inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
 #                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
 #                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
@@ -18,7 +24,7 @@
 #
 # Uso:
 #   ./run-tests.sh                 # tutte le aree
-#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance | smoke
+#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance | tooling | smoke
 #   ./run-tests.sh frontend infra
 #   ./run-tests.sh -h
 set -uo pipefail
@@ -31,18 +37,18 @@ ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 warn() { printf '%s! %s%s\n' "$C_YEL" "$*" "$C_RESET"; }
 
-usage() { sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 # aree richieste (default: tutte)
 AREAS=()
 for a in "$@"; do
   case "$a" in
-    backend|frontend|infra|compliance|smoke) AREAS+=("$a") ;;
+    backend|frontend|infra|compliance|tooling|smoke) AREAS+=("$a") ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | smoke)" >&2; exit 2 ;;
+    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | tooling | smoke)" >&2; exit 2 ;;
   esac
 done
-[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance smoke)
+[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance tooling smoke)
 
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
@@ -161,6 +167,24 @@ run_compliance() {
 }
 
 # Smoke di avvio (change 0037): artefatti reali nei profili reali. Vedi tools/smoke/*.sh.
+run_tooling() {
+  hdr "TOOLING — skill new-application: parità dei modelli + collaudo livello 3 (UC 0046)"
+  if ! command -v node >/dev/null 2>&1; then
+    warn "node non installato: salto il collaudo tooling."; record tooling SKIP; return
+  fi
+  ensure_colima   # il collaudo livello 3 compila ed esegue i test dell'app generata (Postgres reale)
+  if [ ! -d "$ROOT/tools/scaffold-parity/node_modules" ] && [ -f "$ROOT/tools/scaffold-parity/package-lock.json" ]; then
+    ( cd "$ROOT/tools/scaffold-parity" && { npm ci || npm install; } ) >/dev/null 2>&1 || true
+  fi
+  local rc=0
+  # (1) test degli strumenti stessi + parità modelli ↔ app #1 (divergenza silenziosa)
+  ( cd "$ROOT/tools/scaffold-parity" && npm test )       || rc=1
+  ( cd "$ROOT/tools/scaffold-parity" && npm run parity ) || rc=1
+  # (2) livello 3: genera un'app vera ed eseguine l'intera suite (divergenza dura)
+  "$ROOT/tools/new-application/generate-smoke.sh"        || rc=1
+  if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
+}
+
 run_smoke() {
   hdr "SMOKE — tools/smoke (boot artefatti nei profili di spedizione + stack headless dev)"
   ensure_colima

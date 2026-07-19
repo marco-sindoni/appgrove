@@ -9,15 +9,22 @@
 # PRESENTE (nessuna infrastruttura: le connessioni reali sono lazy), e pretende che il server
 # arrivi a "Listening on" — cioè che TUTTA la validazione config e l'init dei bean passino.
 #
-#   • core, fatture → profilo `prod` con le stesse env della task definition ECS
+#   • core e le app → profilo `prod` con le stesse env della task definition ECS
 #     (infra/modules/microsaas_app/ecs.tf) valorizzate con finti;
 #   • auth          → profilo `cloud` con le stesse env della Lambda (auth_lambda.tf).
+#
+# I servizi NON sono elencati qui: arrivano dalla scoperta di services/* (dev/lib/services.sh),
+# così una nuova app entra nello smoke senza modificare questo file. Il profilo si sceglie dal
+# ruolo (auth → cloud, tutti gli altri → prod).
 #
 # Il profilo `dev` è coperto dallo smoke gemello `stack-headless.sh` (infra locale REALE).
 # FAIL: errori di config (SRCFG*/Failed to load config value), crash all'avvio, o timeout.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Scoperta servizi (UC 0046): sorgente unica di nomi/porte/ruoli. Nessun effetto collaterale.
+# shellcheck source=dev/lib/services.sh
+source "$ROOT/dev/lib/services.sh"
 C_RESET=$'\033[0m'; C_GRN=$'\033[0;32m'; C_RED=$'\033[0;31m'; C_BLU=$'\033[1;36m'
 ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
@@ -32,8 +39,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 # con jar a build-profile dev (payment provider stub, ecc.) — qui serve la variante
 # che va davvero in deploy.
 ensure_jars() {
-  step "build artefatti di spedizione (mvn package -DskipTests)…"
-  ( cd "$ROOT/services" && mvn -B -q -pl core,fatture,auth -am package -DskipTests ) \
+  local modules; modules="$(discover_services | cut -f1 | paste -sd, -)"
+  step "build artefatti di spedizione (mvn package -DskipTests): ${modules}…"
+  ( cd "$ROOT/services" && mvn -B -q -pl "$modules" -am package -DskipTests ) \
     || { fail "build artefatti fallita"; return 1; }
 }
 
@@ -100,7 +108,11 @@ boot_one() {
 
 ensure_jars || exit 1
 rc=0
-boot_one core    prod  ecs_like_env    || rc=1
-boot_one fatture prod  ecs_like_env    || rc=1
-boot_one auth    cloud lambda_like_env || rc=1
+# core e app nel profilo di spedizione ECS, auth in quello della Lambda (ordine: core, app, auth).
+while IFS=$'\t' read -r svc app_id port schema role; do
+  case "$role" in
+    auth) boot_one "$svc" cloud lambda_like_env || rc=1 ;;
+    *)    boot_one "$svc" prod  ecs_like_env    || rc=1 ;;
+  esac
+done < <(services_startup_order | while read -r s; do service_row "$s"; done)
 exit "$rc"

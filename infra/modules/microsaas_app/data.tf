@@ -13,6 +13,12 @@ locals {
   export_queue_name = "${var.shared.sqs_queue_prefix}gdpr-export-${var.app_id}"
   purge_queue_name  = "${var.shared.sqs_queue_prefix}tenant-purge-${var.app_id}"
 
+  # Coda di invalidazione degli entitlement (UC 0046): il core vi pubblica "i diritti
+  # del tenant T sono cambiati", l'app marca la propria proiezione da rinfrescare.
+  # Il core NON ne ha una propria (è il produttore, non un consumatore).
+  entitlement_queue_name = "${var.shared.sqs_queue_prefix}entitlement-${var.app_id}"
+  has_entitlement_queue  = !var.is_platform_core
+
   # Retention log esplicita (#08 26): mai "never expire".
   log_retention_days = var.env == "prod" ? 30 : 7
 

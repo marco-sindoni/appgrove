@@ -32,6 +32,9 @@ public class PaddleWebhookConsumer {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    EntitlementInvalidationPublisher invalidation;
+
     /** Poller schedulato (solo dev/prod; in test {@code quarkus.scheduler.enabled=false}). */
     @Scheduled(every = "2s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
     void poll() {
@@ -48,7 +51,15 @@ public class PaddleWebhookConsumer {
         int processed = 0;
         for (WebhookQueue.Message message : queue.receive(BATCH)) {
             try {
-                SubscriptionWriter.Outcome outcome = writer.apply(PaddleWebhookEvent.from(mapper, message.body()));
+                PaddleWebhookEvent event = PaddleWebhookEvent.from(mapper, message.body());
+                SubscriptionWriter.Outcome outcome = writer.apply(event);
+                // Invalidazione delle proiezioni entitlement (UC 0046) SOLO su PROCESSED: un evento
+                // duplicato o out-of-order non ha cambiato lo stato, quindi non c'è nulla da
+                // rinfrescare — pubblicare comunque genererebbe rinfreschi inutili e falserebbe la
+                // misura di ricorso alla rete di sicurezza, che è la spia di un bus rotto.
+                if (outcome == SubscriptionWriter.Outcome.PROCESSED && !event.isCustomerEvent()) {
+                    invalidation.invalidate(event.tenantId(), event.appId(), event.eventType());
+                }
                 queue.delete(message); // esito di successo (applicato/duplicato/stale) → conferma
                 processed++;
                 LOG.debugf("webhook.consume outcome=%s", outcome);

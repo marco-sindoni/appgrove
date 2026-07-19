@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # app-stop.sh — ferma TUTTO lo stack appgrove avviato da app-start.sh.
 #
-# Di default spegne sia le applicazioni (auth, core, fatture, SPA) SIA lo stack Compose
+# Di default spegne sia le applicazioni (tutti i servizi scoperti in services/* + le SPA)
+# SIA lo stack Compose
 # (Postgres, Caddy, Mailpit, MinIO, ElasticMQ). I dati restano (i volumi NON vengono cancellati).
 #
 # Uso:
@@ -10,7 +11,8 @@
 #   ./app-stop.sh --wipe      # ferma tutto E cancella i volumi (reset dati: Postgres/MinIO/code)
 #
 # Stop "per porta" (robusto su macOS): termina qualunque processo ascolti sulle porte note,
-# inclusi i figli java spawnati da `mvn quarkus:dev`.
+# inclusi i figli java spawnati da `mvn quarkus:dev`. L'elenco dei servizi e le loro porte
+# sono SCOPERTI da services/* (dev/lib/services.sh): niente nomi scritti a mano qui.
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,29 +35,14 @@ for arg in "$@"; do
   esac
 done
 
-# stop_port <name> <port> — termina chi ascolta sulla porta (TERM, poi KILL); ripulisce il pidfile.
-stop_port() {
-  local name="$1" port="$2" pids
-  pids="$(lsof -ti "tcp:$port" 2>/dev/null || true)"
-  if [ -z "$pids" ]; then
-    info "  $name: niente su :$port"
-  else
-    # shellcheck disable=SC2086
-    kill $pids 2>/dev/null || true
-    sleep 2
-    pids="$(lsof -ti "tcp:$port" 2>/dev/null || true)"
-    # shellcheck disable=SC2086
-    [ -n "$pids" ] && kill -9 $pids 2>/dev/null || true
-    ok "$name fermato (:$port)"
-  fi
-  rm -f "$RUN_DIR/$name.pid"
-}
+# stop_port: vive in dev/lib/common.sh come proc_stop (condiviso con dev up / dev service).
+stop_port() { proc_stop "$@"; }
 
 step "Stop applicazioni host"
-auth_stop 2>/dev/null || true   # pidfile dedicato (dev/.auth.pid)
-stop_port auth "${AUTH_PORT:-9100}"
-stop_port core 8080
-stop_port fatture 8081
+while read -r svc; do
+  [ -n "$svc" ] || continue
+  svc_stop "$svc"          # auth include il pidfile dedicato (dev/.auth.pid)
+done <<<"$(services_startup_order)"
 stop_port backoffice 5173
 stop_port admin 5174
 

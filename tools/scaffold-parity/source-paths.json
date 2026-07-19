@@ -1,0 +1,111 @@
+{
+  "_commento": [
+    "Elenco DICHIARATO dei percorsi-sorgente che alimentano i modelli della skill `new-application`",
+    "(UC 0046, strato 2 del presidio anti-invecchiamento). Toccare uno di questi percorsi significa",
+    "aver probabilmente cambiato il pattern che ogni app nuova eredita: il varco di `new-change`",
+    "(step-04) obbliga allora ad aggiornare i modelli nello stesso commit, oppure a registrare la",
+    "motivazione in docs/_PARITA-SCAFFOLD.md.",
+    "",
+    "Questo elenco va tenuto vivo: se nasce un nuovo file che il generatore copia o modifica,",
+    "aggiungerlo qui, altrimenti il varco non scatterà mai su di esso."
+  ],
+
+  "percorsi": [
+    {
+      "percorso": "services/fatture",
+      "perche": "App #1: è il gemello da cui derivano i modelli del servizio Quarkus. Ogni file, dipendenza o convenzione che nasce qui è candidato a diventare pattern."
+    },
+    {
+      "percorso": "services/commons",
+      "perche": "Ciò che il servizio generato eredita gratis (tenant dal JWT, filtro row-level, MDC, health, quota, proiezione diritti, contratto GDPR). Un cambio qui cambia il pattern anche senza toccare i modelli."
+    },
+    {
+      "percorso": "services/pom.xml",
+      "perche": "Elenco dei moduli Maven: il generatore vi aggiunge la nuova app. Cambia la forma del file → cambia l'innesto."
+    },
+    {
+      "percorso": "frontend/apps/backoffice/src/modules/fatture",
+      "perche": "Modulo frontend d'esempio: è il gemello da cui derivano i modelli del modulo backoffice."
+    },
+    {
+      "percorso": "frontend/apps/backoffice/src/registry/registry.ts",
+      "perche": "Registro moduli frontend: il generatore vi registra il modulo nuovo."
+    },
+    {
+      "percorso": "frontend/apps/backoffice/package.json",
+      "perche": "Script `gen:<app>` del client tipizzato: il generatore ne aggiunge uno per app."
+    },
+    {
+      "percorso": ".github/workflows/verify-pr.yml",
+      "perche": "Verifica di pull request: le liste dei servizi sono derivate da sorgente unica, ma la forma del workflow è parte del pattern."
+    },
+    {
+      "percorso": ".github/workflows/deploy-test.yml",
+      "perche": "Consegna in ambiente di test: matrice di build e cicli per servizio."
+    },
+    {
+      "percorso": ".github/workflows/release-prod.yml",
+      "perche": "Rilascio in produzione: cicli per servizio."
+    },
+    {
+      "percorso": "tools/ci/services.sh",
+      "perche": "Sorgente unica dei servizi per l'integrazione continua: se cambia il contratto, i workflow generati non si agganciano più."
+    },
+    {
+      "percorso": "dev/lib/services.sh",
+      "perche": "Scoperta automatica dei servizi nello stack locale: è ciò che rende inutile incollare righe negli script d'avvio."
+    },
+    {
+      "percorso": "dev/lib/migrate.sh",
+      "perche": "Migrazioni locali per scoperta automatica: una nuova app deve essere migrata senza modifiche a mano."
+    },
+    {
+      "percorso": "dev/lib/service.sh",
+      "perche": "Avvio selettivo `dev service <app>`: deve prendere l'app generata così com'è."
+    },
+    {
+      "percorso": "dev/lib/up.sh",
+      "perche": "Avvio dello stack locale, hook dei processi applicativi."
+    },
+    {
+      "percorso": "dev/Caddyfile",
+      "perche": "Instradamento locale `/api/<app>/v1/*`: parte del contratto d'avvio locale di ogni app."
+    },
+    {
+      "percorso": "app-start.sh",
+      "perche": "Avvio locale delle applicazioni: deve funzionare per l'app generata senza passi manuali."
+    },
+    {
+      "percorso": "app-stop.sh",
+      "perche": "Arresto locale delle applicazioni, speculare a app-start.sh."
+    },
+    {
+      "percorso": "tools/smoke/boot-profiles.sh",
+      "perche": "Verifica d'avvio reale degli artefatti: deve coprire anche l'app generata."
+    },
+    {
+      "percorso": "tools/smoke/stack-headless.sh",
+      "perche": "Stack backend senza interfaccia con login vero: deve coprire anche l'app generata."
+    },
+    {
+      "percorso": "infra/scripts/service-add",
+      "perche": "Istanza del modulo Terraform `microsaas_app`: il generatore vi delega invece di riscrivere l'infrastruttura (invariante #3)."
+    },
+    {
+      "percorso": "infra/modules/microsaas_app",
+      "perche": "Modulo infrastrutturale che ogni app istanzia: nuovi input o nuove risorse cambiano ciò che il generatore deve passare."
+    },
+    {
+      "percorso": "docs/compliance/manifests/fatture.yaml",
+      "perche": "Manifesto dati d'esempio (italiano/inglese): è il modello del manifesto che il co-pilota dati personali compila per l'app nuova."
+    },
+    {
+      "percorso": "services/core/src/main/resources/pricing/fatture.yaml",
+      "perche": "Listino d'esempio: è il modello del listino che il co-pilota prezzi/quota compila per l'app nuova."
+    },
+    {
+      "percorso": "services/core/src/main/resources/pricing/index.yaml",
+      "perche": "Indice dei listini: il generatore vi registra l'app nuova."
+    }
+  ]
+}
