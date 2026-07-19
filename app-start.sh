@@ -9,9 +9,12 @@
 #      → ripara il proxy Caddy se non risponde (es. immagine amd64 emulata che va in panic);
 #   4. seed idempotente (migrazioni Flyway + utenti seed);       [salta con --no-seed]
 #   5. build dipendenze (pom padre + commons in ~/.m2, npm install frontend); [salta con --no-build]
-#   6. auth (:9100), core (:8080), fatture (:8081);        [riavvia ciò che è morto]
+#   6. tutti i servizi backend SCOPERTI in services/* (auth, core, app);  [riavvia ciò che è morto]
 #   7. SPA backoffice (:5173) + admin (:5174);                   [salta con --no-spa]
-#   8. health-check END-TO-END via Caddy/HTTPS (SPA, auth, core, fatture).
+#   8. health-check END-TO-END via Caddy/HTTPS (SPA + ogni servizio).
+#
+# Nessun servizio è scritto a mano: l'elenco (nome, porta, rotta /api/*) è DERIVATO dai
+# rispettivi application.properties — vedi dev/lib/services.sh e `./dev.sh services`.
 #
 # Uso:
 #   ./app-start.sh            # tira su e ripara TUTTO
@@ -46,28 +49,11 @@ for arg in "$@"; do
 done
 
 FAIL=0   # diventa 1 se un health-check end-to-end fallisce
+BASE_URL="https://app.local.appgrove.app"   # origin del backoffice: SPA + /api/* via Caddy
 
-# ── helper di processo ────────────────────────────────────────────────────────
-# start_bg <name> <port> <cmd…> — avvia in background se la porta è libera (idempotente).
-start_bg() {
-  local name="$1" port="$2"; shift 2
-  if lsof -ti "tcp:$port" >/dev/null 2>&1; then
-    ok "$name già attivo su :$port (skip)"
-    return 0
-  fi
-  log "Avvio $name (:$port) — log: dev/.run/$name.log"
-  nohup "$@" >"$RUN_DIR/$name.log" 2>&1 &
-  echo $! >"$RUN_DIR/$name.pid"
-}
-
-# wait_port <port> [timeout_s] — attende che qualcuno ascolti.
-wait_port() {
-  local port="$1" timeout="${2:-150}" i=0
-  while ! lsof -ti "tcp:$port" >/dev/null 2>&1; do
-    i=$((i + 1)); [ "$i" -ge "$timeout" ] && return 1; sleep 1
-  done
-  return 0
-}
+# start_bg/wait_port (avvio background idempotente per porta) vivono in dev/lib/common.sh
+# come proc_start/wait_port: li condividono dev up, dev service e app-stop.sh.
+start_bg() { proc_start "$@"; }
 
 # ── arch nativa: evita immagini amd64 emulate (Caddy va in panic su Apple Silicon) ────────────
 native_platform() {
@@ -106,13 +92,6 @@ wait_pg() {
   ok "Postgres healthy"
 }
 
-# ── auth sempre su (idempotente, ricostruisce il jar se manca) ───────────
-ensure_auth() {
-  if port_in_use "$AUTH_PORT"; then ok "auth già attivo (:$AUTH_PORT)"; return 0; fi
-  rm -f "$AUTH_PID"   # pid stantio (processo morto): ripulisci e riavvia
-  auth_start
-}
-
 # ── health-check end-to-end via HTTPS (con retry: i servizi bootano lentamente) ─
 probe() {  # <url> → stampa l'HTTP code; ritenta finché non è "pronto" (no 000/5xx)
   local url="$1" code i=0
@@ -146,10 +125,12 @@ if ! certs_present; then
   gen_certs && ok "certificati generati" || warn "mkcert non disponibile: HTTPS via Caddy non funzionerà → ./dev.sh setup"
 fi
 
-# 3) stack Compose + proxy sano
+# 3) stack Compose + proxy sano (rotte /api/* rigenerate dalla scoperta prima di avviare Caddy)
+sync_caddy_routes
 log "Stack infra (Compose): Postgres · Caddy · Mailpit · MinIO · ElasticMQ"
 compose up -d || die "docker compose up fallito (engine/arch?) — ./dev.sh doctor"
 wait_pg
+caddy_reload_if_changed
 ensure_proxy_healthy
 
 # 4) seed dati (idempotente)
@@ -170,24 +151,14 @@ if [ "$BUILD" -eq 1 ]; then
   fi
 fi
 
-# 6) auth + backend
-log "auth (:$AUTH_PORT)"
-ensure_auth
-
-#    core (:8080) e fatture (:8081) → Postgres CONDIVISO (no DevServices); debug 5005/5006 distinti.
-start_bg core 8080 bash -c "cd '$REPO_ROOT/services' && \
-  QUARKUS_DATASOURCE_JDBC_URL='jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB}' \
-  QUARKUS_DATASOURCE_USERNAME='${POSTGRES_USER}' \
-  QUARKUS_DATASOURCE_PASSWORD='${POSTGRES_PASSWORD}' \
-  QUARKUS_HTTP_PORT=8080 \
-  exec mvn -pl core quarkus:dev -Ddebug=5005"
-
-start_bg fatture 8081 bash -c "cd '$REPO_ROOT/services' && \
-  QUARKUS_DATASOURCE_JDBC_URL='jdbc:postgresql://localhost:${POSTGRES_PORT:-5432}/${POSTGRES_DB}' \
-  QUARKUS_DATASOURCE_USERNAME='${POSTGRES_USER}' \
-  QUARKUS_DATASOURCE_PASSWORD='${POSTGRES_PASSWORD}' \
-  QUARKUS_HTTP_PORT=8081 \
-  exec mvn -pl fatture quarkus:dev -Ddebug=5006"
+# 6) servizi backend scoperti in services/* → Postgres CONDIVISO (no DevServices).
+#    auth parte dal jar con le chiavi JWT; core e le app in `quarkus:dev` con debugger
+#    su porte distinte (5005 + offset della porta http). Vedi svc_start in dev/lib/common.sh.
+log "Servizi backend: $(services_startup_order | tr '\n' ' ')"
+while read -r svc; do
+  [ -n "$svc" ] || continue
+  svc_start "$svc"
+done <<<"$(services_startup_order)"
 
 # 7) SPA Vite
 if [ "$SPA" -eq 1 ]; then
@@ -197,9 +168,13 @@ fi
 
 # 8) readiness porte (boot Quarkus/Vite)
 log "Attendo l'avvio dei processi…"
-wait_port "$AUTH_PORT" 60 && ok "auth pronto (:$AUTH_PORT)" || warn "auth non su :$AUTH_PORT — vedi dev/.auth.log"
-wait_port 8080 && ok "core pronto (:8080)" || warn "core non pronto entro il timeout — vedi dev/.run/core.log"
-wait_port 8081 && ok "fatture pronto (:8081)" || warn "fatture non pronto entro il timeout — vedi dev/.run/fatture.log"
+while IFS=$'\t' read -r svc app_id port schema role; do
+  if [ "$role" = auth ]; then
+    wait_port "$port" 60 && ok "$svc pronto (:$port)" || warn "$svc non su :$port — vedi dev/.auth.log"
+  else
+    wait_port "$port" && ok "$svc pronto (:$port)" || warn "$svc non pronto entro il timeout — vedi dev/.run/$svc.log"
+  fi
+done < <(discover_services)
 if [ "$SPA" -eq 1 ]; then
   wait_port 5173 && ok "SPA backoffice pronta (:5173)" || warn "SPA backoffice non pronta — vedi dev/.run/backoffice.log"
   wait_port 5174 && ok "SPA admin pronta (:5174)" || warn "SPA admin non pronta — vedi dev/.run/admin.log"
@@ -207,15 +182,37 @@ fi
 
 # 9) health-check END-TO-END via Caddy/HTTPS (la verità che conta per il browser)
 log "Verifica end-to-end (via Caddy / HTTPS)"
-report "auth  /api/auth/jwks" "https://app.local.appgrove.app/api/auth/jwks" is200
-report "core        /api/platform/v1/" "https://app.local.appgrove.app/api/platform/v1/" reachable
-report "fatture     /api/fatture/v1/" "https://app.local.appgrove.app/api/fatture/v1/" reachable
+# Percorso di sonda per ruolo: auth espone il JWKS (deve dare 200); core e le app rispondono
+# sul prefisso di rotta (basta che siano raggiungibili: 401/404 = servizio vivo dietro Caddy).
+while IFS=$'\t' read -r svc app_id port schema role; do
+  case "$role" in
+    auth) report "$(printf '%-9s /api/auth/jwks' "$svc")" "$BASE_URL/api/auth/jwks" is200 ;;
+    core) report "$(printf '%-9s /api/platform/v1/' "$svc")" "$BASE_URL/api/platform/v1/" reachable ;;
+    *)    report "$(printf '%-9s /api/%s/v1/' "$svc" "$app_id")" "$BASE_URL/api/$app_id/v1/" reachable ;;
+  esac
+done < <(discover_services)
 if [ "$SPA" -eq 1 ]; then
   report "Backoffice  app.local" "https://app.local.appgrove.app/" is200
   report "Console admin admin.local" "https://admin.local.appgrove.app/" is200
 fi
 
 # 10) riepilogo
+# L'elenco delle API si calcola PRIMA del riepilogo: dentro un heredoc `$'\t'` non è quoting
+# ANSI-C e la sostituzione di comando non si parserebbe.
+# `if/elif` e non `case`: bash 3.2 (quello di serie su macOS) sbaglia a chiudere `$( … )` sulla
+# parentesi di un pattern `case`, e il blocco finirebbe nel riepilogo come testo grezzo.
+API_LINES="$(
+  while IFS=$'\t' read -r svc app_id port schema role; do
+    if [ "$role" = auth ]; then
+      printf '    • %-10s http://localhost:%s/api/auth/\n' "$svc" "$port"
+    elif [ "$role" = core ]; then
+      printf '    • %-10s http://localhost:%s/api/platform/v1/\n' "$svc" "$port"
+    else
+      printf '    • %-10s http://localhost:%s/api/%s/v1/\n' "$svc" "$port" "$app_id"
+    fi
+  done < <(discover_services)
+)"
+
 cat <<EOF
 
 $( [ "$FAIL" -eq 0 ] && printf '\033[1;32mTutto su e sano.\033[0m' || printf '\033[1;33mAvvio completato con avvisi (vedi ✗ sopra).\033[0m' )
@@ -224,9 +221,8 @@ $( [ "$FAIL" -eq 0 ] && printf '\033[1;32mTutto su e sano.\033[0m' || printf '\0
 $( [ "$SPA" -eq 1 ] && echo "    • Backoffice (single-origin) .. https://app.local.appgrove.app    ← cliente (SPA + /api/* via Caddy)" )
 $( [ "$SPA" -eq 1 ] && echo "    • Console admin (single-origin) https://admin.local.appgrove.app  ← platform-admin (login admin@appgrove.test)" )
 $( [ "$SPA" -eq 1 ] && echo "    • SPA dirette (no /api/*) ..... http://localhost:5173 · http://localhost:5174" )
-    • core API (diretto) .......... http://localhost:8080/api/platform/v1/
-    • fatture API (diretto) ....... http://localhost:8081/api/fatture/v1/   (app #1, UC 0051/0052)
-    • auth API (diretto) .... http://localhost:9100/api/auth/
+  API backend (dirette, senza proxy):
+$API_LINES
 
   Utility / stack locale (Compose):
     • Mailpit (email) ....... http://localhost:${MAILPIT_UI_PORT:-8025}
@@ -238,7 +234,7 @@ $( [ "$SPA" -eq 1 ] && echo "    • SPA dirette (no /api/*) ..... http://localh
   Utenti seed (password Password1!): owner@acme.test · admin@acme.test · member@acme.test · bob@bob.test
                                      · admin@appgrove.test (platform-admin → console admin)
 
-  Log:  tail -f dev/.run/{core,fatture,backoffice,admin}.log  ·  auth: dev/.auth.log
+  Log:  tail -f dev/.run/*.log  ·  auth: dev/.auth.log  ·  mappa servizi: ./dev.sh services
   Stop: ./app-stop.sh
 EOF
 

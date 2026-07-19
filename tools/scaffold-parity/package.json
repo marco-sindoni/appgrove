@@ -1,0 +1,12 @@
+{
+  "name": "appgrove-scaffold-parity",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Presidio anti-invecchiamento dei modelli-sorgente della skill new-application (UC 0046): collaudo di parità modelli ↔ app #1 (strato 1) e rilevatore dei percorsi-sorgente (strato 2). Registro delle deviazioni consapevoli: docs/_PARITA-SCAFFOLD.md (strato 3).",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "parity": "node parity-check.mjs",
+    "source-paths": "node source-paths-scan.mjs"
+  }
+}

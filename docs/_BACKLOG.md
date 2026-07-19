@@ -24,6 +24,24 @@ accettabile sull'accesso/quota), e l'industrializzazione della proiezione in `ne
 quando il fan-in sincrono diventa un costo reale. Il seam attuale (`QuotaLimitSource` sostituibile + client REST isolato in
 `fatture`) è progettato per essere rimpiazzato dalla proiezione locale **senza toccare il codice di dominio dell'app**.
 
+> ✅ **RISOLTO dalla change `0041-use-case-0046-…`** (2026-07-19). Il seam ha retto: il codice di dominio di
+> `fatture` non è stato toccato. Scelte effettive, decise col Platform Engineer:
+> - **bus**: le code SQS già in casa (`entitlement-<app_id>` + coda degli scarti, generate dal modulo
+>   `microsaas_app`), non un bus nuovo;
+> - **formato evento**: **sottile** — solo "i diritti del tenant T sono cambiati". Un evento grasso avrebbe
+>   costretto core a ri-derivare gli entitlement fuori da una richiesta autenticata, duplicando la logica di
+>   `EntitlementReadModel` e aggirando il filtro per tenant: il rischio di due derivazioni divergenti è peggiore
+>   del costo di un rinfresco;
+> - **bootstrap/replay**: non serve un ripopolamento massivo — la proiezione si popola su richiesta al primo
+>   accesso di ogni tenant, tramite la rete di sicurezza;
+> - **finestra di incoerenza accettata**: postura **"cache con rete di sicurezza"** (proiezione presente → si usa;
+>   da rinfrescare + core giù → si serve il valore vecchio; assente + core giù → si nega). La chiamata sincrona
+>   non sparisce: retrocede da percorso caldo a caso limite, qualificata `@SafetyNet`.
+>
+> Resta un rischio nuovo, coperto da misure e allarmi (`safety_net`, `stale_served`, `denied_unknown`) nel modulo
+> `microsaas_app`: decidere su dati vecchi senza accorgersene. Gli allarmi sono la contropartita esplicita della
+> scelta di privilegiare la disponibilità sulla freschezza.
+
 ## Modello di gestione utenti — tenant-level vs per-app (B2B/B2C) (richiesto 2026-07-01) — GRANDE 🏛️
 
 Sollevato durante UC 0028 (change `0024-use-case-0028-…`, portale self-service). Oggi la schermata **"Membri"**

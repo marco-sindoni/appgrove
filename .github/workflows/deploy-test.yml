@@ -47,6 +47,8 @@ jobs:
       native: ${{ steps.params.outputs.native }}
       image_tag: ${{ steps.params.outputs.image_tag }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      matrix: ${{ steps.services.outputs.matrix }}
+      app_ids: ${{ steps.services.outputs.app_ids }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -70,6 +72,14 @@ jobs:
           echo "native=$NATIVE" >> "$GITHUB_OUTPUT"
           echo "image_tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Build native: $NATIVE — tag immagine: $TAG"
+      - name: Lista servizi dalla sorgente unica (tools/ci/services.sh)
+        id: services
+        run: |
+          # Sorgente UNICA: derivata da services/*/…/application.properties
+          # (`appgrove.app-id`). Aggiungere un'app NON richiede di toccare i workflow.
+          echo "matrix=$(./tools/ci/services.sh matrix)" >> "$GITHUB_OUTPUT"
+          echo "app_ids=$(./tools/ci/services.sh app-ids | xargs)" >> "$GITHUB_OUTPUT"
+          ./tools/ci/services.sh list
 
   # ── Build servizi: mvn test → immagine ARM64 → push ECR test (#07 10) ──────
   # Si buildano SEMPRE tutte le immagini: ogni SHA ha un set completo e coerente
@@ -77,12 +87,9 @@ jobs:
   build:
     needs: prepare
     strategy:
-      matrix:
-        include:
-          - service: core
-            app_id: platform
-          - service: fatture
-            app_id: fatture
+      # Matrice DERIVATA dalla sorgente unica (step `services` del job prepare):
+      # {"include":[{"service":"core","app_id":"platform"},…]}.
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
@@ -178,12 +185,14 @@ jobs:
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/appgrove-github-actions-test
           aws-region: ${{ env.AWS_REGION }}
       - name: Flyway migrate PRIMA del deploy (task one-shot in VPC, #07 15)
+        env:
+          APP_IDS: ${{ needs.prepare.outputs.app_ids }}
         run: |
           # Al primissimo deploy la task definition non esiste ancora: in quel caso
           # la migrazione (su schema vuoto) gira DOPO l'apply. Dai deploy successivi
           # l'ordine canonico è: migrate (immagine nuova) → apply (rollout).
           PRE=(); POST=()
-          for app in platform fatture; do
+          for app in $APP_IDS; do
             if aws ecs describe-task-definition --task-definition "appgrove-test-$app" >/dev/null 2>&1; then
               PRE+=("$app")
             else

@@ -44,17 +44,27 @@ Tracciare ≠ risolvere: le decisioni premature si annotano, **non** si forzano 
 ## Avvio locale di nuove app/moduli (non negoziabile)
 
 Ogni change che introduce una **nuova applicazione backend** (`services/<app>`) o un **nuovo modulo frontend avviabile**
-DEVE **cablarne l'avvio e lo stop negli script di sviluppo locale** nello stesso pattern degli esistenti, così che l'app/
-modulo sia **eseguibile in locale subito dopo il merge**, senza passi manuali impliciti:
+DEVE renderla **eseguibile in locale subito dopo il merge**, senza passi manuali impliciti:
 
-- backend: aggiungere il processo a [app-start.sh](app-start.sh) e [app-stop.sh](app-stop.sh) (Postgres condiviso, porta
-  dedicata, profilo `%dev`) **e** la route `/api/<app_id>/v1/*` in [dev/Caddyfile](dev/Caddyfile);
+- backend: **nessun cablaggio a mano**. La **scoperta automatica** dei servizi ([dev/lib/services.sh](dev/lib/services.sh)
+  per lo stack locale, [tools/ci/services.sh](tools/ci/services.sh) per l'integrazione continua) deriva la mappa
+  servizio → `app_id` → porta → schema dal solo `services/<app>/src/main/resources/application.properties`. Ne discendono
+  da soli [app-start.sh](app-start.sh)/[app-stop.sh](app-stop.sh), `dev migrate`, `dev service <app_id>`, le rotte
+  `/api/<app_id>/v1/*` del [dev/Caddyfile](dev/Caddyfile) (blocco rigenerato fra i marcatori `api-routes`) e gli avvii di
+  `tools/smoke`. Il dovere della change è quindi **dichiarare bene quelle proprietà**, non incollare righe negli script;
 - frontend: registrare il modulo nell'App Registry (∩ entitlement) e — finché l'entitlement reale non esiste — abilitarlo
   nello stub locale.
 
-È parte del **Definition of Done** della change e va verificato eseguendo l'app in locale. L'**auto-discovery
-multi-servizio** del dev stack è di **UC 0046** (`dev service` è uno stub dichiarato): finché non esiste, il cablaggio è
-**esplicito** e non si rimanda.
+È parte del **Definition of Done** della change e va verificato eseguendo l'app in locale (`./dev.sh services` mostra la
+mappa scoperta). Una **nuova app non si scaffolda a mano**: si usa la skill `new-application` (UC 0046).
+
+## Parità dei modelli di scaffolding
+
+I modelli-sorgente della skill `new-application` derivano dall'app #1 `fatture`: se `fatture` evolve e i modelli restano
+indietro, ogni app nuova nasce antiquata **senza che nulla diventi rosso**. Il registro delle **deviazioni consapevoli** —
+perché un modello resta indietro di proposito e cosa lo riallineerebbe — è
+[docs/_PARITA-SCAFFOLD.md](docs/_PARITA-SCAFFOLD.md). Lo legge la skill prima di generare e chi tocca un percorso-sorgente
+(collaudo di parità e rilevatore: `tools/scaffold-parity/`, area `tooling` di `run-tests.sh`).
 
 ## Esecuzione dei test (non negoziabile)
 

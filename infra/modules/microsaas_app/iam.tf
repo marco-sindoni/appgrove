@@ -80,10 +80,12 @@ resource "aws_iam_role_policy" "task_gdpr" {
             "sqs:GetQueueUrl",
             "sqs:GetQueueAttributes",
           ]
-          Resource = [
+          Resource = compact([
             aws_sqs_queue.gdpr_export.arn,
             aws_sqs_queue.tenant_purge.arn,
-          ]
+            # Coda di invalidazione entitlement (UC 0046); assente sul core.
+            try(aws_sqs_queue.entitlement[0].arn, ""),
+          ])
         },
         {
           Sid      = "SendExportResults"
@@ -116,6 +118,15 @@ resource "aws_iam_role_policy" "task_gdpr" {
             "sqs:GetQueueAttributes",
           ]
           Resource = var.shared.gdpr_export_results_queue_arn
+        },
+        {
+          # Il core pubblica le invalidazioni entitlement direttamente sulle code
+          # per-app (UC 0046): a differenza della purge non passa da EventBridge,
+          # perche' e' una notifica puntuale e non un evento di dominio diffuso.
+          Sid      = "PublishEntitlementInvalidations"
+          Effect   = "Allow"
+          Action   = ["sqs:SendMessage", "sqs:GetQueueUrl"]
+          Resource = "${local.sqs_arn_prefix}:${var.shared.sqs_queue_prefix}entitlement-*"
         },
         {
           Sid      = "PublishDomainEvents"

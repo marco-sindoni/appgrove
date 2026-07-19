@@ -22,9 +22,10 @@ Comandi:
   up [args]           Avvia lo stack locale (Postgres, proxy, Mailpit, MinIO, ElasticMQ)
   down [-v]           Ferma lo stack (-v: cancella i volumi = reset dati)
   reset               Wipe volumi + riavvio stack (+ reseed quando disponibile)
-  seed                Carica il seed deterministico            [stub → UC 0011]
-  migrate             Flyway sul Postgres locale               [stub → servizi/UC 0046]
-  service <app_id>    Avvio selettivo core + app               [stub → servizi/UC 0046]
+  seed                Carica il seed deterministico
+  migrate [servizio…] Flyway sul Postgres locale (tutti i servizi scoperti)
+  service <app_id>    Avvio selettivo: stack + auth + core + l'app indicata
+  services            Mappa dei servizi scoperti in services/* (app-id, porte, schemi)
 
 Dettagli di un comando:  ./dev.sh <comando> --help
 EOF
@@ -37,7 +38,7 @@ main() {
   esac
   shift
   case "$cmd" in
-    doctor|setup|up|down|seed|reset|migrate|service)
+    doctor|setup|up|down|seed|reset|migrate|service|services)
       # shellcheck source=/dev/null
       source "$DEV_DIR/lib/$cmd.sh"
       "cmd_$cmd" "$@"

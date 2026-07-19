@@ -4,7 +4,9 @@
 # La fetta pragmatica del "test di app-start.sh in CI" (decisione col Platform Engineer):
 # NIENTE browser, NIENTE Caddy/TLS/mkcert//etc/hosts (dove vive quasi tutta la fragilità),
 # ma infrastruttura VERA: Postgres + ElasticMQ dal compose dev, migrazioni Flyway + seed
-# reali, e i TRE servizi impacchettati avviati in profilo `dev` su porte alternative.
+# reali, e TUTTI i servizi impacchettati avviati in profilo `dev` su porte alternative.
+# L'elenco dei servizi è SCOPERTO da services/* (dev/lib/services.sh): una nuova app entra
+# nello smoke senza toccare questo file. Porta di smoke = porta reale + 10000.
 # Copre ciò che il boot-smoke dei profili non vede: migrazioni+seed sullo stesso DB,
 # config %dev come la assembla lo stack, wiring cross-servizio, e un login VERO end-to-end.
 #
@@ -14,13 +16,21 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# Scoperta servizi (UC 0046): sorgente unica di nomi/porte/ruoli. Nessun effetto collaterale.
+# shellcheck source=dev/lib/services.sh
+source "$ROOT/dev/lib/services.sh"
 C_RESET=$'\033[0m'; C_GRN=$'\033[0;32m'; C_RED=$'\033[0;31m'; C_BLU=$'\033[1;36m'
 ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 step() { printf '%s▶ %s%s\n' "$C_BLU" "$*" "$C_RESET"; }
 
 BOOT_TIMEOUT="${BOOT_TIMEOUT:-120}"
-AUTH_PORT=19100; CORE_PORT=18080; FATTURE_PORT=18081
+# Convive con lo stack dev acceso: ogni servizio gira sulla sua porta + 10000
+# (core 8080→18080, auth 9100→19100, …), così non collide mai con lo stack reale.
+SMOKE_PORT_OFFSET=10000
+smoke_port() { printf '%s\n' "$(( $1 + SMOKE_PORT_OFFSET ))"; }
+AUTH_SVC="$(services_by_role auth | head -1)"
+AUTH_PORT="$(smoke_port "$(service_port "$AUTH_SVC")")"
 TMP_DIR="$(mktemp -d /tmp/appgrove-stack-smoke.XXXXXX)"
 PIDS=()
 cleanup() {
@@ -58,8 +68,9 @@ docker exec -i "$(docker ps --format '{{.Names}}' | grep -m1 postgres)" \
 # esploderebbe sul PaddlePaymentProvider non implementato (gated, UC 0022).
 # Nota: sovrascrive i jar in target/ — chi serve l'artefatto di spedizione
 # (boot-profiles.sh, CI deploy) fa la propria build.
-step "build artefatti in profilo dev (mvn package -Dquarkus.profile=dev)…"
-( cd "$ROOT/services" && mvn -B -q -pl core,fatture,auth -am package -DskipTests -Dquarkus.profile=dev ) \
+MODULES="$(discover_services | cut -f1 | paste -sd, -)"
+step "build artefatti in profilo dev (mvn package -Dquarkus.profile=dev): ${MODULES}…"
+( cd "$ROOT/services" && mvn -B -q -pl "$MODULES" -am package -DskipTests -Dquarkus.profile=dev ) \
   || { fail "build artefatti fallita"; exit 1; }
 AUTH_KEYS="$ROOT/dev/auth"
 if [ ! -f "$AUTH_KEYS/privateKey.pem" ]; then
@@ -82,11 +93,16 @@ start_service() { # <nome> <porta> [env extra...]
       > "$log" 2>&1 &
   PIDS+=($!)
 }
-step "avvio core (:$CORE_PORT), fatture (:$FATTURE_PORT), auth (:$AUTH_PORT) in profilo dev…"
-start_service core "$CORE_PORT"
-start_service fatture "$FATTURE_PORT"
-start_service auth "$AUTH_PORT" \
-  AUTH_LOCAL_PRIVATE_KEY="$AUTH_KEYS/privateKey.pem" AUTH_LOCAL_PUBLIC_KEY="$AUTH_KEYS/publicKey.pem"
+step "avvio dei servizi scoperti in profilo dev (porte +$SMOKE_PORT_OFFSET)…"
+while IFS=$'\t' read -r svc app_id port schema role; do
+  if [ "$role" = auth ]; then
+    # auth ha bisogno delle chiavi di firma locali (le stesse che passa `dev up`).
+    start_service "$svc" "$(smoke_port "$port")" \
+      AUTH_LOCAL_PRIVATE_KEY="$AUTH_KEYS/privateKey.pem" AUTH_LOCAL_PUBLIC_KEY="$AUTH_KEYS/publicKey.pem"
+  else
+    start_service "$svc" "$(smoke_port "$port")"
+  fi
+done < <(discover_services)
 
 # ── readiness + asserzioni end-to-end ─────────────────────────────────────────
 wait_http() { # <nome> <url> <status atteso>
@@ -103,10 +119,15 @@ wait_http() { # <nome> <url> <status atteso>
   return 1
 }
 
+# Readiness per ruolo: auth espone il JWKS, core e le app la health readiness di Quarkus.
 rc=0
-wait_http core    "http://localhost:$CORE_PORT/q/health/ready"    200 || rc=1
-wait_http fatture "http://localhost:$FATTURE_PORT/q/health/ready" 200 || rc=1
-wait_http auth    "http://localhost:$AUTH_PORT/api/auth/jwks"     200 || rc=1
+while IFS=$'\t' read -r svc app_id port schema role; do
+  if [ "$role" = auth ]; then
+    wait_http "$svc" "http://localhost:$(smoke_port "$port")/api/auth/jwks" 200 || rc=1
+  else
+    wait_http "$svc" "http://localhost:$(smoke_port "$port")/q/health/ready" 200 || rc=1
+  fi
+done < <(discover_services)
 
 # Login VERO col seed (migrazioni + seed + provider locale insieme): la garanzia
 # che il boot-smoke dei profili non può dare.

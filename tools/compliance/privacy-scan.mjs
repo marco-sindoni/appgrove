@@ -11,7 +11,20 @@
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+// Radice del repository. TUTTI i comandi git e le letture di file passano di qui.
+//
+// Perche' non basta la directory corrente: lo scanner viene lanciato nel modo documentato
+// (`cd tools/compliance && npm run privacy-scan`), e da li' `git ls-files --others` elenca
+// SOLO i file non tracciati DENTRO tools/compliance — cioe' nessuno. Il gate risultava quindi
+// cieco proprio sul caso a piu' alto segnale: una migrazione o un'entita' APPENA CREATA, che
+// e' non tracciata per definizione finche' non la si aggiunge. Tacere per un difetto e' peggio
+// che non avere il gate, perche' il silenzio viene letto come "nessun dato personale toccato".
+const REPO_ROOT = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+const git = (args) =>
+  execFileSync('git', args, { encoding: 'utf8', cwd: REPO_ROOT, maxBuffer: 64 * 1024 * 1024 });
 
 const MIGRATION_FILE = /\/db\/migration\/[^/]+\.sql$/;
 const JAVA_MAIN_FILE = /src\/main\/java\/.+\.java$/;
@@ -125,15 +138,15 @@ export function renderReport(signals) {
 }
 
 function gitDiffDefault() {
-  const git = (args) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const base = git(['merge-base', 'main', 'HEAD']).trim();
   const files = parseDiff(git(['diff', base]));
   // I file non ancora tracciati non compaiono in `git diff`: li aggiungiamo come interamente nuovi.
+  // I percorsi sono relativi alla radice del repo, quindi anche la lettura parte da li'.
   for (const f of git(['ls-files', '--others', '--exclude-standard']).split('\n').filter(Boolean)) {
     try {
-      files.push({ file: f, isNew: true, added: readFileSync(f, 'utf8').split('\n'), removed: [] });
+      files.push({ file: f, isNew: true, added: readFileSync(join(REPO_ROOT, f), 'utf8').split('\n'), removed: [] });
     } catch {
-      /* file sparito nel frattempo: ignora */
+      /* file sparito nel frattempo o binario: ignora */
     }
   }
   return files;
@@ -145,7 +158,7 @@ function main() {
   const range = argv.find((a) => !a.startsWith('--'));
 
   const files = range
-    ? parseDiff(execFileSync('git', ['diff', range], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }))
+    ? parseDiff(git(['diff', range]))
     : gitDiffDefault();
   const signals = scanFiles(files);
 

@@ -117,6 +117,37 @@ been written into the right place — that use case's file (`docs/usecases/<area
 rule ("Tracciamento delle decisioni differite"): **never** close a change with such points living
 only in chat.
 
+## Verify the scaffold source-path gate (UC 0046)
+
+Before the commit gate, check whether this change touched a **source path** — one of the paths the
+`new-application` source templates are derived from (declared in `tools/scaffold-parity/source-paths.json`):
+
+```bash
+node tools/scaffold-parity/source-paths-scan.mjs
+```
+
+- **Exit 0** → no source path touched. Nothing to do.
+- **Exit ≠ 0** → the change moved a path that feeds the templates. Pick **one** of the two, never neither:
+  1. **Update the templates** in `tools/new-application/templates/` **in this same commit**, so newly
+     generated apps inherit the change. Confirm with `node tools/scaffold-parity/parity-check.mjs` (exit 0).
+  2. **Record the justification** in `docs/_PARITA-SCAFFOLD.md` (the deliberate-deviation register), if the
+     change is specific to `fatture`'s own domain — or otherwise not generalisable — and the templates must
+     deliberately stay behind. State *what*, *why*, and *what would close it*.
+
+Then note the outcome in the implementation log ("gate parità scaffold: ..."). Templates that age in
+silence break nothing today and make every app of tomorrow born out of date — which is exactly why this
+gate is not optional. If neither branch has been taken, print:
+
+```
+🛑 Change NNNN touched a scaffold source path but the templates were neither updated nor a deviation
+   recorded: <list of source paths touched>
+Choose one — update tools/new-application/templates/, or record the reason in docs/_PARITA-SCAFFOLD.md —
+and tell me which. I will not ask for commit consent until this is resolved.
+```
+
+Then STOP and resolve it before going further. This gate is symmetric to the deferred-decisions one above:
+both exist because the thing they guard is invisible at commit time and expensive later.
+
 ## MANDATORY STOP — commit consent gate
 
 Do **not** commit yet. Summarize what will be committed (the changed files and the

@@ -1,0 +1,28 @@
+# Listino dell'app @@APP_NAME@@ — pricing-as-code (UC 0022). Chiave stabile: slug '@@APP_ID@@'.
+#
+# ⚠️ BOZZA GENERATA DALLO SCAFFOLDING (tools/new-application, UC 0046) — DA COMPLETARE.
+# Lo scaffolding crea SOLO il livello gratuito, con un tetto prudente sulla metrica scelta: serve a
+# far girare l'app end-to-end (gate 402 + gate 429) prima ancora che i prezzi siano decisi. I livelli
+# a pagamento li scrive il co-pilota prezzi/quota della skill `new-application`, che guida su:
+#   - prezzo mensile e annuale (sconto indicativo ~17%, cioè due mesi in omaggio);
+#   - prova gratuita (default 14 giorni, disattivabile);
+#   - natura della metrica: `flow` = a consumo, si azzera a ogni finestra (es. documenti creati nel
+#     mese); `stock` = a giacenza, conta quanti oggetti esistono ORA (es. postazioni attive). Sbagliare
+#     natura è l'errore più costoso del listino: un tetto a giacenza contato a consumo non si libera mai.
+#   - commissione effettiva del fornitore di pagamento, con avviso non bloccante oltre il 10%.
+#
+# La natura dichiarata qui deve corrispondere a come @@APP_CLASS@@QuotaService conta l'uso.
+
+slug: @@APP_ID@@
+name: @@APP_NAME@@
+userModel: @@USER_MODEL@@
+# `inactive` finché il listino non è completo e rivisto: l'app esiste a catalogo ma non è vendibile.
+# Passa ad `active` quando i livelli a pagamento sono decisi e la landing è pronta.
+status: inactive
+tiers:
+  - key: free
+    name: @@APP_NAME@@ Free
+    trialDays: 0
+    limits: { metric: @@METRIC@@, window: month, cap: @@FREE_CAP@@, type: flow }
+    features: {}
+    prices: []

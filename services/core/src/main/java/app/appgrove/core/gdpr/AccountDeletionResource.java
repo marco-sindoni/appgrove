@@ -1,6 +1,7 @@
 package app.appgrove.core.gdpr;
 
 import app.appgrove.commons.audit.AuditLogger;
+import app.appgrove.core.billing.EntitlementInvalidationPublisher;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.AccountDtos.AccountView;
 import app.appgrove.core.platform.AccountRepository;
@@ -48,6 +49,9 @@ public class AccountDeletionResource {
     @Inject
     AuditLogger audit;
 
+    @Inject
+    EntitlementInvalidationPublisher invalidation;
+
     /** Richiede l'eliminazione: disattivazione immediata + avvio della grace. 409 se già in corso. */
     @POST
     @Transactional
@@ -65,6 +69,9 @@ public class AccountDeletionResource {
                 "tenant_id", caller.tenantId().toString(),
                 "user_id", caller.subject(),
                 "effective_at", account.deletionEffectiveAt().toString()));
+        // Disattivazione immediata = zero entitlement (#13 E25): senza invalidazione le app
+        // continuerebbero a servire dalla propria proiezione un accesso che non esiste più.
+        invalidation.invalidateAllApps(caller.tenantId().toString(), "account.pending_deletion");
         return AccountView.from(account);
     }
 
@@ -83,6 +90,9 @@ public class AccountDeletionResource {
         audit.success("gdpr.account-deletion.canceled", Map.of(
                 "tenant_id", caller.tenantId().toString(),
                 "user_id", caller.subject()));
+        // Ripristino dell'accesso: va propagato con la stessa urgenza della revoca, altrimenti il
+        // cliente resta bloccato fino alla scadenza naturale della proiezione (che non c'è).
+        invalidation.invalidateAllApps(caller.tenantId().toString(), "account.deletion_canceled");
         return AccountView.from(account);
     }
 

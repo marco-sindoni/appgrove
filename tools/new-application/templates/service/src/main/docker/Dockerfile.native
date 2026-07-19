@@ -1,0 +1,18 @@
+# ── @@APP_ID@@ — immagine native GraalVM (on-demand `[graal]`/dispatch, sempre in prod, #07 7/23) ──
+# Stesso pattern di core/src/main/docker/Dockerfile.native (build dalla pipeline, UC 0005):
+#   mvn -pl @@APP_ID@@ -am package -Dnative   →   docker build -f @@APP_ID@@/src/main/docker/Dockerfile.native @@APP_ID@@
+# Base ubi9-minimal con `curl` per l'health check ECS (UC 0006), verificato al build.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4
+
+RUN microdnf install -y curl && microdnf clean all && curl --version
+
+WORKDIR /work/
+RUN chown 1001 /work && chmod "g+rwX" /work && chown 1001:root /work
+COPY --chown=1001:root target/*-runner /work/application
+
+ENV QUARKUS_HTTP_HOST=0.0.0.0
+EXPOSE @@HTTP_PORT@@
+USER 1001
+
+# Forma exec: gli argomenti del command override ECS (task one-shot `migrate`) si accodano.
+ENTRYPOINT ["./application"]

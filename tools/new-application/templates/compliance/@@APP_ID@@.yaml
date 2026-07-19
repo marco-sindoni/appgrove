@@ -1,0 +1,78 @@
+# Manifesto dati — app @@APP_NAME@@ (UC 0030, #13 C14/C15/C18).
+#
+# ⚠️ BOZZA GENERATA DALLO SCAFFOLDING (tools/new-application, UC 0046) — DA COMPLETARE.
+# I testi qui sotto descrivono il DOMINIO SEGNAPOSTO, non ancora quello reale dell'app. Il
+# co-pilota dati personali della skill `new-application` li riscrive insieme all'autore dell'app.
+#
+# Questo file è la fonte unica dei dati personali dell'app: alimenta il registro dei trattamenti
+# (RoPA), lo snippet privacy pubblico e le rotte di export/cancellazione. Le voci con `entity`+`field`
+# sono incrociate con le annotazioni @PersonalData del servizio dal check JUnit
+# (PersonalDataManifestTest): aggiungere un campo personale senza dichiararlo qui rende la build
+# rossa, e togliere qui una voce ancora annotata pure.
+#
+# REGOLE DA NON AGGIRARE:
+#  - ogni testo esiste in TUTTE le lingue richieste (oggi it + en): la parità è verificata
+#    dall'area `compliance` di run-tests.sh;
+#  - la retention dichiarata deve essere quella davvero applicata dalla cancellazione, non
+#    un'intenzione;
+#  - categorie particolari (art. 9 GDPR: salute, convinzioni, biometria, orientamento…) NON si
+#    dichiarano di nascosto: richiedono avviso esplicito e valutazione d'impatto prima di procedere.
+#
+# BOZZA SOTTO DISCLAIMER: validazione finale del legale (docs/_REVISIONE-LEGALE.md).
+
+id: @@APP_ID@@
+name:
+  it: App @@APP_NAME@@
+  en: @@APP_NAME@@ app
+description:
+  it: >-
+    DA COMPLETARE — dati trattati dall'app @@APP_NAME@@ (schema `@@SCHEMA@@`).
+    Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13).
+  en: >-
+    TO BE COMPLETED — data processed by the @@APP_NAME@@ app (schema `@@SCHEMA@@`).
+    The tenant is the data controller; appgrove acts as processor (#13 C13).
+
+entries:
+  - key: item.contact_name
+    entity: app.appgrove.@@APP_ID@@.Item
+    field: contactName
+    location:
+      it: Tabella `@@SCHEMA@@.item` (Aurora PostgreSQL, eu-west-1)
+      en: Table `@@SCHEMA@@.item` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: DA COMPLETARE — interessati i cui dati sono inseriti dal tenant
+      en: TO BE COMPLETED — data subjects whose data is entered by the tenant
+    data_category:
+      it: Identità del contatto (nome/denominazione)
+      en: Contact identity (name)
+    purpose:
+      it: "@@PD_PURPOSE@@"
+      en: DA COMPLETARE — purpose of the processing
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: "@@PD_RETENTION@@"
+      en: DA COMPLETARE — retention period, matching what the erasure actually does
+
+  - key: item.contact_email
+    entity: app.appgrove.@@APP_ID@@.Item
+    field: contactEmail
+    location:
+      it: Tabella `@@SCHEMA@@.item` (Aurora PostgreSQL, eu-west-1)
+      en: Table `@@SCHEMA@@.item` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: DA COMPLETARE — interessati i cui dati sono inseriti dal tenant
+      en: TO BE COMPLETED — data subjects whose data is entered by the tenant
+    data_category:
+      it: Recapito del contatto (indirizzo email, facoltativo)
+      en: Contact details (email address, optional)
+    purpose:
+      it: "@@PD_PURPOSE@@"
+      en: DA COMPLETARE — purpose of the processing
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: "@@PD_RETENTION@@"
+      en: DA COMPLETARE — retention period, matching what the erasure actually does

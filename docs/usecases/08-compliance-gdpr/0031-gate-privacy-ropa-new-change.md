@@ -62,3 +62,26 @@ Manifest: **è** il meccanismo che lo mantiene aggiornato (accountability).
   2. Enforcement CI bloccante (`@PersonalData` non dichiarato).
   3. MAJOR/MINOR pilota il bump versione PP/ToS → re-accept scoped / notifica.
   4. Segnalazione nuovi sub-processor → aggiornamento lista + notifica.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0041-use-case-0046-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- ✅ **Difetto corretto nella change 0041 — lo scanner era cieco sui file nuovi.** `privacy-scan.mjs`
+  elencava i file non tracciati con `git ls-files --others` eseguito nella **directory corrente**: lanciato
+  nel modo documentato (`cd tools/compliance && npm run privacy-scan`) vedeva solo sé stesso, quindi **zero**
+  file nuovi invece di 95. Il gate taceva proprio sul caso a più alto segnale — una migrazione o un'entità
+  **appena creata**, che è non tracciata per definizione finché non la si aggiunge. Corretto ancorando tutti i
+  comandi git e le letture alla radice del repository. **Perché conta oltre alla correzione**: un gate che tace
+  per un difetto è peggio di un gate assente, perché il silenzio viene letto come "nessun dato personale
+  toccato". Vale la pena chiedersi se altri strumenti del repo abbiano la stessa fragilità sulla directory
+  di esecuzione.
+
+- **Rumore dello scanner sui modelli-sorgente della skill `new-application`.** Da UC 0046 esiste
+  `tools/new-application/templates/`: una copia dell'app #1 con segnaposto. Lo scanner la analizza come
+  codice vero e produce **~40 segnali** (tabelle, campi entità, dipendenze) a ogni change che tocchi i modelli.
+  Non sono falsi in senso stretto — un modello che guadagna un campo personale lo propaga a **tutte** le app
+  future, quindi merita revisione — ma il volume rischia di **allenare a ignorare il gate**, che è il modo
+  in cui i presidi muoiono. Da decidere: trattare i modelli come area a sé (segnale unico "i modelli sono
+  cambiati, rivedili") invece di un segnale per riga. **Differito** perché è una scelta di ergonomia del gate,
+  di proprietà di questo UC, non della change che l'ha fatta emergere. **Proprietario**: UC 0031.

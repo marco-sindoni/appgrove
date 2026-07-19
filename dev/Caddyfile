@@ -22,22 +22,29 @@
 	admin off
 }
 
-# (snippet riusabile dalle SPA quando le app gireranno — UC 0009/0010)
+# (snippet riusabile dalle SPA — UC 0009/0010)
 # Tiene il routing /api/* in un unico punto: stesso origin della SPA.
+#
+# ATTENZIONE: il corpo dello snippet è GENERATO (UC 0046). Caddy non può scoprire i servizi a
+# runtime, quindi le rotte sono derivate da services/*/src/main/resources/application.properties
+# (app-id + porta) da `sync_caddy_routes` in dev/lib/common.sh, e rigenerate a ogni `dev up` /
+# `./app-start.sh`. NON modificare le righe tra i marker: aggiungere un'app non richiede alcuna
+# modifica a mano qui. Ispeziona la mappa con `./dev.sh services`.
 (api_routes) {
-	# /api/auth/* → provider auth locale (UC 0010), processo host su :9100
+	# ── api-routes:begin (generato da dev/lib/common.sh — non modificare a mano) ──
+	# /api/auth/* → servizio auth, processo host su :9100
 	handle /api/auth/* {
 		reverse_proxy host.docker.internal:9100
 	}
-	# /api/platform/* → API core/platform (UC 0013/0020), processo host su :8080
+	# /api/platform/* → servizio core, processo host su :8080
 	handle /api/platform/* {
 		reverse_proxy host.docker.internal:8080
 	}
-	# /api/<app_id>/v1/* → backend del servizio (UC 0009 assegna la porta)
-	# /api/fatture/v1/* → app #1 fatture (UC 0051/0052), processo host su :8081
+	# /api/fatture/v1/* → servizio fatture, processo host su :8081
 	handle /api/fatture/v1/* {
 		reverse_proxy host.docker.internal:8081
 	}
+	# ── api-routes:end ────────────────────────────────────────────────────────────
 }
 
 # ── Backoffice cliente (un solo origin: SPA + /api/*) ────────────────────────
