@@ -1,0 +1,45 @@
+# Listino dell'app Mini-CRM — pricing-as-code (UC 0022). Chiave stabile: slug 'crm'.
+# App #2 del marketplace (B2B multi-utente, UC 0054). Compilato dal co-pilota prezzi/quota della skill
+# `new-application` e approvato dallo sviluppatore (change 0042).
+#
+# Metrica `seats` (posti), natura `stock` (a giacenza): il tetto vale su quanti posti sono OCCUPATI ora,
+# non su quanti se ne creano nel periodo — nessuna `window`, coerente con come CrmQuotaService conta
+# l'uso. Due livelli servono anche a poter esercitare il downgrade gated (UC 0054): scendere da `team`
+# a `free` con più di 2 posti occupati dev'essere bloccato.
+#
+# Prezzi mensile/annuale con sconto ~17% (due mesi in omaggio). La sincronizzazione col fornitore di
+# pagamento è di UC 0022 ed è comunque bloccata a monte da #14 (nessun account senza sito + ToU/PP).
+#
+# DISABILITATA DI DEFAULT (`status: inactive`) — scelta dello sviluppatore, change 0042. Il Mini-CRM è
+# nato come VEICOLO per validare la skill `new-application` (UC 0054) e per costruire la meccanica
+# multi-utente/posti (quota a giacenza + downgrade bloccato), NON come prodotto da vendere. Il codice
+# resta nel repo per il suo valore riutilizzabile, ma l'app è spenta per TUTTI gli account: il read-model
+# entitlement salta le app non-attive (EntitlementReadModel, decisione #09.30), quindi il modulo non
+# compare nel registry frontend e le API `/api/crm/v1/*` negano l'accesso. Tier e prezzi restano definiti
+# (pronti per il giorno in cui la si accende). Per riattivarla: toggle admin `PATCH /api/admin/v1/apps/{id}`
+# `{status:active}` (temporaneo, la sync lo riscrive da qui) oppure rimettere `status: active` in questo file
+# (durevole).
+
+slug: crm
+name: Mini-CRM
+userModel: multi_user
+status: inactive
+tiers:
+  - key: free
+    name: Mini-CRM Free
+    trialDays: 0
+    limits: { metric: seats, cap: 2, type: stock }
+    features: {}
+    prices: []
+  - key: team
+    name: Mini-CRM Team
+    trialDays: 14
+    limits: { metric: seats, cap: 10, type: stock }
+    features: {}
+    prices:
+      - billingCycle: monthly
+        amount: 1900
+        currency: EUR
+      - billingCycle: annual
+        amount: 19000
+        currency: EUR

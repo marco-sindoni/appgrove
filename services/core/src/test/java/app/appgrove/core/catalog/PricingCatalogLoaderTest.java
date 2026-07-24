@@ -24,13 +24,15 @@ class PricingCatalogLoaderTest {
 
     @Test
     void loadsRealAppsPlusFixturesInTest() {
-        // in %test include-fixtures=true → app reali (fatture) + fixture (notes/teams/legacy)
+        // in %test include-fixtures=true → app reali (fatture, crm) + fixture (notes/teams/legacy)
         List<AppDef> defs = loader.load();
         assertEquals(
-                java.util.Set.of("fatture", "notes", "teams", "legacy"),
+                java.util.Set.of("fatture", "crm", "notes", "teams", "legacy"),
                 defs.stream().map(AppDef::slug).collect(java.util.stream.Collectors.toSet()));
-        // l'app reale viene prima delle fixture (indice reale caricato per primo)
-        assertEquals("fatture", defs.get(0).slug());
+        // le app reali vengono prima delle fixture (indice reale caricato per primo)
+        assertEquals(
+                java.util.Set.of("fatture", "crm"),
+                java.util.Set.of(defs.get(0).slug(), defs.get(1).slug()));
 
         AppDef notes = bySlug(defs, "notes");
         assertEquals(AppUserModel.single_user, notes.userModel());
@@ -46,6 +48,11 @@ class PricingCatalogLoaderTest {
 
         AppDef legacy = defs.stream().filter(a -> a.slug().equals("legacy")).findFirst().orElseThrow();
         assertEquals(AppStatus.inactive, legacy.status(), "legacy è disabilitata");
+
+        // crm: app reale ma DISABILITATA DI DEFAULT (change 0042) — veicolo di validazione della skill,
+        // non prodotto in vendita; deve restare spenta per tutti finché non la si accende deliberatamente.
+        AppDef crm = bySlug(defs, "crm");
+        assertEquals(AppStatus.inactive, crm.status(), "crm è disabilitata di default (change 0042)");
     }
 
     @Test

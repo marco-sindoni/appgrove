@@ -1,0 +1,336 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot, richiesta esplicitamente all'invocazione ('implementa change 0054 in modalità autopilot on'). L'agente risponde alle domande di approfondimento seguendo l'opzione che raccomanderebbe; restano allo sviluppatore i tre presidi: rilettura e approvazione dei requisiti, consenso al commit, consenso al merge. Fanno eccezione i due co-piloti della skill new-application (prezzi/quote e dati personali), che anche in autopilot vengono proposti e poi confermati dallo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La richiesta 'change 0054' è stata interpretata come 'implementa lo use case 0054', non come 'la change numero 0054': in changes/ il contatore è arrivato a 0041 e lo use case 0054 (App #2 B2B via new-application) è il prossimo in coda nell'indice di esecuzione. Da qui il nome del ramo change/0042-use-case-0054-app2-b2b-crm: 0042 è il progressivo delle change, 0054 lo use case sorgente.",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "Lo use case 0054 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Identità dell'app #2: identificativo `crm`, nome visibile «Mini-CRM», modello utente multi-utente (B2B), porta locale 8082 (prima libera dopo fatture=8081, porta di debug 5007), schema `app_crm`, rotta `/api/crm/v1/*`. Scelto `crm` e non `contatti`/`clienti` perché l'identificativo finisce nello schema, nelle code, nella rotta pubblica e nell'istanza Terraform, quindi deve essere corto e stabile e descrivere la categoria dell'app (che non cambia) invece di una sua singola entità.",
+    "files": [
+      {
+        "file": "services/crm/src/main/resources/application.properties",
+        "description": "Dichiara app_id, porta e schema: da qui la scoperta automatica dei servizi deriva tutto il resto (dev/lib/services.sh, tools/ci/services.sh)."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Metrica di quota dell'app: `seats` (posti). È l'unica cosa che il piano limita, ed è il nome già usato da UC 0054, dai punti aperti di UC 0027 e dalla fixture di catalogo `teams`: introdurne un sinonimo italiano avrebbe creato due nomi per la stessa metrica in documenti che si citano a vicenda."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il dominio segnaposto generato dallo scaffolding (Item/ItemLine) viene sostituito dal dominio reale minimo del mini-CRM: `contact` (contatto, con stato di avanzamento della trattativa) e `interaction` (interazione datata con nota). Motivo: i commenti dello stesso generatore indicano la sostituzione come primo lavoro dopo lo scaffolding, e un manifesto dati che descrive un dominio finto sarebbe conformità di facciata. Restano fuori calendario, importazione contatti e attività assegnate: sono prodotto, non validazione della skill.",
+    "files": [
+      {
+        "file": "services/crm/src/main/resources/db/migration/V2__crm_domain.sql",
+        "description": "Tabelle contact e interaction al posto di item/item_line, tenant-scoped con lo stesso schema di audit e cancellazione logica."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Definizione di «posto» (seat): non è l'utente dell'account contato da core, ma l'utente dell'account a cui è stato dato accesso a QUESTA app, registrato nello schema dell'app. Alternativa scartata: contare gli utenti del tenant lato core — contraddice la nota di UC 0054 («il conteggio dei posti occupati resta un dato dell'app») e non regge il caso normale del marketplace, cioè un account che compra più app con tetti di posti diversi.",
+    "files": [
+      {
+        "file": "services/crm/src/main/resources/db/migration/V2__crm_domain.sql",
+        "description": "Tabella seat (tenant_id, user_id, ruolo applicativo, date di assegnazione/revoca): è la giacenza contata dalla quota stock."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il varco «invito oltre il posto» si applica all'ASSEGNAZIONE del posto nell'app, non alla creazione dell'invito in core. UC 0054 §5 lo descrive sull'invito, ma l'invito è tenant-level e appartiene a core (UC 0013/0059): metterlo lì significherebbe insegnare a core i posti di ogni app del marketplace. Nella schermata «Membri» dell'app il pulsante «invita un collega» riusa il flusso inviti esistente e poi assegna il posto, quindi per chi usa il prodotto l'invito risulta comunque bloccato quando i posti sono esauriti. Lo scostamento dal testo letterale dello use case viene annotato in UC 0054."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il downgrade bloccato («gated») viene reso reale facendo pubblicare all'app il proprio uso a giacenza sul bus di messaggi già esistente; core lo materializza in un read-model e TierChangePolicy.evaluateDowngrade lo consuma al posto della mappa vuota di oggi. Alternativa scartata: core che interroga l'app in sincrono al momento del cambio piano — obbligherebbe core a conoscere gli indirizzi di rete di ogni app e introdurrebbe una dipendenza sincrona nella direzione opposta a quella che UC 0046 ha appena rimosso. Questo chiude, limitatamente al varco del downgrade, il punto aperto «gate stock del downgrade contro l'uso reale» di UC 0028; la visualizzazione del consumo nel pannello di fatturazione resta di UC 0028 e non viene anticipata.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/TierChangePolicy.java",
+        "description": "Smette di ricevere una mappa d'uso vuota: il gate stock diventa efficace a runtime."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La natura a giacenza della metrica viene risolta CORREGGENDO IL GENERATORE, non l'output: nuova opzione `--quota-nature flow|stock` di tools/new-application, con modello-sorgente che genera il conteggio corrispondente (giacenza attuale senza finestra temporale) e listino coerente (`type: stock`, nessuna `window`). Motivo: la regola non negoziabile della skill new-application è «se l'output è sbagliato si corregge il modello, non la copia», e questa è esattamente la lacuna che UC 0054 esiste per scoprire (punto 4 della sua definizione di fatto). Adattare a mano l'app #2 avrebbe lasciato la prossima app a giacenza a ripetere lo stesso errore.",
+    "files": [
+      {
+        "file": "tools/new-application/generate.mjs",
+        "description": "Nuova opzione --quota-nature; il valore alimenta i segnaposto di conteggio quota e di listino."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Restano fuori scope, e sono già di proprietà di altri use case: la pubblicazione della landing (UC 0057, qui solo bozza), la sincronizzazione dei prezzi verso il fornitore di pagamento (UC 0022, bloccata da #14), la visualizzazione del consumo quota nel pannello di fatturazione (UC 0028), la console di amministrazione (UC 0021) e qualunque applicazione di infrastruttura in cloud (la change genera l'istanza del modulo Terraform e la valida, non la applica)."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot, ESCALATION) Prezzi e quote sono materia dello sviluppatore anche in autopilot (regola della skill new-application). Proposta portata al varco di approvazione dei requisiti: livello `free` con 2 posti e livello `team` con 10 posti a 19,00 €/mese o 190,00 €/anno (due mesi in omaggio) e 14 giorni di prova; stato del listino `active` come per fatture, perché con `inactive` l'app non supererebbe il varco «app abilitata» e non sarebbe utilizzabile in locale. In attesa di conferma esplicita prima di scrivere il file di listino."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot, ESCALATION) La classificazione dei dati personali è materia dello sviluppatore anche in autopilot. Proposta portata al varco di approvazione dei requisiti: i contatti sono dati personali di terzi immessi dal tenant, base giuridica contratto (art. 6.1.b), appgrove responsabile del trattamento per i tenant titolari (postura #13 A2); nessuna categoria particolare dell'art. 9 prevista, con l'avvertenza esplicita che il campo nota dell'interazione è testo libero e quindi un possibile punto di ingresso non presidiato. In attesa di conferma esplicita prima di scrivere il manifesto dati."
+  },
+  {
+    "id": 13,
+    "decision": "Lo sviluppatore ha approvato i requisiti e ha dato il sì esplicito a entrambe le proposte scalate (prezzi/quote della decisione 11 e classificazione dei dati personali della decisione 12), senza modifiche. Da qui in poi l'implementazione può scrivere il file di listino e il manifesto dati come proposti."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La natura della metrica si sceglie con l'opzione `--quota-nature flow|stock` e si materializza come VARIANTE dei modelli-sorgente: i file il cui nome contiene `.flow.` o `.stock.` prima dell'estensione (per esempio `QuotaTest.flow.java` e `QuotaTest.stock.java`) producono lo stesso file di destinazione, ma il generatore ne istanzia solo quello della natura scelta. Alternativa scartata: comprimere la differenza in segnaposto dentro un unico file — la differenza fra le due nature è il corpo di un metodo di conteggio con le sue importazioni e i suoi test, e comprimerla avrebbe reso illeggibili proprio i modelli dove si sbaglia più spesso. Il generatore verifica che ogni famiglia di varianti sia completa e si rifiuta di far sparire un file in silenzio.",
+    "files": [
+      {
+        "file": "tools/new-application/lib/context.mjs",
+        "description": "QUOTA_NATURES, il riconoscitore del marcatore di variante e i segnaposto derivati (finestra, etichette del banner)."
+      },
+      {
+        "file": "tools/new-application/generate.mjs",
+        "description": "Opzione --quota-nature, filtro delle varianti in expand(), controllo di completezza delle famiglie."
+      },
+      {
+        "file": "tools/new-application/templates/service/src/main/java/app/appgrove/@@APP_ID@@/@@APP_CLASS@@QuotaService.stock.java",
+        "description": "Conteggio a giacenza: quanti record esistono ora, senza finestra temporale."
+      },
+      {
+        "file": "tools/new-application/templates/service/src/test/java/app/appgrove/@@APP_ID@@/QuotaTest.stock.java",
+        "description": "Prova che cancellare un record libera SUBITO il posto: è l'asserzione che distingue una giacenza vera da una giacenza contata a consumo."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il collaudo di parità dei modelli-sorgente confronta con l'app #1 `fatture` solo la variante dichiarata come `varianteRiferimento` (`flow`, che è la natura di `fatture`). Confrontare anche la variante a giacenza avrebbe prodotto divergenze inventate, perché pretenderebbe che un modello scritto per la giacenza somigli a un'app a consumo. La completezza delle famiglie di varianti non è affidata al collaudo di parità ma al generatore, che è l'unico a sapere quali nature esistono.",
+    "files": [
+      {
+        "file": "tools/scaffold-parity/parity.config.json",
+        "description": "Nuove chiavi varianti e varianteRiferimento."
+      },
+      {
+        "file": "tools/scaffold-parity/parity-check.mjs",
+        "description": "varianteDi() e normalizzazione che toglie il marcatore; le varianti non di riferimento sono saltate."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Lacuna del generatore trovata usandolo davvero e corretta: la visita dei modelli-sorgente copiava anche le cartelle di compilazione e le dipendenze installate (`target/`, `node_modules/`, `dist/`, `build/`) e i file `.DS_Store`. Non sono versionate, ma compaiono appena qualcuno compila dentro `templates/` — cosa che capita, perché i modelli sono sorgenti Java veri — e l'app nuova nasceva con dentro un `target/` preistorico. Corretto nella visita, non nell'output.",
+    "files": [
+      {
+        "file": "tools/new-application/generate.mjs",
+        "description": "walk() salta le cartelle di build e i file di sistema."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Lacuna della skill trovata e corretta: le istruzioni di `new-application` indicavano un comando inesistente (`tools/new-application/generate.sh`, mentre il generatore è `generate.mjs`) e rimandavano la scelta della natura della metrica al passo dei prezzi, quando invece serve PRIMA di generare. Corrette entrambe le cose nelle istruzioni della skill: la natura entra fra le domande obbligatorie del varco d'identità e al passo prezzi resta una conferma, con l'indicazione che se è sbagliata si rigenera invece di correggere l'output.",
+    "files": [
+      {
+        "file": ".claude/skills/new-application/step-01-identity.md",
+        "description": "Comando corretto e natura della metrica fra le decisioni da prendere prima di generare."
+      },
+      {
+        "file": ".claude/skills/new-application/step-02-pricing.md",
+        "description": "La natura si conferma, non si decide qui."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Lacuna del dominio segnaposto trovata generando un'app a giacenza e corretta nei modelli-sorgente: QuotaStatusTest creava sempre 3 record a prescindere dal tetto, e con un tetto free basso (2 posti) sbatteva contro il 429 fallendo per un motivo diverso da quello che verifica; EntitlementProjectionTest usava un tenant unico condiviso, e i record lasciati da un test consumavano la giacenza del successivo. Corretto derivando il numero di record di campione dal tetto (SAMPLE = min(3, cap)) e dando a ogni test della proiezione un tenant diverso. È una lacuna latente anche nella natura a consumo: i test presumevano un tetto free grande, presupposto che una metrica a giacenza rende falso.",
+    "files": [
+      {
+        "file": "tools/new-application/templates/service/src/test/java/app/appgrove/@@APP_ID@@/QuotaStatusTest.java",
+        "description": "Record di campione derivati dal tetto invece che fissi a 3/2."
+      },
+      {
+        "file": "tools/new-application/templates/service/src/test/java/app/appgrove/@@APP_ID@@/EntitlementProjectionTest.java",
+        "description": "Un tenant per test, così la giacenza di uno non tocca l'altro."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Seconda lacuna del generatore corretta nei modelli-sorgente: il finto servizio entitlement dei test (MockEntitlementService) restituiva sempre QuotaNature.FLOW, incoerente con il MetricLimit che già dichiarava la natura scelta. Aggiunto il segnaposto QUOTA_NATURE_ENUM (FLOW/STOCK) così anche natureOf() rispetta la natura dell'app. La copia in services/crm è stata allineata a STOCK.",
+    "files": [
+      {
+        "file": "tools/new-application/templates/service/src/test/java/app/appgrove/@@APP_ID@@/MockEntitlementService.java",
+        "description": "natureOf() usa la natura scelta invece di FLOW fisso."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Il dominio reale del mini-CRM è: Contact (nome, email, telefono, organizzazione, stato trattativa lead→qualified→negotiating→won/lost, note), Interaction (nota datata di tipo call/email/meeting/note figlia del contatto) e Seat (posto = utente abilitato). Contatti e interazioni sono aperti a tutti e tre i ruoli; l'accesso al dominio è subordinato al possesso di un posto (SeatAccess → 403), l'entitlement 402 resta il gate esterno (@RequiresEntitlement). I contatti NON consumano quota: la metrica seats conta le persone abilitate, non i dati immessi.",
+    "files": [
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/Contact.java",
+        "description": "Entità contatto con campi @PersonalData (nome, email, telefono, note)."
+      },
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/Interaction.java",
+        "description": "Interazione datata; la nota è @PersonalData (testo libero)."
+      },
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/SeatAccess.java",
+        "description": "Varco posto: 403 sul dominio per chi non ha un posto."
+      },
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/CrmQuotaService.java",
+        "description": "currentUsage conta i posti (SeatRepository), non i contatti."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) La gestione dei posti (SeatResource) è OWNER/ADMIN e NON passa dal varco posto, così un account a posti esauriti può sempre liberarne uno (evita la trappola senza uscita). L'assegnazione è l'unico punto che consuma quota (checkAndReserve prima di occupare → 429 a tetto raggiunto); riassegnare lo stesso utente è idempotente (200, nessun consumo); la revoca è cancellazione logica e libera subito la giacenza. Un posto per utente attivo (indice unico parziale su deleted_at is null).",
+    "files": [
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/SeatResource.java",
+        "description": "Assegna/revoca/riepilogo posti; gate quota sull'assegnazione, pubblicazione uso a ogni cambiamento."
+      },
+      {
+        "file": "services/crm/src/main/resources/db/migration/V2__crm_domain.sql",
+        "description": "Tabella seat con unicità parziale (tenant_id, user_id) where deleted_at is null."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Il blocco del downgrade è reso reale con un canale asincrono app→core: nuova coda CONDIVISA `app-usage` (commons/UsageEvents), un solo consumatore (core/AppUsageConsumer) che materializza la giacenza in platform.app_usage_stock (AppUsageStore, upsert idempotente che ignora i report più vecchi), e SubscriptionResource.currentUsage(appSlug) che la legge al posto della mappa vuota di prima. L'app (crm/SeatUsagePublisher) ripubblica il valore assoluto dei posti a ogni assegnazione/revoca, best-effort (un report perso è sanato dal successivo). Nessuna nuova chiamata sincrona: il verso è opposto e disaccoppiato. Chiude, per il solo varco del downgrade, il punto aperto «gate stock del downgrade contro l'uso reale» di UC 0028.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/usage/UsageEvents.java",
+        "description": "Contratto del canale d'uso: coda condivisa app-usage + messaggio UsageReport."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/AppUsageStore.java",
+        "description": "Upsert idempotente e lettura della giacenza per (app, tenant)."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/AppUsageConsumer.java",
+        "description": "Consumer schedulato della coda app-usage."
+      },
+      {
+        "file": "services/core/src/main/resources/db/migration/V9__app_usage_stock.sql",
+        "description": "Tabella platform.app_usage_stock."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionResource.java",
+        "description": "currentUsage(appSlug) legge la giacenza reale; il gate stock ora blocca a runtime."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot, dati personali) Manifesto crm compilato e approvato: contatti = dati personali di terzi immessi dal tenant (identità, email, telefono, note), base giuridica contratto (art. 6.1.b), appgrove responsabile (postura #13 A2); conservazione fino a cancellazione del tenant o chiusura account (coerente con l'erasure fisica del contratto GDPR). I campi note (contatto) e note (interazione) sono testo libero e sono dichiarati esplicitamente come punto d'ingresso non presidiato per dati non classificati (possibili categorie art. 9 per iniziativa del tenant): l'informativa del tenant titolare deve coprirli, appgrove non li sollecita. La tabella seat contiene il solo identificativo interno del membro (non dato di terzi), quindi è in export/erasure ma senza voce di manifesto @PersonalData. Cambio classificato MINOR: nessuna nuova finalità/base/responsabile rispetto a fatture, cambia l'insieme dei dati.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/crm.yaml",
+        "description": "Cinque voci entity-backed (Contact.displayName/email/phone/notes, Interaction.note) in it+en."
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Infrastruttura del canale d'uso: la coda `app-usage` è una risorsa di platform_shared (come gdpr-export-results), non del modulo microsaas_app, perché il consumatore è unico (il core). Il modulo microsaas_app concede l'invio (SendMessage) alle sole app (is_platform_core=false) e il consumo (Receive/Delete) al solo core (is_platform_core=true): minima superficie di permessi. In locale la coda è dichiarata in dev/elasticmq.conf. Infra validata (fmt+validate su test e prod), non applicata: l'applicazione è della pipeline (#07 G18).",
+    "files": [
+      {
+        "file": "infra/modules/platform_shared/sqs.tf",
+        "description": "Coda condivisa app-usage + DLQ."
+      },
+      {
+        "file": "infra/modules/microsaas_app/iam.tf",
+        "description": "SendMessage app-usage per le app; Receive/Delete per il solo core."
+      },
+      {
+        "file": "dev/elasticmq.conf",
+        "description": "Coda app-usage locale."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot, gate privacy UC 0031) Lo scanner deterministico ha prodotto segnali attesi: nuovo manifesto e chiavi di classificazione (già compilate e classificate MINOR, decisione 23), nuovi campi personali nelle entità (coperti da @PersonalData ↔ manifesto), nuove dipendenze Maven (tutte standard di piattaforma, identiche a fatture — nessun responsabile esterno) e l'host `local.appgrove.app` (emittente JWT locale condiviso, identico a services/fatture: NON un nuovo responsabile esterno, solo un file nuovo che lo scanner non aveva mai visto). Nessuna categoria particolare art. 9 introdotta (il rischio del testo libero è dichiarato nel manifesto). Classificazione confermata MINOR, nessun nuovo sub-processor."
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Modulo frontend crm riscritto dal dominio segnaposto (Item) a quello reale: elenco contatti con ricerca e filtro stato, scheda contatto con storico e registrazione interazioni, editor di creazione, e schermata «Membri» che assegna/revoca posti mostrando occupati/tetto e gestendo il 429 con invito all'upgrade. Il modulo è registrato nell'App Registry (crmManifest, sezioni Contatti + Membri) e abilitato via entitlement (in locale lo stub /me/entitlements). Il banner posti è solo esperienza d'uso: l'enforcement resta il 429/403 backend. Schema API scritto a mano fedele al dominio reale (da rigenerare con npm run gen:crm dopo la prima compilazione del backend).",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/screens/MembersScreen.tsx",
+        "description": "Gestione posti: assegna/revoca, occupati/tetto, 429 → upgrade."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/manifest.ts",
+        "description": "Sezioni Contatti + Membri nella sidebar."
+      },
+      {
+        "file": "frontend/apps/backoffice/e2e/crm.spec.ts",
+        "description": "E2E: ciclo contatti + assegnazione posto + route guard non-entitled."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Aggiornati tre test del core che elencavano a mano il catalogo reale, ora che crm è la SECONDA app reale del listino (pricing/index.yaml): PricingCatalogLoaderTest e PricingCatalogRealOnlyTest includono crm fra le app reali; SeedDataTest aggiorna i conteggi del catalogo sincronizzato (app 4→5, tier 5→7 per i due tier di crm, prezzi 4→6 per i due prezzi del tier team). Sono conseguenze legittime dell'aggiunta di un'app reale, non regressioni.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/catalog/PricingCatalogLoaderTest.java",
+        "description": "Catalogo test include crm."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/catalog/PricingCatalogRealOnlyTest.java",
+        "description": "Catalogo prod = fatture + crm."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/SeedDataTest.java",
+        "description": "Conteggi catalogo sincronizzato aggiornati."
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Difetto di UX trovato provando l'app a mano e corretto: quando l'elenco contatti riceve 403 perché l'utente non ha un posto, la schermata mostrava l'errore generico «Something went wrong» + Retry (un retry cieco che non risolve nulla). Ora un 403 sull'elenco contatti è riconosciuto come «non hai un posto» e mostra un pannello azionabile con il messaggio esplicito e un pulsante verso «Membri». Il backend era già corretto (403 con messaggio chiaro): il difetto era solo nella traduzione del 403 in UI. Aggiunto test di regressione.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/screens/ContactListScreen.tsx",
+        "description": "Il 403 senza posto rende un pannello azionabile invece dell'errore generico."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/crm.test.tsx",
+        "description": "Test: 403 senza posto → messaggio azionabile + pulsante Membri."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "Scelta dello sviluppatore (NON autopilot): il Mini-CRM nasce DISABILITATO DI DEFAULT per tutti gli account. Motivo: l'app #2 era un veicolo per validare la skill new-application e costruire la meccanica multi-utente/posti (quota a giacenza + downgrade bloccato), non un prodotto da vendere; il codice resta nel repo per il suo valore riutilizzabile (tempra del generatore, canale d'uso app→core, gate di downgrade reale) ma l'app non deve comparire ad alcun tenant. Realizzato mettendo status: inactive nel listino crm.yaml: il read-model entitlement (EntitlementReadModel, decisione #09.30 access = app.status==active && ...) salta le app non-attive, quindi il modulo sparisce dal registry frontend e le API /api/crm/v1/* negano l'accesso. Il toggle admin PATCH /api/admin/v1/apps/{id} {status:active} può riaccenderla a runtime ma la ri-sincronizzazione del listino lo riscrive dal file, quindi la disattivazione durevole vive nel yaml. Tier e prezzi restano definiti, pronti per un'eventuale accensione futura.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/pricing/crm.yaml",
+        "description": "status: active → inactive; intestazione aggiornata con motivo e istruzioni di riattivazione (toggle admin temporaneo vs yaml durevole)."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/catalog/PricingCatalogLoaderTest.java",
+        "description": "Asserzione aggiunta: crm ha AppStatus.inactive (fissa l'intento a livello di catalogo, come già per legacy)."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/SeedDataTest.java",
+        "description": "Asserzione end-to-end aggiunta: la riga platform.app slug='crm' ha status='inactive' dopo la sincronizzazione dal listino."
+      }
+    ]
+  }
+]

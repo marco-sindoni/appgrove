@@ -141,6 +141,11 @@ output "gdpr_export_results_queue_arn" {
   value       = aws_sqs_queue.gdpr_export_results.arn
 }
 
+output "app_usage_queue_arn" {
+  description = "ARN della coda condivisa dell'uso a giacenza app → core (UC 0054, gate downgrade)."
+  value       = aws_sqs_queue.app_usage.arn
+}
+
 output "spa_bucket_names" {
   description = "Bucket dei bundle SPA per distribuzione (backoffice/admin): destinazione della pipeline FE (UC 0005)."
   value       = { for k, b in aws_s3_bucket.spa : k => b.bucket }

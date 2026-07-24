@@ -12,6 +12,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,16 @@ import org.junit.jupiter.api.Test;
 class EntitlementProjectionTest {
 
     private static final String ITEMS = "/api/@@APP_ID@@/v1/items";
-    private static final String TENANT = "77777777-0000-0000-0000-000000000046";
+
+    /**
+     * Un tenant DIVERSO per ogni test. Non è pignoleria: i record creati qui restano nel database
+     * per tutta la suite, e con una metrica di quota a giacenza (tetto su quanti ne esistono ora)
+     * i residui del test precedente consumerebbero il tetto di quello successivo — che fallirebbe
+     * con 429 senza avere nulla a che vedere con gli entitlement che sta verificando.
+     */
+    private static final AtomicInteger TENANT_SEQ = new AtomicInteger();
+
+    private String tenant;
 
     @Inject
     TestProjection projection;
@@ -46,6 +56,7 @@ class EntitlementProjectionTest {
 
     @BeforeEach
     void clean() {
+        tenant = String.format("77777777-0000-0000-0000-%012d", TENANT_SEQ.incrementAndGet());
         projection.clear();
         MockEntitlementService.reset();
     }
@@ -79,7 +90,7 @@ class EntitlementProjectionTest {
         createItem("Popola la proiezione").then().statusCode(201);
 
         // Un evento invalida la proiezione, ma core non risponde al rinfresco.
-        projection.markStale(TENANT);
+        projection.markStale(tenant);
         MockEntitlementService.unreachable = true;
 
         // L'ultima verità nota vale più di un blocco: l'accesso resta concesso.
@@ -91,7 +102,7 @@ class EntitlementProjectionTest {
         createItem("Popola la proiezione").then().statusCode(201);
 
         // Accesso revocato a monte + invalidazione: al rinfresco l'app deve accorgersene.
-        projection.markStale(TENANT);
+        projection.markStale(tenant);
         MockEntitlementService.accessGranted = false;
 
         createItem("Dopo la revoca").then().statusCode(402);
@@ -112,7 +123,7 @@ class EntitlementProjectionTest {
         createItem("Primo accesso").then().statusCode(201);
 
         assertTrue(
-                projection.rowsFor(TENANT) > 0,
+                projection.rowsFor(tenant) > 0,
                 "dopo il ricorso alla rete di sicurezza la proiezione deve essere popolata,"
                         + " altrimenti ogni richiesta continuerebbe a chiamare core");
     }
@@ -157,12 +168,12 @@ class EntitlementProjectionTest {
 
     private void publishInvalidation(String reason) throws Exception {
         String body = mapper.writeValueAsString(
-                new EntitlementEvents.InvalidationMessage(TENANT, reason, Instant.now().toString()));
+                new EntitlementEvents.InvalidationMessage(tenant, reason, Instant.now().toString()));
         queues.send(EntitlementEvents.invalidationQueue("@@APP_ID@@"), body);
     }
 
     private io.restassured.response.Response createItem(String contactName) {
-        return given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "owner"))
+        return given().header("Authorization", "Bearer " + TestTokens.withTenant(tenant, "owner"))
                 .contentType(ContentType.JSON)
                 .body(Map.of("contactName", contactName))
                 .when()

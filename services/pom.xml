@@ -16,6 +16,7 @@
     <module>core</module>
     <module>auth</module>
     <module>fatture</module>
+    <module>crm</module>
   </modules>
 
   <properties>

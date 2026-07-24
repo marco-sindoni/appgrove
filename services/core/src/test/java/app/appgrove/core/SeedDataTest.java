@@ -85,11 +85,16 @@ class SeedDataTest {
         // Non più nel seed: con il pricing-as-code (UC 0022) il catalogo è prodotto dal loader allo startup
         // (created_by = 'sync'), dagli YAML in services/core/.../pricing/. Le subscription del seed lo
         // referenziano via UUID deterministici (CatalogIds) → la doppia applicazione del seed non duplica.
-        assertEquals(4, scalar("select count(*) from platform.app where created_by = 'sync'"));
-        assertEquals(5, scalar("select count(*) from platform.app_tier where created_by = 'sync'"));
-        assertEquals(4, scalar("select count(*) from platform.app_price where created_by = 'sync'"));
+        // 5 app reali+fixture: fatture, crm (app #2 reale, UC 0054), notes, teams, legacy.
+        assertEquals(5, scalar("select count(*) from platform.app where created_by = 'sync'"));
+        // 7 tier: fatture(free) + crm(free,team) + notes(free,pro) + teams(team) + legacy(std).
+        assertEquals(7, scalar("select count(*) from platform.app_tier where created_by = 'sync'"));
+        // 6 prezzi: notes pro (mensile+annuale) + teams (mensile+annuale) + crm team (mensile+annuale).
+        assertEquals(6, scalar("select count(*) from platform.app_price where created_by = 'sync'"));
         assertEquals("inactive", text("select status from platform.app where slug = 'legacy'"),
                 "l'app 'legacy' è disabilitata dall'admin (esercita il gate app-abilitata)");
+        assertEquals("inactive", text("select status from platform.app where slug = 'crm'"),
+                "crm è disabilitata di default (change 0042): veicolo di validazione, non prodotto in vendita");
         assertEquals("single_user", text("select user_model from platform.app where slug = 'notes'"));
         assertEquals("multi_user", text("select user_model from platform.app where slug = 'teams'"));
         // app #1 reale (UC 0051): fatture, single-user, con tier free cap 10 fatture/mese

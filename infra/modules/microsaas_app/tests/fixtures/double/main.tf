@@ -35,6 +35,7 @@ locals {
     db_bootstrap_lambda_name      = "appgrove-test-db-bootstrap"
     sqs_queue_prefix              = "appgrove-test-"
     gdpr_export_results_queue_arn = "arn:aws:sqs:eu-west-1:123456789012:appgrove-test-gdpr-export-results"
+    app_usage_queue_arn           = "arn:aws:sqs:eu-west-1:123456789012:appgrove-test-app-usage"
     gdpr_export_bucket            = "appgrove-test-gdpr-export"
     gdpr_export_bucket_arn        = "arn:aws:s3:::appgrove-test-gdpr-export"
     alarm_topic_critical_arn      = "arn:aws:sns:eu-west-1:123456789012:appgrove-test-alarms-critical"

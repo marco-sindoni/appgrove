@@ -21,6 +21,7 @@ import {
   renderReport,
   sostituisciSegnaposto,
   trovaRadiceModello,
+  varianteDi,
 } from '../parity-check.mjs';
 
 const cfg = caricaConfig();
@@ -40,6 +41,47 @@ test('il dominio di esempio dei modelli si riconduce al dominio reale dell’app
 test('il suffisso di modello viene tolto dal nome normalizzato', () => {
   assert.equal(normalizzaPercorsoModello('pom.xml.tmpl', cfg), 'pom.xml');
   assert.equal(normalizzaPercorsoModello('src/main/java/@@APP_CLASS@@Main.java.template', cfg), 'src/main/java/FattureMain.java');
+});
+
+test('il marcatore di variante si riconosce solo se dichiarato in configurazione', () => {
+  assert.equal(varianteDi('QuotaTest.flow.java', cfg.varianti), 'flow');
+  assert.equal(varianteDi('QuotaTest.stock.java', cfg.varianti), 'stock');
+  // un punto qualunque nel nome non è una variante
+  assert.equal(varianteDi('Dockerfile.jvm', cfg.varianti), null);
+  assert.equal(varianteDi('src/main/resources/application.properties', cfg.varianti), null);
+  assert.equal(varianteDi('QuotaTest.qualcosaltro.java', cfg.varianti), null);
+});
+
+test('le varianti confluiscono sullo stesso nome dell’app #1', () => {
+  const atteso = 'src/main/java/FattureQuotaService.java';
+  assert.equal(normalizzaPercorsoModello('src/main/java/@@APP_CLASS@@QuotaService.flow.java', cfg), atteso);
+  assert.equal(normalizzaPercorsoModello('src/main/java/@@APP_CLASS@@QuotaService.stock.java', cfg), atteso);
+});
+
+test('solo la variante di riferimento viene confrontata con l’app #1', () => {
+  const base = mkdtempSync(join(tmpdir(), 'parita-varianti-'));
+  const modello = join(base, 'modelli', 'servizio');
+  const rif = join(base, 'app1');
+  const scrivi = (dir, rel, testo) => {
+    mkdirSync(dirname(join(dir, rel)), { recursive: true });
+    writeFileSync(join(dir, rel), testo);
+  };
+  scrivi(modello, 'pom.xml', '<project/>');
+  scrivi(modello, 'src/Quota.flow.java', '@ApplicationScoped class Quota {}');
+  // la variante a giacenza non ha corrispondente nell'app #1 (che è a consumo): non deve risultare "extra"
+  scrivi(modello, 'src/Quota.stock.java', '@ApplicationScoped class Quota {}');
+  scrivi(rif, 'pom.xml', '<project/>');
+  scrivi(rif, 'src/Quota.java', '@ApplicationScoped class Quota {}');
+
+  const cfgLocale = {
+    ...cfg,
+    templatesRoot: join(base, 'modelli'),
+    dominio: {},
+    segnaposto: {},
+  };
+  const coppia = { id: 'servizio', riferimento: rif, marcatore: 'pom.xml', controlli: ['file'] };
+  const div = confrontaCoppia(coppia, cfgLocale, join(base, 'modelli'));
+  assert.deepEqual(div, [], `divergenze inattese: ${JSON.stringify(div)}`);
 });
 
 test('il glob minimale distingue * da **', () => {

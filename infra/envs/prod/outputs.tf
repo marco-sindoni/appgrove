@@ -97,6 +97,7 @@ output "ci_deploy" {
       # ── ci-services:begin ──
       platform = { task_definition_family = module.app_platform.task_definition_family, ecs_service_name = module.app_platform.ecs_service_name, ecr_repository_url = module.app_platform.ecr_repository_url, security_group_id = module.app_platform.security_group_id }
       fatture  = { task_definition_family = module.app_fatture.task_definition_family, ecs_service_name = module.app_fatture.ecs_service_name, ecr_repository_url = module.app_fatture.ecr_repository_url, security_group_id = module.app_fatture.security_group_id }
+      crm      = { task_definition_family = module.app_crm.task_definition_family, ecs_service_name = module.app_crm.ecs_service_name, ecr_repository_url = module.app_crm.ecr_repository_url, security_group_id = module.app_crm.security_group_id }
       # ── ci-services:end ──
     }
   }

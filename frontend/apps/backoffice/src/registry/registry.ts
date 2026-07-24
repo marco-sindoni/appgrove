@@ -1,13 +1,14 @@
 import type { ModuleManifest } from './types'
 import { demoManifest } from '../modules/demo/manifest'
 import { fattureManifest } from '../modules/fatture/manifest'
+import { crmManifest } from '../modules/crm/manifest'
 import { useEntitlements } from './entitlements'
 
 /**
  * Mappa **build-time** dei moduli esistenti (#01 dec.10): il modulo **demo** (banco di prova dell'App
  * Registry, UC 0020) e la prima app reale **fatture** (UC 0052). La sidebar mostra ciò che è entitled.
  */
-export const MODULES: ModuleManifest[] = [demoManifest, fattureManifest]
+export const MODULES: ModuleManifest[] = [demoManifest, fattureManifest, crmManifest]
 
 /** Intersezione moduli ∩ entitlement → ciò che la sidebar "YOUR APPS" mostra (#03 dec.6). Pura, testabile. */
 export function intersectModules(

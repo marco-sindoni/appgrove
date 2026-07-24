@@ -1,0 +1,142 @@
+# Manifesto dati — app MINI-CRM (UC 0030/0054, #13 C14/C15/C18).
+# Fonte unica (vedi platform.yaml per il funzionamento). Le voci entity-backed sono incrociate
+# con le annotazioni @PersonalData di services/crm dal check JUnit (PersonalDataManifestVerifier).
+# BOZZA SOTTO DISCLAIMER: validazione finale del legale (docs/_REVISIONE-LEGALE.md).
+
+id: crm
+name:
+  it: App Mini-CRM (gestione contatti B2B multi-utente)
+  en: Mini-CRM app (multi-user B2B contact management)
+description:
+  it: >-
+    Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel proprio CRM
+    (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile
+    (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del
+    tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi.
+  en: >-
+    Contact data (people at the tenant's client organizations) entered by the tenant into their CRM
+    (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13).
+    The `seat` table holds only the internal identifier of the tenant's members granted access to
+    the app — processed by core as controller — and is therefore not third-party data.
+
+entries:
+  - key: contact.display_name
+    entity: app.appgrove.crm.Contact
+    field: displayName
+    location:
+      it: Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Contatti (persone delle organizzazioni clienti) inseriti dal tenant
+      en: Contacts (people at the tenant's client organizations) entered by the tenant
+    data_category:
+      it: Identità del contatto (nome/denominazione)
+      en: Contact identity (name)
+    purpose:
+      it: Gestione della relazione commerciale con i contatti del tenant
+      en: Managing the tenant's commercial relationship with its contacts
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a cancellazione da parte del tenant o chiusura dell'account
+      en: Until deletion by the tenant or account closure
+
+  - key: contact.email
+    entity: app.appgrove.crm.Contact
+    field: email
+    location:
+      it: Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Contatti (persone delle organizzazioni clienti) inseriti dal tenant
+      en: Contacts (people at the tenant's client organizations) entered by the tenant
+    data_category:
+      it: Recapito del contatto (indirizzo email, facoltativo)
+      en: Contact details (email address, optional)
+    purpose:
+      it: Gestione della relazione commerciale con i contatti del tenant
+      en: Managing the tenant's commercial relationship with its contacts
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a cancellazione da parte del tenant o chiusura dell'account
+      en: Until deletion by the tenant or account closure
+
+  - key: contact.phone
+    entity: app.appgrove.crm.Contact
+    field: phone
+    location:
+      it: Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Contatti (persone delle organizzazioni clienti) inseriti dal tenant
+      en: Contacts (people at the tenant's client organizations) entered by the tenant
+    data_category:
+      it: Recapito del contatto (numero di telefono, facoltativo)
+      en: Contact details (phone number, optional)
+    purpose:
+      it: Gestione della relazione commerciale con i contatti del tenant
+      en: Managing the tenant's commercial relationship with its contacts
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a cancellazione da parte del tenant o chiusura dell'account
+      en: Until deletion by the tenant or account closure
+
+  - key: contact.notes
+    entity: app.appgrove.crm.Contact
+    field: notes
+    location:
+      it: Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Contatti inseriti dal tenant, ed eventuali terzi citati nelle annotazioni
+      en: Contacts entered by the tenant, and any third parties mentioned in the notes
+    data_category:
+      it: >-
+        Annotazioni a testo libero sul contatto. Campo non strutturato: può contenere informazioni
+        che nessuno ha classificato, comprese — per iniziativa del tenant — categorie particolari
+        (art. 9). L'informativa del tenant titolare deve coprirlo; appgrove non le sollecita.
+      en: >-
+        Free-text notes about the contact. Unstructured field: may contain unclassified information,
+        including — at the tenant's initiative — special categories (art. 9). The tenant controller's
+        privacy notice must cover it; appgrove does not solicit them.
+    purpose:
+      it: Gestione della relazione commerciale con i contatti del tenant
+      en: Managing the tenant's commercial relationship with its contacts
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a cancellazione da parte del tenant o chiusura dell'account
+      en: Until deletion by the tenant or account closure
+
+  - key: interaction.note
+    entity: app.appgrove.crm.Interaction
+    field: note
+    location:
+      it: Tabella `app_crm.interaction` (Aurora PostgreSQL, eu-west-1)
+      en: Table `app_crm.interaction` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Contatti inseriti dal tenant, ed eventuali terzi citati nelle interazioni
+      en: Contacts entered by the tenant, and any third parties mentioned in the interactions
+    data_category:
+      it: >-
+        Contenuto a testo libero di un'interazione (telefonata, email, incontro, nota). Come le
+        annotazioni del contatto, è un campo non strutturato e un possibile punto d'ingresso non
+        presidiato per dati che nessuno ha classificato.
+      en: >-
+        Free-text content of an interaction (call, email, meeting, note). Like the contact notes,
+        it is an unstructured field and a possible unguarded entry point for unclassified data.
+    purpose:
+      it: Storico della relazione commerciale con i contatti del tenant
+      en: History of the tenant's commercial relationship with its contacts
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Fino a cancellazione da parte del tenant o chiusura dell'account
+      en: Until deletion by the tenant or account closure

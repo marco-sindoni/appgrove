@@ -67,6 +67,13 @@ Catalogo `app`/`app_tier`/`app_price` (+ ID Paddle per env). Nessun dato persona
 
 _Tracciato dalla change `0007-use-case-0013-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
+- **La sincronizzazione col fornitore di pagamento non deve pubblicare le app `inactive`** _(tracciato dalla change
+  `0042-use-case-0054-…`)_. Dalla change 0042 esiste in catalogo un'app **reale ma disabilitata di default** (`crm`,
+  `status: inactive`) che ha comunque **tier e prezzi definiti** (pronti per un'eventuale accensione). Quando la
+  sincronizzazione verso il fornitore di pagamento (oggi bloccata a monte da #14) verrà attivata, deve **saltare le app
+  non-attive**: non creare prodotti/prezzi presso il fornitore per un'app che nessun account può usare. **Proprietario**:
+  UC 0022.
+
 - **Entità JPA del catalogo (`app`/`app_tier`/`app_price`).** UC 0013 crea solo il **DDL Flyway** delle tabelle di
   catalogo (decisione di scope della change 0007: niente mapping speculativo, #09 H34 = nessun editor runtime). Le
   **entità JPA + repository** del catalogo vanno modellate **qui** (UC 0022), che è il primo consumatore reale (sync

@@ -36,6 +36,9 @@ class PricingCatalogRealOnlyTest {
     @Test
     void prodLoadsOnlyRealAppsNotFixtures() {
         List<String> slugs = loader.load().stream().map(AppDef::slug).toList();
-        assertEquals(List.of("fatture"), slugs, "in prod il catalogo è solo le app reali, niente fixture");
+        assertEquals(
+                java.util.Set.of("fatture", "crm"),
+                java.util.Set.copyOf(slugs),
+                "in prod il catalogo è solo le app reali (fatture, crm), niente fixture");
     }
 }
