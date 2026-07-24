@@ -58,3 +58,23 @@ Skill di tooling: verifica che `service-remove`→destroy mirato non impatti alt
   2. Gestione abbonati (migrazione/disdetta) prima della distruzione; export garantito.
   3. Segue `new-change` (branch+PR); RoPA aggiornato.
   4. Test: destroy mirato isolato + purge no-orfani.
+
+## Punti aperti / decisioni differite
+
+Aperti durante la change `0043-use-case-0048-…` (implementazione della skill), tracciati qui perché la
+skill li incontra ma non li possiede o non sono ancora maturi:
+
+- **Rimozione della landing per-app** — *cosa*: la skill dovrebbe rimuovere (o marcare "dismessa") la
+  landing dell'app dismessa; *perché differito*: la vetrina/landing **non esiste ancora** (UC 0036/0038/0053
+  non implementati), quindi oggi non c'è nulla da rimuovere e qualunque codice sarebbe speculativo;
+  *proprietario*: questo UC (0048) — da completare quando la landing esisterà, come inverso di
+  `finalize-landing` (UC 0057).
+- **Conservazione dell'audit di erasure oltre il `DROP SCHEMA`** — *cosa*: l'audit `gdpr_purge_audit` prodotto
+  dalla purga di dismissione vive nello schema `app_<id>`, che la pulizia fisica del DB elimina; la prova
+  dell'avvenuta cancellazione va conservata altrove per la retention dichiarata (12 mesi); *perché differito*:
+  è retention/archivio, non tooling; *proprietario*: **UC 0035** (voce aggiunta lì).
+- **Esecuzione degli atti irreversibili/esterni** — *cosa*: destroy infra al tag, lancio di `offboard-app`,
+  `DROP SCHEMA app_<id> CASCADE` + `DROP ROLE` + rimozione segreto Secrets Manager, archiviazione price sul
+  Paddle reale; *perché fuori dalla skill*: irreversibili o verso l'esterno (decisione 4 della change); restano
+  passi manuali/CI post-merge nel runbook, con le safety #06 K / #07 19. Il Paddle reale è comunque bloccato da
+  #14 (provider placeholder).

@@ -90,3 +90,12 @@ Manifest: applica le retention dichiarate (accountability art. 5.1.e). `@Persona
   di prova `gdpr_purge_audit` e `gdpr_restriction_audit` (12 mesi dichiarati, #08 — oggi nessun job li
   scade); (c) l'eventuale scoping temporale delle finestre della console (i record aggregati spariscono
   oggi solo quando la sorgente viene purgata, non per finestra di visualizzazione).
+
+- **Conservazione dell'audit di erasure dopo la dismissione di un'app** _(tracciato dalla change
+  `0043-use-case-0048-…`)_. La skill `drop-application` (UC 0048) introduce la purga app-wide (comando core
+  `offboard-app <app_id>`) che scrive l'audit di avvenuta cancellazione nella tabella `app_<id>.gdpr_purge_audit`.
+  La pulizia fisica del DB che chiude la dismissione (`DROP SCHEMA app_<id> CASCADE`) **elimina anche quell'audit**:
+  la prova dell'erasure va quindi conservata **fuori** dallo schema dell'app per la retention dichiarata (12 mesi,
+  #08). *Perché differito*: è materia di retention/archivio audit — di questo UC — non della skill di tooling.
+  *Da decidere*: dove far confluire l'audit di dismissione (copia in `platform`, oppure Firehose→S3→Glacier come
+  gli altri registri di prova) e quando eseguirla nel runbook (prima del `DROP SCHEMA`).
