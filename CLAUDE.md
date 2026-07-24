@@ -41,6 +41,54 @@ il task:
 Non lasciare questi punti solo nella conversazione: **si perdono**, ed è un problema grave.
 Tracciare ≠ risolvere: le decisioni premature si annotano, **non** si forzano fuori dal loro contesto.
 
+## Registro delle decisioni di change — `decisions.json` (non negoziabile)
+
+Ogni change porta **tre** artefatti nella sua cartella `changes/NNNN-*/`, non due: `requirements.md`,
+`implementation-log.md` e **`decisions.json`**. I primi due sono prosa per le persone; il terzo è il registro
+**leggibile da un programma** delle scelte effettivamente compiute — la versione strutturata del log di
+implementazione, più **ogni risposta data alle domande della fase di approfondimento**. Serve a un agente di
+sviluppo che riprende il lavoro dopo: deve poter sapere *cosa è stato deciso e perché il codice è così*, senza
+rileggere una conversazione che non esiste più.
+
+Struttura: un array JSON di oggetti con esattamente questi campi —
+
+- `id`: numero progressivo della decisione (parte da 1, **solo in aggiunta**: mai rinumerare né riordinare);
+- `decision`: descrizione della decisione, in italiano, autoconsistente (cosa è stato deciso e perché);
+- `files` (**facoltativo**): array di oggetti `{ "file": <percorso>, "description": <decisione rilevante per quel file> }`.
+
+Il campo `files` esiste per tracciare le modifiche **rilevanti**, non per sostituire la storia di git: si annota ciò
+che serve a capire le scelte, non ogni riga toccata. Le voci si scrivono **quando la decisione viene presa** (step-01
+apre il file, step-02 e step-03 lo accrescono, step-04 lo verifica e lo committa), mai ricostruite alla fine.
+Dettaglio operativo nella skill [`new-change`](.claude/skills/new-change/SKILL.md).
+
+## Modalità autopilot delle skill di change (non negoziabile nei suoi limiti)
+
+`new-change` — e quindi anche le skill che vi si appoggiano, come `new-application` — può girare in due modalità:
+**classica** (lo sviluppatore risponde a ogni domanda) o **autopilot** (l'agente risponde al posto suo). La modalità
+si dichiara all'invocazione; se non è dichiarata, la skill la chiede **come primissima azione**, con una domanda a
+scelta secca.
+
+In autopilot valgono questi principi, vincolanti:
+
+1. ogni risposta segue l'**opzione raccomandata** dall'agente stesso;
+2. si **massimizza il lavoro portato a termine dentro il task**, così che la change sia completa e coerente;
+3. **non si anticipa il lavoro successivo**: ciò che appartiene a un altro use case resta fuori;
+4. quello che si lascia indietro si **traccia sistematicamente** come rimando scritto nello use case che lo possiede
+   (o in [docs/_BACKLOG.md](docs/_BACKLOG.md)) — è la stessa regola del "Tracciamento delle decisioni differite",
+   applicata in anticipo invece che a incidente avvenuto;
+5. **ogni scelta finisce in `decisions.json`**, marcata `(autopilot)`: una decisione dell'agente non registrata è un
+   difetto.
+
+Limiti invalicabili: l'autopilot **risponde alle domande, non rimuove i presidi**. Tutti e tre i gate restano dello
+sviluppatore, sempre — la **rilettura e approvazione dei requisiti**, il consenso al **commit** e quello al **merge**.
+In autopilot i requisiti sono il frutto delle risposte dell'agente: proprio per questo vanno riletti prima che si scriva
+una riga di codice. L'autopilot cambia *chi risponde alle domande*, mai *chi approva la change*.
+
+L'autopilot inoltre **si ferma e chiede** quando la domanda non è sua:
+direzione di prodotto, prezzi e quote, classificazioni su dati personali materialmente ambigue (categorie particolari,
+nuova base giuridica, nuovo responsabile esterno del trattamento), effetti irreversibili o verso l'esterno, e ogni
+punto su cui non riesce a formulare una raccomandazione onesta.
+
 ## Avvio locale di nuove app/moduli (non negoziabile)
 
 Ogni change che introduce una **nuova applicazione backend** (`services/<app>`) o un **nuovo modulo frontend avviabile**

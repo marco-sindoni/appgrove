@@ -7,6 +7,11 @@ All commands run at the monorepo root.
 Ask the developer (one question):
 > "Any decisions made or issues encountered during implementation worth noting?"
 
+*(Autopilot: do not ask — the decisions are the ones you already recorded in `decisions.json`; re-read them and
+carry them into the log.)*
+
+Then re-read `changes/NNNN-*/decisions.json`: it is the backbone of the log you are about to write.
+
 Then inspect the git diff to identify changed files and the areas touched:
 ```bash
 git diff --name-only "$DEFAULT_BRANCH"...HEAD
@@ -44,6 +49,8 @@ instructions stay in English):
 **Branch**: `change/NNNN-descrizione-breve`
 **Aree**: <infra | frontend | services/<app>, …>
 **Completata**: AAAA-MM-GG
+**Modalità**: <classica | autopilot — se autopilot, le risposte alle domande di approfondimento
+sono dell'agente e sono tracciate in [decisions.json](decisions.json)>
 
 ## File modificati
 
@@ -57,7 +64,10 @@ instructions stay in English):
 
 ## Decisioni prese
 
-<eventuali decisioni prese durante l'implementazione, o "Nessuna — implementato come da specifica">
+<sintesi in prosa delle decisioni; il registro completo e strutturato è in
+[decisions.json](decisions.json) — le due viste devono raccontare la stessa storia.
+Se la change è stata condotta in **autopilot**, dirlo qui e indicare quali decisioni
+sono state prese dall'agente. Oppure "Nessuna — implementato come da specifica">
 
 ## Invarianti appgrove
 
@@ -106,6 +116,32 @@ Before the commit gate, confirm the step-03 privacy gate was executed on the fin
   `@PersonalData` annotated, MAJOR/MINOR + sub-processor flags recorded in the log). If any signal is unaddressed, go
   back to step-03 **before** asking for commit consent — never close a change with unclassified privacy signals.
 
+## Verify and close the decision register `decisions.json` (non-negotiable)
+
+Before the commit gate, check the register is complete, valid and coherent:
+
+```bash
+node -e "const d=JSON.parse(require('fs').readFileSync(process.argv[1],'utf8'));
+if(!Array.isArray(d)||d.length===0) throw new Error('decisions.json vuoto o non è un array');
+d.forEach((e,i)=>{ if(e.id!==i+1) throw new Error('id non progressivo alla posizione '+i);
+  if(typeof e.decision!=='string'||!e.decision.trim()) throw new Error('decision mancante per id '+e.id);
+  if(e.files!==undefined){ if(!Array.isArray(e.files)) throw new Error('files non è un array per id '+e.id);
+    e.files.forEach(f=>{ if(!f.file||!f.description) throw new Error('file/description mancante per id '+e.id); }); } });
+console.log('decisions.json ok — '+d.length+' decisioni');" "changes/NNNN-brief-description/decisions.json"
+```
+
+Then verify by reading, not only by parsing:
+
+- every question settled during this change (clarification, requirements, design, privacy classification) has an entry —
+  in **autopilot** that means *every* question, each marked `(autopilot)`;
+- every deferred decision tracked in a use case or `docs/_BACKLOG.md` has an entry pointing at where it was written;
+- the register and `implementation-log.md` do not contradict each other;
+- `files` entries reference paths that actually exist in the diff (or explain why they do not).
+
+If the register is missing, empty, or clearly thinner than what the change actually decided, **fill it now from the
+implementation and say so** — but treat that as a process failure to avoid next time: entries are meant to be written
+when the decisions are taken. Do not ask for commit consent with an unverified register.
+
 ## Traccia le decisioni differite (non-negoziabile)
 
 Before the commit gate, confirm that **every** architectural decision, drift, or open point you
@@ -150,19 +186,21 @@ both exist because the thing they guard is invisible at commit time and expensiv
 
 ## MANDATORY STOP — commit consent gate
 
-Do **not** commit yet. Summarize what will be committed (the changed files and the
-`implementation-log.md`) and ask the developer's explicit consent to commit.
+Do **not** commit yet. Summarize what will be committed (the changed files, the `implementation-log.md` and the
+`decisions.json`) and ask the developer's explicit consent to commit. **This gate is never auto-approved — not
+even in autopilot**: it is where the developer sees what the agent decided, and that is precisely the point.
 
 Print:
 ```
-🛑 Implementation complete. Ready to commit change NNNN (areas: <list>):
+🛑 Implementation complete. Ready to commit change NNNN (areas: <list>, modalità: <classica|autopilot>):
    <short list of changed files>
+   Decisioni registrate: <N> in changes/NNNN-*/decisions.json (<in autopilot: quante prese dall'agente>)
 Reply with explicit consent and I will commit. I will not commit without your go-ahead.
 ```
 
 Then STOP. Only after the developer explicitly consents, run:
 ```bash
-git add changes/NNNN-brief-description/implementation-log.md
+git add changes/NNNN-brief-description/implementation-log.md changes/NNNN-brief-description/decisions.json
 git add -A
 git commit -m "chore(change/NNNN): implementation complete"
 git push origin change/NNNN-brief-description   # only if a remote is configured
@@ -172,7 +210,7 @@ git push origin change/NNNN-brief-description   # only if a remote is configured
 
 After committing, leave the change branch **unmerged**. Do **not** merge to the default branch and
 do **not** run the merge command on your own — merging requires the developer's separate explicit
-consent.
+consent. **Autopilot does not weaken this gate either**: it answers questions, it never merges.
 
 Print:
 ```

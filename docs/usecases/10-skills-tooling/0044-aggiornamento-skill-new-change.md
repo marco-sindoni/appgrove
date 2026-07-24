@@ -1,9 +1,9 @@
-# UC 0044 — `new-change` update (4 cifre + variante use-case + gate test/snapshot + hook privacy/RoPA)
+# UC 0044 — `new-change` update (4 cifre + variante use-case + gate test/snapshot + hook privacy/RoPA + registro decisioni + autopilot)
 
 **Area**: 10-skills-tooling · **Fase**: 0 · **Stato**: 🟡 in corso (skill base esistente; hook privacy/RoPA e snapshot da completare in UC 0031/UC 0030)
 **Dipendenze**: — (skill di build-time; opera sul repo)
-**Fonte decisioni**: #07 (workflow PR→CI), #10 (gate test/E2E/baseline), #13 (gate privacy/RoPA)
-**Ultimo aggiornamento**: 2026-06-21
+**Fonte decisioni**: #07 (workflow PR→CI), #10 (gate test/E2E/baseline), #13 (gate privacy/RoPA), CLAUDE.md (registro decisioni + autopilot)
+**Ultimo aggiornamento**: 2026-07-24
 **Aree collegate**: [07-devops-cicd](../../07-devops-cicd.md), [10-testing](../../10-testing.md), [13-compliance-privacy](../../13-compliance-privacy.md)
 
 ## 1. Obiettivo / Scope
@@ -12,6 +12,8 @@ e portarla alla forma definitiva.
 **Incluso**: numerazione a **4 cifre** `NNNN-descrizione-breve`; **variante da use case** `NNNN-use-case-YYYY-descrizione`
 (YYYY = numero dello use case sorgente); campo **"Source use case"** nei requirements; i **gate obbligatori**
 (requirements review, consenso commit, consenso merge); la **verifica test stack-aware** alla chiusura (per area toccata);
+il **registro decisioni** `changes/NNNN-*/decisions.json` (versione strutturata del log + risposte della fase di
+approfondimento); la **modalità autopilot** (l'agente risponde alle domande al posto dello sviluppatore);
 gli **hook futuri** privacy/RoPA (#13 C) e snapshot/baseline E2E (#10 F).
 **Escluso**: l'implementazione dei singoli cambi; la creazione degli use case (è `new-usecase`, [0045](0045-skill-new-usecase.md));
 l'enforcement CI vero del gate privacy (è UC [0031](../08-compliance-gdpr/0031-gate-privacy-ropa-new-change.md)).
@@ -27,16 +29,25 @@ l'enforcement CI vero del gate privacy (è UC [0031](../08-compliance-gdpr/0031-
 - Se il cambio nasce da uno use case, esiste già il relativo `docs/usecases/<area>/YYYY-*.md`.
 
 ## 4. Flusso principale
+0. **Modalità** (`step-01`, primissima azione): se l'invocazione non dichiara già `autopilot`, la skill chiede a scelta
+   secca **autopilot vs classica**. In autopilot l'agente risponde alle domande di approfondimento seguendo l'opzione
+   raccomandata, massimizza il lavoro chiuso nel task senza anticipare quello successivo e traccia i rimandi negli use
+   case; **i tre gate restano comunque dello sviluppatore** — approvazione dei requisiti, consenso al commit, consenso
+   al merge (CLAUDE.md, "Modalità autopilot").
 1. **Init** (`step-01`): determina il prossimo `NNNN` a **4 cifre** scandendo `changes/` (regex `^[0-9]{3,4}-`, ma **pad a 4**,
-   start `0001`); crea il branch `change/NNNN-brief` e il folder `changes/NNNN-brief/`. Se origina da uno use case YYYY,
-   usa la forma `NNNN-use-case-YYYY-brief`.
-2. **Requirements** (`step-02`): **clarification gate** — se qualcosa è ambiguo o ammette alternative, fa domande mirate;
-   poi scrive `requirements.md` (Problem/Goal, Scope, Out of Scope, Acceptance Criteria, **Source use case**, Invarianti
-   appgrove toccati, Test richiesti, Impact). Commit `chore(change/NNNN): write requirements`. **🛑 gate review** dei requisiti.
-3. **Implement** (`step-03`): implementa nel rispetto degli invarianti; aggiunge/aggiorna i test richiesti (#10).
+   start `0001`); crea il branch `change/NNNN-brief` e il folder `changes/NNNN-brief/`; **apre `decisions.json`** con la
+   decisione sulla modalità. Se origina da uno use case YYYY, usa la forma `NNNN-use-case-YYYY-brief`.
+2. **Requirements** (`step-02`): **clarification gate** — se qualcosa è ambiguo o ammette alternative, fa domande mirate
+   (o se le risponde da sé, in autopilot); ogni punto risolto viene **appeso a `decisions.json`**. Poi scrive
+   `requirements.md` (Problem/Goal, Scope, Out of Scope, Acceptance Criteria, **Source use case**, Invarianti
+   appgrove toccati, Test richiesti, Impact). Commit `chore(change/NNNN): write requirements`. **🛑 gate review** dei
+   requisiti — mai auto-approvato: anche in autopilot li rilegge e li approva lo sviluppatore.
+3. **Implement** (`step-03`): implementa nel rispetto degli invarianti; aggiunge/aggiorna i test richiesti (#10);
+   registra in `decisions.json` le scelte tecniche non ricostruibili dal diff.
 4. **Close** (`step-04`): esegue la **suite di ogni area toccata** (`mvn test` / `npm test` / `terraform fmt+validate`),
-   scrive `implementation-log.md` (file cambiati, decisioni, invarianti, test + esito, acceptance status).
-   **🛑 gate consenso commit**, poi **🛑 gate consenso merge** (branch lasciato non mergiato).
+   scrive `implementation-log.md` (file cambiati, decisioni, invarianti, test + esito, acceptance status) e **verifica
+   `decisions.json`** (JSON valido, id progressivi, coerenza con il log).
+   **🛑 gate consenso commit**, poi **🛑 gate consenso merge** (branch lasciato non mergiato) — mai auto-approvati.
 
 ## 5. Flussi alternativi / edge / errori
 - **Cambio non da use case**: campo "Source use case" = `None (ad-hoc change)`.
@@ -50,10 +61,12 @@ l'enforcement CI vero del gate privacy (è UC [0031](../08-compliance-gdpr/0031-
 ## 6. Risorse & runbook
 **File della skill** (`.claude/skills/new-change/`): `SKILL.md`, `step-01-init.md`, `step-02-requirements.md`,
 `step-03-implement.md`, `step-04-close.md`.
-**Artefatti per invocazione**: branch `change/NNNN-…`, folder `changes/NNNN-…/` con `requirements.md` + `implementation-log.md`.
-**Runbook**: `/new-change <descrizione>` → confermare requisiti al gate → implementare → consenso commit → consenso merge/PR.
-**Stato attuale vs target**: numerazione 4 cifre + variante use-case + "Source use case" = **fatti**; gate privacy/RoPA e
-gestione baseline da **encodare** (rimando a UC 0031 e alle regole #10 F).
+**Artefatti per invocazione**: branch `change/NNNN-…`, folder `changes/NNNN-…/` con `requirements.md` +
+`implementation-log.md` + **`decisions.json`** (registro strutturato: `id`, `decision`, `files` facoltativo).
+**Runbook**: `/new-change [autopilot] <descrizione>` → scegliere la modalità (se non dichiarata) → confermare requisiti al
+gate → implementare → consenso commit → consenso merge/PR.
+**Stato attuale vs target**: numerazione 4 cifre + variante use-case + "Source use case" + registro decisioni + autopilot
+= **fatti**; gate privacy/RoPA e gestione baseline da **encodare** (rimando a UC 0031 e alle regole #10 F).
 **Rollback**: branch eliminabile prima del merge; nessuna infra toccata.
 
 ## 7. Dati toccati
@@ -75,6 +88,11 @@ responsabilità dei cambi che la skill produce.
 - **Decisioni**: #07 (B/3 PR→CI, H gate prod), #10 (J gate di merge, F baseline), #13 C (gate privacy/RoPA), #13 G41 (versioning PP).
 - **DoD**:
   1. `new-change` usa `NNNN` a 4 cifre + variante `NNNN-use-case-YYYY` + campo "Source use case".
-  2. I tre gate (requisiti/commit/merge) sono presenti e bloccanti.
+  2. I tre gate (requisiti/commit/merge) sono presenti e bloccanti, e **nessuno dei tre** è mai auto-approvato,
+     nemmeno in autopilot.
   3. La chiusura esegue le suite per area toccata e le richiede verdi.
-  4. Gli hook privacy/RoPA e baseline sono **tracciati** come lavoro di UC 0031 / regole #10 (questo UC resta 🟡 finché non wired).
+  4. Ogni change produce un `decisions.json` valido, con id progressivi, che copre le risposte della fase di
+     approfondimento e le scelte tecniche dell'implementazione, coerente con `implementation-log.md`.
+  5. La modalità (autopilot / classica) è dichiarabile all'invocazione e, se non dichiarata, chiesta come prima azione;
+     in autopilot ogni scelta dell'agente è registrata e marcata come tale.
+  6. Gli hook privacy/RoPA e baseline sono **tracciati** come lavoro di UC 0031 / regole #10 (questo UC resta 🟡 finché non wired).

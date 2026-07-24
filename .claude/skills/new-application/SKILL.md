@@ -70,6 +70,17 @@ a pattern that still works but is out of date. Three defences exist; know them:
 - **At close (step-04): STOP for commit consent**, then **STOP for merge consent** — inherited from
   `new-change` and not weakened here. The skill writes code and leaves the branch; it never merges,
   never deploys, never talks to the payment provider.
+- **Throughout: the decision register.** Everything the two co-pilots settle is appended to the change's
+  `changes/NNNN-*/decisions.json` as it is decided (CLAUDE.md, "Registro delle decisioni di change").
+
+## Execution mode — inherited from `new-change`
+
+This skill closes through the `new-change` workflow and inherits its **classic / autopilot** modes, with one
+narrowing: the two co-pilots here are precisely the escalation cases listed in `new-change`. Even in autopilot,
+**pricing and quotas** (money) and **personal data** (legal effects) are asked, not assumed — autopilot may
+draft a proposal with its reasoning, but it needs an explicit "yes" before writing the pricing file or the data
+manifest. Everything else (app identity, port, category icon/colour, landing draft) autopilot may settle on its
+own, recording each choice in `decisions.json`.
 
 ## Questioning style — one at a time, verbose, with dialogue
 

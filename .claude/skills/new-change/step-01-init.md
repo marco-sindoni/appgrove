@@ -2,6 +2,29 @@
 
 All commands run at the monorepo root `/Users/msindoni/Projects/appgrove`.
 
+## FIRST ACTION — settle the execution mode (classic vs autopilot)
+
+Before the change number, before the description, before anything else.
+
+**1. Was the mode declared at invocation?** Autopilot counts as declared if the invocation says so plainly —
+`/new-change autopilot`, "in autopilot", "modalità autopilot", "autopilota", "rispondi tu alle domande". If so,
+acknowledge it in one line and skip the question.
+
+**2. If it was not declared, ask it immediately** with a single `AskUserQuestion` prompt (the one deliberate
+exception to the "no multiple-choice wizard" rule — it is a mode switch, not a design question):
+
+- header: `Modalità`
+- question: `Come vuoi condurre questa change: in autopilot (rispondo io alle domande di approfondimento e le accetto per tuo conto) o in modalità classica (rispondi tu a ogni domanda, come finora)?`
+- option A — `Autopilot`: `Rispondo io alle domande seguendo l'opzione raccomandata, massimizzo il lavoro fatto in questo task senza anticipare quello successivo, e traccio come rimandi negli use case ciò che resta da fare. Ogni scelta finisce in decisions.json. I tre gate restano tuoi: rilettura e approvazione dei requisiti, consenso al commit, consenso al merge.`
+- option B — `Classica (come finora)`: `Ti faccio le domande una alla volta, in prosa, e aspetto la tua risposta prima di procedere.`
+- `multiSelect: false`
+
+Do **not** guess the mode and do **not** proceed without it. Once settled, follow the corresponding rules in
+`SKILL.md` ("Execution mode") for the whole change: the mode does not change mid-run unless the developer says so
+(if they do, record the switch as a decision).
+
+State the outcome in one line, e.g. `▶︎ Modalità: autopilot — rispondo io alle domande e traccio ogni scelta in decisions.json.`
+
 ## Determine next change number
 
 ```bash
@@ -17,6 +40,8 @@ If `changes/` has no numbered folders, start at `0001`.
 Ask the developer (one question):
 > "Describe the change in a few words (will be used as the branch and folder name):"
 
+*(Autopilot: do not ask — derive the description from the invocation text and state the name you chose.)*
+
 Convert the answer to kebab-case, max 40 characters.
 Example: "add Cognito authorizer to notes API" → `add-cognito-authorizer-notes-api`
 
@@ -24,6 +49,10 @@ Example: "add Cognito authorizer to notes API" → `add-cognito-authorizer-notes
 
 Ask the developer (one question):
 > "Does this change implement a use case from `docs/usecases/`? If yes, give its number (YYYY)."
+
+*(Autopilot: do not ask — look the answer up. If the invocation names a use case, use it; otherwise search
+`docs/usecases/` and `docs/usecases/_INDEX.md` for a use case that plainly covers this work, and treat the change
+as ad-hoc only if none does. Record the outcome, with the reasoning, in `decisions.json`.)*
 
 This determines the **folder/branch naming convention** (two forms):
 
@@ -67,6 +96,33 @@ git checkout -b "change/$CHANGE_ID"
 mkdir -p "changes/$CHANGE_ID"
 ```
 
+## Seed the decision register `decisions.json`
+
+Create `changes/$CHANGE_ID/decisions.json` right away — it is a change artifact like `requirements.md`, and it
+must exist **before** the first question is answered, so that nothing has to be reconstructed later. Schema and
+rules: see `SKILL.md` ("Decision register"). Seed it with the decisions already taken in this step — at minimum
+the execution mode, plus the use-case binding if there was anything to decide there:
+
+```json
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata, i consensi a commit e merge restano allo sviluppatore. (Oppure: modalità classica, richiesta dallo sviluppatore.)"
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0046 (skill new-application): il testo dell'invocazione corrisponde allo scope descritto in docs/usecases/10-skills-tooling/0046-skill-new-application.md. Da qui la forma del branch NNNN-use-case-0046-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0046 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  }
+]
+```
+
+Write it as a plain JSON array (no wrapper object, no comments — it must parse). Keep it valid at every step:
+after each append, `node -e "JSON.parse(require('fs').readFileSync('changes/$CHANGE_ID/decisions.json','utf8'))"`
+must succeed. Ids are append-only: never renumber and never reorder existing entries.
+
 ## Aggiorna l'indice di esecuzione (solo use-case change)
 
 If this is a **use-case-originated** change (you captured a `YYYY`), mark the use case **in corso** in the execution index
@@ -83,12 +139,12 @@ to ✅. For a **normal** change (no `YYYY`), skip this.
 ## Output
 
 ```json
-{ "change_id": "NNNN-brief-description", "branch": "change/NNNN-brief-description", "areas": ["frontend", "services/notes", "infra"] }
+{ "change_id": "NNNN-brief-description", "branch": "change/NNNN-brief-description", "mode": "autopilot | classic", "areas": ["frontend", "services/notes", "infra"] }
 ```
 
 Confirm to developer (one line):
 ```
-✅ Branch: change/NNNN-brief-description | Areas: <list> | Now writing requirements...
+✅ Branch: change/NNNN-brief-description | Modalità: <autopilot|classica> | Aree: <list> | Now writing requirements...
 ```
 
 Proceed to step-02-requirements.md.

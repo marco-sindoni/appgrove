@@ -43,6 +43,15 @@ Before closing, confirm each of these exists and is real, not a placeholder:
 - landing draft in five languages, still `draft`
 - privacy classification (major/minor) recorded with its rationale
 
+## Decision register — `decisions.json`
+
+The change folder opened by `new-change` carries a `decisions.json` (see CLAUDE.md, "Registro delle decisioni
+di change"). Everything the two co-pilots settled belongs in it, appended as it was decided: app identity
+(`app_id`, user model, port), the **pricing/quota** choices with their rationale, the **personal-data**
+classification (purposes, legal bases, retention, MAJOR/MINOR, sub-processor flags), and every deliberate
+deviation from the templates. Verify it before handing back — a scaffolded app whose pricing and privacy
+reasoning lives nowhere is exactly the case the register exists for.
+
 ## Deferred decisions — record them before closing
 
 Anything you hit that belongs to a *different* use case, or is not ripe to decide, goes into that
