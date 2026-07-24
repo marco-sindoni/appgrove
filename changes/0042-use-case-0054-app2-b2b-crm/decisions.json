@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot, richiesta esplicitamente all'invocazione ('implementa change 0054 in modalità autopilot on'). L'agente risponde alle domande di approfondimento seguendo l'opzione che raccomanderebbe; restano allo sviluppatore i tre presidi: rilettura e approvazione dei requisiti, consenso al commit, consenso al merge. Fanno eccezione i due co-piloti della skill new-application (prezzi/quote e dati personali), che anche in autopilot vengono proposti e poi confermati dallo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La richiesta 'change 0054' è stata interpretata come 'implementa lo use case 0054', non come 'la change numero 0054': in changes/ il contatore è arrivato a 0041 e lo use case 0054 (App #2 B2B via new-application) è il prossimo in coda nell'indice di esecuzione. Da qui il nome del ramo change/0042-use-case-0054-app2-b2b-crm: 0042 è il progressivo delle change, 0054 lo use case sorgente.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0054 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Identità dell'app #2: identificativo `crm`, nome visibile «Mini-CRM», modello utente multi-utente (B2B), porta locale 8082 (prima libera dopo fatture=8081, porta di debug 5007), schema `app_crm`, rotta `/api/crm/v1/*`. Scelto `crm` e non `contatti`/`clienti` perché l'identificativo finisce nello schema, nelle code, nella rotta pubblica e nell'istanza Terraform, quindi deve essere corto e stabile e descrivere la categoria dell'app (che non cambia) invece di una sua singola entità.",
+    "files": [
+      { "file": "services/crm/src/main/resources/application.properties", "description": "Dichiara app_id, porta e schema: da qui la scoperta automatica dei servizi deriva tutto il resto (dev/lib/services.sh, tools/ci/services.sh)." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Metrica di quota dell'app: `seats` (posti). È l'unica cosa che il piano limita, ed è il nome già usato da UC 0054, dai punti aperti di UC 0027 e dalla fixture di catalogo `teams`: introdurne un sinonimo italiano avrebbe creato due nomi per la stessa metrica in documenti che si citano a vicenda."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il dominio segnaposto generato dallo scaffolding (Item/ItemLine) viene sostituito dal dominio reale minimo del mini-CRM: `contact` (contatto, con stato di avanzamento della trattativa) e `interaction` (interazione datata con nota). Motivo: i commenti dello stesso generatore indicano la sostituzione come primo lavoro dopo lo scaffolding, e un manifesto dati che descrive un dominio finto sarebbe conformità di facciata. Restano fuori calendario, importazione contatti e attività assegnate: sono prodotto, non validazione della skill.",
+    "files": [
+      { "file": "services/crm/src/main/resources/db/migration/V2__crm_domain.sql", "description": "Tabelle contact e interaction al posto di item/item_line, tenant-scoped con lo stesso schema di audit e cancellazione logica." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Definizione di «posto» (seat): non è l'utente dell'account contato da core, ma l'utente dell'account a cui è stato dato accesso a QUESTA app, registrato nello schema dell'app. Alternativa scartata: contare gli utenti del tenant lato core — contraddice la nota di UC 0054 («il conteggio dei posti occupati resta un dato dell'app») e non regge il caso normale del marketplace, cioè un account che compra più app con tetti di posti diversi.",
+    "files": [
+      { "file": "services/crm/src/main/resources/db/migration/V2__crm_domain.sql", "description": "Tabella seat (tenant_id, user_id, ruolo applicativo, date di assegnazione/revoca): è la giacenza contata dalla quota stock." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il varco «invito oltre il posto» si applica all'ASSEGNAZIONE del posto nell'app, non alla creazione dell'invito in core. UC 0054 §5 lo descrive sull'invito, ma l'invito è tenant-level e appartiene a core (UC 0013/0059): metterlo lì significherebbe insegnare a core i posti di ogni app del marketplace. Nella schermata «Membri» dell'app il pulsante «invita un collega» riusa il flusso inviti esistente e poi assegna il posto, quindi per chi usa il prodotto l'invito risulta comunque bloccato quando i posti sono esauriti. Lo scostamento dal testo letterale dello use case viene annotato in UC 0054."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il downgrade bloccato («gated») viene reso reale facendo pubblicare all'app il proprio uso a giacenza sul bus di messaggi già esistente; core lo materializza in un read-model e TierChangePolicy.evaluateDowngrade lo consuma al posto della mappa vuota di oggi. Alternativa scartata: core che interroga l'app in sincrono al momento del cambio piano — obbligherebbe core a conoscere gli indirizzi di rete di ogni app e introdurrebbe una dipendenza sincrona nella direzione opposta a quella che UC 0046 ha appena rimosso. Questo chiude, limitatamente al varco del downgrade, il punto aperto «gate stock del downgrade contro l'uso reale» di UC 0028; la visualizzazione del consumo nel pannello di fatturazione resta di UC 0028 e non viene anticipata.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/TierChangePolicy.java", "description": "Smette di ricevere una mappa d'uso vuota: il gate stock diventa efficace a runtime." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La natura a giacenza della metrica viene risolta CORREGGENDO IL GENERATORE, non l'output: nuova opzione `--quota-nature flow|stock` di tools/new-application, con modello-sorgente che genera il conteggio corrispondente (giacenza attuale senza finestra temporale) e listino coerente (`type: stock`, nessuna `window`). Motivo: la regola non negoziabile della skill new-application è «se l'output è sbagliato si corregge il modello, non la copia», e questa è esattamente la lacuna che UC 0054 esiste per scoprire (punto 4 della sua definizione di fatto). Adattare a mano l'app #2 avrebbe lasciato la prossima app a giacenza a ripetere lo stesso errore.",
+    "files": [
+      { "file": "tools/new-application/generate.mjs", "description": "Nuova opzione --quota-nature; il valore alimenta i segnaposto di conteggio quota e di listino." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Restano fuori scope, e sono già di proprietà di altri use case: la pubblicazione della landing (UC 0057, qui solo bozza), la sincronizzazione dei prezzi verso il fornitore di pagamento (UC 0022, bloccata da #14), la visualizzazione del consumo quota nel pannello di fatturazione (UC 0028), la console di amministrazione (UC 0021) e qualunque applicazione di infrastruttura in cloud (la change genera l'istanza del modulo Terraform e la valida, non la applica)."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot, ESCALATION) Prezzi e quote sono materia dello sviluppatore anche in autopilot (regola della skill new-application). Proposta portata al varco di approvazione dei requisiti: livello `free` con 2 posti e livello `team` con 10 posti a 19,00 €/mese o 190,00 €/anno (due mesi in omaggio) e 14 giorni di prova; stato del listino `active` come per fatture, perché con `inactive` l'app non supererebbe il varco «app abilitata» e non sarebbe utilizzabile in locale. In attesa di conferma esplicita prima di scrivere il file di listino."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot, ESCALATION) La classificazione dei dati personali è materia dello sviluppatore anche in autopilot. Proposta portata al varco di approvazione dei requisiti: i contatti sono dati personali di terzi immessi dal tenant, base giuridica contratto (art. 6.1.b), appgrove responsabile del trattamento per i tenant titolari (postura #13 A2); nessuna categoria particolare dell'art. 9 prevista, con l'avvertenza esplicita che il campo nota dell'interazione è testo libero e quindi un possibile punto di ingresso non presidiato. In attesa di conferma esplicita prima di scrivere il manifesto dati."
+  }
+]
