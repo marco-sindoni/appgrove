@@ -1,0 +1,11 @@
+{
+  "name": "appgrove-drop-application",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Metà meccanica della skill drop-application (UC 0048): de-generatore che disfa lo scaffolding di un'app (l'inverso di tools/new-application). Rimuove servizio, modulo frontend, test end-to-end, manifesto dati e listino, e toglie le cinque modifiche ai file condivisi; rigenera la RoPA. Non esegue atti irreversibili (infra/purga/DB): quelli restano nel runbook.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "drop": "node remove.mjs"
+  }
+}

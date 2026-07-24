@@ -1,6 +1,7 @@
 package app.appgrove.core;
 
 import app.appgrove.core.catalog.PricingSyncService;
+import app.appgrove.core.gdpr.AppOffboarding;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -17,6 +18,10 @@ import org.jboss.logging.Logger;
  *   <li>{@code migrate} — applica le migrazioni Flyway (schema {@code platform}) e termina; è il task ECS
  *       one-shot in VPC della pipeline (UC 0005, #07 14/15: {@code build → test → migrate → deploy}),
  *       connessione diretta Agroal (il Proxy è solo per le Lambda, #05 dec.3).</li>
+ *   <li>{@code offboard-app <app_id>} — dismissione dati di un'app: accoda la purge per ogni tenant
+ *       dell'app e termina (skill {@code drop-application}, UC 0048). È l'atto <b>irreversibile</b>
+ *       della dismissione: lanciato a mano/CI dal runbook quando la dismissione è confermata, mai
+ *       dalla skill (change 0043).</li>
  * </ul>
  */
 @QuarkusMain
@@ -26,12 +31,16 @@ public class CoreMain implements QuarkusApplication {
 
     static final String SYNC_PRICING = "sync-pricing";
     static final String MIGRATE = "migrate";
+    static final String OFFBOARD_APP = "offboard-app";
 
     @Inject
     PricingSyncService pricingSync;
 
     @Inject
     Flyway flyway;
+
+    @Inject
+    AppOffboarding appOffboarding;
 
     @Override
     public int run(String... args) {
@@ -47,6 +56,16 @@ public class CoreMain implements QuarkusApplication {
             LOG.infof(
                     "migrate completata: %d migrazioni applicate (schema %s)",
                     result.migrationsExecuted, String.join(",", flyway.getConfiguration().getSchemas()));
+            return 0;
+        }
+        if (args.length > 0 && OFFBOARD_APP.equals(args[0])) {
+            if (args.length < 2 || args[1].isBlank()) {
+                LOG.error("offboard-app richiede l'app_id: offboard-app <app_id>");
+                return 1;
+            }
+            String appId = args[1];
+            var tenants = appOffboarding.offboardApp(appId, AppOffboarding.REASON_APP_OFFBOARDED);
+            LOG.infof("offboard-app completata: app_id=%s tenants=%d (purge accodata)", appId, tenants.size());
             return 0;
         }
         Quarkus.waitForExit();

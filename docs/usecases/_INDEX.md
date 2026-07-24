@@ -28,7 +28,7 @@ AWS finché il prodotto non gira offline.
 - **Dipendenze**: i numeri sono i prerequisiti **hard** che devono comparire più in alto; `☁N` = dipendenza
   che si completa solo nella **messa in cloud** (non blocca lo sviluppo offline); `(N)` = relazione soft/non bloccante.
 
-## 👉 Prossimo da implementare: **UC 0046** (skill `new-application`); poi **UC 0054** (App #2 B2B via `new-application`)
+## 👉 Prossimo da implementare: **UC 0047** (skill `pricing-change`); poi **UC 0002** (documenti legali reali 5 lingue)
 
 > **Manutenzione automatica.** La skill `new-change`, quando una change implementa uno use case (forma
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
@@ -78,7 +78,7 @@ AWS finché il prodotto non gira offline.
 | 38 | [0018](05-auth/0018-localizzazione-email-auth.md) | Localizzazione email auth (Custom Message Lambda) | Auth | 0015 | ✅ |
 | 39 | [0046](10-skills-tooling/0046-skill-new-application.md) | skill `new-application` | Skills & Tooling | 0051, 0052, 0004, 0005, 0013, 0019, 0022, 0030, 0032 | ✅ |
 | 40 | [0054](11-apps/0054-app2-b2b-via-new-application.md) | App #2 (B2B) via `new-application` | Apps | 0046, 0013, 0027 | ✅ |
-| 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ⬜ |
+| 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ✅ |
 | 42 | [0047](10-skills-tooling/0047-skill-pricing-change.md) | skill `pricing-change` | Skills & Tooling | 0022 | ⬜ |
 | 43 | [0002](01-business-legal/0002-documenti-legali-multilingua.md) | Documenti legali reali 5 lingue | Business & Legal | — | ⬜ |
 | 44 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | ⬜ |
