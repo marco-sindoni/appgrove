@@ -72,6 +72,9 @@ public class SubscriptionResource {
     SubscriptionReadModel readModel;
 
     @Inject
+    AppUsageStore usage;
+
+    @Inject
     PaymentProvider provider;
 
     @Inject
@@ -121,7 +124,7 @@ public class SubscriptionResource {
         } else {
             // downgrade: gate stock (E23) + scheduling a fine periodo (resta sul tier corrente fin lì).
             TierChangePolicy.Decision decision =
-                    TierChangePolicy.evaluateDowngrade(targetLimits(targetTier), currentUsage());
+                    TierChangePolicy.evaluateDowngrade(targetLimits(targetTier), currentUsage(appSlug));
             if (decision.blocked()) {
                 throw blocked(decision.remediation());
             }
@@ -235,12 +238,15 @@ public class SubscriptionResource {
     }
 
     /**
-     * Uso corrente per metrica: <b>vuoto</b> per ora — la sorgente usage per-app è applicativa e non ancora
-     * leggibile da core (UC 0028 §Punti aperti, differita). Finché non cablata, il gate stock non blocca a
-     * runtime; la logica di blocco resta reale in {@link TierChangePolicy} e coperta da test.
+     * Uso corrente {@code metrica → giacenza} del tenant per l'app, letto dalla proiezione che le app
+     * alimentano per evento ({@link AppUsageStore}, UC 0054). Prima di UC 0054 questo metodo tornava una
+     * mappa vuota — la sorgente usage per-app non era leggibile da core (UC 0028 §Punti aperti) — e il gate
+     * stock del downgrade, pur reale in {@link TierChangePolicy}, non bloccava mai a runtime. Ora legge la
+     * giacenza reale: se un'app non ha ancora riportato nulla la mappa è vuota e il downgrade resta libero,
+     * il che è corretto (nessuna giacenza nota da proteggere).
      */
-    private Map<String, Long> currentUsage() {
-        return Map.of();
+    private Map<String, Long> currentUsage(String appSlug) {
+        return usage.usageFor(appSlug, caller.tenantId().toString());
     }
 
     private BillingCycle parseCycle(String raw) {

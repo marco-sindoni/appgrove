@@ -39,9 +39,12 @@ fact is a data migration, not a rename. Say so when you ask.
 >    awkward to change later: a single-user app has no notion of who did what.
 > 3. **HTTP port** — local development only. Derive the free ones and propose the next:
 >    `./dev.sh services` lists what is taken (convention: `8081+` for apps).
-> 4. **Quota metric** — the *one* thing the plan limits (e.g. `fatture`, `documenti`, `progetti`).
->    Its nature (consumption per window vs standing level) is settled in step-02; here you only need
->    the name, because the template wires it into the quota service.
+> 4. **Quota metric** — the *one* thing the plan limits (e.g. `fatture`, `documenti`, `progetti`),
+>    **and its nature**: `flow` (consumption over a window that resets — "200 documents per month")
+>    or `stock` (a ceiling on what exists right now — "10 seats"). Both are needed *before*
+>    generating, because the generator emits a different counting implementation, a different pricing
+>    shape and a different quota test for each. The nature is confirmed again in step-02 when the
+>    tiers are written; getting it wrong is the most expensive mistake in the price list.
 
 Ask about the **category icon and accent colour** too, but do not block on them: sensible defaults
 exist in the design system and they are trivial to change later (unlike the four above).
@@ -49,9 +52,13 @@ exist in the design system and they are trivial to change later (unlike the four
 ## Run the generator
 
 ```bash
-tools/new-application/generate.sh \
-  --app-id <app_id> --port <N> --user-model <single|multi> --metric <metric> --dry-run
+node tools/new-application/generate.mjs \
+  --app-id <app_id> --port <N> --user-model <single|multi> \
+  --metric <metric> --quota-nature <flow|stock> --dry-run
 ```
+
+`--help` lists every option (readable name, category icon and accent colour, free-tier cap,
+`--skip-infra`).
 
 **Always `--dry-run` first**, show the developer what it will touch, then run it for real without
 the flag. The generator refuses to overwrite an existing app — if it complains, stop and ask; do not

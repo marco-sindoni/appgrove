@@ -67,7 +67,9 @@ import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import {
   APP_ID_PATTERN,
+  QUOTA_NATURES,
   RESERVED_APP_IDS,
+  VARIANT_RE,
   buildContext,
   discoverServices,
   nextFreePort,
@@ -94,6 +96,8 @@ Obbligatori
 Opzioni
   --port <N>           porta HTTP del servizio (default: prima libera dopo quelle esistenti)
   --user-model <m>     single (B2C, default) | multi (B2B, con ruolo membro)
+  --quota-nature <n>   flow (default) = a consumo, si azzera a ogni finestra (es. documenti/mese)
+                       stock = a giacenza, tetto su quanti oggetti esistono ORA (es. posti)
   --free-cap <N>       tetto del livello gratuito (default 10)
   --app-name <nome>    nome leggibile (default: derivato dall'identificativo)
   --icon <nome>        icona Material Symbols (default: widgets)
@@ -107,6 +111,7 @@ Opzioni
 function parseArgs(argv) {
   const opts = {
     userModel: 'single',
+    quotaNature: 'flow',
     freeCap: 10,
     icon: 'widgets',
     accent: 'cat-blue',
@@ -126,6 +131,7 @@ function parseArgs(argv) {
       case '--metric': opts.metric = next(); break
       case '--port': opts.port = Number(next()); break
       case '--user-model': opts.userModel = next(); break
+      case '--quota-nature': opts.quotaNature = next(); break
       case '--free-cap': opts.freeCap = Number(next()); break
       case '--app-name': opts.appName = next(); break
       case '--icon': opts.icon = next(); break
@@ -165,6 +171,14 @@ function validate(opts, services) {
   }
   if (!['single', 'multi'].includes(opts.userModel)) {
     die(`--user-model deve essere "single" o "multi" (ricevuto: "${opts.userModel}")`)
+  }
+  if (!QUOTA_NATURES.includes(opts.quotaNature)) {
+    die(
+      `--quota-nature deve essere ${QUOTA_NATURES.map((n) => `"${n}"`).join(' o ')} `
+      + `(ricevuto: "${opts.quotaNature}")\n`
+      + '  flow  = a consumo, il conteggio si azzera a ogni finestra (es. "200 documenti al mese")\n'
+      + '  stock = a giacenza, tetto su quanti oggetti esistono ORA (es. "10 posti")',
+    )
   }
   if (!Number.isInteger(opts.freeCap) || opts.freeCap < 1) {
     die('--free-cap deve essere un intero positivo')
@@ -223,32 +237,88 @@ function substitute(text, ctx) {
 /** File binari o comunque da copiare senza sostituzione (le chiavi JWT di test). */
 const VERBATIM = new Set(['.pem'])
 
+/**
+ * Cartelle e file che nei modelli-sorgente sono RUMORE, non modello: artefatti di
+ * compilazione e dipendenze installate. Compaiono appena qualcuno compila dentro
+ * `templates/` (cosa che capita, perché i modelli sono sorgenti Java veri), non
+ * sono versionati, e senza questo filtro finirebbero copiati dentro l'app nuova —
+ * che nascerebbe con un `target/` preistorico dentro il proprio albero sorgenti.
+ */
+const IGNORED_DIRS = new Set(['target', 'node_modules', 'dist', 'build', '.git'])
+const IGNORED_FILES = new Set(['.DS_Store'])
+
 function walk(dir) {
   const out = []
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
-    if (entry.isDirectory()) out.push(...walk(full))
-    else out.push(full)
+    if (entry.isDirectory()) {
+      if (!IGNORED_DIRS.has(entry.name)) out.push(...walk(full))
+    } else if (!IGNORED_FILES.has(entry.name)) {
+      out.push(full)
+    }
   }
   return out
 }
 
 /**
+ * Verifica che ogni FAMIGLIA di varianti sia completa: se esiste
+ * `QuotaTest.flow.java` deve esistere anche `QuotaTest.stock.java`. Senza questo
+ * controllo, generare con la natura non coperta farebbe sparire un file in
+ * silenzio — e un test che non c'è non diventa mai rosso.
+ */
+function assertVariantsComplete(files, templateDir) {
+  const families = new Map()
+  for (const rel of files) {
+    const match = rel.match(VARIANT_RE)
+    if (!match) continue
+    const family = rel.replace(VARIANT_RE, '')
+    if (!families.has(family)) families.set(family, new Set())
+    families.get(family).add(match[1])
+  }
+  const incomplete = []
+  for (const [family, natures] of families) {
+    const missing = QUOTA_NATURES.filter((n) => !natures.has(n))
+    if (missing.length > 0) {
+      incomplete.push(`${family} — manca la variante: ${missing.join(', ')}`)
+    }
+  }
+  if (incomplete.length > 0) {
+    die(
+      `modelli-sorgente incompleti in ${templateDir}:\n`
+      + incomplete.map((i) => `    ${i}`).join('\n')
+      + '\n  Ogni file con marcatore di variante deve esistere per TUTTE le nature'
+      + ` (${QUOTA_NATURES.join(', ')}).`,
+    )
+  }
+}
+
+/**
  * Espande una cartella di modelli verso una destinazione, sostituendo i
  * segnaposto sia nei percorsi sia nei contenuti.
+ *
+ * I file con marcatore di variante (`…​.flow.java` / `…​.stock.java`) sono filtrati
+ * sulla natura di quota scelta e il marcatore sparisce dal percorso di
+ * destinazione: l'app generata non sa di essere nata da una variante.
  */
 function expand(templateDir, destDir, ctx) {
-  return walk(templateDir).map((file) => {
-    const relative = path.relative(templateDir, file)
-    const destRelative = substitute(relative, ctx)
-    const verbatim = VERBATIM.has(path.extname(file))
-    const raw = fs.readFileSync(file, verbatim ? null : 'utf8')
-    return {
-      path: path.join(destDir, destRelative),
-      content: verbatim ? raw : substitute(raw, ctx),
-      verbatim,
-    }
-  })
+  const files = walk(templateDir).map((f) => path.relative(templateDir, f))
+  assertVariantsComplete(files, path.relative(REPO_ROOT, templateDir))
+
+  return files
+    .filter((rel) => {
+      const match = rel.match(VARIANT_RE)
+      return match === null || match[1] === ctx.QUOTA_NATURE
+    })
+    .map((rel) => {
+      const destRelative = substitute(rel.replace(VARIANT_RE, ''), ctx)
+      const verbatim = VERBATIM.has(path.extname(rel))
+      const raw = fs.readFileSync(path.join(templateDir, rel), verbatim ? null : 'utf8')
+      return {
+        path: path.join(destDir, destRelative),
+        content: verbatim ? raw : substitute(raw, ctx),
+        verbatim,
+      }
+    })
 }
 
 function buildPlan(ctx) {
@@ -308,7 +378,11 @@ function printPlan(plan, opts) {
   out.push(`  Modello utente  ${ctx.USER_MODEL}`)
   out.push(`  Porta HTTP      ${ctx.HTTP_PORT}   (debug JVM ${ctx.DEBUG_PORT}, derivata da dev/lib/services.sh)`)
   out.push(`  Schema          ${ctx.SCHEMA}`)
-  out.push(`  Metrica quota   ${ctx.METRIC}  (tetto gratuito ${ctx.FREE_CAP}/mese, natura flow)`)
+  out.push(
+    `  Metrica quota   ${ctx.METRIC}  (natura ${ctx.QUOTA_NATURE}`
+    + `${ctx.QUOTA_NATURE === 'stock' ? ' = a giacenza' : ' = a consumo'}`
+    + `, tetto gratuito ${ctx.QUOTA_CAP_NOTE})`,
+  )
   out.push('')
   out.push(`  CREA (${plan.creates.length} file)`)
   for (const c of plan.creates) out.push(`    + ${c.path}`)
@@ -349,7 +423,9 @@ function printHandoff(ctx) {
 
   2. Listino  services/core/src/main/resources/pricing/${ctx.APP_ID}.yaml
      Solo il livello gratuito, e \`status: inactive\`: l'app non è vendibile finché
-     i livelli a pagamento non sono decisi (co-pilota prezzi/quota).
+     i livelli a pagamento non sono decisi (co-pilota prezzi/quota). La natura
+     dichiarata è \`${ctx.QUOTA_NATURE}\` e coincide con come il servizio conta l'uso:
+     cambiarla in un solo posto rompe l'accordo fra listino ed enforcement.
 
   3. Dominio  services/${ctx.APP_ID}/…/Item.java e migrazione V2
      È un modello SEGNAPOSTO: serve a far nascere l'app con la suite verde e gli

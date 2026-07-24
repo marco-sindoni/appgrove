@@ -97,6 +97,28 @@ export function toCamelCase(appId) {
   return pascal[0].toLowerCase() + pascal.slice(1)
 }
 
+/**
+ * Nature ammesse per la metrica di quota. Non è una preferenza di stile: decide COME si conta.
+ * <ul>
+ *   <li>`flow` — a consumo: eventi in una finestra che si azzera (es. "200 documenti al mese");</li>
+ *   <li>`stock` — a giacenza: tetto su quanti oggetti esistono ORA (es. "10 posti").</li>
+ * </ul>
+ * Sbagliarla è l'errore più costoso del listino: un tetto a giacenza contato a consumo non si
+ * libera mai, e una metrica a consumo contata a giacenza blocca l'utente per sempre.
+ */
+export const QUOTA_NATURES = ['flow', 'stock']
+
+/**
+ * Marcatore di VARIANTE nei nomi dei modelli-sorgente: `QuotaTest.flow.java` e `QuotaTest.stock.java`
+ * producono entrambi `QuotaTest.java`, ma solo quello della natura scelta viene istanziato.
+ *
+ * Perché una variante di file e non un segnaposto dentro un file solo: la differenza fra le due
+ * nature è il CORPO di un metodo di conteggio (più le sue importazioni e i suoi test), non una
+ * parola. Comprimerla in segnaposto avrebbe prodotto modelli illeggibili proprio nel punto in cui
+ * si sbaglia più facilmente.
+ */
+export const VARIANT_RE = /\.(flow|stock)(?=\.[^.]+$)/
+
 /** `demo_gen` → `Demo Gen` (titolo leggibile di default, poi riscritto dall'autore dell'app). */
 export function toDisplayName(appId) {
   return appId
@@ -125,6 +147,23 @@ export function buildContext(options) {
     DEBUG_PORT: String(DEBUG_PORT_BASE + options.port - DEFAULT_HTTP_PORT),
     METRIC: options.metric,
     FREE_CAP: String(options.freeCap),
+    QUOTA_NATURE: options.quotaNature,
+    // Come si legge il tetto in prosa: compare nei commenti dei modelli e nella nota del listino.
+    // Tenerla qui evita che ogni modello se la riscriva a modo suo.
+    QUOTA_CAP_NOTE:
+      options.quotaNature === 'stock'
+        ? `${options.freeCap} ${options.metric} contemporanei`
+        : `${options.freeCap} ${options.metric}/mese`,
+    // Finestra della metrica nei dati di prova (Java e TypeScript). A giacenza NON esiste finestra:
+    // scriverne una — anche solo in un test — insegnerebbe al lettore una regola che non c'è.
+    QUOTA_NATURE_ENUM: options.quotaNature === 'stock' ? 'STOCK' : 'FLOW',
+    QUOTA_WINDOW_JAVA: options.quotaNature === 'stock' ? 'null' : '"month"',
+    QUOTA_WINDOW_TS: options.quotaNature === 'stock' ? 'null' : "'month'",
+    QUOTA_LABEL: options.quotaNature === 'stock' ? 'Consumo attuale' : 'Consumo questo mese',
+    QUOTA_REACHED:
+      options.quotaNature === 'stock'
+        ? 'Hai raggiunto il limite del tuo piano. Libera un elemento oppure passa a un piano superiore.'
+        : 'Hai raggiunto il limite mensile del tuo piano.',
     USER_MODEL: options.userModel === 'multi' ? 'multi_user' : 'single_user',
     USER_MODEL_NOTE:
       options.userModel === 'multi'

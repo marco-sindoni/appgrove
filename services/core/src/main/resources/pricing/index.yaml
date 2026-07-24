@@ -4,3 +4,4 @@
 # Registro ESPLICITO finché l'auto-discovery multi-servizio (UC 0046) non lo industrializza.
 apps:
   - fatture
+  - crm

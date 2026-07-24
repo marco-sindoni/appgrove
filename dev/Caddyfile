@@ -40,6 +40,10 @@
 	handle /api/platform/* {
 		reverse_proxy host.docker.internal:8080
 	}
+	# /api/crm/v1/* → servizio crm, processo host su :8082
+	handle /api/crm/v1/* {
+		reverse_proxy host.docker.internal:8082
+	}
 	# /api/fatture/v1/* → servizio fatture, processo host su :8081
 	handle /api/fatture/v1/* {
 		reverse_proxy host.docker.internal:8081

@@ -65,7 +65,7 @@ public class MockEntitlementService implements EntitlementService, EntitlementVi
     @Override
     public QuotaNature natureOf(String appSlug, String metric) {
         record();
-        return QuotaNature.FLOW;
+        return QuotaNature.@@QUOTA_NATURE_ENUM@@;
     }
 
     @Override
@@ -75,6 +75,10 @@ public class MockEntitlementService implements EntitlementService, EntitlementVi
             return Optional.empty();
         }
         return Optional.of(new EntitlementView(
-                appSlug, "free", null, null, Map.of("@@METRIC@@", new MetricLimit(cap, "flow", "month"))));
+                appSlug,
+                "free",
+                null,
+                null,
+                Map.of("@@METRIC@@", new MetricLimit(cap, "@@QUOTA_NATURE@@", @@QUOTA_WINDOW_JAVA@@))));
     }
 }

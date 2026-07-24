@@ -24,7 +24,10 @@ limit, and a consumption metric counted as a level blocks the user forever once 
 
 ## Questions, in this order
 
-1. **Nature of the metric** (above), and the window if it resets (usually the month).
+1. **Nature of the metric** (above), and the window if it resets (usually the month). It was already
+   settled at step-01 (the generator needs it to emit the right counting implementation): here you
+   **confirm** it against the tiers being written, and if it turns out to be wrong the fix is to
+   regenerate with the right `--quota-nature`, not to edit the generated file.
 2. **Tiers** — how many and what separates them. Recommend starting with **two or three**: a free
    baseline plus one or two paid. More tiers are easy to add later (skill `pricing-change`) and hard
    to remove once someone is on them.

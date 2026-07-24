@@ -94,6 +94,7 @@ variable "shared" {
     db_bootstrap_lambda_name      = string
     sqs_queue_prefix              = string
     gdpr_export_results_queue_arn = string
+    app_usage_queue_arn           = string
     gdpr_export_bucket            = string
     gdpr_export_bucket_arn        = string
     alarm_topic_critical_arn      = string

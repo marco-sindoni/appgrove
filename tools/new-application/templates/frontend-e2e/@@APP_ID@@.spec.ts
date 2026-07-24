@@ -49,7 +49,7 @@ async function mockAuthed(page: Page, env: 'local' | 'test') {
           {
             appSlug: '@@APP_ID@@',
             tierKey: 'free',
-            limits: { '@@METRIC@@': { cap: @@FREE_CAP@@, nature: 'flow', window: 'month' } },
+            limits: { '@@METRIC@@': { cap: @@FREE_CAP@@, nature: '@@QUOTA_NATURE@@', window: @@QUOTA_WINDOW_TS@@ } },
           },
         ]
       : []

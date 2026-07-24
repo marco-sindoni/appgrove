@@ -54,9 +54,20 @@ export function sostituisciSegnaposto(testo, segnaposto) {
   return out;
 }
 
+// Marcatore di VARIANTE nei nomi dei modelli (`QuotaTest.flow.java` / `QuotaTest.stock.java`): il
+// generatore ne istanzia una sola, secondo la natura della metrica di quota scelta per l'app.
+export const VARIANTE_RE = /\.([a-z0-9]+)(?=\.[^.]+$)/;
+
+// Variante di un file del modello, se ne ha una fra quelle dichiarate in configurazione.
+export function varianteDi(rel, varianti = []) {
+  const m = rel.match(VARIANTE_RE);
+  return m && varianti.includes(m[1]) ? m[1] : null;
+}
+
 // Nome del file del modello → nome atteso nell'app #1: segnaposto risolti, dominio di esempio
-// ricondotto al dominio reale dell'app #1, suffisso di modello tolto.
+// ricondotto al dominio reale dell'app #1, marcatore di variante e suffisso di modello tolti.
 export function normalizzaPercorsoModello(rel, cfg) {
+  if (varianteDi(rel, cfg.varianti)) rel = rel.replace(VARIANTE_RE, '');
   let out = sostituisciSegnaposto(rel, cfg.segnaposto);
   for (const [esempio, reale] of Object.entries(cfg.dominio ?? {})) {
     if (esempio.startsWith('_')) continue;
@@ -185,8 +196,15 @@ export function confrontaCoppia(coppia, cfg, templatesAbs) {
   const fileModello = elencaFile(modelloAbs, coppia.ignora ?? []);
 
   // mappa "percorso in termini dell'app #1" → "percorso reale nel modello"
+  //
+  // I file con VARIANTE (es. `QuotaTest.flow.java` / `QuotaTest.stock.java`) confluiscono tutti sullo
+  // stesso nome normalizzato: si confronta solo quella della `varianteRiferimento`, cioè la natura di
+  // quota dell'app #1. Confrontare l'altra significherebbe pretendere che `fatture` — che è a consumo —
+  // assomigli a un modello scritto per la giacenza.
   const mappa = new Map();
   for (const rel of fileModello) {
+    const variante = varianteDi(rel, cfg.varianti);
+    if (variante && variante !== cfg.varianteRiferimento) continue;
     const normalizzato = normalizzaPercorsoModello(rel, cfg);
     mappa.set(normalizzato, rel);
     const residui = normalizzato.match(SEGNAPOSTO_RESIDUO);

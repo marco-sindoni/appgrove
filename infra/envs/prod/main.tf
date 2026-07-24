@@ -137,6 +137,7 @@ locals {
     db_bootstrap_lambda_name      = module.platform_shared.db_bootstrap_lambda_name
     sqs_queue_prefix              = module.platform_shared.sqs_queue_prefix
     gdpr_export_results_queue_arn = module.platform_shared.gdpr_export_results_queue_arn
+    app_usage_queue_arn           = module.platform_shared.app_usage_queue_arn
     gdpr_export_bucket            = module.baseline.gdpr_export_bucket
     gdpr_export_bucket_arn        = module.baseline.gdpr_export_bucket_arn
     alarm_topic_critical_arn      = module.platform_shared.alarm_topic_critical_arn
@@ -206,6 +207,7 @@ module "observability" {
     # ── obs-services:begin ──
     module.app_platform.observability,
     module.app_fatture.observability,
+    module.app_crm.observability,
     # ── obs-services:end ──
   ]
 
@@ -248,3 +250,19 @@ resource "aws_lambda_invocation" "auth_lambdas_grants" {
 
   depends_on = [module.app_platform]
 }
+
+# ── service-add:begin crm ─────────────────────────────────────────────────
+module "app_crm" {
+  source = "../../modules/microsaas_app"
+
+  env            = "prod"
+  app_id         = "crm"
+  container_port = 8082
+  image_tag      = var.image_tag
+
+  use_fargate_spot = false # prod: on-demand (#06 10)
+  force_destroy    = false # prod: nessuno svuotamento automatico (#06 24)
+
+  shared = local.microsaas_shared
+}
+# ── service-add:end crm ───────────────────────────────────────────────────

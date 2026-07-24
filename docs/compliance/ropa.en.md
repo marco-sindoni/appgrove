@@ -35,6 +35,20 @@ Data at rest only in EU regions (eu-west-1; monitoring in eu-central-1) — #13 
 
 At-rest and in-transit encryption; row-level per-tenant isolation (`tenant_id` only from the verified JWT); least-privilege IAM; invitation tokens stored hashed only; soft-delete with scheduled purge (14-day grace); structured logging and audit trail (#02/#05/#06/#08).
 
+## Mini-CRM app (multi-user B2B contact management)
+
+Contact data (people at the tenant's client organizations) entered by the tenant into their CRM (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13). The `seat` table holds only the internal identifier of the tenant's members granted access to the app — processed by core as controller — and is therefore not third-party data.
+
+### Processing activities
+
+| Entry | Data category | Location | Data subjects | Purpose | Legal basis | Retention |
+|---|---|---|---|---|---|---|
+| `contact.display_name` | Contact identity (name) | Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contacts (people at the tenant's client organizations) entered by the tenant | Managing the tenant's commercial relationship with its contacts | Contract (art. 6(1)(b) GDPR) | Until deletion by the tenant or account closure |
+| `contact.email` | Contact details (email address, optional) | Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contacts (people at the tenant's client organizations) entered by the tenant | Managing the tenant's commercial relationship with its contacts | Contract (art. 6(1)(b) GDPR) | Until deletion by the tenant or account closure |
+| `contact.phone` | Contact details (phone number, optional) | Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contacts (people at the tenant's client organizations) entered by the tenant | Managing the tenant's commercial relationship with its contacts | Contract (art. 6(1)(b) GDPR) | Until deletion by the tenant or account closure |
+| `contact.notes` | Free-text notes about the contact. Unstructured field: may contain unclassified information, including — at the tenant's initiative — special categories (art. 9). The tenant controller's privacy notice must cover it; appgrove does not solicit them. | Table `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contacts entered by the tenant, and any third parties mentioned in the notes | Managing the tenant's commercial relationship with its contacts | Contract (art. 6(1)(b) GDPR) | Until deletion by the tenant or account closure |
+| `interaction.note` | Free-text content of an interaction (call, email, meeting, note). Like the contact notes, it is an unstructured field and a possible unguarded entry point for unclassified data. | Table `app_crm.interaction` (Aurora PostgreSQL, eu-west-1) | Contacts entered by the tenant, and any third parties mentioned in the interactions | History of the tenant's commercial relationship with its contacts | Contract (art. 6(1)(b) GDPR) | Until deletion by the tenant or account closure |
+
 ## Fatture app (single-user B2C invoicing)
 
 End-customer data entered by the tenant in their invoices (schema `app_fatture`). The tenant is the data controller; appgrove acts as processor (#13 C13).

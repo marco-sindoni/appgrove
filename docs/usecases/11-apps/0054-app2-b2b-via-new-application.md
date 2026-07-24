@@ -79,3 +79,25 @@ dati per-app (categorie/finalità/base/retention) generato da `new-application`.
   quel qualificatore esiste apposta per rendere esplicito chi chiede una chiamata di rete sul percorso caldo.
   Nota per i **posti (seat)**, metrica a giacenza: la proiezione riporta il tetto, ma il **conteggio** dei posti
   occupati resta un dato dell'app; non tentare di leggerlo dalla proiezione.
+
+### Rimandi aperti dopo la change `0042-use-case-0054-…` (App #2 implementata)
+
+Lavoro **deliberatamente lasciato fuori** da questa change, con dove è tracciato:
+
+- **Generalizzare i «posti» e il canale d'uso nello scaffold** _(owner: [UC 0046](../10-skills-tooling/0046-skill-new-application.md))_.
+  Nell'app #2 la gestione posti (`Seat`, `SeatResource`, `SeatAccess`, `SeatUsagePublisher`) e la pubblicazione dell'uso
+  a giacenza sono scritte **a mano nel servizio crm**, non nei modelli-sorgente: era giusto così (UC 0054 non deve
+  anticipare la skill, e solo le app multi-utente a giacenza ne hanno bisogno). Ma se nascerà una **seconda** app
+  multi-utente a giacenza, questo va industrializzato nella skill `new-application` (una variante `--user-model multi`
+  che genera posti + varco posto + publisher). Finché c'è **una sola** app così, resta a mano. Il contratto del canale
+  (`commons/UsageEvents`) e il consumatore in core (`AppUsageConsumer`/`AppUsageStore`) sono invece **già generici**.
+- **Consumo quota in tempo reale nel pannello di fatturazione** _(owner: [UC 0028](../07-payments/0028-portale-cliente-self-service.md))_.
+  Questa change costruisce la **sorgente** (l'uso a giacenza materializzato in `platform.app_usage_stock`); mostrarla nel
+  portale cliente («4 posti su 10») resta di UC 0028. Il gate del downgrade la consuma già; il pannello no.
+- **Ruolo applicativo del posto**: oggi un posto è un semplice **permesso d'accesso** (presenza/assenza); non porta un
+  ruolo specifico dell'app (i permessi vengono dal ruolo di account owner/admin/member nel token). Se un'app volesse
+  ruoli **interni** all'app diversi da quelli di account, è un'estensione futura, non di questo UC.
+- **Presidio del testo libero (note contatto/interazione)** _(owner: compliance, [_BACKLOG](../../_BACKLOG.md) / UC 0033)_.
+  I campi nota sono dichiarati nel manifesto come possibile ingresso non presidiato per categorie particolari (art. 9):
+  l'app **non** fa rilevazione né blocco di contenuto. Un eventuale presidio (avviso, classificazione) è tema compliance
+  trasversale, non di questa app.

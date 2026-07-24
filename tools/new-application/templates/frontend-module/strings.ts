@@ -52,8 +52,8 @@ export const t = {
   confirmDeleteBody: 'L\'operazione non è reversibile dalla UI.',
 
   // Quota
-  quotaLabel: 'Consumo questo mese',
-  quotaReached: 'Hai raggiunto il limite mensile del tuo piano.',
+  quotaLabel: '@@QUOTA_LABEL@@',
+  quotaReached: '@@QUOTA_REACHED@@',
   quotaUpgrade: 'Passa a un piano superiore',
 
   // Errori

@@ -18,6 +18,14 @@ class QuotaStatusTest {
     private static final String QUOTA = "/api/@@APP_ID@@/v1/quota";
     private static final String ITEMS = "/api/@@APP_ID@@/v1/items";
     private static final int CAP = @@FREE_CAP@@;
+    /**
+     * Quanti record creano i casi qui sotto. Deriva dal tetto invece di essere un numero fisso: con
+     * una metrica a giacenza il tetto è spesso piccolo (2 posti, 3 progetti), e un test che ne crea
+     * tre a prescindere fallirebbe non perché l'endpoint è rotto, ma perché ha superato il limite
+     * che sta cercando di misurare.
+     */
+    private static final int SAMPLE = Math.min(3, CAP);
+    private static final int SAMPLE_SMALL = Math.min(2, CAP);
 
     @Test
     void freshTenantHasFullQuota() {
@@ -36,7 +44,7 @@ class QuotaStatusTest {
     void usageAndRemainingTrackCreatedRecords() {
         String token = TestTokens.withTenant("55555555-0000-0000-0000-000000000032", "owner");
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < SAMPLE; i++) {
             given().header("Authorization", "Bearer " + token)
                     .contentType(ContentType.JSON)
                     .body(Map.of("contactName", "Contatto " + i))
@@ -47,18 +55,18 @@ class QuotaStatusTest {
         given().header("Authorization", "Bearer " + token)
                 .when().get(QUOTA)
                 .then().statusCode(200)
-                .body("used", is(3))
+                .body("used", is(SAMPLE))
                 .body("limit", is(CAP))
-                .body("remaining", is(CAP - 3));
+                .body("remaining", is(CAP - SAMPLE));
     }
 
     @Test
     void quotaIsScopedToCallerTenant() {
-        // Il tenant A crea 2 record; il tenant B deve vedere il proprio uso a 0 (isolamento #2).
+        // Il tenant A crea qualche record; il tenant B deve vedere il proprio uso a 0 (isolamento #2).
         String tokenA = TestTokens.withTenant("55555555-0000-0000-0000-0000000000a3", "owner");
         String tokenB = TestTokens.withTenant("55555555-0000-0000-0000-0000000000b3", "owner");
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < SAMPLE_SMALL; i++) {
             given().header("Authorization", "Bearer " + tokenA)
                     .contentType(ContentType.JSON)
                     .body(Map.of("contactName", "A " + i))
@@ -69,7 +77,7 @@ class QuotaStatusTest {
         given().header("Authorization", "Bearer " + tokenA)
                 .when().get(QUOTA)
                 .then().statusCode(200)
-                .body("used", is(2));
+                .body("used", is(SAMPLE_SMALL));
         given().header("Authorization", "Bearer " + tokenB)
                 .when().get(QUOTA)
                 .then().statusCode(200)

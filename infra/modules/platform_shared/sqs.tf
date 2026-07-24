@@ -39,3 +39,34 @@ resource "aws_sqs_queue" "gdpr_export_results" {
     Name = "${local.sqs_queue_prefix}gdpr-export-results"
   }
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Coda condivisa dell'uso a giacenza app → core (UC 0054): le app pubblicano
+# "il tenant T occupa N posti", il core la consuma e la materializza per il gate
+# del downgrade. Stessa forma di gdpr-export-results (molti produttori, un solo
+# consumatore); il permesso di invio lo dà il modulo microsaas_app alle app, il
+# permesso di consumo lo dà al solo core (is_platform_core).
+# ─────────────────────────────────────────────────────────────────────────────
+
+resource "aws_sqs_queue" "app_usage_dlq" {
+  name                    = "${local.sqs_queue_prefix}app-usage-dlq"
+  sqs_managed_sse_enabled = true
+
+  tags = {
+    Name = "${local.sqs_queue_prefix}app-usage-dlq"
+  }
+}
+
+resource "aws_sqs_queue" "app_usage" {
+  name                    = "${local.sqs_queue_prefix}app-usage"
+  sqs_managed_sse_enabled = true
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.app_usage_dlq.arn
+    maxReceiveCount     = 5
+  })
+
+  tags = {
+    Name = "${local.sqs_queue_prefix}app-usage"
+  }
+}

@@ -35,6 +35,20 @@ Dati a riposo solo in regioni UE (eu-west-1; monitoring eu-central-1) — #13 I5
 
 Cifratura at-rest e in-transit; isolamento per-tenant row-level (`tenant_id` solo dal JWT verificato); least-privilege IAM; token di invito persistiti solo come hash; soft-delete con purge programmata (grace 14 giorni); logging strutturato e audit trail (#02/#05/#06/#08).
 
+## App Mini-CRM (gestione contatti B2B multi-utente)
+
+Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel proprio CRM (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi.
+
+### Trattamenti
+
+| Voce | Categoria di dati | Ubicazione | Interessati | Finalità | Base giuridica | Retention |
+|---|---|---|---|---|---|---|
+| `contact.display_name` | Identità del contatto (nome/denominazione) | Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contatti (persone delle organizzazioni clienti) inseriti dal tenant | Gestione della relazione commerciale con i contatti del tenant | Contratto (art. 6.1.b GDPR) | Fino a cancellazione da parte del tenant o chiusura dell'account |
+| `contact.email` | Recapito del contatto (indirizzo email, facoltativo) | Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contatti (persone delle organizzazioni clienti) inseriti dal tenant | Gestione della relazione commerciale con i contatti del tenant | Contratto (art. 6.1.b GDPR) | Fino a cancellazione da parte del tenant o chiusura dell'account |
+| `contact.phone` | Recapito del contatto (numero di telefono, facoltativo) | Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contatti (persone delle organizzazioni clienti) inseriti dal tenant | Gestione della relazione commerciale con i contatti del tenant | Contratto (art. 6.1.b GDPR) | Fino a cancellazione da parte del tenant o chiusura dell'account |
+| `contact.notes` | Annotazioni a testo libero sul contatto. Campo non strutturato: può contenere informazioni che nessuno ha classificato, comprese — per iniziativa del tenant — categorie particolari (art. 9). L'informativa del tenant titolare deve coprirlo; appgrove non le sollecita. | Tabella `app_crm.contact` (Aurora PostgreSQL, eu-west-1) | Contatti inseriti dal tenant, ed eventuali terzi citati nelle annotazioni | Gestione della relazione commerciale con i contatti del tenant | Contratto (art. 6.1.b GDPR) | Fino a cancellazione da parte del tenant o chiusura dell'account |
+| `interaction.note` | Contenuto a testo libero di un'interazione (telefonata, email, incontro, nota). Come le annotazioni del contatto, è un campo non strutturato e un possibile punto d'ingresso non presidiato per dati che nessuno ha classificato. | Tabella `app_crm.interaction` (Aurora PostgreSQL, eu-west-1) | Contatti inseriti dal tenant, ed eventuali terzi citati nelle interazioni | Storico della relazione commerciale con i contatti del tenant | Contratto (art. 6.1.b GDPR) | Fino a cancellazione da parte del tenant o chiusura dell'account |
+
 ## App Fatture (fatturazione B2C single-user)
 
 Dati dei clienti finali inseriti dal tenant nelle proprie fatture (schema `app_fatture`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13).

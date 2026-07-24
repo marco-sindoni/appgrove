@@ -32,7 +32,8 @@ CREATE TABLE @@SCHEMA@@.item (
 -- codice univoco per tenant (la numerazione progressiva è generata server-side).
 CREATE UNIQUE INDEX ux_item_tenant_code ON @@SCHEMA@@.item (tenant_id, code);
 CREATE INDEX ix_item_tenant ON @@SCHEMA@@.item (tenant_id);
--- supporta il conteggio quota "flow" (record creati nella finestra) per tenant.
+-- supporta il conteggio della quota per tenant: a consumo (record creati nella finestra) e, con la
+-- sola colonna tenant_id, anche a giacenza (quanti ne esistono ora) — vedi @@APP_CLASS@@QuotaService.
 CREATE INDEX ix_item_tenant_created ON @@SCHEMA@@.item (tenant_id, created_at);
 
 -- ── item_line (riga; tenant-scoped, figlia di item) ──────────────────────────

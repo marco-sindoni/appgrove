@@ -100,6 +100,16 @@ resource "aws_iam_role_policy" "task_gdpr" {
           Resource = "${var.shared.gdpr_export_bucket_arn}/jobs/*"
         },
       ],
+      # Le app (non il core) pubblicano il proprio uso a giacenza sulla coda condivisa
+      # `app-usage` (UC 0054), che il core consuma per il gate del downgrade.
+      var.is_platform_core ? [] : [
+        {
+          Sid      = "ReportAppUsage"
+          Effect   = "Allow"
+          Action   = ["sqs:SendMessage", "sqs:GetQueueUrl"]
+          Resource = var.shared.app_usage_queue_arn
+        },
+      ],
       # Ruolo di orchestratore GDPR del core (UC 0032).
       var.is_platform_core ? [
         {
@@ -118,6 +128,18 @@ resource "aws_iam_role_policy" "task_gdpr" {
             "sqs:GetQueueAttributes",
           ]
           Resource = var.shared.gdpr_export_results_queue_arn
+        },
+        {
+          # Il core consuma l'uso a giacenza riportato dalle app (UC 0054) per il gate del downgrade.
+          Sid    = "ConsumeAppUsage"
+          Effect = "Allow"
+          Action = [
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+            "sqs:ChangeMessageVisibility",
+            "sqs:GetQueueAttributes",
+          ]
+          Resource = var.shared.app_usage_queue_arn
         },
         {
           # Il core pubblica le invalidazioni entitlement direttamente sulle code

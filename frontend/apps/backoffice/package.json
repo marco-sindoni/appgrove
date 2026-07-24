@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "gen:fatture": "openapi-typescript ../../../services/fatture/src/main/resources/META-INF/openapi/openapi.yaml -o src/modules/fatture/api/schema.ts"
+    "gen:fatture": "openapi-typescript ../../../services/fatture/src/main/resources/META-INF/openapi/openapi.yaml -o src/modules/fatture/api/schema.ts",
+    "gen:crm": "openapi-typescript ../../../services/crm/src/main/resources/META-INF/openapi/openapi.yaml -o src/modules/crm/api/schema.ts"
   },
   "dependencies": {
     "@appgrove/api-client": "*",

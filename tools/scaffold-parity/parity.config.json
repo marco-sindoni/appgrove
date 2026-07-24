@@ -12,6 +12,17 @@
 
   "suffissiModello": [".tmpl", ".template", ".mustache", ".hbs", ".ejs"],
 
+  "_commentoVarianti": [
+    "Varianti dei modelli-sorgente: `QuotaTest.flow.java` e `QuotaTest.stock.java` producono entrambi",
+    "`QuotaTest.java`, ma il generatore ne istanzia UNA sola, secondo --quota-nature. Il collaudo",
+    "confronta con l'app #1 solo la variante `varianteRiferimento`, che è la natura di quota di",
+    "`fatture`: pretendere che un modello scritto per la giacenza somigli a un'app a consumo",
+    "produrrebbe divergenze inventate. Che ogni famiglia di varianti sia COMPLETA lo verifica il",
+    "generatore stesso (assertVariantsComplete), che si rifiuta di far sparire un file in silenzio."
+  ],
+  "varianti": ["flow", "stock"],
+  "varianteRiferimento": "flow",
+
   "segnaposto": {
     "_commento": [
       "Token del generatore → valore corrispondente nell'app #1. La convenzione in uso è @@TOKEN@@;",
