@@ -8,12 +8,15 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity (UC 0046) → collaudo della skill `new-application`:
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application (UC 0046/0048) →
+#                collaudo delle skill `new-application` e `drop-application`:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
 #                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
 #                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
-#                DURA (non compila più). È lenta e volutamente FUORI da `./run-tests.sh backend`, per non
-#                appesantire i cicli rapidi; inclusa nell'esecuzione completa. [richiede Docker]
+#                DURA (non compila più); (3) de-generatore drop-application — round-trip genera→de-genera che
+#                deve riportare il repo identico (simmetria col generatore) + inversi delle modifiche condivise.
+#                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
+#                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
 #                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
 #                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
@@ -168,7 +171,7 @@ run_compliance() {
 
 # Smoke di avvio (change 0037): artefatti reali nei profili reali. Vedi tools/smoke/*.sh.
 run_tooling() {
-  hdr "TOOLING — skill new-application: parità dei modelli + collaudo livello 3 (UC 0046)"
+  hdr "TOOLING — skill new-application (parità + livello 3) + de-generatore drop-application (UC 0046/0048)"
   if ! command -v node >/dev/null 2>&1; then
     warn "node non installato: salto il collaudo tooling."; record tooling SKIP; return
   fi
@@ -182,6 +185,8 @@ run_tooling() {
   ( cd "$ROOT/tools/scaffold-parity" && npm run parity ) || rc=1
   # (2) livello 3: genera un'app vera ed eseguine l'intera suite (divergenza dura)
   "$ROOT/tools/new-application/generate-smoke.sh"        || rc=1
+  # (3) de-generatore drop-application: round-trip genera→de-genera + inversi/parità (UC 0048)
+  ( cd "$ROOT/tools/drop-application" && npm test )       || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

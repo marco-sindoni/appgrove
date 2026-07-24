@@ -43,5 +43,43 @@
   {
     "id": 9,
     "decision": "(autopilot, decisione differita tracciata) Tre punti che la skill incontra ma non possiede o non sono maturi sono stati annotati nei rispettivi use case invece di essere forzati dentro questa change: (a) la rimozione della landing per-app resta da fare quando la vetrina esisterà (UC 0036/0038/0053 non ancora implementati) — tracciato nei Punti aperti di UC 0048; (b) la conservazione dell'audit di erasure oltre il DROP SCHEMA (l'audit vive in app_<id>, che viene droppato) è materia di retention/archivio — tracciato in UC 0035; (c) l'esecuzione degli atti irreversibili/esterni resta manuale/CI post-merge nel runbook (decisione 4). Motivo: regola costituzionale di tracciamento delle decisioni differite."
+  },
+  {
+    "id": 10,
+    "decision": "Lo sviluppatore ha riletto e approvato requirements.md senza modifiche, confermando esplicitamente l'inclusione della primitiva core offboard-app (decisione 6). Via libera all'implementazione (step-03)."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Implementazione di AppOffboarding: enumera i tenant dell'app da platform.subscription SENZA filtrare deleted_at (una subscription cancellata o soft-deleted non garantisce che i dati dell'app siano già stati cancellati, quindi il tenant va comunque purgato), esattamente come TenantOffboarding include le app con subscription soft-deleted. Se l'app non ha tenant, l'orchestrazione è un no-op che completa (nessun messaggio, exit 0). La causale dell'evento è 'app.offboarded', distinta da 'tenant.offboarded'. Non aggiunge logica di cancellazione: riusa la coda tenant-purge-<app_id> + TenantPurgeConsumer + audit esistenti.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/AppOffboarding.java", "description": "Orchestratore app-level: fan-out di un TenantPurgeMessage per ogni tenant dell'app sulla coda tenant-purge-<app_id>." },
+      { "file": "services/core/src/main/java/app/appgrove/core/CoreMain.java", "description": "Dispatch del comando one-shot offboard-app <app_id>; exit 1 se manca l'app_id." },
+      { "file": "services/core/src/test/java/app/appgrove/core/gdpr/AppOffboardingTest.java", "description": "Verifica enumerazione (soft-deleted inclusi) e fan-out isolato per app; caso senza tenant = no-op." },
+      { "file": "services/core/src/test/java/app/appgrove/core/OffboardAppCommandTest.java", "description": "Esercita il percorso arg→exit del comando: exit 1 senza app_id, completamento con app_id." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il de-generatore tools/drop-application/remove.mjs rimuove i due alberi dedicati (services/<id>, modulo frontend) per intero — così è robusto anche se il dominio dell'app è stato riscritto dopo lo scaffolding, perché non confronta coi modelli ma rimuove la radice — e i tre file dell'app nelle cartelle condivise (test end-to-end, manifesto, listino); le cinque modifiche condivise sono disfatte invertendo lib/edits.mjs del generatore (lib/unedits.mjs importa EDITED_FILES/toCamelCase dal generatore = sorgente unica, decisione 8). Le unedit tollerano l'assenza del marcatore (ri-eseguibili), a differenza degli editor del generatore che vietano il doppio innesto. La RoPA è rigenerata di default (reversibile).",
+    "files": [
+      { "file": "tools/drop-application/remove.mjs", "description": "Orchestratore del de-generatore, con --dry-run/--skip-ropa; NON esegue infra/purga/DB (runbook)." },
+      { "file": "tools/drop-application/lib/unedits.mjs", "description": "Inversi delle cinque modifiche condivise; chiavi UNEDITORS verificate == EDITED_FILES dal test." },
+      { "file": "tools/drop-application/test/roundtrip.test.mjs", "description": "Round-trip genera→de-genera: il repo torna byte-identico sui file condivisi (presidio anti-divergenza)." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot, deviazione motivata dalla simmetria) A differenza del generatore — che invoca infra/scripts/service-add di default — il de-generatore NON invoca infra/scripts/service-remove automaticamente: la rimozione infrastrutturale tocca gli ambienti test E prod ed è protetta da un guardrail di conferma digitata (#06 K) deliberato, da eseguire con la persona presente. remove.mjs stampa service-remove come primo passo del runbook. Motivo: distruggere non è creare; la simmetria col generatore si ferma dove comincia l'irreversibilità (coerente con la decisione 4). Il collaudo tooling di drop-application gira quindi senza terraform (--skip-infra implicito, --skip-ropa nei test)."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) run-tests.sh area tooling estesa: aggiunto il collaudo di tools/drop-application (npm test) accanto a scaffold-parity e al livello 3 di new-application. Definition of Done: il de-generatore è coperto dallo stesso entrypoint unico dei test.",
+    "files": [
+      { "file": "run-tests.sh", "description": "run_tooling ora esegue anche i test del de-generatore drop-application." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) La skill conversazionale .claude/skills/drop-application/ è modellata specularmente su new-application: SKILL.md + 4 step (scope/de-generazione, gate abbonati, purga dati pianificata, runbook/chiusura). Il trattamento abbonati è marcato come escalation allo sviluppatore anche in autopilot (denaro + verso l'esterno); tutti gli atti irreversibili sono consegnati come runbook eseguibile dopo il merge, mai dalla skill. La skill chiude dentro new-change ereditandone i tre gate umani."
   }
 ]
