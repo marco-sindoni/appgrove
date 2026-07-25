@@ -1,0 +1,52 @@
+---
+// Illustrazione hero della homepage (UC 0037): "strumenti che crescono con te".
+// SVG vettoriale on-brand: i colori usano i token del design system (classi Tailwind
+// fill-*/stroke-* → CSS var), quindi seguono l'accento e il tema chiaro/scuro a
+// runtime. Decorativa: aria-hidden, il significato è nel testo accanto.
+---
+
+<svg
+  viewBox="0 0 480 340"
+  class="ag-illustration h-auto w-full"
+  data-illustration="hero"
+  role="presentation"
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- pannello di sfondo -->
+  <rect x="8" y="8" width="464" height="324" rx="20" class="fill-surface-2 stroke-line" stroke-width="1.5" />
+
+  <!-- griglia leggera -->
+  <g class="stroke-line" stroke-width="1" opacity="0.5">
+    <line x1="40" y1="270" x2="440" y2="270" />
+    <line x1="40" y1="210" x2="440" y2="210" />
+    <line x1="40" y1="150" x2="440" y2="150" />
+  </g>
+
+  <!-- barre di crescita -->
+  <g>
+    <rect x="70" y="210" width="52" height="60" rx="8" class="fill-surface-3" />
+    <rect x="150" y="170" width="52" height="100" rx="8" class="fill-surface-3" />
+    <rect x="230" y="120" width="52" height="150" rx="8" class="fill-accent" opacity="0.35" />
+    <rect x="310" y="80" width="52" height="190" rx="8" class="fill-accent" />
+  </g>
+
+  <!-- linea di tendenza + freccia -->
+  <polyline
+    points="96,236 176,196 256,150 336,104"
+    fill="none"
+    class="stroke-accent"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M336 104 l-22 4 M336 104 l4 22" fill="none" class="stroke-accent" stroke-width="4" stroke-linecap="round" />
+
+  <!-- piccole tessere app che salgono -->
+  <g class="fill-surface stroke-line" stroke-width="1.5">
+    <rect x="86" y="214" width="20" height="20" rx="5" />
+    <rect x="166" y="174" width="20" height="20" rx="5" />
+    <rect x="246" y="128" width="20" height="20" rx="5" />
+    <rect x="326" y="82" width="20" height="20" rx="5" />
+  </g>
+</svg>

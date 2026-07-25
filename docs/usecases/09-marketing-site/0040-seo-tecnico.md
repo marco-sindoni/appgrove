@@ -65,3 +65,12 @@ utenti), compatibili con la postura purista (#14 33). Manifest: N/A.
   sito nascono con slug in inglese sotto il prefisso di lingua (`/it/pricing/`, non `/it/prezzi/`). Gli slug localizzati
   (#14 31), legati da hreflang, sono ottimizzazione SEO che appartiene a questo use case. Quando verrà implementato,
   localizzare gli slug delle pagine brand e delle landing, aggiornando gli hreflang e il check link.
+  _Nota:_ le **landing per-app** (UC 0038) nascono già con **slug localizzati** (`/en/invoicing/`, `/it/fatture/`); qui resta
+  da localizzare **solo** le pagine brand (homepage/why/pricing).
+
+- **Dati strutturati Schema.org + sitemap/robots** _(tracciato dalla change `0048-use-case-0038-…`)_: UC 0038 ha aggiunto al
+  `BaseLayout` i meta **Open Graph/Twitter** (titolo, descrizione, URL, immagine) per tutte le pagine, incluse le landing.
+  Restano da aggiungere in questo use case i **dati strutturati JSON-LD** (dec. #14 29: `SoftwareApplication`/`Product`+`Offer`
+  dai tier di prezzo della landing, **`FAQPage`** dalla sezione FAQ del template, `Organization`, `BreadcrumbList`, `Article`)
+  e **`sitemap.xml`/`robots.txt`**. Il contenuto sorgente esiste già strutturato in `site/src/content/landings/types.ts`
+  (sezioni `pricing` e `faq`): il JSON-LD si può derivare da lì. **Proprietario**: UC 0040.

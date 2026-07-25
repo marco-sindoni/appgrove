@@ -7,7 +7,8 @@
 //   2. nessun token {{ residuo nell'HTML dei legali;
 //   3. hreflang completo (5 lingue + x-default) sulle pagine localizzate;
 //   4. meta noindex presente (salvo SITE_INDEXABLE=true);
-//   5. nessun link interno rotto.
+//   5. nessun link interno rotto;
+//   6. landing per-app (UC 0038): parità 5 lingue + Open Graph per ogni app pubblicata.
 // Exit code ≠ 0 su qualsiasi violazione.
 
 import fs from 'node:fs'
@@ -94,6 +95,51 @@ for (const file of localizedPages) {
   const hasNoindex = /<meta[^>]+name="robots"[^>]+noindex/i.test(html)
   if (!indexable && !hasNoindex) fail(`noindex: meta robots noindex assente in ${url}`)
   if (indexable && hasNoindex) fail(`noindex: SITE_INDEXABLE=true ma ${url} è ancora noindex`)
+}
+
+// 6. Landing per-app (UC 0038): riconosciute dal marcatore <meta name="ag:app-id">.
+//    Difesa a valle del gate strutturale (getStaticPaths pubblica solo `published`,
+//    quindi qui NON deve mai comparire una bozza). Per ogni app pubblicata: parità
+//    delle 5 lingue e presenza dei meta Open Graph. La lingua è il primo segmento URL.
+const landingByApp = new Map() // appId → Map(lang → { url, html })
+for (const file of localizedPages) {
+  const html = fs.readFileSync(file, 'utf8')
+  const m = html.match(/<meta[^>]+name="ag:app-id"[^>]+content="([^"]+)"/i)
+  if (!m) continue
+  const appId = m[1]
+  const url = urlOf(file)
+  const lang = url.split('/')[1]
+  if (!landingByApp.has(appId)) landingByApp.set(appId, new Map())
+  landingByApp.get(appId).set(lang, { url, html })
+}
+
+for (const [appId, byLang] of landingByApp) {
+  // Parità 5 lingue.
+  for (const lang of LOCALES) {
+    if (!byLang.has(lang)) fail(`landing "${appId}": manca la lingua "${lang}"`)
+  }
+  // Open Graph presenti su ogni pagina landing.
+  for (const [lang, { url, html }] of byLang) {
+    for (const prop of ['og:title', 'og:description', 'og:url']) {
+      if (!new RegExp(`property="${prop}"`).test(html)) {
+        fail(`landing "${appId}" [${lang}]: manca il meta Open Graph "${prop}" in ${url}`)
+      }
+    }
+  }
+}
+
+// 7. Illustrazioni della homepage (UC 0037 / change 0048): ogni home localizzata
+//    deve portare le illustrazioni on-brand (marcate data-illustration). Rete di
+//    regressione: se qualcuno le rimuove per errore, il sito torna "solo testo".
+const MIN_HOME_ILLUSTRATIONS = 4
+for (const lang of LOCALES) {
+  const home = path.join(DIST, lang, 'index.html')
+  if (!fs.existsSync(home)) continue // la mancanza è già segnalata dal controllo di parità
+  const html = fs.readFileSync(home, 'utf8')
+  const count = (html.match(/data-illustration=/g) || []).length
+  if (count < MIN_HOME_ILLUSTRATIONS) {
+    fail(`illustrazioni: la home "${lang}" ne ha ${count} (attese ≥ ${MIN_HOME_ILLUSTRATIONS})`)
+  }
 }
 
 // 5. Link interni: ogni <a href="/…"> deve risolvere a un file in dist.

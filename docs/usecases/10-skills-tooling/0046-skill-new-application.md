@@ -76,6 +76,14 @@ Skill di tooling: l'app generata deve nascere con suite verde (unit/integration/
 
 _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
+- **Generazione della bozza di landing** _(tracciato dalla change `0048-use-case-0038-…`)_: UC 0038 ha consegnato il
+  **template landing per-app** + il modello dati `LandingContent` con `status: draft|published` (`site/src/content/landings/`,
+  `site/src/lib/landings.ts`, `site/src/components/LandingSections.astro`) e il gate di pubblicazione. Manca il pezzo di
+  competenza di **questa** skill (dec. #14 9/51): `new-application` deve **generare la bozza** della landing (copy AI on-brand
+  8 sezioni + screenshot placeholder `src: null`, `ogImage: null`) aggiungendo una voce `status: 'draft'` al registro
+  `site/src/content/landings/index.ts` con lo slug localizzato per lingua (evitando gli `RESERVED_SLUGS`). UC 0038 escludeva
+  esplicitamente la modifica alla skill "in sé"; qui è dove va fatta. **Proprietario**: UC 0046.
+
 - ✅ **chiuso dalla change 0041** — la scoperta automatica è reale: `dev/lib/services.sh` deriva la mappa
   servizio → identificativo app → porta → schema dagli `application.properties` già presenti nei servizi, e
   `dev migrate`/`dev service`/`app-start.sh`/`app-stop.sh`/`dev/Caddyfile`/`tools/smoke` la consumano. Il

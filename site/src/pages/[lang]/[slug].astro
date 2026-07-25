@@ -1,0 +1,31 @@
+---
+// Rotta delle landing per-app (UC 0038): /<lang>/<slug>/ con slug LOCALIZZATO
+// (dec. #14 31, es. /en/invoicing/, /it/fatture/). getStaticPaths deriva i percorsi
+// da landingParams(), che espone SOLO le landing `published` (gate #14 52): una
+// bozza non genera pagine, quindi non finisce in dist/. In Astro le rotte statiche
+// (why, pricing, legal…) hanno priorità su questa dinamica; la lista di slug
+// riservati (lib/landings.ts) impedisce comunque a una landing di rivendicarle.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import LandingSections from '../../components/LandingSections.astro'
+import { landingParams } from '../../lib/landings.ts'
+import type { Locale } from '../../lib/i18n.ts'
+import type { Landing } from '../../content/landings/types.ts'
+
+export function getStaticPaths() {
+  return landingParams()
+}
+
+const { landing, lang } = Astro.props as { landing: Landing; lang: Locale }
+const c = landing.content[lang]
+---
+
+<BaseLayout
+  lang={lang}
+  title={c.meta.title}
+  description={c.meta.description}
+  pathWithinLocale={`/${c.slug}/`}
+  ogImage={c.meta.ogImage}
+  appId={landing.appId}
+>
+  <LandingSections content={c} lang={lang} />
+</BaseLayout>

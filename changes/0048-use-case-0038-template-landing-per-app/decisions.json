@@ -1,0 +1,103 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi a commit e merge restano allo sviluppatore, così come la rilettura/approvazione dei requisiti."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0038 (Template landing per-app), area 09-marketing-site: il testo dell'invocazione corrisponde allo scope in docs/usecases/09-marketing-site/0038-template-landing-per-app.md. Da qui la forma del branch 0048-use-case-0038-…; l'indice esecutivo docs/usecases/_INDEX.md passa a 🟡 all'apertura e a ✅ alla chiusura.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0038 → 🟡 (in corso) allo step-01; → ✅ allo step-04." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Scope: si consegna SOLO il template landing + il modello dati draft/published + il gate + i controlli automatici. Restano fuori (tracciati come rimandi negli UC proprietari) la generazione della bozza da new-application (UC 0046), finalize-landing (UC 0057), la landing app #1 (UC 0053), Schema.org completo + sitemap (UC 0040), il segnale landing stale in new-change (UC 0057). Motivo: UC 0038 §1 esclude esplicitamente le skill 'in sé'; massimizzare il task senza anticipare il lavoro successivo."
+  },
+  {
+    "id": 4,
+    "decision": "URL delle landing = slug localizzato alla radice della lingua (/en/invoicing/, /it/fatture/) onorando la decisione #14 31, invece del prefisso /apps/. Proposto in autopilot come opzione raccomandata (URL corti con keyword nel percorso, SEO/GEO) e CONFERMATO esplicitamente dallo sviluppatore al gate dei requisiti. Collisioni con le pagine statiche prevenute da una lista di slug riservati (validazione + test); in Astro le rotte statiche hanno comunque priorità sulla dinamica [slug].",
+    "files": [
+      { "file": "site/src/pages/[lang]/[slug].astro", "description": "Rotta dinamica; getStaticPaths genera una pagina per lingua da ogni landing pubblicata, con slug localizzato." },
+      { "file": "site/src/lib/landings.ts", "description": "RESERVED_SLUGS + validazione che vieta a una landing di usare uno slug riservato." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Gate draft/published STRUTTURALE: getStaticPaths filtra status === 'published', quindi una bozza non compare mai in dist/. Il controllo post-build resta come rete di sicurezza (parità 5 lingue + Open Graph sulle pubblicate). È la garanzia più forte contro pubblicazioni accidentali (dec. 52).",
+    "files": [
+      { "file": "site/src/lib/landings.ts", "description": "publishedLandings()/landingParams() espongono solo le landing pubblicate." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Contenuti landing come modello TypeScript strutturato (non markdown), come per il marketing (UC 0037): il tipo Record<Locale, LandingContent> dà la parità 5 lingue a compile-time. Le 8 sezioni (dec. 25) sono campi tipizzati. Gli screenshot sono { src: string | null, alt }: null → riquadro placeholder on-brand (stato bozza), src riempito da finalize-landing.",
+    "files": [
+      { "file": "site/src/content/landings/types.ts", "description": "Tipo LandingContent + tipi delle 8 sezioni + LandingStatus." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Open Graph/Twitter card aggiunti al BaseLayout (beneficio a tutte le pagine del sito) + marcatore <meta name=\"ag:app-id\"> sulle sole landing, così il controllo post-build le riconosce senza importare il registro TypeScript e senza esporre le bozze. JSON-LD/Schema.org completo rimandato a UC 0040.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Prop ogImage + tag Open Graph/Twitter + slot head opzionale." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Fixture di esempio: una landing 'example' (5 lingue, status draft, screenshot placeholder) per collaudare template e test senza pubblicare contenuti finti e senza anticipare la landing dell'app #1 (UC 0053). Le icone Material Symbols si importano nel componente delle sezioni, così il font si carica solo sulle pagine landing.",
+    "files": [
+      { "file": "site/src/content/landings/example/en.ts", "description": "Fixture bozza (sorgente EN + traduzioni)." },
+      { "file": "site/src/components/LandingSections.astro", "description": "Template parametrico 8 sezioni; import material-symbols/outlined.css scoping alle landing." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Config vitest resa Astro-aware con getViteConfig (astro/config), così i test possono importare e RENDERE componenti .astro via Container API (test di resa delle 8 sezioni). Alternative scartate: build-only (non verifica la resa del contenuto) e una pagina di anteprima in dist (aggiungerebbe pagine pubbliche o esporrebbe la bozza). getViteConfig è trasparente per i test TypeScript esistenti (marketing/legali), verificato verde.",
+    "files": [
+      { "file": "site/vitest.config.ts", "description": "Passa a getViteConfig per abilitare il transform .astro nei test." },
+      { "file": "site/src/content/landings/landings.test.ts", "description": "Test: parità/valori 5 lingue, gate draft/published, slug riservati, resa template via AstroContainer." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Controllo post-build esteso: le pagine landing sono riconosciute dal marcatore <meta name=\"ag:app-id\"> e verificate per parità 5 lingue + presenza dei meta Open Graph. È difesa a valle del gate strutturale (le bozze non compaiono comunque in dist/). Verificato l'intero percorso published con una prova temporanea (fixture forzata a published → build genera 5 pagine con slug localizzati + Open Graph + ag:app-id, controllo verde) e poi ripristinata a draft.",
+    "files": [
+      { "file": "site/scripts/postbuild-check.mjs", "description": "Nuovo controllo #6: landing per-app (parità 5 lingue + Open Graph per app pubblicata)." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "Gate privacy/RoPA (UC 0031): privacy-scan eseguito sul diff finale → nessun segnale. La change tocca solo contenuti statici del sito vetrina (marketing), senza dati personali, senza nuove migrazioni/campi, senza nuove dipendenze o host esterni (material-symbols era già dipendenza). Classificazione: non applicabile (nessun trattamento). Nessun bump di versione legale."
+  },
+  {
+    "id": 12,
+    "decision": "Decisioni differite tracciate prima della chiusura (regola CLAUDE.md): (a) generazione della bozza landing da new-application → UC 0046 (Punti aperti); (b) finalize-landing (screenshot reali/immagine OG/review/publish) + contratto da consumare + caso 'landing stale' da new-change → UC 0057 (Punti aperti, sezione aggiunta); (c) dati strutturati JSON-LD Schema.org + sitemap/robots → UC 0040 (Punti aperti); (d) landing concreta dell'app #1 → UC 0053 (già in indice). Nessun punto lasciato solo in chat."
+  },
+  {
+    "id": 13,
+    "decision": "Ampliamento di scope richiesto esplicitamente dallo sviluppatore: rendere la homepage (UC 0037) più visuale con immagini nelle sezioni. Sono state aggiunte illustrazioni al posto di immagini raster generate con AI perché: (1) l'ambiente non dispone di uno strumento di generazione immagini (limite dichiarato onestamente); (2) un generatore esterno contraddirebbe la linea 'tutto in UE / self-hosted, nessun host esterno' e introdurrebbe un potenziale fornitore; (3) le illustrazioni vettoriali seguono il tema chiaro/scuro, un raster no. Scelta approvata dallo sviluppatore (opzione raccomandata). Coerente con #14 F3/35 (illustrazioni on-brand).",
+    "files": [
+      { "file": "site/src/components/illustrations/HeroVisual.astro", "description": "Illustrazione hero 'crescita'." },
+      { "file": "site/src/components/illustrations/AppsVisual.astro", "description": "Illustrazione 'un account, ogni strumento' (griglia app)." },
+      { "file": "site/src/components/illustrations/EcosystemVisual.astro", "description": "Illustrazione 'un account, tanti strumenti' (hub + satelliti)." },
+      { "file": "site/src/components/illustrations/AiVisual.astro", "description": "Illustrazione 'Ready for AI' (chat ↔ app via MCP)." },
+      { "file": "site/src/components/illustrations/PrivacyVisual.astro", "description": "Illustrazione privacy/EU (scudo + stelle)." },
+      { "file": "site/src/pages/[lang]/index.astro", "description": "Homepage: sezioni riorganizzate a due colonne testo + illustrazione." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "Le illustrazioni sono SVG inline on-brand: i colori usano classi Tailwind fill-*/stroke-* mappate ai token del design system (rgb(var(--ag-*))), così seguono accento e tema chiaro/scuro a runtime senza JavaScript. Sono decorative (aria-hidden, il significato è nel testo) e marcate con data-illustration, su cui il controllo post-build aggiunge una rete di regressione (ogni home ≥ 4 illustrazioni). Il template landing (UC 0038) NON riceve illustrazioni decorative perché è screenshot-first per design: farebbero concorrenza allo screenshot dell'app.",
+    "files": [
+      { "file": "site/scripts/postbuild-check.mjs", "description": "Controllo #7: ogni home localizzata porta ≥ 4 illustrazioni (marker data-illustration)." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "Direttiva dello sviluppatore: riusare lo stesso stile di illustrazione per arricchire le pagine future del sito (non solo questa change). Documentata in site/src/components/illustrations/README.md (stile + come aggiungerne una) così chi lavora sulle pagine future la trova, e salvata come preferenza persistente in memoria. Non implementata ora per pagine inesistenti (non si anticipa il lavoro futuro).",
+    "files": [
+      { "file": "site/src/components/illustrations/README.md", "description": "Convenzione di stile delle illustrazioni + direttiva di riuso per le pagine future." }
+    ]
+  }
+]
