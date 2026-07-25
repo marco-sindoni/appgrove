@@ -100,5 +100,35 @@
     "files": [
       { "file": "docs/_BACKLOG.md", "description": "Nuova sezione 'Prodotto — Ready for AI: app distribuite via MCP' (tema trasversale GRANDE, use case dedicati futuri; il sito anticipa il concetto onestamente)." }
     ]
+  },
+  {
+    "id": 20,
+    "decision": "Formulazione del pilastro 'Ready for AI' confermata dallo SVILUPPATORE: 'visione forte ma onesta' — pilastro molto visibile, formulato come principio di design/visione dell'ecosistema (app progettate per essere richiamate dagli assistenti AI), SENZA affermare che ogni app è già richiamabile ora. Riconciliazione coi contenuti reali prima del go-live (tracciata in docs/_BACKLOG.md). Scartata la formulazione 'disponibilità piena' per rischio di claim non veritiero (utenti + revisione dominio Paddle)."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Top nav responsive SENZA menu a scomparsa (hamburger): le voci restano visibili e vanno a capo (flex-wrap) su schermi piccoli. Motivo: evitare un ulteriore island interattivo (JS) su un sito statico SEO/perf-first per un numero ridotto di voci; il wrap è sufficiente e accessibile. Se il numero di voci cresce (es. all'arrivo di Blog, UC 0042), rivalutare un menu compatto.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Header con nav flex-wrap, senza hamburger." }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) URL esterni e contatti (login/registrazione SPA, mail support, security.txt) centralizzati in site/src/lib/links.ts, riusati da layout e pagine (una sola fonte, niente duplicazione).",
+    "files": [
+      { "file": "site/src/lib/links.ts", "description": "APP_LOGIN, APP_SIGNUP, SUPPORT_EMAIL, SECURITY_TXT." }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) I bottoni della newsletter (homepage e footer) sono resi come type=button disabled: la struttura visuale è presente ma NON finge un invio riuscito, coerente con l'assenza di backend (UC 0039). All'atterraggio di UC 0039 il form va collegato all'endpoint reale con consenso.",
+    "files": [
+      { "file": "site/src/pages/[lang]/index.astro", "description": "Sezione newsletter: form con bottone disabilitato." },
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Newsletter nel footer: form con bottone disabilitato." }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Gate privacy/RoPA (UC 0031) eseguito (tools/compliance npm run privacy-scan): nessun segnale. Coerente con l'assenza di trattamento (pagine statiche). Il typecheck 'astro check' NON è nella suite canonica del sito (run-tests.sh site = vitest + astro build + controllo post-build) e richiede l'installazione interattiva di @astrojs/check: non installato/eseguito; la parità di TIPO dei contenuti è comunque garantita dal Record<Locale, MarketingContent> in fase di build e dal test vitest sui valori."
   }
 ]

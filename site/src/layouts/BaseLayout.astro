@@ -1,7 +1,8 @@
 ---
-// Layout di base della vetrina (UC 0036): <head> con hreflang + x-default,
-// gate di indicizzazione (noindex fino al go-live), brand del design system,
-// header col selettore lingua e footer coi documenti legali.
+// Layout di base della vetrina (UC 0036 + UC 0037): <head> con hreflang +
+// x-default, gate di indicizzazione (noindex fino al go-live), brand del design
+// system, header con top nav localizzata + selettore lingua, footer arricchito
+// (legali · Support · security.txt · newsletter · ©).
 import '../styles/global.css'
 import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
 import {
@@ -12,6 +13,8 @@ import {
   type Locale,
 } from '../lib/i18n.ts'
 import { LEGAL_COMPONENTS } from '../lib/legal.ts'
+import { MARKETING } from '../content/marketing/index.ts'
+import { APP_LOGIN, APP_SIGNUP, SUPPORT_EMAIL, SECURITY_TXT } from '../lib/links.ts'
 
 interface Props {
   lang: Locale
@@ -23,6 +26,7 @@ interface Props {
 
 const { lang, title, description, pathWithinLocale = '/' } = Astro.props
 const path = normalizePath(pathWithinLocale)
+const t = MARKETING[lang]
 
 // Gate di indicizzazione (#14 54): `noindex` finché SITE_INDEXABLE !== 'true'
 // (rimozione = atto operativo al go-live). Default: non indicizzabile.
@@ -37,6 +41,13 @@ const langOptions = LOCALES.map((loc) => ({
   href: `/${loc}${path}`,
 }))
 
+const navLinks = [
+  { label: t.nav.app, href: `/${lang}/#apps` },
+  { label: t.nav.why, href: `/${lang}/why/` },
+  { label: t.nav.pricing, href: `/${lang}/pricing/` },
+]
+
+// Etichette brevi dei documenti legali (nomi propri dei documenti, riconoscibili).
 const legalLabels: Record<string, string> = {
   privacy: 'Privacy',
   terms: 'Terms',
@@ -44,6 +55,8 @@ const legalLabels: Record<string, string> = {
   cookie: 'Cookie',
   subprocessors: 'Sub-processors',
 }
+
+const year = new Date().getFullYear()
 ---
 
 <!doctype html>
@@ -61,32 +74,97 @@ const legalLabels: Record<string, string> = {
       ))
     }
   </head>
-  <body class="min-h-screen bg-bg text-fg">
+  <body class="flex min-h-screen flex-col bg-bg text-fg">
     <header class="border-b border-line">
-      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+      <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
         <a href={`/${lang}/`} class="text-lg font-extrabold tracking-tight">appgrove</a>
-        <div class="flex items-center gap-4">
+        <nav aria-label="Primaria" class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+          {
+            navLinks.map((l) => (
+              <a href={l.href} class="text-fg-muted hover:text-fg">
+                {l.label}
+              </a>
+            ))
+          }
+          <a href={APP_LOGIN} class="text-fg-muted hover:text-fg">{t.nav.login}</a>
+          <a
+            href={APP_SIGNUP}
+            class="rounded-pill bg-accent px-3 py-1.5 font-semibold text-accent-contrast hover:opacity-90"
+          >
+            {t.nav.signup}
+          </a>
           <LanguageSwitcher current={lang} options={langOptions} client:load />
-        </div>
+        </nav>
       </div>
     </header>
 
-    <main class="mx-auto max-w-5xl px-4 py-10">
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
       <slot />
     </main>
 
     <footer class="mt-16 border-t border-line">
-      <div class="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-fg-muted">
-        <nav class="flex flex-wrap gap-x-4 gap-y-1">
-          {
-            LEGAL_COMPONENTS.map((c) => (
-              <a href={`/${lang}/legal/${c}/`} class="hover:text-fg">
-                {legalLabels[c] ?? c}
-              </a>
-            ))
-          }
-        </nav>
-        <p>© {new Date().getFullYear()} appgrove — all-EU, GDPR-first.</p>
+      <div class="mx-auto max-w-5xl px-4 py-10">
+        <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p class="text-lg font-extrabold tracking-tight">appgrove</p>
+            <p class="mt-2 text-sm text-fg-muted">{t.footer.tagline}</p>
+          </div>
+
+          <nav aria-label={t.footer.legalHeading} class="text-sm">
+            <p class="mb-2 font-semibold">{t.footer.legalHeading}</p>
+            <ul class="flex flex-col gap-1">
+              {
+                LEGAL_COMPONENTS.map((c) => (
+                  <li>
+                    <a href={`/${lang}/legal/${c}/`} class="text-fg-muted hover:text-fg">
+                      {legalLabels[c] ?? c}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </nav>
+
+          <nav aria-label={t.footer.supportLabel} class="text-sm">
+            <p class="mb-2 font-semibold">{t.footer.supportLabel}</p>
+            <ul class="flex flex-col gap-1">
+              <li>
+                <a href={`mailto:${SUPPORT_EMAIL}`} class="text-fg-muted hover:text-fg">
+                  {SUPPORT_EMAIL}
+                </a>
+              </li>
+              <li>
+                <a href={SECURITY_TXT} class="text-fg-muted hover:text-fg">
+                  {t.footer.securityLabel} · security.txt
+                </a>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="text-sm">
+            <p class="mb-2 font-semibold">{t.footer.newsletterTitle}</p>
+            <p class="mb-3 text-fg-muted">{t.footer.newsletterBody}</p>
+            {/* Struttura visuale: la raccolta email vera (consenso, Plausible) è UC 0039. */}
+            <form class="flex flex-wrap gap-2" aria-label={t.footer.newsletterTitle}>
+              <input
+                type="email"
+                name="email"
+                autocomplete="email"
+                placeholder={t.footer.newsletterPlaceholder}
+                class="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-1.5 text-sm"
+              />
+              <button
+                type="button"
+                disabled
+                class="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm font-semibold text-fg-muted"
+              >
+                {t.footer.newsletterCta}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <p class="mt-8 border-t border-line pt-6 text-sm text-fg-muted">© {year} {t.footer.rights}</p>
       </div>
     </footer>
   </body>
