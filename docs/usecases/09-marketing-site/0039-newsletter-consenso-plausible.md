@@ -81,3 +81,8 @@ _Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento
   backend: nessun invio, nessun consenso, nessun Plausible. Quando questo use case verrà implementato deve **collegare
   quel form** (`site/src/content/marketing/*` per i testi, sezione newsletter di homepage/footer) all'endpoint di
   raccolta con double opt-in e consent log.
+- **Allineare i goal Plausible con le convenzioni UTM di `campaign-guide` (da change `0053-use-case-0050-…`)**: la
+  skill `campaign-guide` (UC 0050) definisce lo schema UTM lato campagna, ma i **goal** che Plausible conta
+  (iscrizione newsletter, click verso l'app, …) nascono qui. Quando questo use case imposterà i goal, sceglierne
+  i nomi in modo coerente con lo schema UTM di `.claude/skills/campaign-guide/reference/convenzioni-utm.md`, così
+  che il report campagna sia leggibile end-to-end (sorgente → visita → goal).
