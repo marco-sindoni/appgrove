@@ -39,6 +39,7 @@ jobs:
       infra: ${{ steps.filter.outputs.infra }}
       workflows: ${{ steps.filter.outputs.workflows }}
       smoke: ${{ steps.filter.outputs.smoke }}
+      site: ${{ steps.filter.outputs.site }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -58,6 +59,10 @@ jobs:
               - 'services/**'
               - 'dev/**'
               - 'tools/smoke/**'
+              - 'run-tests.sh'
+            site:
+              - 'site/**'
+              - 'content/legal/**'
               - 'run-tests.sh'
 
   # ── Backend: suite completa se toccato (#10 34) ────────────────────────────
@@ -136,6 +141,21 @@ jobs:
       - name: E2E L2 (sempre bloccanti, #10 35)
         working-directory: frontend
         run: npm run e2e
+
+  # ── Sito vetrina: SEO tecnico (UC 0040) — vitest + astro build + controllo SEO ──
+  # Il controllo post-build (parità 5 lingue, hreflang risolvibili, sitemap/robots,
+  # JSON-LD, noindex) è il "check CI SEO" del DoD di UC 0040: qui diventa bloccante.
+  site:
+    needs: changes
+    if: needs.changes.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Suite site (vitest + astro build + controllo SEO)
+        run: ./run-tests.sh site
 
   # ── Infra: validazione statica (fmt/validate/terraform test/tflint/checkov) ─
   infra-check:

@@ -9,6 +9,13 @@
 //   4. meta noindex presente (salvo SITE_INDEXABLE=true);
 //   5. nessun link interno rotto;
 //   6. landing per-app (UC 0038): parità 5 lingue + Open Graph per ogni app pubblicata.
+// SEO tecnico (UC 0040):
+//   8. ogni pagina localizzata ha <title> e <meta name="description"> non vuoti;
+//   9. ogni hreflang RISOLVE a una pagina reale in dist (non solo presenza) — cattura
+//      gli slug localizzati che non combaciano fra lingue;
+//  10. sitemap.xml e robots.txt presenti; sitemap XML ben formato e non vuota;
+//  11. dati strutturati JSON-LD validi: ogni pagina ha Organization; le landing hanno
+//      SoftwareApplication e FAQPage.
 // Exit code ≠ 0 su qualsiasi violazione.
 
 import fs from 'node:fs'
@@ -20,9 +27,13 @@ const DIST = path.join(ROOT, 'dist')
 
 const LOCALES = ['en', 'it', 'fr', 'es', 'de']
 const LEGAL_COMPONENTS = ['privacy', 'terms', 'refund', 'cookie', 'subprocessors']
-// Pagine brand localizzate attese in ogni lingua (UC 0037): home + why + pricing.
-// Percorso relativo a /<lang>/ ('' = home). I legali sono verificati a parte.
-const BRAND_PAGES = ['', 'why', 'pricing']
+// Slug brand localizzati per lingua (UC 0040): home (senza slug) + why + pricing con
+// slug tradotto. DEVE restare allineato a src/lib/routes.ts (BRAND_SLUGS): un
+// disallineamento fa fallire questo controllo (parità), quindi il drift è rumoroso.
+const BRAND_SLUGS = {
+  why: { en: 'why', it: 'perche', fr: 'pourquoi', es: 'por-que', de: 'warum' },
+  pricing: { en: 'pricing', it: 'prezzi', fr: 'tarifs', es: 'precios', de: 'preise' },
+}
 const indexable = process.env.SITE_INDEXABLE === 'true'
 
 const errors = []
@@ -47,6 +58,29 @@ const allFiles = walk(DIST)
 const htmlFiles = allFiles.filter((f) => f.endsWith('.html'))
 const relFromDist = (f) => '/' + path.relative(DIST, f).split(path.sep).join('/')
 
+// Estrae e parsa i blocchi JSON-LD di una pagina. Ritorna { types, invalid }:
+// `types` = i @type trovati (stringa o array), `invalid` = numero di blocchi che NON
+// parsano come JSON (SEO tecnico UC 0040: un JSON-LD malformato è peggio che assente).
+function jsonLdTypes(html) {
+  const types = []
+  let invalid = 0
+  const re = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g
+  let m
+  while ((m = re.exec(html)) !== null) {
+    try {
+      const parsed = JSON.parse(m[1])
+      for (const node of Array.isArray(parsed) ? parsed : [parsed]) {
+        const t = node && node['@type']
+        if (Array.isArray(t)) types.push(...t)
+        else if (t) types.push(t)
+      }
+    } catch {
+      invalid += 1
+    }
+  }
+  return { types, invalid }
+}
+
 // Percorso URL "pulito" di un file HTML: dist/it/legal/privacy/index.html → /it/legal/privacy/
 function urlOf(file) {
   let rel = relFromDist(file)
@@ -55,13 +89,26 @@ function urlOf(file) {
   return rel
 }
 
-// 1. Parità 5 lingue: pagine brand (home, why, pricing) + legali.
+// Un percorso interno (href/hreflang) risolve a un file reale in dist? Usato sia dal
+// controllo link (5) sia dalla risoluzione degli hreflang (9, UC 0040), perciò definito qui.
+const pageExists = (href) => {
+  const clean = href.split('#')[0].split('?')[0]
+  if (clean === '' || clean === '/') return fs.existsSync(path.join(DIST, 'index.html'))
+  const rel = clean.replace(/^\//, '').replace(/\/$/, '')
+  const asDir = path.join(DIST, rel, 'index.html')
+  const asFile = path.join(DIST, rel)
+  return fs.existsSync(asDir) || fs.existsSync(asFile)
+}
+
+// 1. Parità 5 lingue: home + pagine brand (slug localizzati) + legali.
 for (const lang of LOCALES) {
-  for (const page of BRAND_PAGES) {
-    const p = path.join(DIST, lang, page, 'index.html')
+  const home = path.join(DIST, lang, 'index.html')
+  if (!fs.existsSync(home)) fail(`parità: manca la home per lingua "${lang}" (${relFromDist(home)})`)
+  for (const [key, byLang] of Object.entries(BRAND_SLUGS)) {
+    const slug = byLang[lang]
+    const p = path.join(DIST, lang, slug, 'index.html')
     if (!fs.existsSync(p)) {
-      const label = page === '' ? 'home' : `pagina "${page}"`
-      fail(`parità: manca la ${label} per lingua "${lang}" (${relFromDist(p)})`)
+      fail(`parità: manca la pagina brand "${key}" (${slug}) per lingua "${lang}" (${relFromDist(p)})`)
     }
   }
   for (const c of LEGAL_COMPONENTS) {
@@ -91,6 +138,33 @@ for (const file of localizedPages) {
     if (!hreflangs.includes(expected)) fail(`hreflang: manca "${expected}" in ${url}`)
   }
 
+  // 8. title + description non vuoti (SEO tecnico UC 0040).
+  const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i)
+  if (!titleMatch || !titleMatch[1].trim()) fail(`meta: <title> assente o vuoto in ${url}`)
+  const descMatch = html.match(/<meta[^>]+name="description"[^>]+content="([^"]*)"/i)
+  if (!descMatch || !descMatch[1].trim()) fail(`meta: description assente o vuota in ${url}`)
+
+  // 9. hreflang che RISOLVONO a pagine reali (non solo presenti). Cattura gli slug
+  //    localizzati che non combaciano fra lingue (bug corretto in UC 0040).
+  const altHrefs = [...html.matchAll(/rel="alternate"[^>]+href="([^"]+)"|href="([^"]+)"[^>]+hreflang=/g)]
+    .map((m) => m[1] || m[2])
+    .filter(Boolean)
+  for (const href of altHrefs) {
+    let pathname
+    try {
+      pathname = new URL(href, 'https://appgrove.app').pathname
+    } catch {
+      fail(`hreflang: href non valido "${href}" in ${url}`)
+      continue
+    }
+    if (!pageExists(pathname)) fail(`hreflang: alternate "${pathname}" non risolve (da ${url})`)
+  }
+
+  // 11. Dati strutturati: JSON-LD valido + Organization su ogni pagina (UC 0040).
+  const { types, invalid } = jsonLdTypes(html)
+  if (invalid > 0) fail(`json-ld: ${invalid} blocco/i non parsano come JSON in ${url}`)
+  if (!types.includes('Organization')) fail(`json-ld: manca Organization in ${url}`)
+
   // 4. noindex (salvo indicizzazione esplicita).
   const hasNoindex = /<meta[^>]+name="robots"[^>]+noindex/i.test(html)
   if (!indexable && !hasNoindex) fail(`noindex: meta robots noindex assente in ${url}`)
@@ -118,11 +192,17 @@ for (const [appId, byLang] of landingByApp) {
   for (const lang of LOCALES) {
     if (!byLang.has(lang)) fail(`landing "${appId}": manca la lingua "${lang}"`)
   }
-  // Open Graph presenti su ogni pagina landing.
+  // Open Graph + dati strutturati landing (UC 0040) su ogni pagina landing.
   for (const [lang, { url, html }] of byLang) {
     for (const prop of ['og:title', 'og:description', 'og:url']) {
       if (!new RegExp(`property="${prop}"`).test(html)) {
         fail(`landing "${appId}" [${lang}]: manca il meta Open Graph "${prop}" in ${url}`)
+      }
+    }
+    const { types } = jsonLdTypes(html)
+    for (const expected of ['SoftwareApplication', 'FAQPage']) {
+      if (!types.includes(expected)) {
+        fail(`landing "${appId}" [${lang}]: manca il JSON-LD "${expected}" in ${url}`)
       }
     }
   }
@@ -143,15 +223,6 @@ for (const lang of LOCALES) {
 }
 
 // 5. Link interni: ogni <a href="/…"> deve risolvere a un file in dist.
-const pageExists = (href) => {
-  const clean = href.split('#')[0].split('?')[0]
-  if (clean === '' || clean === '/') return fs.existsSync(path.join(DIST, 'index.html'))
-  const rel = clean.replace(/^\//, '').replace(/\/$/, '')
-  const asDir = path.join(DIST, rel, 'index.html')
-  const asFile = path.join(DIST, rel)
-  return fs.existsSync(asDir) || fs.existsSync(asFile)
-}
-
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, 'utf8')
   const hrefs = [...html.matchAll(/<a\s[^>]*href="([^"]+)"/g)].map((m) => m[1])
@@ -160,6 +231,23 @@ for (const file of htmlFiles) {
     if (href.startsWith('//')) continue // protocol-relative → esterno
     if (!pageExists(href)) fail(`link rotto: ${href} referenziato da ${urlOf(file)}`)
   }
+}
+
+// 10. sitemap.xml + robots.txt (SEO tecnico UC 0040).
+const sitemapPath = path.join(DIST, 'sitemap.xml')
+if (!fs.existsSync(sitemapPath)) {
+  fail('sitemap: dist/sitemap.xml assente')
+} else {
+  const xml = fs.readFileSync(sitemapPath, 'utf8')
+  if (!xml.includes('<urlset')) fail('sitemap: manca <urlset> (XML non ben formato)')
+  if (!/<loc>/.test(xml)) fail('sitemap: nessun <loc> (sitemap vuota)')
+}
+const robotsPath = path.join(DIST, 'robots.txt')
+if (!fs.existsSync(robotsPath)) {
+  fail('robots: dist/robots.txt assente')
+} else {
+  const robots = fs.readFileSync(robotsPath, 'utf8')
+  if (!/User-agent:/i.test(robots)) fail('robots: manca la direttiva User-agent')
 }
 
 if (errors.length) {

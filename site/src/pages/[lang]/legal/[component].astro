@@ -23,9 +23,24 @@ const titles: Record<string, string> = {
   cookie: 'Cookie',
   subprocessors: 'Sub-processors',
 }
+
+// Meta description dei legali (UC 0040): breve, localizzata, per non lasciare pagine
+// indicizzabili senza descrizione. I documenti .md non portano una description propria.
+const legalDescription: Record<Locale, string> = {
+  en: 'Legal document for appgrove — your data and your rights, hosted in the EU with full GDPR protection.',
+  it: 'Documento legale di appgrove — i tuoi dati e i tuoi diritti, ospitati in UE con piena tutela GDPR.',
+  fr: 'Document légal appgrove — vos données et vos droits, hébergés dans l’UE avec pleine protection RGPD.',
+  es: 'Documento legal de appgrove — tus datos y tus derechos, alojados en la UE con plena protección RGPD.',
+  de: 'Rechtsdokument von appgrove — deine Daten und Rechte, in der EU gehostet mit vollem DSGVO-Schutz.',
+}
 ---
 
-<BaseLayout lang={lang} title={titles[component] ?? component} pathWithinLocale={`/legal/${component}/`}>
+<BaseLayout
+  lang={lang}
+  title={titles[component] ?? component}
+  description={legalDescription[lang]}
+  pathWithinLocale={`/legal/${component}/`}
+>
   <article class="prose-legal">
     <p class="mb-6 text-sm text-fg-faint">
       v{doc.frontmatter.version} · {doc.frontmatter.effective_date}

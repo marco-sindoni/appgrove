@@ -1,31 +1,85 @@
 ---
-// Rotta delle landing per-app (UC 0038): /<lang>/<slug>/ con slug LOCALIZZATO
-// (dec. #14 31, es. /en/invoicing/, /it/fatture/). getStaticPaths deriva i percorsi
-// da landingParams(), che espone SOLO le landing `published` (gate #14 52): una
-// bozza non genera pagine, quindi non finisce in dist/. In Astro le rotte statiche
-// (why, pricing, legal…) hanno priorità su questa dinamica; la lista di slug
-// riservati (lib/landings.ts) impedisce comunque a una landing di rivendicarle.
+// Dispatcher unico delle pagine /<lang>/<slug>/ (UC 0038 landing + UC 0040 brand).
+//
+// In Astro una sola rotta dinamica può servire /<lang>/<slug>/: qui convivono le
+// pagine BRAND con slug localizzato (why→/perche/, pricing→/prezzi/, …) e le LANDING
+// per-app (slug per-lingua). getStaticPaths unisce le due sorgenti; il corpo scelto
+// dipende dal discriminante `kind` delle props. Le sole landing `published` compaiono
+// (gate #14 52). Gli hreflang usano i percorsi REALI di ogni lingua (slug localizzati),
+// così non puntano mai a URL inesistenti.
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import LandingSections from '../../components/LandingSections.astro'
+import WhyContent from '../../components/WhyContent.astro'
+import PricingContent from '../../components/PricingContent.astro'
 import { landingParams } from '../../lib/landings.ts'
-import type { Locale } from '../../lib/i18n.ts'
+import { brandParams, brandPath, brandHreflangPaths, slugHreflangPaths, type BrandRouteProps } from '../../lib/routes.ts'
+import { LOCALES, type Locale } from '../../lib/i18n.ts'
+import { MARKETING } from '../../content/marketing/index.ts'
+import { breadcrumbJsonLd, landingJsonLd } from '../../lib/seo.ts'
 import type { Landing } from '../../content/landings/types.ts'
 
 export function getStaticPaths() {
-  return landingParams()
+  return [...brandParams(), ...landingParams()]
 }
 
-const { landing, lang } = Astro.props as { landing: Landing; lang: Locale }
-const c = landing.content[lang]
+type LandingRouteProps = { kind: 'landing'; landing: Landing; lang: Locale }
+const props = Astro.props as BrandRouteProps | LandingRouteProps
+const { lang } = props
+
+// Meta e contenuto specifici del tipo di pagina.
+let title: string
+let description: string
+let pathWithinLocale: string
+let hreflangPaths: Record<Locale, string>
+let ogImage: string | null = null
+let appId: string | undefined
+let jsonLd: Record<string, unknown>[]
+
+if (props.kind === 'landing') {
+  const c = props.landing.content[lang]
+  title = c.meta.title
+  description = c.meta.description
+  pathWithinLocale = `/${c.slug}/`
+  ogImage = c.meta.ogImage
+  appId = props.landing.appId
+  const slugByLocale = Object.fromEntries(LOCALES.map((l) => [l, props.landing.content[l].slug])) as Record<Locale, string>
+  hreflangPaths = slugHreflangPaths(slugByLocale)
+  const url = new URL(`/${lang}${pathWithinLocale}`, Astro.site).toString()
+  jsonLd = [
+    breadcrumbJsonLd([
+      { name: MARKETING[lang].nav.app, url: new URL(`/${lang}/`, Astro.site).toString() },
+      { name: title, url },
+    ]),
+    ...landingJsonLd(c, url),
+  ]
+} else {
+  const t = MARKETING[lang]
+  const page = props.brandKey === 'why' ? t.why : t.pricing
+  title = page.title
+  description = page.intro
+  pathWithinLocale = brandPath(props.brandKey, lang)
+  hreflangPaths = brandHreflangPaths(props.brandKey)
+  const url = new URL(`/${lang}${pathWithinLocale}`, Astro.site).toString()
+  jsonLd = [
+    breadcrumbJsonLd([
+      { name: t.nav.app, url: new URL(`/${lang}/`, Astro.site).toString() },
+      { name: title, url },
+    ]),
+  ]
+}
 ---
 
 <BaseLayout
   lang={lang}
-  title={c.meta.title}
-  description={c.meta.description}
-  pathWithinLocale={`/${c.slug}/`}
-  ogImage={c.meta.ogImage}
-  appId={landing.appId}
+  title={title}
+  description={description}
+  pathWithinLocale={pathWithinLocale}
+  hreflangPaths={hreflangPaths}
+  ogImage={ogImage}
+  appId={appId}
+  jsonLd={jsonLd}
 >
-  <LandingSections content={c} lang={lang} />
+  {props.kind === 'landing' && <LandingSections content={props.landing.content[lang]} lang={lang} />}
+  {props.kind === 'brand' && props.brandKey === 'why' && <WhyContent lang={lang} />}
+  {props.kind === 'brand' && props.brandKey === 'pricing' && <PricingContent lang={lang} />}
 </BaseLayout>

@@ -10,6 +10,7 @@ import 'material-symbols/outlined.css'
 import type { LandingLocaleContent } from '../content/landings/types.ts'
 import type { Locale } from '../lib/i18n.ts'
 import { APP_SIGNUP } from '../lib/links.ts'
+import { brandHref } from '../lib/routes.ts'
 
 interface Props {
   content: LandingLocaleContent
@@ -196,7 +197,7 @@ const { content: c, lang } = Astro.props
         {c.finalCta.primary}
       </a>
       <a
-        href={`/${lang}/why/`}
+        href={brandHref('why', lang)}
         class="rounded-pill border border-line px-5 py-2.5 font-semibold hover:bg-surface-2"
       >
         {c.finalCta.secondary}

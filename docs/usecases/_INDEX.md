@@ -85,7 +85,7 @@ AWS finché il prodotto non gira offline.
 | 45 | [0037](09-marketing-site/0037-homepage-nav-footer.md) | Homepage + nav/footer | Marketing Site | 0036 | ✅ |
 | 46 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ✅ |
 | 47 | [0057](10-skills-tooling/0057-skill-finalize-landing.md) | skill `finalize-landing` | Skills & Tooling | 0038, 0046, 0036 | ✅ |
-| 48 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ⬜ |
+| 48 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ✅ |
 | 49 | [0041](09-marketing-site/0041-geo-llms.md) | GEO (`llms.txt`, crawler AI) | Marketing Site | 0036 | ⬜ |
 | 50 | [0039](09-marketing-site/0039-newsletter-consenso-plausible.md) | Newsletter + consent log + Plausible | Marketing Site | 0036, 0013 | ⬜ |
 | 51 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ⬜ |
