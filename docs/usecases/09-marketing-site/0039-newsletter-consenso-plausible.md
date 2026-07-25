@@ -76,3 +76,8 @@ _Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento
   la voce "cambi consenso"** perché oggi non esiste alcun modello di consenso (postura no-consent). Quando
   qui nascerà il consent log, la console va estesa con il tipo di richiesta corrispondente (nuova sorgente
   nell'aggregatore `AdminGdprResource.requests()` + tipo nella tabella della pagina admin "Diritti GDPR").
+- **Collegare la newsletter del sito vetrina (da change `0047-use-case-0037-…`)**: la homepage e il footer del sito
+  espongono già la **struttura visuale** della newsletter (proposta di valore + campo email + invito), ma senza
+  backend: nessun invio, nessun consenso, nessun Plausible. Quando questo use case verrà implementato deve **collegare
+  quel form** (`site/src/content/marketing/*` per i testi, sezione newsletter di homepage/footer) all'endpoint di
+  raccolta con double opt-in e consent log.

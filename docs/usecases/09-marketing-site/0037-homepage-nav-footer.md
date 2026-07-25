@@ -65,4 +65,17 @@ Contenuti statici, nessun dato personale (la cattura email è la newsletter, UC 
 - **Link del footer ai documenti legali reali** (da change 0045, UC 0002): i legali esistono ora come
   `content/legal/{privacy,terms,refund,cookie,subprocessors}.<lang>.md` in 5 lingue. Il footer/menu deve linkarli
   (requisito Paddle) e il check CI "link non rotti" deve puntare a questi file. *Perché differito*: nav/footer del sito
-  nascono qui. *Owner*: UC 0037.
+  nascono qui. *Owner*: UC 0037. → **Risolto nella change `0047-use-case-0037-…`** (footer linka i 5 legali per lingua,
+  già presenti dallo scheletro UC 0036).
+
+_Rimandi aperti dalla change `0047-use-case-0037-…` (lavoro deliberatamente non anticipato):_
+
+- **Voce "Blog" nella top nav**: omessa perché il blog non esiste (linkarlo romperebbe il check "link non rotti").
+  *Owner*: UC 0042 — quando il blog atterra, aggiungere la voce nav e il relativo contenuto tradotto.
+- **Link alle landing per-app dalle card della vetrina in homepage**: le card app oggi non linkano (le landing non
+  esistono). *Owner*: UC 0038/0053 — collegare le card alle landing quando esistono.
+- **Wiring backend della newsletter** (form oggi solo struttura visuale): *Owner*: UC 0039 (raccolta email + consenso +
+  Plausible).
+- **Link social nel footer** (LinkedIn/X): omessi perché gli account brand non esistono ancora. *Owner*: UC 0043 (lancio).
+- **Slug di pagina localizzati per lingua** (`/it/prezzi` vs `/en/pricing`): oggi gli slug sono in inglese sotto il
+  prefisso di lingua. *Owner*: UC 0040 (SEO tecnico).

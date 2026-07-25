@@ -55,3 +55,10 @@ l'attribuzione Plausible funzioni (UTM/goal) e che i lead entrino nel flusso new
   2. Paid Google Search + Meta cookieless (Traffico/Lead Form), attribuzione UTM+Plausible.
   3. Postura privacy difesa (no pixel/CAPI-PII); lead con consenso (UC 0039).
   4. Campagne conformi via `campaign-guide`; misura referral (incl. AI).
+
+## Punti aperti / decisioni differite
+
+- **Link social nel footer del sito** _(tracciato dalla change `0047-use-case-0037-…`)_: il footer della vetrina è nato
+  senza link social perché gli **account brand non esistono ancora**. I canali sono già decisi (#14 J46: LinkedIn primario,
+  X opzionale). Quando questo use case verrà implementato — che possiede la creazione degli account brand — aggiungere i
+  link nel footer del sito (`site/src/layouts/BaseLayout.astro` / modello marketing).

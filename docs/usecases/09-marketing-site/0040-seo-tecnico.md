@@ -58,3 +58,10 @@ utenti), compatibili con la postura purista (#14 33). Manifest: N/A.
   2. Slug localizzati; keyword strategy due livelli + nicchia EU/GDPR.
   3. Misurazione Plausible+Search Console+Bing; `noindex` fino al go-live.
   4. Check CI SEO verde; `new-application` genera il SEO per-app.
+
+## Punti aperti / decisioni differite
+
+- **Slug di pagina localizzati per lingua** _(tracciato dalla change `0047-use-case-0037-…`)_: homepage/why/pricing del
+  sito nascono con slug in inglese sotto il prefisso di lingua (`/it/pricing/`, non `/it/prezzi/`). Gli slug localizzati
+  (#14 31), legati da hreflang, sono ottimizzazione SEO che appartiene a questo use case. Quando verrà implementato,
+  localizzare gli slug delle pagine brand e delle landing, aggiornando gli hreflang e il check link.
