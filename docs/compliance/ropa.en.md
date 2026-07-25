@@ -25,7 +25,7 @@ Cross-cutting platform processing (accounts, users, invitations, authentication,
 
 ### Recipients and sub-processors
 
-Sub-processors: **AWS** (hosting, EU regions — DPA with SCCs + DPF certification) and **Plausible Analytics** (cookieless analytics, EU hosting). **Paddle** (Merchant of Record) is an **independent controller** for payment data, not a sub-processor (#13 H45-47). Public list: `content/subprocessors.md` (UC 0002).
+Sub-processors: **AWS** (hosting, EU regions — DPA with SCCs + DPF certification) and **Plausible Analytics** (cookieless analytics, EU hosting). **Paddle** (Merchant of Record) is an **independent controller** for payment data, not a sub-processor (#13 H45-47). Public list: `content/legal/subprocessors.<lang>.md` (UC 0002).
 
 ### Non-EU transfers
 

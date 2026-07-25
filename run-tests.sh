@@ -153,10 +153,11 @@ run_infra() {
   if [ "$infra_ok" -eq 1 ]; then record infra OK; else record infra FAIL; fi
 }
 
-# Check compliance (UC 0030): parità lingue dei manifesti dati + freshness del RoPA generato.
+# Check compliance (UC 0030): parità lingue dei manifesti dati + freshness del RoPA generato,
+# + check documenti legali pubblici (UC 0002): parità 5 lingue + frontmatter + integrità token entity.yaml.
 # Il check @PersonalData ↔ manifesto gira invece nei test backend (JUnit, services/commons).
 run_compliance() {
-  hdr "COMPLIANCE — tools/compliance (parità lingue manifesti + freshness RoPA)"
+  hdr "COMPLIANCE — tools/compliance (parità lingue manifesti + freshness RoPA + documenti legali 5 lingue)"
   if ! command -v node >/dev/null 2>&1; then
     warn "node non installato: salto il check compliance."; record compliance SKIP; return
   fi
@@ -168,6 +169,7 @@ run_compliance() {
   local rc=0
   ( cd "$ROOT/tools/compliance" && npm test ) || rc=1
   ( cd "$ROOT/tools/compliance" && npm run check ) || rc=1
+  ( cd "$ROOT/tools/compliance" && npm run legal-check ) || rc=1
   if [ "$rc" -eq 0 ]; then ok "compliance: ok"; record compliance OK; else fail "compliance: check falliti"; record compliance FAIL; fi
 }
 

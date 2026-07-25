@@ -25,7 +25,7 @@ Trattamenti trasversali della piattaforma (account, utenti, inviti, autenticazio
 
 ### Destinatari e sub-responsabili
 
-Sub-responsabili: **AWS** (hosting, regioni UE — DPA con SCC + certificazione DPF) e **Plausible Analytics** (analytics senza cookie, hosting UE). **Paddle** (Merchant of Record) è **titolare autonomo** per i dati di pagamento, non sub-responsabile (#13 H45-47). Lista pubblica: `content/subprocessors.md` (UC 0002).
+Sub-responsabili: **AWS** (hosting, regioni UE — DPA con SCC + certificazione DPF) e **Plausible Analytics** (analytics senza cookie, hosting UE). **Paddle** (Merchant of Record) è **titolare autonomo** per i dati di pagamento, non sub-responsabile (#13 H45-47). Lista pubblica: `content/legal/subprocessors.<lang>.md` (UC 0002).
 
 ### Trasferimenti extra-UE
 

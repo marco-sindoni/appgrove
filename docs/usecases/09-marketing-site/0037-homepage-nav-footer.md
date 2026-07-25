@@ -59,3 +59,10 @@ Contenuti statici, nessun dato personale (la cattura email è la newsletter, UC 
   2. Posizionamento job-led + privacy wedge; cross-sell "un account, tanti strumenti".
   3. Nessuna founder story; catalogo onesto anche con 1 app.
   4. Check CI 5 lingue + link verdi; pagine `published`.
+
+## Punti aperti / decisioni differite
+
+- **Link del footer ai documenti legali reali** (da change 0045, UC 0002): i legali esistono ora come
+  `content/legal/{privacy,terms,refund,cookie,subprocessors}.<lang>.md` in 5 lingue. Il footer/menu deve linkarli
+  (requisito Paddle) e il check CI "link non rotti" deve puntare a questi file. *Perché differito*: nav/footer del sito
+  nascono qui. *Owner*: UC 0037.

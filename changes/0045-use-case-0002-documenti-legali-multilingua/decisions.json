@@ -1,0 +1,69 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate restano dello sviluppatore (rilettura/approvazione dei requisiti, consenso al commit, consenso al merge)."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0002 (documenti legali reali multilingua): il testo dell'invocazione lo nomina esplicitamente e lo scope corrisponde a docs/usecases/01-business-legal/0002-documenti-legali-multilingua.md. Da qui la forma del branch change/0045-use-case-0002-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Riga UC 0002 portata a 🟡 (in corso) all'apertura della change; sarà ✅ alla chiusura (step-04)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Componenti legali prodotti: privacy, terms, refund, cookie, subprocessors — cinque markdown fonte unica per lingua in content/legal/, coerenti con UC 0002 §1 e con i tre documenti richiesti da Paddle (#14 dec.1/2) più cookie disclosure (#13 F27/28) e lista sub-responsabili (#13 dec.46). Cookie = sezione autonoma, nessun banner."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Cinque lingue en/it/fr/es/de, IT facente fede sui legali (clausola esplicita nel testo, prevale in caso di difformità — #14 C10). Le traduzioni sono fedeli alla versione IT/EN."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Frontmatter di ogni file: version (semver, avvio 1.0.0), effective_date (YYYY-MM-DD, oggi 2026-07-25 in fase di bozza), lang (coerente col suffisso del nome file). Semver perché supporta major/minor/patch: major=ri-accettazione, minor=notifica (#13 §229), patch=refuso.",
+    "files": [
+      { "file": "content/legal/", "description": "Nuova radice pubblica content/ (distinta da docs/ interna, #13 §50); i legali pubblici stanno qui, il RoPA interno resta in docs/compliance/." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Identità del titolare come segnaposto inequivocabili {{TITOLARE_*}} anziché valori inventati: nome/sede/P.IVA/email sono posseduti da UC 0001 e non esistono ancora (persona fisica → ditta individuale alla monetizzazione). È un punto di escalation (business/legale) segnalato allo sviluppatore nei requisiti; la sola compilazione finale resta sua, pre-go-live. Elenco dei segnaposto in content/legal/README.md."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Controllo CI del nuovo tipo scritto in tools/compliance sul modello di ropa.mjs/lib.mjs: legal.mjs (logica pura: presenza 5 lingue + frontmatter valido), legal-check.mjs (CLI/IO che splitta il frontmatter fra i delimitatori --- e usa parse() di yaml, niente nuova dipendenza gray-matter), test/legal.test.mjs. Cablato via nuovo script npm legal-check + riga in run_compliance di run-tests.sh; il job compliance della CI gira sempre → gate bloccante automatico.",
+    "files": [
+      { "file": "tools/compliance/legal.mjs", "description": "Logica pura di validazione legali (parità 5 lingue + frontmatter)." },
+      { "file": "tools/compliance/legal-check.mjs", "description": "CLI del check legali (I/O su content/legal/ + _config.yaml)." },
+      { "file": "content/legal/_config.yaml", "description": "required_languages: [en, it, fr, es, de] per il check legali (distinto dal _config.yaml del RoPA, oggi it+en)." },
+      { "file": "run-tests.sh", "description": "run_compliance esegue anche npm run legal-check." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Riporto delle decisioni differite possedute da UC 0002: la scansione degli artefatti delle change precedenti trova solo classificazioni MINOR / piattaforma core (0029, 0030, 0035, 0037) e nessuna segnalazione di nuovo sub-responsabile (Cognito/SES = AWS già in lista #13 H45; Mailpit = solo dev). Conseguenza: documenti a baseline 1.0.0 senza bump divergenti; lista sub-responsabili seminata con AWS + Plausible (dec. 45), Paddle escluso."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Riconciliazione del path della lista sub-responsabili: platform.yaml citava content/subprocessors.md (path vecchio, singolo file); aggiornato a content/legal/subprocessors.<lang>.md (5 lingue, allineato a UC 0002 e #13 dec.46). RoPA rigenerato per il check freshness.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Riferimenti al path della lista sub-responsabili aggiornati a content/legal/subprocessors.<lang>.md." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Fuori scope tracciato come rimando proattivo: (a) rendering nel sito vetrina + link menu/footer → UC 0037 (footer) / UC 0036 (deploy), perché il sito Astro non esiste ancora; (b) runtime accettazione/ri-accettazione + tabella legal_version + log → UC 0056; (c) snippet privacy per-app → UC 0046/0030; (d) compilazione identità titolare → UC 0001; (e) revisione legale → opzionale _REVISIONE-LEGALE. Rimandi (a)-(d) scritti nella sezione 'Punti aperti' dei rispettivi use case dove non già presenti."
+  },
+  {
+    "id": 11,
+    "decision": "DECISIONE DELLO SVILUPPATORE (non autopilot): l'identità del titolare NON va replicata come segnaposto muti nei testi, ma tenuta in un'unica fonte di verità content/legal/entity.yaml; nei testi compaiono token {{titolare.<campo>}}. Modificando il solo entity.yaml alla disponibilità dei dati, ogni documento (e in futuro sito + rendering in-app) si aggiorna. Scelto YAML (non JSON) per coerenza col tooling compliance esistente. Supera l'approccio 'solo segnaposto' della decisione 6.",
+    "files": [
+      { "file": "content/legal/entity.yaml", "description": "Fonte unica dei dati del titolare (ragione_sociale, sede, piva, email_privacy, email_support, giurisdizione, dominio); valori iniziali 'DA COMPILARE'." },
+      { "file": "content/legal/README.md", "description": "Documenta il contratto di sostituzione dei token {{titolare.*}} per i renderer futuri (UC 0036 sito, UC 0056 in-app)." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il controllo CI acquista un presidio in più: integrità referenziale dei token. Ogni {{titolare.<campo>}} usato nei testi deve risolvere a una chiave di entity.yaml (errore bloccante se orfano); i valori ancora 'DA COMPILARE' sono elencati come avviso informativo NON bloccante (attesi pre-go-live, così la CI non si impunta oggi ma segnala cosa manca)."
+  }
+]

@@ -84,3 +84,9 @@ _Tracciato dalla change `0036-use-case-0005-…` (pipeline CI/CD)._
 - **Secret GitHub `APPGROVE_L3_BASE_URL` / `APPGROVE_L3_USER_EMAIL` / `APPGROVE_L3_USER_PASSWORD`.** Il job L3 della
   release (`release-prod.yml`, cablato dalla change `0036`) li legge dai secret del repo: finché mancano, auto-skip
   registrato nel summary. Da valorizzare alla creazione dell'account sandbox e dell'utenza di smoke sull'ambiente test.
+
+- **Compilazione dell'identità del titolare in `content/legal/entity.yaml`** (da change 0045, UC 0002): i documenti
+  legali usano token `{{titolare.*}}` la cui fonte unica è `content/legal/entity.yaml`, oggi con valori `DA COMPILARE`
+  (ragione_sociale, forma, sede, piva). Alla monetizzazione (apertura P.IVA ditta individuale) **basta compilare quel
+  file** e ogni documento/sito/app si aggiorna. Il check compliance li segnala come avviso non bloccante finché restano
+  vuoti. *Perché differito*: l'identità legale si concretizza qui. *Owner*: UC 0001.
