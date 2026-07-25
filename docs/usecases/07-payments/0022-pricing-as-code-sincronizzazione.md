@@ -118,7 +118,20 @@ _Residui tracciati dalla change `0019-use-case-0022-…` (confine deciso: slice 
   **UC 0046** (auto-discovery multi-servizio). **Proprietari**: UC 0005 (CI) / UC 0046 (discovery & industrializzazione).
 - **Co-piloti che producono gli YAML** (`new-application` scrive il pricing iniziale, `pricing-change` gestisce i cambi con
   immutabilità/grandfathering) → **UC 0046/0047**: la change 0019 definisce e congela il **contratto/formato YAML** che quelle
-  skill scriveranno, ma **non** le implementa. **Proprietario**: UC 0046/0047.
+  skill scriveranno, ma **non** le implementa. **Proprietario**: UC 0046/0047. **La parte UC 0047 è RISOLTA** dalla change
+  `0044-use-case-0047-…`: la skill `pricing-change` + il tool `tools/pricing-change` scrivono gli YAML sul contratto congelato.
 - **Migrazione esplicita di subscription esistenti a un nuovo price** (oltre il grandfathering di default) → gestita da
   `pricing-change` (**UC 0047**); la change 0019 implementa solo il **default grandfathering** (la sync non archivia/cancella
-  un price con subscription attive). **Proprietario**: UC 0047.
+  un price con subscription attive). **Proprietario**: UC 0047. **RISOLTA come DECISIONE + RUNBOOK** dalla change
+  `0044-use-case-0047-…`: `pricing-change` fa **decidere** grandfathering vs migrazione (escalation) e, se migrazione, consegna
+  un **passo di runbook** che riusa `PaymentProvider.changeSubscriptionTier` (reale gated #14); la skill non esegue migrazioni.
+
+  _Punto aperto sollevato dalla change `0044-use-case-0047-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+- **Versione a livello di prezzo (per non coniare un nuovo tier a ogni cambio prezzo).** L'identità di un prezzo è la tripla
+  `(slug, tier.key, billingCycle)` → UUID deterministico **senza versione** (`CatalogIds.priceId`). Perciò `pricing-change`, per
+  cambiare un prezzo **vivo** rispettando l'immutabilità, deve portare il nuovo prezzo con un **nuovo tier** (chiave nuova, es.
+  `team_2026`), lasciando il vecchio per il grandfathering. Funziona ed è immutabilità-safe, ma **fa proliferare tier visibili**
+  e non è esattamente il «nuovo Price + archivia il vecchio, stesso piano» di #09 H35. Una dimensione di **versione a livello di
+  prezzo** (due prezzi coesistenti sullo stesso `(tier, ciclo)`, vecchio archiviato + nuovo vivo) richiederebbe di toccare
+  identità/DDL/sync — **lavoro sull'engine**, non della skill. Correlato: come l'offerta ai **nuovi** clienti nasconde un tier
+  archiviato-ma-grandfathered (lato checkout/read-model). **Proprietario**: UC 0022, in coordinamento con UC 0024 (checkout).

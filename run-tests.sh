@@ -8,13 +8,15 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application (UC 0046/0048) →
-#                collaudo delle skill `new-application` e `drop-application`:
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change (UC 0046/0048/0047) →
+#                collaudo delle skill `new-application`, `drop-application` e `pricing-change`:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
 #                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
 #                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
 #                DURA (non compila più); (3) de-generatore drop-application — round-trip genera→de-genera che
-#                deve riportare il repo identico (simmetria col generatore) + inversi delle modifiche condivise.
+#                deve riportare il repo identico (simmetria col generatore) + inversi delle modifiche condivise;
+#                (4) pricing-change — fee effettiva (avviso soft >10%) + modifiche al pricing-as-code con
+#                immutabilità (nuovo prezzo = nuovo tier, mai muta un prezzo vivo) su fixture YAML.
 #                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
 #                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
@@ -187,6 +189,11 @@ run_tooling() {
   "$ROOT/tools/new-application/generate-smoke.sh"        || rc=1
   # (3) de-generatore drop-application: round-trip genera→de-genera + inversi/parità (UC 0048)
   ( cd "$ROOT/tools/drop-application" && npm test )       || rc=1
+  # (4) skill pricing-change: fee effettiva + modifiche al pricing-as-code con immutabilità (UC 0047)
+  if [ ! -d "$ROOT/tools/pricing-change/node_modules" ] && [ -f "$ROOT/tools/pricing-change/package-lock.json" ]; then
+    ( cd "$ROOT/tools/pricing-change" && { npm ci || npm install; } ) >/dev/null 2>&1 || true
+  fi
+  ( cd "$ROOT/tools/pricing-change" && npm test )        || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

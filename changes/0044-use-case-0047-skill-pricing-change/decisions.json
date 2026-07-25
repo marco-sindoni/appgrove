@@ -36,5 +36,30 @@
   {
     "id": 8,
     "decision": "(autopilot) Aree toccate e confine: si aggiungono `.claude/skills/pricing-change/` (co-pilota) e `tools/pricing-change/` (tool Node testato), e si aggiorna `run-tests.sh` (area tooling, come da Definition of Done di new-change per l'aggiunta di un modulo) e `docs/usecases/_INDEX.md` (stato 0047). NON si toccano services/core (engine congelato), infra, frontend, né il listino di alcuna app reale (crm.yaml/fatture.yaml restano invariati: cambiare i prezzi di un'app reale è una decisione di prodotto, fuori dallo scope di «implementare la skill»). I test del tool usano YAML fixture, non i listini reali. Nessun dato personale: il catalogo è dato di piattaforma, come per la change 0019 → nessun gate privacy/RoPA."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il tool modifica gli YAML del listino con la Document API di `yaml` (parseDocument → modifica → toString), che PRESERVA i commenti: i listini portano header curati a mano (perché un'app è inactive, come si conta la metrica) e una riserializzazione ingenua li perderebbe. Scartata la manipolazione a stringa/regex (fragile su inserimenti strutturati) e il parse-e-riscrivi con serializzatore standard (distrugge i commenti). I `limits` dei tier nuovi/clonati sono resi in forma inline `{ ... }` per coerenza con lo stile dei listini.",
+    "files": [
+      { "file": "tools/pricing-change/lib/pricing.mjs", "description": "Operazioni deterministiche (addTier/addCycle/setLimits/changePriceInPlace/changePriceNewTier) + validate() di forma; il loader Java resta l'autorità sullo schema." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Modello di fee implementato come funzione pura (lib/fee.mjs): parte percentuale 5% + parte fissa $0,50 con tasso di cambio dollaro→euro assunto 1,0 (documentato, prudenziale). La scelta 1,0 riproduce ESATTAMENTE gli esempi di #09 K46 (€5/mese → 15%, €50/anno → 6%, soglia 10% a €10/mese) e i test la bloccano. Il tasso è sovrascrivibile con --fx. Avviso soft strettamente sopra il 10% (10% esatto non accende): scelta coerente con «segnale-guida, non blocco».",
+    "files": [
+      { "file": "tools/pricing-change/lib/fee.mjs", "description": "Costanti PROVIDER_PCT/FIXED_USD_CENTS/DEFAULT_USD_TO_EUR/WARN_THRESHOLD_PCT e computeFee()." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Gate privacy/RoPA (UC 0031): lo scanner segnala la nuova dipendenza `yaml@^2.8.0` come «potenziale sub-processor». Falso positivo euristico: `yaml` è una libreria LOCALE di parsing (già usata da tools/compliance), non un servizio esterno, non tratta dati personali, non fa chiamate di rete. Classificazione: NON è un responsabile esterno del trattamento; nessun dato personale nel cambio; nessun manifesto/RoPA da aggiornare; classificazione MINOR/non-applicabile. Caso non ambiguo → risolto in autopilot senza escalation."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Punti aperti tracciati in UC 0022 prima della chiusura (regola CLAUDE.md): (a) NUOVO — manca una dimensione di versione a livello di prezzo, per cui il cambio prezzo su price vivo conia un nuovo tier visibile invece del «nuovo Price stesso piano» di #09 H35 (lavoro sull'engine, proprietà UC 0022, in coordinamento con UC 0024 per nascondere ai nuovi clienti un tier archiviato-ma-grandfathered); (b) marcati RISOLTI i due item di proprietà UC 0047 (co-piloti che scrivono gli YAML; migrazione esplicita come decisione+runbook che riusa changeSubscriptionTier).",
+    "files": [
+      { "file": "docs/usecases/07-payments/0022-pricing-as-code-sincronizzazione.md", "description": "Sezione «Punti aperti»: aggiunto il gap versione-prezzo; i due item UC 0047 marcati risolti dalla change 0044." }
+    ]
   }
 ]
