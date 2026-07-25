@@ -1,0 +1,15 @@
+{
+  "name": "appgrove-pricing-change",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Metà meccanica della skill pricing-change (UC 0047): il co-pilota dei cambi di pricing SUCCESSIVI al lancio. Calcola la fee effettiva del fornitore di pagamento (avviso soft >10%, #09 K46/K47) e applica le modifiche al pricing-as-code (nuovo tier, aggiungi ciclo, cambia limiti, cambia prezzo) rispettando l'immutabilità (#09 H35/H37): un prezzo vivo non si muta nell'importo, il nuovo prezzo si porta con un nuovo tier. Scrive gli YAML del contratto congelato dalla change 0019; non parla col fornitore di pagamento e non esegue migrazioni (runbook).",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "change": "node change.mjs",
+    "fee": "node change.mjs fee"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  }
+}

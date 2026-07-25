@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi a commit e merge restano allo sviluppatore, così come la rilettura e approvazione dei requisiti."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0047 (skill `pricing-change`): il testo dell'invocazione lo indica esplicitamente e corrisponde allo scope descritto in docs/usecases/10-skills-tooling/0047-skill-pricing-change.md. Da qui la forma del branch 0044-use-case-0047-skill-pricing-change (NNNN=0044 = prossimo progressivo in changes/, YYYY=0047 = use case sorgente).",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0047 passa a 🟡 (in corso) all'apertura della change; passerà a ✅ alla chiusura (step-04)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) `pricing-change` è realizzata come le due skill sorella (#09 H36): un co-pilota in `.claude/skills/pricing-change/` + un tool deterministico Node ESM in `tools/pricing-change/`, testato con `node --test` e agganciato all'area `tooling` di run-tests.sh. Scelta motivata: la Definition of Done chiede fee effettiva calcolata correttamente e pricing-as-code valido (item 4) — cose che vanno testate, non lasciate a calcolo mentale; il calcolo della fee non esiste da nessuna parte oggi e serve a DUE skill (K47); l'ethos del repo è determinismo testato (parità con new-application/drop-application). Alternativa scartata: skill di sola prosa (fee non testabile, nessun presidio di validità)."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La skill SCRIVE gli YAML contro il contratto CONGELATO dalla change 0019; NON estende il modello di identità dell'engine (di UC 0022). Poiché l'identità del prezzo è la tripla (slug, tier.key, billingCycle) senza dimensione di versione, un cambio prezzo si esprime così: (a) prezzo NON ancora sincronizzato (nessun paddle_price_id) → si può correggere l'importo in loco (la guardia di immutabilità lo consente); (b) prezzo VIVO → immutabile: il nuovo prezzo si porta con un NUOVO tier (nuova chiave stabile), lasciando il vecchio tier definito per gli abbonati esistenti (grandfathering per costruzione, dato che la sync non archivia un tier con subscription attive). È la mappatura del «nuovo Price + archivia il vecchio» di #09 H35 sul modello appgrove dove (tier×ciclo)=Price.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogIds.java", "description": "Riferimento (non modificato): priceId = det('price:'+slug+':'+tierKey+':'+cycle) — l'identità versionless che impone la via del nuovo tier per un cambio prezzo su price vivo." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Punto aperto tracciato in UC 0022: manca una dimensione di VERSIONE a livello di prezzo che permetta a due prezzi di coesistere sullo stesso (tier, ciclo) — vecchio archiviato + nuovo vivo — senza coniare un intero nuovo tier (che è visibile all'utente). È un lavoro sull'engine (identità/sync/DDL), di proprietà di UC 0022; NON lo si anticipa qui. `pricing-change` opera nel contratto attuale (via del nuovo tier). Tracciato nei «Punti aperti» di UC 0022."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Grandfathering e migrazione. Il grandfathering di DEFAULT (gli esistenti restano sul vecchio) è già garantito dalla sync (UC 0022, non archivia price/tier con subscription attive) e non va reimplementato. La MIGRAZIONE ESPLICITA (di proprietà di UC 0047) è una decisione di DENARO ed EFFETTO VERSO L'ESTERNO: in autopilot si ESCALA allo sviluppatore al momento d'uso della skill (come il gate abbonati di drop-application), e — se scelta — si consegna come passo di RUNBOOK riusando il meccanismo esistente changeSubscriptionTier, mai eseguita dalla skill (che lascia solo un branch + PR)."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Modello di fee dalla decisione #09 K46/K47: fornitore ~5% + $0.50/transazione (parte fissa in USD → ~7% effettiva con il cambio valuta), warning soft oltre ~10% (NON un blocco), spinta all'annuale (K48/K49, sconto ~17% = 10× il mensile). Il calcolo fee effettiva + netto è una funzione pura testata nel tool. La parte fissa in dollari è convertita in euro con un tasso di cambio ASSUNTO e documentato (costante conservativa, sovrascrivibile): la fee è un segnale-guida soft, non contabilità, quindi non si interroga un cambio valuta in tempo reale (manterrebbe il tool non-deterministico e non testabile)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Aree toccate e confine: si aggiungono `.claude/skills/pricing-change/` (co-pilota) e `tools/pricing-change/` (tool Node testato), e si aggiorna `run-tests.sh` (area tooling, come da Definition of Done di new-change per l'aggiunta di un modulo) e `docs/usecases/_INDEX.md` (stato 0047). NON si toccano services/core (engine congelato), infra, frontend, né il listino di alcuna app reale (crm.yaml/fatture.yaml restano invariati: cambiare i prezzi di un'app reale è una decisione di prodotto, fuori dallo scope di «implementare la skill»). I test del tool usano YAML fixture, non i listini reali. Nessun dato personale: il catalogo è dato di piattaforma, come per la change 0019 → nessun gate privacy/RoPA."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il tool modifica gli YAML del listino con la Document API di `yaml` (parseDocument → modifica → toString), che PRESERVA i commenti: i listini portano header curati a mano (perché un'app è inactive, come si conta la metrica) e una riserializzazione ingenua li perderebbe. Scartata la manipolazione a stringa/regex (fragile su inserimenti strutturati) e il parse-e-riscrivi con serializzatore standard (distrugge i commenti). I `limits` dei tier nuovi/clonati sono resi in forma inline `{ ... }` per coerenza con lo stile dei listini.",
+    "files": [
+      { "file": "tools/pricing-change/lib/pricing.mjs", "description": "Operazioni deterministiche (addTier/addCycle/setLimits/changePriceInPlace/changePriceNewTier) + validate() di forma; il loader Java resta l'autorità sullo schema." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Modello di fee implementato come funzione pura (lib/fee.mjs): parte percentuale 5% + parte fissa $0,50 con tasso di cambio dollaro→euro assunto 1,0 (documentato, prudenziale). La scelta 1,0 riproduce ESATTAMENTE gli esempi di #09 K46 (€5/mese → 15%, €50/anno → 6%, soglia 10% a €10/mese) e i test la bloccano. Il tasso è sovrascrivibile con --fx. Avviso soft strettamente sopra il 10% (10% esatto non accende): scelta coerente con «segnale-guida, non blocco».",
+    "files": [
+      { "file": "tools/pricing-change/lib/fee.mjs", "description": "Costanti PROVIDER_PCT/FIXED_USD_CENTS/DEFAULT_USD_TO_EUR/WARN_THRESHOLD_PCT e computeFee()." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Gate privacy/RoPA (UC 0031): lo scanner segnala la nuova dipendenza `yaml@^2.8.0` come «potenziale sub-processor». Falso positivo euristico: `yaml` è una libreria LOCALE di parsing (già usata da tools/compliance), non un servizio esterno, non tratta dati personali, non fa chiamate di rete. Classificazione: NON è un responsabile esterno del trattamento; nessun dato personale nel cambio; nessun manifesto/RoPA da aggiornare; classificazione MINOR/non-applicabile. Caso non ambiguo → risolto in autopilot senza escalation."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Punti aperti tracciati in UC 0022 prima della chiusura (regola CLAUDE.md): (a) NUOVO — manca una dimensione di versione a livello di prezzo, per cui il cambio prezzo su price vivo conia un nuovo tier visibile invece del «nuovo Price stesso piano» di #09 H35 (lavoro sull'engine, proprietà UC 0022, in coordinamento con UC 0024 per nascondere ai nuovi clienti un tier archiviato-ma-grandfathered); (b) marcati RISOLTI i due item di proprietà UC 0047 (co-piloti che scrivono gli YAML; migrazione esplicita come decisione+runbook che riusa changeSubscriptionTier).",
+    "files": [
+      { "file": "docs/usecases/07-payments/0022-pricing-as-code-sincronizzazione.md", "description": "Sezione «Punti aperti»: aggiunto il gap versione-prezzo; i due item UC 0047 marcati risolti dalla change 0044." }
+    ]
+  }
+]
