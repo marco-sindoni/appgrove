@@ -57,3 +57,17 @@ pixel/CAPI-PII) e copy on-brand. (Nessun test runtime di prodotto.)
   2. Obiettivi ammessi (Traffico/Lead Form) + UTM coerenti per Plausible + copy AI on-brand.
   3. Blocca configurazioni non conformi (pixel/CAPI-PII).
   4. Evoluzione futura: assistente Playwright non-headless (tracciata).
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0053-use-case-0050-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
+
+- **Assistente Playwright non-headless** _(evoluzione futura, non implementata)_: un assistente che apre la
+  interfaccia di creazione campagna delle piattaforme (finestra visibile, non headless) e **guida/pilota**
+  l'utente passo-passo nella compilazione. La change 0053 implementa solo la guida testuale + checklist + UTM +
+  copy; il pilotaggio della interfaccia è un'estensione successiva. Già annotato anche in
+  [_BACKLOG](../../_BACKLOG.md) e nella memoria `skills-backlog`.
+- **Coordinamento goal Plausible ↔ convenzioni UTM (possiede UC 0039)**: la skill definisce lo schema UTM lato
+  campagna (`reference/convenzioni-utm.md`), ma i **goal** che Plausible conta nascono in **UC 0039**. Perché il
+  report campagna sia leggibile, i nomi dei goal e i valori UTM vanno pensati insieme: quando UC 0039 definirà i
+  goal, allineare i due schemi. Il rimando gemello è annotato in UC 0039.

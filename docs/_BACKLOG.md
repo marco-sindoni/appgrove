@@ -375,7 +375,7 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   renderizza solo `published`. Crea contenuti via `new-change` (deploy = CI). `new-change` segnala landing stale →
   propone re-run. Ambienti sito: **locale** (preview), **test** (basic auth + noindex), **prod** (pubblico, gate published +
   noindex pre-lancio). Memoria `skills-backlog`.
-- **`campaign-guide`** (richiesto 2026-06-21, #14 J) — **guida passo-passo** per creare campagne ads (Meta/Google)
+- **`campaign-guide`** ✅ **implementata (change `0053-use-case-0050-…`)** — resta aperta solo l'evoluzione futura (assistente Playwright non-headless, tracciata in UC 0050). (richiesto 2026-06-21, #14 J) — **guida passo-passo** per creare campagne ads (Meta/Google)
   **rispettando la postura privacy** (cookieless, **no pixel/CAPI-PII**, no banner, EU-purista): obiettivi ammessi
   (Traffico/Lead Form native), **convenzioni UTM** per attribuzione **Plausible** cookieless, **copy/creatività AI
   on-brand** (tono F1, dec. 35), **checklist di conformità** a ogni step. L'utente non è esperto di advertising.

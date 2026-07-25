@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi al commit e al merge restano allo sviluppatore, così come la rilettura e approvazione dei requisiti."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0050 (skill campaign-guide), indicato esplicitamente nell'invocazione e coerente con docs/usecases/10-skills-tooling/0050-skill-campaign-guide.md. Da qui la forma del branch NNNN-use-case-0050-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0050 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Il branch è stato ramificato da main e non dal branch parallelo change/0052-use-case-0039 (in corso in altra sessione): UC 0050 è tooling puro (una skill in .claude/skills/) e non condivide file di codice con UC 0039; l'unica dipendenza è concettuale (convenzioni UTM/goal per Plausible, già decise in #14 J48/J49). Ramificare da main tiene le due linee di lavoro indipendenti per un merge pulito."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Struttura della skill: SKILL.md (flusso guidato a intervista) + cartella reference/ con tre file (checklist-conformita.md, convenzioni-utm.md, copy-on-brand.md). Scelta rispetto agli step numerati (step-01…step-04) usati dalle skill procedurali pesanti come new-change: campaign-guide è un'intervista guidata che produce un piano, non un workflow deterministico multi-fase, quindi una struttura più leggera con contenuti di riferimento massimizza l'utilità senza sovra-ingegnerizzare.",
+    "files": [
+      { "file": ".claude/skills/campaign-guide/SKILL.md", "description": "Flusso guidato: piattaforma → obiettivo ammesso → checklist a ogni step → UTM → copy on-brand." },
+      { "file": ".claude/skills/campaign-guide/reference/checklist-conformita.md", "description": "Checklist di conformità privacy verificabile (no pixel/CAPI-dati-personali/banner, EU-purista, obiettivi ammessi)." },
+      { "file": ".claude/skills/campaign-guide/reference/convenzioni-utm.md", "description": "Schema UTM concreto raggruppabile da Plausible, con esempi Google/Meta." },
+      { "file": ".claude/skills/campaign-guide/reference/copy-on-brand.md", "description": "Guida al copy/creatività on-brand (tono F1), tutto AI-generato (dec. 35)." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La convenzione UTM è posseduta dalla skill (è la guida campagne). Il coordinamento tra i goal Plausible — definiti in UC 0039 — e questo schema UTM è un punto di contatto concettuale con la sessione parallela: viene tracciato come rimando scritto in UC 0039, non replicato qui, per evitare doppia sorgente di verità."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Output della skill: deliverable in chat (piano di campagna + esito checklist + stringhe UTM pronte + varianti di copy on-brand). Il salvataggio di un brief di campagna su file resta opzionale e la gestione degli asset di campagna è di UC 0043 (lancio operativo), tenuta fuori scope per non anticipare il lavoro successivo."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Nessun test automatico e nessuna modifica a run-tests.sh: la skill è composta solo da Markdown/istruzioni (nessun codice eseguibile) e non aggiunge moduli né cambia comandi di test. Verifica di contenuto in chiusura, coerente con la regola new-change per change di soli Markdown/skill."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La skill non tratta dati personali: produce guida/checklist/UTM/copy e non archivia dati di visitatori. Il suo scopo è anzi impedire l'introduzione di tracciamento con dati personali. Manifesto dati N/A, nessun gate privacy/RoPA runtime (coerente con UC 0050 §7)."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Tracciamento delle decisioni differite: (a) l'assistente Playwright non-headless resta evoluzione futura, annotato in UC 0050 (nuova sezione 'Punti aperti / decisioni differite'), in docs/_BACKLOG.md e nella memoria skills-backlog; (b) il coordinamento tra i goal Plausible (posseduti da UC 0039) e le convenzioni UTM della skill è annotato con rimandi gemelli in UC 0050 e in UC 0039.",
+    "files": [
+      { "file": "docs/usecases/10-skills-tooling/0050-skill-campaign-guide.md", "description": "Aggiunta sezione 'Punti aperti / decisioni differite': assistente Playwright + coordinamento goal↔UTM." },
+      { "file": "docs/usecases/09-marketing-site/0039-newsletter-consenso-plausible.md", "description": "Aggiunto rimando: quando UC 0039 definirà i goal Plausible, allinearne i nomi allo schema UTM della skill." },
+      { "file": "docs/_BACKLOG.md", "description": "Voce campaign-guide marcata implementata (change 0053); resta aperta solo l'evoluzione Playwright." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "Gate privacy UC 0031: lo scanner segnali (npm run privacy-scan) non ha rilevato alcun segnale — la change tocca solo Markdown/skill/documentazione, nessun campo dati, migrazione, dipendenza o manifesto. Nessuna classificazione MAJOR/MINOR necessaria."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Nota di merge tracciata: la change modifica docs/usecases/09-marketing-site/0039-newsletter-consenso-plausible.md (una riga nella sezione 'Punti aperti'), file toccato anche dalla sessione parallela change/0052 (UC 0039). È l'unico punto di contatto su file condivisi; l'edit è un'append a fine lista, conflitto di merge al più banale. Scelta consapevole: il rimando appartiene per costituzione allo use case che lo possiede (UC 0039), quindi va lì nonostante il piccolo rischio di merge."
+  }
+]

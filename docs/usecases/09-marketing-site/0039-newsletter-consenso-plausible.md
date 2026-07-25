@@ -91,3 +91,9 @@ _Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento
   progetto) va valutato solo se il volume di spam lo richiederà.
 - **Console admin "Diritti GDPR" (UC 0034)**: con il consent log ora esistente, la console va estesa con la voce
   "cambi consenso" — è lavoro di UC 0034 (vedi i suoi punti aperti), non di questo use case.
+- **Allineare i goal Plausible con le convenzioni UTM di `campaign-guide` (da change `0053-use-case-0050-…`)**: la
+  skill `campaign-guide` (UC 0050) definisce lo schema UTM lato campagna, ma i **goal** che Plausible conta
+  (iscrizione newsletter, click verso l'app, …) nascono qui. L'evento `Newsletter: Subscribe` è stato introdotto dalla
+  change 0052; quando questo use case imposterà gli altri goal, sceglierne i nomi in modo coerente con lo schema UTM di
+  `.claude/skills/campaign-guide/reference/convenzioni-utm.md`, così che il report campagna sia leggibile end-to-end
+  (sorgente → visita → goal).
