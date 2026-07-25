@@ -14,6 +14,7 @@ import { it } from './example/it.ts'
 import { fr } from './example/fr.ts'
 import { es } from './example/es.ts'
 import { de } from './example/de.ts'
+import { fattureLanding } from './fatture/index.ts'
 
 const example: Landing = {
   appId: 'example',
@@ -21,6 +22,6 @@ const example: Landing = {
   content: { en, it, fr, es, de },
 }
 
-export const LANDINGS: Landing[] = [example]
+export const LANDINGS: Landing[] = [example, fattureLanding]
 
 export type { Landing } from './types.ts'

@@ -57,7 +57,15 @@ coerenti con #09 (la landing è "vetrina", non checkout).
 
 ## Punti aperti / decisioni differite
 
-- **Collegare le card della vetrina in homepage alle landing app** _(tracciato dalla change `0047-use-case-0037-…`)_: la
-  homepage del sito presenta la vetrina app in modo **onesto col catalogo piccolo** (strumento faro "in arrivo" + "altri
-  strumenti in arrivo"), ma **senza link** perché le landing per-app non esistono ancora. Quando questo use case (e UC 0038)
-  atterra, collegare le card della sezione `#apps` della homepage alle rispettive landing.
+- **Collegare le card della vetrina in homepage alle landing app** _(risolto per l'app #1 nella change `0054-use-case-0053-…`)_:
+  la card faro della sezione `#apps` ora **linka** la landing pubblicata di `fatture` (`/<lang>/<slug>/`). Resta da collegare
+  le card delle **app future** quando le loro landing verranno pubblicate.
+- **Riconciliare il messaggio di disponibilità homepage ↔ landing** _(tracciato dalla change `0054-use-case-0053-…`, verso il
+  go-live)_: la card faro mantiene il badge **"coming soon"** e il nome generico **"Invoicing"**, mentre la landing è
+  pubblicata e i suoi CTA dicono "Inizia gratis". Finché il prodotto non è realmente attivabile (attivazione Paddle, ambiente
+  prod acceso — #14, #09), il "coming soon" è onesto. Al go-live: allineare badge/nome ("Invoicing" ↔ "Fatture") e verificare
+  dove puntano i CTA della landing. Decisione di prodotto/go-live, non forzata in autopilot.
+- **Screenshot della landing per-lingua** _(scorporato in UC [0060](../06-frontend/0060-localizzazione-ui-app-multilingua.md),
+  change `0054-use-case-0053-…`)_: gli screenshot escono con la UI in **italiano** in tutte le lingue perché l'app non è
+  localizzata (shell i18n solo `it/en`, modulo `fatture` cablato in italiano). UC 0060 localizza la UI dell'app alle 5 lingue;
+  poi si ri-esegue `/finalize-landing fatture` per ottenere gli screenshot per-lingua coerenti.

@@ -74,6 +74,7 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | 0020 | 2 | Backoffice SPA shell (sidebar, app registry, routing, auth store, API client, i18n, theme) | 0019, 0013 | 🟢 |
 | 0021 | 6 | Admin console SPA (accounts, users, matrice entitlement, billing, danger zone, disable-app) | 0019, 0013 | 🟢 |
 | 0059 | 2 | Gestione membri & inviti (UI backoffice: lista, invita, revoca, cambia ruolo) | 0020, 0013, 0017 | 🟡 |
+| 0060 | 6 | Localizzazione UI app a 5 lingue (shell i18n en/it/fr/es/de + moduli via i18n) → sblocca screenshot landing per-lingua | 0020, 0052, 0037 | 🔴 |
 
 ### 07-payments
 | UC | Fase | Titolo | Dipendenze | Stato |

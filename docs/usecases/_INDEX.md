@@ -1,6 +1,6 @@
 # Indice di esecuzione — Use Case appgrove
 
-**Ordine di esecuzione reale** dei 59 use case, in **tabella unica**. L'ordine deriva da un ordinamento
+**Ordine di esecuzione reale** dei 60 use case, in **tabella unica**. L'ordine deriva da un ordinamento
 topologico sulle **dipendenze effettive** (estratte rileggendo per intero ogni use case, non solo dagli
 header `Dipendenze:`) sotto una strategia **local-first**. Si implementa **dall'alto verso il basso**:
 ogni UC ha tutti i suoi prerequisiti *hard* sopra di sé.
@@ -88,21 +88,22 @@ AWS finché il prodotto non gira offline.
 | 48 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ✅ |
 | 49 | [0041](09-marketing-site/0041-geo-llms.md) | GEO (`llms.txt`, crawler AI) | Marketing Site | 0036 | ✅ |
 | 50 | [0039](09-marketing-site/0039-newsletter-consenso-plausible.md) | Newsletter + consent log + Plausible | Marketing Site | 0036, 0013 | ✅ |
-| 51 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ⬜ |
-| 52 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ⬜ |
-| 53 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | ⬜ |
-| 54 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ⬜ |
-| 55 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |
-| 56 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ⬜ |
-| 57 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
-| 58 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ✅ |
-| 59 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ⬜ |
+| 51 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ✅ |
+| 52 | [0060](06-frontend/0060-localizzazione-ui-app-multilingua.md) | Localizzazione UI app 5 lingue (sblocca screenshot landing per-lingua) | Frontend | 0020, 0052, 0037 · (0053) | ⬜ |
+| 53 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ⬜ |
+| 54 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | ⬜ |
+| 55 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ⬜ |
+| 56 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |
+| 57 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ⬜ |
+| 58 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
+| 59 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ✅ |
+| 60 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ⬜ |
 
 **Traguardi (milestone) lungo la tabella:**
 - riga **28**: prodotto applicativo completo e testato **offline** (zero AWS);
 - righe **29–37**: **messa in cloud** (infra + auth reale + CI/CD + observability);
-- riga **52**: **go-live** commerciale (Paddle attivo dopo vetrina + legali);
-- righe **53–58**: crescita / hardening.
+- riga **53**: **go-live** commerciale (Paddle attivo dopo vetrina + legali);
+- righe **54–59**: crescita / hardening.
 
 ---
 

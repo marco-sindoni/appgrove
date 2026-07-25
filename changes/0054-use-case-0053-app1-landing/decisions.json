@@ -1,0 +1,139 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — dichiarata all'invocazione. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; restano allo sviluppatore i tre gate: rilettura/approvazione dei requisiti, consenso al commit, consenso al merge. In più, per questa change vale la regola di escalation della skill finalize-landing: la copy marketing nelle 5 lingue è rivolta all'esterno, quindi va approvata dallo sviluppatore prima della pubblicazione (#14 dec.35)."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0053 (App #1 landing): l'invocazione lo nomina esplicitamente e docs/usecases/11-apps/0053-app1-landing.md ne descrive lo scope (bozza→finalizzazione della landing dell'app #1 'fatture'). Da qui la forma del branch 0054-use-case-0053-app1-landing.",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "UC 0053 passa a 🟡 (in corso) all'apertura della change."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "Perimetro della change (deciso dallo sviluppatore su domanda dell'autopilot): portare la landing di 'fatture' fino a 'published' — l'intera Definition of Done di UC 0053 — invece di fermarsi alla bozza. Questo comporta anche CORREGGERE un difetto in codice già consegnato: il seed del comando screenshots del tool finalize-landing (UC 0057, già merged) monta mock-route dello scaffold generico (rotte 'items') non allineati alle rotte reali di Fatture ('invoices'), quindi produce screenshot a lista vuota. NB: la proposta iniziale dell'autopilot era la sola bozza (motivata dal gate umano + dal difetto tecnico); lo sviluppatore ha scelto di allargare, riconoscendo il difetto come 'codice non finito' da chiudere qui."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Copy del pricing veritiera: il listino reale di Fatture (services/core/src/main/resources/pricing/fatture.yaml) ha un solo piano gratuito (free, 10 fatture/mese, trialDays 0, nessun prezzo Paddle). La sezione pricing e le FAQ NON riportano i placeholder della fixture example ('prova gratuita 14 giorni', tier Starter/Pro): sarebbe pubblicità ingannevole. Si presenta un unico piano gratuito col tetto reale, senza promettere trial o piani a pagamento inesistenti.",
+    "files": [
+      {
+        "file": "site/src/content/landings/fatture/en.ts",
+        "description": "PricingSection con un solo tier gratuito (10 fatture/mese); trialNote onesto (nessuna carta, gratis nel piano attuale); FAQ allineate al tetto mensile e ai diritti GDPR."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Copy delle 8 sezioni fondata sulle funzionalità reali dell'app (CRUD fattura con cliente e righe, numero progressivo, stati Bozza/Emessa/Pagata/Annullata, quota mensile, dati in UE con diritti GDPR self-service), non sui testi generici della fixture. Inquadramento job-first + privacy come firma di fiducia. Lingua sorgente EN, poi IT/FR/ES/DE. Feature 3–6 con icone Material Symbols, step 2–3 (vincoli #14 25)."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Slug 'fatture' identico nelle 5 lingue (default del generatore new-application; nome proprio dell'app, riconoscibile; non riservato — validato da validateLandings). Nessuna localizzazione dello slug.",
+    "files": [
+      {
+        "file": "site/src/content/landings/fatture/index.ts",
+        "description": "appId 'fatture', status 'draft', content nelle 5 lingue con slug 'fatture'."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Stato bozza esplicito: hero.screenshot.src=null, meta.ogImage=null (li riempirà la finalizzazione), e badge hero con la sentinella «DA RIFINIRE» che fa fallire di proposito il preflight di finalize-landing finché la copy non è rivista/approvata dallo sviluppatore (#14 dec.35). Nessun cablaggio asset in questa change."
+  },
+  {
+    "id": 8,
+    "decision": "UC 0053 passa a ✅ alla chiusura di questa change: con la scelta di andare fino a 'published' (dec. 3) la Definition of Done dello use case è coperta per intero (bozza + finalizzazione + published). (Nel perimetro inizialmente proposto dall'autopilot, sola bozza, sarebbe rimasto 🟡; superato dalla dec. 3.)"
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) A landing pubblicata, si collega la card #apps della homepage alla landing di Fatture (DoD UC 0053 #4: la homepage mostra un'app reale). Se il collegamento risultasse invasivo sul contenuto marketing (UC 0037), si riduce al minimo o si traccia come rimando: valutazione in fase di implementazione. (Nel perimetro sola-bozza sarebbe stato rimandato perché la bozza non ha rotta pubblica; superato dalla dec. 3.)"
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Fix del seed screenshot del tool finalize-landing: reso GENERICO e guidato dai dati per-app, con fallback. Si estrae un descrittore per-app (listPath, metric, freeCap, record d'esempio) in lib/seeds.mjs; il tool carica tools/finalize-landing/seeds/<appId>.mjs se presente, altrimenti usa il default generico (rotta 'items'). Si aggiunge seeds/fatture.mjs allineato alla prova e2e reale (frontend/apps/backoffice/e2e/fatture.spec.ts): rotta 'invoices', record fattura realistici, metric 'fatture', cap 10. Nessuna modifica a new-application e NESSUNA divergenza di parità scaffold: un'app appena scaffoldata espone la forma generica 'items' e combacia col default (il fallback preserva la parità); solo un'app che diverge — come fatture — aggiunge un seed dedicato. Il rimando (seed contro stack backend reale) è tracciato in UC 0057, non nel doc di parità.",
+    "files": [
+      {
+        "file": "tools/finalize-landing/lib/seeds.mjs",
+        "description": "Nuovo: DEFAULT_SEED generico + resolveSeed(appId)/normalizeSeed; carica seeds/<appId>.mjs se presente, altrimenti il default."
+      },
+      {
+        "file": "tools/finalize-landing/lib/screenshot.mjs",
+        "description": "installMocks/captureShots guidati dal descrittore di seed risolto per appId; rotte lista/quota/entitlement derivate dal seed; default generico come fallback."
+      },
+      {
+        "file": "tools/finalize-landing/seeds/fatture.mjs",
+        "description": "Descrittore seed per Fatture: listPath 'invoices', metric 'fatture', freeCap 10, record fattura d'esempio (numero/cliente/stato/totale)."
+      },
+      {
+        "file": "tools/finalize-landing/finalize.mjs",
+        "description": "cmdScreenshots non forza più metric='items'/freeCap=10: passa undefined se le opzioni mancano, lasciando decidere al seed per-app."
+      },
+      {
+        "file": "tools/finalize-landing/test/seeds.test.mjs",
+        "description": "Nuovo: test della risoluzione del seed (fatture→invoices; appId ignoto→default items; normalizeSeed coi default)."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La transizione draft→published è eseguita SOLO dal tool (finalize-landing publish), mai a mano, dopo il gate di approvazione della copy. Il gate umano resta: la copy di marketing 5 lingue è rivolta all'esterno (#14 dec.35), quindi l'agente la redige ma la pubblicazione attende l'approvazione esplicita dello sviluppatore. In implementazione l'agente presenta la copy nelle 5 lingue e si ferma prima di publish."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Con Fatture pubblicata, il registro reale ha una landing published: il test landings.test.ts che assume publishedLandings().length === 0 va adeguato alla realtà (il controllo del gate draft/published resta, verificato su una fixture di prova invece che sull'assenza globale di pubblicate). Il controllo post-build del sito valida la landing pubblicata (5 lingue, Open Graph, SoftwareApplication+FAQPage).",
+    "files": [
+      {
+        "file": "site/src/content/landings/landings.test.ts",
+        "description": "Adeguato l'assunto 'nessuna landing pubblicata' ora che Fatture è published; il gate resta coperto tramite una fixture di prova."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Seed reale contro lo stack backend + seed.sql non necessario ora: il seed mock (rotte in-browser) è sufficiente per uno screenshot rappresentativo. Il seed contro backend reale + Postgres resta un raffinamento tracciato in UC 0057 §Punti aperti."
+  },
+  {
+    "id": 14,
+    "decision": "Gate umano superato: lo sviluppatore ha approvato esplicitamente la copy di marketing nelle 5 lingue ('si approvo'). Da qui in poi si può procedere alla rimozione della sentinella «DA RIFINIRE», al cablaggio degli asset reali e alla pubblicazione (finalize-landing publish). Restano i gate di commit e merge."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Homepage collegata alla landing (DoD UC 0053 #4): la card faro della sezione #apps diventa un link a /<lang>/<slug>/ (slug per-lingua della landing pubblicata). Cambio minimale: <article> → <a> con affordance hover, testo e badge invariati. Si è scelto di NON toccare il messaggio 'coming soon' né i nomi ('Invoicing' sulla home vs 'Fatture' app/landing): la disponibilità reale del prodotto (attivazione, Paddle, ambiente prod) è una decisione di go-live materialmente ambigua, non dell'agente. La riconciliazione del messaggio (coming-soon vs disponibile, allineamento nomi, target dei CTA della landing) è tracciata come rimando in UC 0053 §Punti aperti / UC 0037.",
+    "files": [
+      { "file": "site/src/pages/[lang]/index.astro", "description": "Card faro #apps resa link alla landing pubblicata (flagshipHref = /<lang>/<slug fatture>/); import di fattureLanding per lo slug per-lingua." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Gli screenshot delle 5 lingue mostrano tutti la stessa interfaccia in ITALIANO: le stringhe del modulo fatture sono solo italiane (frontend/apps/backoffice/src/modules/fatture/strings.ts), quindi la UI non cambia con la lingua del browser. È lo stato reale dell'app ed è onesto lasciarlo così; la localizzazione della UI dei moduli app è una decisione già differita (docs/_BACKLOG.md). Quando i moduli saranno localizzati, ri-eseguire /finalize-landing fatture per catturare screenshot per-lingua reali."
+  },
+  {
+    "id": 17,
+    "decision": "(nota operativa) Per catturare gli screenshot il frontend va buildato dalla RADICE (frontend/: npm run build, che ricompila prima @appgrove/design-system e poi il backoffice). Buildare il solo apps/backoffice usa il dist stantìo del design-system e fallisce se il design-system è evoluto (es. componente Checkbox aggiunto dalla change 0052 non ancora nel dist). Il dist è gitignore (artefatto locale on-demand), quindi non è un difetto committato. Inoltre il tool finalize-landing usa playwright 1.62 (chromium rev. 1234): serve 'npx playwright install chromium' una tantum se in cache c'è solo la revisione del frontend."
+  },
+  {
+    "id": 18,
+    "decision": "Slug della landing LOCALIZZATI per lingua (correzione su richiesta dello sviluppatore, dec. #14 31): en 'invoices', it 'fatture', fr 'factures', es 'facturas', de 'rechnungen'. Supera la dec. 6 (che aveva lasciato 'fatture' in tutte le lingue, default del generatore): per una landing pubblicata gli slug tradotti sono corretti (SEO + coerenza con il resto del sito, dove anche gli slug brand sono localizzati). validateLandings verifica unicità per-lingua e assenza di collisioni con gli slug riservati; la card #apps della homepage segue lo slug per-lingua senza modifiche.",
+    "files": [
+      { "file": "site/src/content/landings/fatture/en.ts", "description": "slug 'invoices'." },
+      { "file": "site/src/content/landings/fatture/fr.ts", "description": "slug 'factures'." },
+      { "file": "site/src/content/landings/fatture/es.ts", "description": "slug 'facturas'." },
+      { "file": "site/src/content/landings/fatture/de.ts", "description": "slug 'rechnungen'." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "Screenshot landing per-lingua: rimandati a una change dedicata (scelta dello sviluppatore). Causa: l'app non è localizzata (pacchetto @appgrove/i18n solo it/en; modulo fatture cablato in italiano via strings.ts), quindi il generatore — che già cattura una figura per lingua — rende sempre la UI italiana. Il lavoro (localizzare la UI dell'app alle 5 lingue + ri-eseguire /finalize-landing) è scorporato nel NUOVO use case 0060 (06-frontend), creato e inserito in docs/usecases/_INDEX.md alla POSIZIONE 52, subito dopo UC 0053 (come richiesto): rinumerate le posizioni successive (52→60) e aggiornati i riferimenti 'Traguardi'. Supera la dec. 16 (che rimandava genericamente al backlog): ora c'è uno use case dedicato.",
+    "files": [
+      { "file": "docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md", "description": "Nuovo use case: localizzazione UI app a 5 lingue (shell i18n en/it/fr/es/de + moduli via i18n), sblocca gli screenshot landing per-lingua." },
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0060 inserito in posizione 52 (subito dopo UC 0053); posizioni 52→60 rinumerate; conteggio 59→60; traguardi aggiornati." },
+      { "file": "docs/usecases/README.md", "description": "UC 0060 registrato nel catalogo area 06-frontend (🔴 da scrivere)." },
+      { "file": "CLAUDE.md", "description": "Conteggio catalogo aggiornato a 60 use case (0001–0060) con nota su 0060." }
+    ]
+  }
+]

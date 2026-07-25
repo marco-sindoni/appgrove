@@ -104,10 +104,17 @@ describe('registro landing — validazione e gate (UC 0038)', () => {
   })
 
   it('gate: le bozze sono escluse dai path, le pubblicate incluse', () => {
-    // Nel registro reale ogni landing è draft (fixture "example" + eventuali bozze
-    // generate da new-application) → nessun path generato.
-    expect(publishedLandings().length).toBe(0)
-    expect(landingParams()).toEqual([])
+    // Nel registro reale: la fixture "example" è draft (esclusa); la landing dell'app #1
+    // "fatture" è published (UC 0053), quindi inclusa in tutte e 5 le lingue. Il gate è
+    // verificato sui dati veri, non sull'assenza globale di pubblicate.
+    const published = publishedLandings()
+    expect(published.some((l) => l.appId === 'fatture'), 'fatture è pubblicata').toBe(true)
+    expect(published.some((l) => l.appId === 'example'), 'la bozza example è esclusa').toBe(false)
+    // Solo le pubblicate generano path: 5 lingue × numero di landing pubblicate.
+    expect(landingParams().length).toBe(LOCALES.length * published.length)
+    for (const p of landingParams()) {
+      expect(p.props.landing.status, `path di "${p.props.landing.appId}"`).toBe('published')
+    }
 
     // Con tutte le landing marcate published: 5 lingue × N landing.
     // Non si assume UNA sola landing: il generatore new-application (UC 0046) ne

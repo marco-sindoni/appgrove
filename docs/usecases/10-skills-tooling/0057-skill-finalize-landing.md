@@ -73,3 +73,10 @@ Verifica: bozza → published con placeholder risolti, hreflang/Schema.org compl
     Open Graph presenti: la finalizzazione deve lasciare la vetrina verde.
   Restano di competenza di **questa** skill (DoD): cattura screenshot reali via Playwright + seed, generazione immagine OG,
   review interattiva 5 lingue, e il caso **"landing stale"** segnalato dal gate qualità di `new-change` (#14 55).
+
+- **Seed screenshot per-app** _(fix nella change `0054-use-case-0053-…`, UC 0053)_: il comando `screenshots` cablava il
+  mock-route sulla sola forma generica dello scaffold (risorsa `items`); un'app che diverge — es. `fatture` (risorsa
+  `invoices`) — rendeva una lista vuota. Reso **guidato dai dati per-app**: il tool carica `tools/finalize-landing/seeds/<appId>.mjs`
+  se presente, altrimenti usa il default generico (parità scaffold). **Resta aperto**: il seed contro lo **stack backend reale
+  + `seed.sql`** (Postgres) invece del mock in-browser — raffinamento non necessario finché il mock produce uno screenshot
+  rappresentativo; da valutare quando servisse una figura fedele a stato/formattazioni reali del backend.
