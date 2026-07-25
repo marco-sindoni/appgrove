@@ -87,7 +87,10 @@ export const de: MarketingContent = {
     body: 'Wir melden uns, wenn neue Apps erscheinen. Kein Spam, jederzeit abbestellbar.',
     placeholder: 'sie@email.com',
     cta: 'Benachrichtigen',
-    note: 'Wir schreiben Ihnen ausschließlich zu appgrove. Die Anmeldung öffnet bald.',
+    consentLabel: 'Ich willige ein, den appgrove-Newsletter zu erhalten. Kein Spam, Abmeldung mit einem Klick.',
+    success: 'Fast geschafft: Prüfen Sie Ihr E-Mail-Postfach und bestätigen Sie Ihre Anmeldung.',
+    error: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+    note: 'Wir schreiben Ihnen ausschließlich zu appgrove. Jederzeit abbestellbar.',
   },
   finalCta: {
     title: 'Bereit loszulegen?',

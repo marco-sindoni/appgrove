@@ -217,6 +217,13 @@ public class TestData {
         }
     }
 
+    /** Iscritto alla newsletter (UC 0039), platform-level: una riga per l'indirizzo con lo stato dato. */
+    public void newsletterSubscriber(String email, String status) {
+        exec("insert into platform.newsletter_subscriber"
+                        + "(id,email,status,locale,origin_channel,created_at,updated_at) values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), email, status, "en", "site", OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
     private String queryString(String sql, Object... params) {
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {

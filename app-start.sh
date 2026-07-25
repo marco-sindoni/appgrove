@@ -4,13 +4,14 @@
 #
 # Cosa fa (e ripara) ad ogni esecuzione:
 #   1. container engine (Colima) attivo;                         [auto-start se giù]
-#   2. certificati TLS locali (mkcert) presenti;                 [auto-genera se mancano]
+#   2. bootstrap one-time: CA mkcert nel trust store + certificati TLS + voci /etc/hosts;
+#      [idempotente — non serve più `./dev.sh setup` a parte: basta ./app-start.sh]
 #   3. stack Compose (Postgres, Caddy, Mailpit, MinIO, ElasticMQ) su e SANO, arch nativa
 #      → ripara il proxy Caddy se non risponde (es. immagine amd64 emulata che va in panic);
 #   4. seed idempotente (migrazioni Flyway + utenti seed);       [salta con --no-seed]
 #   5. build dipendenze (pom padre + commons in ~/.m2, npm install frontend); [salta con --no-build]
 #   6. tutti i servizi backend SCOPERTI in services/* (auth, core, app);  [riavvia ciò che è morto]
-#   7. SPA backoffice (:5173) + admin (:5174);                   [salta con --no-spa]
+#   7. SPA backoffice (:5173) + admin (:5174) + sito vetrina (:4321);      [salta con --no-spa]
 #   8. health-check END-TO-END via Caddy/HTTPS (SPA + ogni servizio).
 #
 # Nessun servizio è scritto a mano: l'elenco (nome, porta, rotta /api/*) è DERIVATO dai
@@ -18,7 +19,7 @@
 #
 # Uso:
 #   ./app-start.sh            # tira su e ripara TUTTO
-#   ./app-start.sh --no-spa   # solo backend (niente SPA Vite)
+#   ./app-start.sh --no-spa   # solo backend (niente SPA Vite né sito vetrina)
 #   ./app-start.sh --no-seed  # non rieseguire il seed
 #   ./app-start.sh --no-build # salta build commons / npm install (assumi già fatti)
 #
@@ -50,6 +51,11 @@ done
 
 FAIL=0   # diventa 1 se un health-check end-to-end fallisce
 BASE_URL="https://app.local.appgrove.app"   # origin del backoffice: SPA + /api/* via Caddy
+# Sito vetrina (Astro, UC 0036): dev server su :4321, chiama il core cross-origin (CORS abilitato, UC
+# 0039). L'URL del core per il browser è iniettato via PUBLIC_CORE_API_URL, coerente col base-url del
+# core per i link di conferma newsletter. Non è nei workspace npm del frontend: install/avvio propri.
+SITE_PORT=4321
+SITE_CORE_API_URL="http://localhost:8080"
 
 # start_bg/wait_port (avvio background idempotente per porta) vivono in dev/lib/common.sh
 # come proc_start/wait_port: li condividono dev up, dev service e app-stop.sh.
@@ -80,6 +86,21 @@ ensure_proxy_healthy() {
   compose up -d proxy >/dev/null 2>&1 || true
   local i=0; while ! proxy_alive; do i=$((i + 1)); [ "$i" -ge 25 ] && break; sleep 1; done
   if proxy_alive; then ok "proxy Caddy ripristinato"; else err "proxy Caddy ancora KO — vedi: docker logs appgrove-dev-proxy-1"; FAIL=1; fi
+}
+
+# ── /etc/hosts → 127.0.0.1 per i domini locali (idempotente; sudo solo alla prima volta) ───────
+ensure_hosts() {
+  local d miss=()
+  for d in "${DOMAINS[@]}"; do host_mapped "$d" || miss+=("$d"); done
+  if [ "${#miss[@]}" -eq 0 ]; then ok "/etc/hosts già configurato"; return 0; fi
+  if [ -t 0 ]; then
+    info "aggiungo a /etc/hosts (richiede sudo): ${miss[*]}"
+    { printf '\n# appgrove — stack dev locale (UC 0008/0009)\n'; for d in "${miss[@]}"; do printf '127.0.0.1   %s\n' "$d"; done; } \
+      | sudo tee -a /etc/hosts >/dev/null \
+      && ok "/etc/hosts aggiornato" || { warn "scrittura /etc/hosts non riuscita: aggiungi a mano ${miss[*]}"; FAIL=1; }
+  else
+    warn "ambiente non interattivo: aggiungi a mano a /etc/hosts:"; for d in "${miss[@]}"; do info "  127.0.0.1   $d"; done
+  fi
 }
 
 # ── attesa Postgres healthy ────────────────────────────────────────────────────
@@ -118,12 +139,22 @@ ensure_engine
 PLATFORM="$(native_platform)"
 export DOCKER_DEFAULT_PLATFORM="$PLATFORM"   # ogni container creato userà l'arch nativa
 
-# 2) ambiente + certificati TLS
+# 2) bootstrap one-time idempotente: dev/.env, CA mkcert nel trust store, certificati, /etc/hosts.
+#    È il contenuto di `dev setup` ripiegato qui, così `./app-start.sh` basta da una macchina pulita.
 ensure_env
-if ! certs_present; then
-  warn "certificati TLS assenti in dev/certs → li genero (mkcert)"
-  gen_certs && ok "certificati generati" || warn "mkcert non disponibile: HTTPS via Caddy non funzionerà → ./dev.sh setup"
+if require_cmd mkcert; then
+  # CA locale nel trust store (idempotente): senza, il browser non si fida di *.local.appgrove.app.
+  if mkcert -install >/dev/null 2>&1; then ok "CA mkcert nel trust store"
+  else warn "mkcert -install non completato (serve sudo interattivo): eseguilo a mano se il browser non si fida"; fi
+  if ! certs_present; then
+    warn "certificati TLS assenti in dev/certs → li genero (mkcert)"
+    mkdir -p "$CERT_DIR"
+    gen_certs && ok "certificati generati" || warn "generazione certificati fallita"
+  fi
+else
+  warn "mkcert assente → brew install mkcert nss (HTTPS via Caddy non funzionerà)"
 fi
+ensure_hosts
 
 # 3) stack Compose + proxy sano (rotte /api/* rigenerate dalla scoperta prima di avviare Caddy)
 sync_caddy_routes
@@ -149,6 +180,10 @@ if [ "$BUILD" -eq 1 ]; then
     log "Installazione dipendenze frontend (npm install)"
     ( cd "$REPO_ROOT/frontend" && npm install --no-fund --no-audit ) || warn "npm install fallito — le SPA potrebbero non partire"
   fi
+  if [ "$SPA" -eq 1 ] && [ ! -d "$REPO_ROOT/site/node_modules" ]; then
+    log "Installazione dipendenze sito vetrina (npm install)"
+    ( cd "$REPO_ROOT/site" && npm install --no-fund --no-audit ) || warn "npm install sito fallito — la vetrina potrebbe non partire"
+  fi
 fi
 
 # 6) servizi backend scoperti in services/* → Postgres CONDIVISO (no DevServices).
@@ -160,10 +195,12 @@ while read -r svc; do
   svc_start "$svc"
 done <<<"$(services_startup_order)"
 
-# 7) SPA Vite
+# 7) SPA Vite + sito vetrina (Astro)
 if [ "$SPA" -eq 1 ]; then
   start_bg backoffice 5173 bash -c "cd '$REPO_ROOT/frontend' && exec npm run dev -w @appgrove/backoffice"
   start_bg admin 5174 bash -c "cd '$REPO_ROOT/frontend' && exec npm run dev -w @appgrove/admin"
+  # Sito vetrina: PUBLIC_CORE_API_URL abilita il subscribe box (UC 0039); porta fissa per un URL stabile.
+  start_bg site "$SITE_PORT" bash -c "cd '$REPO_ROOT/site' && PUBLIC_CORE_API_URL='$SITE_CORE_API_URL' exec npm run dev -- --port $SITE_PORT"
 fi
 
 # 8) readiness porte (boot Quarkus/Vite)
@@ -178,6 +215,7 @@ done < <(discover_services)
 if [ "$SPA" -eq 1 ]; then
   wait_port 5173 && ok "SPA backoffice pronta (:5173)" || warn "SPA backoffice non pronta — vedi dev/.run/backoffice.log"
   wait_port 5174 && ok "SPA admin pronta (:5174)" || warn "SPA admin non pronta — vedi dev/.run/admin.log"
+  wait_port "$SITE_PORT" && ok "Sito vetrina pronto (:$SITE_PORT)" || warn "Sito vetrina non pronto — vedi dev/.run/site.log"
 fi
 
 # 9) health-check END-TO-END via Caddy/HTTPS (la verità che conta per il browser)
@@ -194,6 +232,7 @@ done < <(discover_services)
 if [ "$SPA" -eq 1 ]; then
   report "Backoffice  app.local" "https://app.local.appgrove.app/" is200
   report "Console admin admin.local" "https://admin.local.appgrove.app/" is200
+  report "$(printf '%-11s localhost:%s' 'Vetrina' "$SITE_PORT")" "http://localhost:$SITE_PORT/" reachable
 fi
 
 # 10) riepilogo
@@ -221,6 +260,7 @@ $( [ "$FAIL" -eq 0 ] && printf '\033[1;32mTutto su e sano.\033[0m' || printf '\0
 $( [ "$SPA" -eq 1 ] && echo "    • Backoffice (single-origin) .. https://app.local.appgrove.app    ← cliente (SPA + /api/* via Caddy)" )
 $( [ "$SPA" -eq 1 ] && echo "    • Console admin (single-origin) https://admin.local.appgrove.app  ← platform-admin (login admin@appgrove.test)" )
 $( [ "$SPA" -eq 1 ] && echo "    • SPA dirette (no /api/*) ..... http://localhost:5173 · http://localhost:5174" )
+$( [ "$SPA" -eq 1 ] && echo "    • Sito vetrina (Astro) ........ http://localhost:$SITE_PORT    ← newsletter (UC 0039), API core via CORS" )
   API backend (dirette, senza proxy):
 $API_LINES
 

@@ -64,6 +64,8 @@ export const en = {
     verifyStep: 'Verify email',
     workspaceStep: 'Workspace',
     doneStep: 'Done',
+    newsletterConsent:
+      'Subscribe me to the appgrove newsletter. No spam, unsubscribe with one click. We will ask you to confirm by email.',
   },
   verify: {
     title: 'Verify your email',
@@ -125,6 +127,9 @@ export const en = {
     displayName: 'Display name',
     save: 'Save',
     saved: 'Saved',
+    newsletter: 'Newsletter',
+    newsletterLabel: 'Receive the appgrove newsletter',
+    newsletterHint: 'Updates on new apps and features. You can turn it off any time.',
   },
   // Diritti GDPR self-service (UC 0033) — pagina "I miei dati".
   privacy: {

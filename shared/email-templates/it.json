@@ -25,6 +25,14 @@
       "actionLabel": "Accetta l'invito",
       "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
       "footer": "Se non ti aspettavi questo invito, puoi ignorare questo messaggio."
+    },
+    "newsletter-confirm": {
+      "subject": "Conferma l'iscrizione alla newsletter",
+      "heading": "Conferma l'iscrizione alla newsletter",
+      "intro": "Ci sei quasi. Conferma questo indirizzo per iniziare a ricevere la newsletter di appgrove. Se non confermi, non ti invieremo nulla.",
+      "actionLabel": "Conferma l'iscrizione",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Se non hai richiesto tu questa iscrizione, puoi ignorare questo messaggio: senza conferma non riceverai la newsletter."
     }
   }
 }

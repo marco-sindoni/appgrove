@@ -535,3 +535,12 @@ in ordine:
 
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).
+
+## Tooling — unificare in `services/commons` i due renderer Java dei template email (sollevato 2026-07-25)
+
+Sollevato dalla change `0052-use-case-0039-…` (newsletter). L'email di conferma della newsletter parte dal servizio
+`core` e riusa la sorgente unica `shared/email-templates`, ma il **renderer** Java che risolve stringhe + impaginazione
+è oggi **duplicato**: `EmailTemplates` in `services/auth` (email di autenticazione, UC 0018) e `NewsletterEmailRenderer`
+in `services/core` (gemello compatto). I *testi* restano single-source (bene), solo la logica di resa è in due copie.
+Da estrarre in `services/commons` un unico renderer (con set di lingue parametrizzabile) usato da entrambi i servizi.
+Non fatto nella change 0052 per non rifattorizzare `services/auth` fuori dallo scope di UC 0039. Effort: piccolo/medio.

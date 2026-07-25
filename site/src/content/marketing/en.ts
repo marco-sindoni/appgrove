@@ -88,7 +88,10 @@ export const en: MarketingContent = {
     body: 'Get a note when new apps land. No spam, and you can unsubscribe anytime.',
     placeholder: 'you@email.com',
     cta: 'Notify me',
-    note: 'We will only ever email you about appgrove. Sign-up opens soon.',
+    consentLabel: 'I agree to receive the appgrove newsletter. No spam, unsubscribe with one click.',
+    success: 'Almost there: check your email and confirm your subscription.',
+    error: 'Something went wrong. Please try again.',
+    note: 'We will only ever email you about appgrove. Unsubscribe anytime.',
   },
   finalCta: {
     title: 'Ready to get started?',

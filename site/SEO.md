@@ -23,6 +23,12 @@ copy e alla manutenzione; l'implementazione tecnica vive nel codice (vedi rimand
 - **Misurazione** (cablata, spenta di default): Plausible (`PUBLIC_PLAUSIBLE_DOMAIN`, cookieless, nessun
   dato personale) e meta di verifica Search Console/Bing (`SITE_VERIFICATION_GOOGLE`/`_BING`), emessi solo
   se le variabili sono valorizzate. Connessione reale ai servizi = post-go-live.
+- **Newsletter** (UC 0039): il form (isola React `NewsletterForm`) chiama in POST l'endpoint pubblico del
+  core all'URL `PUBLIC_CORE_API_URL` (in sviluppo `http://localhost:8080`). È l'unica variabile letta dal
+  browser di questo flusso (prefisso `PUBLIC_`, esposta come prop dal frontmatter Astro). Se assente il
+  sito compila e si renderizza comunque: il form resta inviabile solo dopo il consenso, ma l'invio va in
+  errore gestito finché la variabile non è valorizzata. Sul successo emette l'evento Plausible
+  `Newsletter: Subscribe` (best-effort).
 - **Check SEO in continuous integration**: `run-tests.sh site` (vitest + `astro build` + controllo
   post-build) gira nel workflow `verify-pr` ed è bloccante.
 

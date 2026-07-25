@@ -11,6 +11,7 @@ export { Input, type InputProps } from './components/Input'
 export { Card, CardHeader, CardTitle, CardContent } from './components/Card'
 export { Badge, badgeVariants, type BadgeProps } from './components/Badge'
 export { Switch, type SwitchProps } from './components/Switch'
+export { Checkbox, type CheckboxProps } from './components/Checkbox'
 export {
   SegmentedControl,
   type SegmentedControlProps,

@@ -132,6 +132,32 @@ entries:
     retention:
       it: Fino a scadenza/accettazione dell'invito; soft-delete e purge secondo il ciclo piattaforma
       en: Until the invitation expires or is accepted; soft-delete and purge per the platform lifecycle
+  - key: newsletter_subscribers.email
+    entity: app.appgrove.core.newsletter.NewsletterSubscriber
+    field: email
+    location:
+      it: Tabella `platform.newsletter_subscriber` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.newsletter_subscriber` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Iscritti alla newsletter (visitatori del sito e utenti registrati)
+      en: Newsletter subscribers (site visitors and registered users)
+    data_category:
+      it: Contatto (indirizzo email dell'iscritto)
+      en: Contact data (subscriber email address)
+    purpose:
+      it: >-
+        Invio della newsletter (marketing diretto), con doppia conferma (double opt-in) e prova del
+        consenso nel registro consensi (art. 7); Plausible resta analytics aggregato non identificativo
+      en: >-
+        Newsletter delivery (direct marketing), with double opt-in and proof of consent in the consent
+        log (art. 7); Plausible remains aggregate, non-identifying analytics
+    legal_basis:
+      it: Consenso (art. 6.1.a GDPR) — separato e distinto dalle email transazionali (#13 F29)
+      en: Consent (art. 6(1)(a) GDPR) — separate and distinct from transactional emails (#13 F29)
+    retention:
+      it: Finché iscritto + 24 mesi dopo la disiscrizione, poi eliminazione automatica (#13 E)
+      en: While subscribed + 24 months after unsubscription, then automatic deletion (#13 E)
+
   - key: accounts.name
     entity: app.appgrove.core.platform.Account
     field: name

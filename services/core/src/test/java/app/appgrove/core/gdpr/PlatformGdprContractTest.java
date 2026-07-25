@@ -39,6 +39,8 @@ class PlatformGdprContractTest {
         data.invitation(TENANT_A, "invitato-a@example.test", "member");
         var ticketId = data.ticket(TENANT_A, "support", "Domanda di prova", "open");
         data.ticketMessage(TENANT_A, ticketId, "user", "Testo del messaggio");
+        // Newsletter (UC 0039): iscritto con l'email dell'utente del tenant → coperto per email.
+        data.newsletterSubscriber("gdpr-a@example.test", "confirmed");
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());

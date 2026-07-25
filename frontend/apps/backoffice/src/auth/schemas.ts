@@ -32,7 +32,13 @@ export const loginSchema = (t: TFn) =>
 export const totpSchema = (t: TFn) => z.object({ code: codeField(t) })
 
 export const signupSchema = (t: TFn) =>
-  z.object({ email: emailField(t), password: passwordField(t), displayName: displayNameField(t) })
+  z.object({
+    email: emailField(t),
+    password: passwordField(t),
+    displayName: displayNameField(t),
+    // Consenso newsletter (UC 0039): NON pre-spuntato (privacy by default). Facoltativo.
+    newsletterConsent: z.boolean().optional(),
+  })
 
 export const forgotSchema = (t: TFn) => z.object({ email: emailField(t) })
 

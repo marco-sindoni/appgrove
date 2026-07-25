@@ -2,9 +2,14 @@ import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button, Card, CardContent, CardHeader, CardTitle, Input } from '@appgrove/design-system'
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Switch } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
-import { useCurrentAccount, useUpdateAccountName } from '../api/hooks'
+import {
+  useCurrentAccount,
+  useNewsletterPreference,
+  useSetNewsletterPreference,
+  useUpdateAccountName,
+} from '../api/hooks'
 
 /**
  * Form RHF + Zod (#03 dec.7): lo schema rispecchia le regole Bean Validation di `UpdateAccount`
@@ -39,6 +44,9 @@ export function Settings() {
 
   const onSubmit = handleSubmit((values) => update.mutateAsync(values.name).catch(() => undefined))
 
+  const newsletter = useNewsletterPreference()
+  const setNewsletter = useSetNewsletterPreference()
+
   return (
     <div className="space-y-[22px]">
       <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('settings.title')}</h1>
@@ -71,6 +79,27 @@ export function Settings() {
               {update.isSuccess && <span className="text-sm text-success">{t('settings.saved')}</span>}
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Newsletter (UC 0039): il toggle qui è autenticato → grant/revoke senza double opt-in. */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.newsletter')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex max-w-sm items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-fg">{t('settings.newsletterLabel')}</p>
+              <p className="text-sm text-fg-muted">{t('settings.newsletterHint')}</p>
+            </div>
+            <Switch
+              checked={newsletter.data?.subscribed ?? false}
+              disabled={newsletter.isLoading || setNewsletter.isPending}
+              onCheckedChange={(v) => setNewsletter.mutate(v)}
+              aria-label={t('settings.newsletterLabel')}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

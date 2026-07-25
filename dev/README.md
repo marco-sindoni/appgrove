@@ -7,7 +7,7 @@ Dipendenze infrastrutturali in **Docker Compose**, 100% offline (**zero AWS**), 
 
 | Servizio | Immagine | Sostituisce (AWS) | Porte host (default) |
 |---|---|---|---|
-| `postgres` | `postgres:17` | Aurora Serverless v2 | 5432 |
+| `postgres` | `postgres:17` | Aurora Serverless v2 | 5433 (evita il 5432 di un Postgres locale) |
 | `proxy` (Caddy) | `caddy:2` | API Gateway v2 | 80, 443 |
 | `mailpit` | `axllent/mailpit` | SES | 1025 (SMTP), 8025 (UI) |
 | `minio` | `minio/minio` | S3 | 9000 (API), 9001 (console) |
@@ -52,7 +52,7 @@ curl -s "http://localhost:9324/?Action=ListQueues"  # ElasticMQ: elenca le code
 
 - **Docker daemon non attivo** → `colima start` (o lascia che `./dev.sh up`/`setup` lo avvii). Persistente al login: `brew services start colima`.
 - **Browser non si fida del certificato** → `mkcert -install` (chiede la password del Mac).
-- **Porta occupata** (es. 5432 da un Postgres locale che ombreggia il container) → `./dev.sh doctor` la segnala; ferma il processo o cambia porta in `dev/.env`.
+- **Porta occupata** (lo stack usa **5433** apposta per non farsi ombreggiare da un Postgres locale su 5432; se anche 5433 è occupata) → `./dev.sh doctor` la segnala; ferma il processo o cambia `POSTGRES_PORT` in `dev/.env`.
 - **`JAVA_HOME` / keytool** durante la generazione certificati → `dev` usa già il workaround (`env -u JAVA_HOME`); per `mkcert -install` nello store Java serve `JAVA_HOME` corretta.
 
 > `dev/.env` e `dev/certs/*` **non sono committati** (`.gitignore`). Reset dati = `./dev.sh down -v`.

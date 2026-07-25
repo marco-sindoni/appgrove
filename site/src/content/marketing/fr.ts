@@ -87,7 +87,10 @@ export const fr: MarketingContent = {
     body: "On vous prévient quand de nouvelles applications arrivent. Pas de spam, et vous vous désinscrivez quand vous voulez.",
     placeholder: 'vous@email.com',
     cta: 'Me prévenir',
-    note: "Nous ne vous écrirons qu'au sujet d'appgrove. Les inscriptions ouvrent bientôt.",
+    consentLabel: "J'accepte de recevoir la newsletter d'appgrove. Pas de spam, désinscription en un clic.",
+    success: 'Vous y êtes presque : vérifiez votre e-mail et confirmez votre inscription.',
+    error: "Une erreur s'est produite. Veuillez réessayer.",
+    note: "Nous ne vous écrirons qu'au sujet d'appgrove. Désinscription à tout moment.",
   },
   finalCta: {
     title: 'Prêt à commencer ?',

@@ -662,6 +662,22 @@
           }
         }
       },
+      "PreferenceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "subscribed" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "PreferenceView" : {
+        "type" : "object",
+        "properties" : {
+          "subscribed" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "PriceView" : {
         "type" : "object",
         "properties" : {
@@ -864,6 +880,28 @@
           "exportJobId" : {
             "type" : "string",
             "pattern" : "\\S"
+          }
+        }
+      },
+      "SubscribeRequest" : {
+        "type" : "object",
+        "required" : [ "email" ],
+        "properties" : {
+          "email" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          },
+          "locale" : {
+            "type" : "string"
+          },
+          "consent" : {
+            "type" : "boolean"
+          },
+          "channel" : {
+            "type" : "string"
+          },
+          "website" : {
+            "type" : "string"
           }
         }
       },
@@ -2470,6 +2508,144 @@
         "security" : [ {
           "SecurityScheme" : [ "owner" ]
         } ]
+      }
+    },
+    "/api/platform/v1/newsletter/confirm" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "token",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Confirm",
+        "tags" : [ "Newsletter Resource" ]
+      }
+    },
+    "/api/platform/v1/newsletter/preference" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PreferenceRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreferenceView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Preference",
+        "tags" : [ "Newsletter Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PreferenceView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Get Preference",
+        "tags" : [ "Newsletter Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/newsletter/subscriptions" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "X-Forwarded-For",
+          "in" : "header",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SubscribeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Subscribe",
+        "tags" : [ "Newsletter Resource" ]
+      }
+    },
+    "/api/platform/v1/newsletter/unsubscribe" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "sid",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "t",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "summary" : "Unsubscribe",
+        "tags" : [ "Newsletter Resource" ]
       }
     },
     "/api/platform/v1/tickets" : {

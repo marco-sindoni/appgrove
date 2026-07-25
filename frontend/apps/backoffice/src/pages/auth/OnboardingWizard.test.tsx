@@ -8,6 +8,7 @@ import { useAuthStore } from '../../auth/authStore'
 import { renderWithProviders } from '../../test/utils'
 
 let lastSignupBody: Record<string, unknown> | null = null
+let lastNewsletterBody: Record<string, unknown> | null = null
 
 const server = setupServer(
   http.post('http://localhost/api/auth/signup', async ({ request }) => {
@@ -21,11 +22,19 @@ const server = setupServer(
       headers: { 'content-type': 'application/json' },
     })
   }),
+  // Newsletter (UC 0039): iscrizione pubblica dal signup (canale 'signup').
+  http.post('http://localhost/api/platform/v1/newsletter/subscriptions', async ({ request }) => {
+    lastNewsletterBody = (await request.json()) as Record<string, unknown>
+    return new HttpResponse(null, { status: 202 })
+  }),
 )
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
-beforeEach(() => useAuthStore.getState().clear())
+beforeEach(() => {
+  useAuthStore.getState().clear()
+  lastNewsletterBody = null
+})
 
 async function fillAccount(user: ReturnType<typeof userEvent.setup>, email: string) {
   await user.type(screen.getByLabelText(/Email/), email)
@@ -59,6 +68,31 @@ describe('OnboardingWizard', () => {
     await fillAccount(user, 'taken@x.io')
     expect(await screen.findByText('This email is already registered.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Create account' })).toBeInTheDocument()
+  })
+
+  // UC 0039: privacy by default — il consenso newsletter non è mai pre-attivato.
+  it('la checkbox newsletter è NON pre-spuntata di default', async () => {
+    renderWithProviders(<OnboardingWizard />, { route: '/signup' })
+    expect(await screen.findByRole('checkbox')).not.toBeChecked()
+  })
+
+  it('con consenso spuntato → iscrive alla newsletter (canale signup, consenso esplicito)', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<OnboardingWizard />, { route: '/signup' })
+    await user.type(screen.getByLabelText(/Email/), 'nl@x.io')
+    await user.type(screen.getByLabelText(/Password/), 'Password1!')
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    await screen.findByText(/We sent a verification link/)
+    expect(lastNewsletterBody).toMatchObject({ email: 'nl@x.io', consent: true, channel: 'signup' })
+  })
+
+  it('senza consenso → nessuna iscrizione newsletter', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<OnboardingWizard />, { route: '/signup' })
+    await fillAccount(user, 'noNl@x.io')
+    await screen.findByText(/We sent a verification link/)
+    expect(lastNewsletterBody).toBeNull()
   })
 
   it('valida la password policy lato client', async () => {

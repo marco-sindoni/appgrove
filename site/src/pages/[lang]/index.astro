@@ -11,6 +11,7 @@ import { APP_SIGNUP } from '../../lib/links.ts'
 import { brandHref } from '../../lib/routes.ts'
 import { faqPageJsonLd } from '../../lib/seo.ts'
 import FaqSection from '../../components/FaqSection.astro'
+import NewsletterForm from '../../components/NewsletterForm.tsx'
 import HeroVisual from '../../components/illustrations/HeroVisual.astro'
 import AppsVisual from '../../components/illustrations/AppsVisual.astro'
 import EcosystemVisual from '../../components/illustrations/EcosystemVisual.astro'
@@ -141,26 +142,27 @@ const jsonLd = faqPageJsonLd(t.faq.items)
     </div>
   </section>
 
-  {/* Newsletter — struttura visuale, backend UC 0039 */}
+  {/* Newsletter — double opt-in via endpoint pubblico del core (UC 0039). Il form
+      è un'isola React (consenso esplicito, campo esca anti-bot, evento Plausible
+      sul successo). L'URL del core arriva da PUBLIC_CORE_API_URL (vuota se non
+      configurata: la pagina si renderizza comunque, l'invio richiede l'endpoint). */}
   <section class="border-t border-line py-12">
     <h2 class="text-2xl font-bold tracking-tight">{t.newsletter.title}</h2>
     <p class="mt-2 max-w-2xl text-fg-muted">{t.newsletter.body}</p>
-    <form class="mt-6 flex max-w-md flex-wrap gap-2" aria-label={t.newsletter.title}>
-      <input
-        type="email"
-        name="email"
-        autocomplete="email"
-        placeholder={t.newsletter.placeholder}
-        class="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2 text-sm"
-      />
-      <button
-        type="button"
-        disabled
-        class="rounded-md border border-line bg-surface-2 px-4 py-2 text-sm font-semibold text-fg-muted"
-      >
-        {t.newsletter.cta}
-      </button>
-    </form>
+    <NewsletterForm
+      apiUrl={import.meta.env.PUBLIC_CORE_API_URL ?? ''}
+      lang={lang}
+      labels={{
+        ariaLabel: t.newsletter.title,
+        emailPlaceholder: t.newsletter.placeholder,
+        cta: t.newsletter.cta,
+        consentLabel: t.newsletter.consentLabel,
+        success: t.newsletter.success,
+        error: t.newsletter.error,
+      }}
+      variant="section"
+      client:load
+    />
     <p class="mt-3 text-sm text-fg-faint">{t.newsletter.note}</p>
   </section>
 
