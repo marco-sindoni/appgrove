@@ -1,0 +1,44 @@
+---
+// Pagina "Perché appgrove" per lingua (UC 0037): mission e valori sui quattro
+// pilastri (tempo · ecosistema · Ready for AI · privacy EU), i due cunei
+// differenzianti (AI + privacy) come firma di fiducia. NESSUNA founder story
+// né narrativa personale (#14 24, G24). Contenuti dal modello marketing.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { LOCALES, type Locale } from '../../lib/i18n.ts'
+import { MARKETING } from '../../content/marketing/index.ts'
+import { APP_SIGNUP } from '../../lib/links.ts'
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }))
+}
+
+const lang = Astro.params.lang as Locale
+const t = MARKETING[lang]
+---
+
+<BaseLayout lang={lang} title={t.why.title} description={t.why.intro} pathWithinLocale="/why/">
+  <section class="py-8">
+    <h1 class="text-4xl font-extrabold tracking-tight">{t.why.title}</h1>
+    <p class="mt-4 max-w-2xl text-lg text-fg-muted">{t.why.intro}</p>
+  </section>
+
+  <div class="grid gap-6 sm:grid-cols-2">
+    {
+      t.why.sections.map((s) => (
+        <section class="rounded-lg border border-line bg-surface p-6">
+          <h2 class="text-xl font-bold tracking-tight">{s.title}</h2>
+          <p class="mt-2 text-fg-muted">{s.body}</p>
+        </section>
+      ))
+    }
+  </div>
+
+  <section class="mt-12 border-t border-line py-10">
+    <a
+      href={APP_SIGNUP}
+      class="rounded-pill bg-accent px-5 py-2.5 font-semibold text-accent-contrast hover:opacity-90"
+    >
+      {t.finalCta.primary}
+    </a>
+  </section>
+</BaseLayout>

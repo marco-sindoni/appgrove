@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi a rilettura requisiti, commit e merge restano allo sviluppatore. Richiesta esplicitamente all'invocazione (\"autopilot mode on\")."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0037 (docs/usecases/09-marketing-site/0037-homepage-nav-footer.md): homepage + nav/footer + pagine \"Perché appgrove\" e \"Prezzi\", contenuti AI-generati on-brand nelle 5 lingue. Il testo dell'invocazione (\"implementa use case 0037\") lega la change a quello UC. Da qui la forma del branch 0047-use-case-0037-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0037 → 🟡 in corso all'apertura della change (step-01), → ✅ alla chiusura (step-04)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Modello dei contenuti marketing tradotti: modulo TypeScript tipizzato per lingua (src/content/marketing/<lang>.ts), con un tipo condiviso MarketingContent e un indice Record<Locale, MarketingContent>. Motivo: i contenuti marketing sono STRUTTURATI (etichette di navigazione, liste di funzionalità, sezioni con titolo/testo/CTA), diversi dai documenti-prosa legali che restano markdown (content/legal/*.md). Con il tipo condiviso più il Record su tutte le lingue, la PARITÀ delle 5 lingue è garantita a tempo di compilazione (il compilatore rifiuta una lingua mancante o una forma diversa), non solo dal controllo post-build. Scartato: markdown/YAML per lingua (adatto alla prosa lunga, scomodo per dati strutturati e senza garanzia di forma).",
+    "files": [
+      { "file": "site/src/content/marketing/types.ts", "description": "Tipo condiviso MarketingContent: forma unica di homepage, why, pricing, nav e footer." },
+      { "file": "site/src/content/marketing/index.ts", "description": "Record<Locale, MarketingContent> che raccoglie le 5 lingue: forza a compile-time presenza e forma di tutte." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Voce \"Blog\" della top nav: OMESSA in questa change. Il blog è UC 0042 (struttura al lancio) ed è fuori scope; un link a una pagina inesistente romperebbe il controllo \"link interni non rotti\" del post-build e violerebbe il DoD (link verdi). Non si anticipa UC 0042. Tracciato come rimando nei punti aperti di UC 0037 e in UC 0042."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Voce \"App\" della top nav → ancora alla sezione vetrina app della homepage (/<lang>/#apps), non una pagina catalogo dedicata (non esiste; le landing per-app sono UC 0038/0053, fuori scope). Il controllo link tratta l'ancora come /<lang>/ (esistente), quindi non è un link rotto."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) \"Login\" e \"Registrati\" della nav puntano alla SPA di backoffice esterna: https://app.appgrove.app/ (login) e https://app.appgrove.app/signup (registrati). Sono URL assoluti esterni, non verificati dal controllo link interni. Il dominio deriva da titolare.dominio (appgrove.app) e dalla convenzione app.appgrove.app già citata negli use case (coming-soon del backoffice)."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Sezione newsletter (homepage e footer): resa come struttura visuale on-brand (proposta di valore + campo email + invito) SENZA collegamento a un backend. La raccolta email vera, il log di consenso e Plausible sono UC 0039 (fuori scope): il form non finge un invio riuscito, il collegamento arriva con UC 0039. Tracciato come rimando in UC 0039.",
+    "files": [
+      { "file": "site/src/content/marketing/index.ts", "description": "Testi newsletter presenti nel modello; il wiring backend è rimandato a UC 0039." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Link social nel footer: OMESSI in questa change. I canali sono già decisi (#14 46: LinkedIn primario, X opzionale) ma gli account brand non esistono ancora; linkare profili inesistenti è scorretto. La creazione degli account e i relativi URL appartengono al lancio (UC 0043). Tracciato come rimando in UC 0043 e nei punti aperti di UC 0037."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) security.txt esposto come file statico in site/public/.well-known/security.txt (Astro serve public/ alla radice del sito). Campo Contact: mailto:security@appgrove.app (indirizzo di sicurezza per #14 22) più il link alla privacy policy; Expires con data fissa (nessuna data dinamica nei sorgenti). Il footer lo linka come /.well-known/security.txt (il controllo lo risolve come file esistente in dist).",
+    "files": [
+      { "file": "site/public/.well-known/security.txt", "description": "File RFC 9116 statico: Contact security@appgrove.app, Policy verso la privacy, Preferred-Languages, Expires fisso." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Footer \"Support\": link mailto:support@appgrove.app (contatto esistente in content/legal/entity.yaml). Il ticketing self-service (#13 I) è futuro e fuori scope; per ora il contatto è la mail di assistenza."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Pagina \"Prezzi — come funziona la fatturazione\" (/<lang>/pricing/): spiega il MODELLO di fatturazione (mensile/annuale con default annuale, prova gratuita 14 giorni, nessun rimborso rimandando alla Refund Policy), SENZA prezzi numerici: il prezzo vero sta sulle landing app (UC 0038). Coerente con #14 24 e con la Refund Policy (content/legal/refund.*.md)."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Pagina \"Perché appgrove\" (/<lang>/why/): mission e valori con il cuneo (wedge) EU/privacy come firma di fiducia, SENZA founder story né narrativa personale (#14 24, G24). Posizionamento job-led + privacy wedge (#14 E7)."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Slug di pagina NON localizzati per ora: /<lang>/why/ e /<lang>/pricing/ (segmenti in inglese sotto il prefisso di lingua). Gli slug localizzati per lingua (/it/prezzi vs /en/pricing, #14 31) sono ottimizzazione SEO di UC 0040, fuori scope. Tracciato come rimando in UC 0040."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Vetrina app in homepage: catalogo ONESTO col catalogo piccolo (#14 11/26) — si presenta lo strumento faro come \"in arrivo\" con la sua descrizione di categoria e il messaggio \"altri strumenti in arrivo\", SENZA link a landing per-app inesistenti (UC 0038/0053). Nessuna promessa di data. Il collegamento alle landing arriva con UC 0053. Tracciato come rimando in UC 0037/0053."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Top nav e footer arricchiti vivono nel BaseLayout condiviso, alimentati dal modello marketing per lingua (MARKETING[lang].nav / .footer). Il selettore di lingua interattivo (island React) resta nell'header dove l'utente lo cerca, non duplicato nel footer, per non caricare due volte lo stesso island; il footer resta HTML statico (legali, support, security.txt, newsletter, © titolare).",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Header con top nav localizzata + selettore lingua; footer statico arricchito (legali, support, security.txt, newsletter, copyright)." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il controllo post-build (site/scripts/postbuild-check.mjs) viene esteso alla parità 5 lingue anche delle nuove pagine /<lang>/why/ e /<lang>/pricing/ (finora copriva solo home + legali). Aggiunto inoltre un test vitest sul modello marketing: nessuna stringa vuota e stessa forma tra le 5 lingue (la parità di tipo è già a compile-time; il test copre i valori a runtime).",
+    "files": [
+      { "file": "site/scripts/postbuild-check.mjs", "description": "Parità 5 lingue estesa a why/ e pricing/." },
+      { "file": "site/src/content/marketing/marketing.test.ts", "description": "Test parità valori (nessuna stringa vuota, stesse liste) tra le 5 lingue." }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Nessun dato personale trattato dalla change: sono pagine statiche pubbliche. La sezione privacy/EU DESCRIVE la postura, non raccoglie dati; la cattura email della newsletter è solo struttura visuale, la raccolta reale è UC 0039. Manifesto dati: N/A. Il gate privacy/RoPA (UC 0031) non produce classificazione MAJOR/MINOR perché non c'è trattamento nuovo."
+  },
+  {
+    "id": 18,
+    "decision": "Pilastri del messaggio indicati dallo SVILUPPATORE (non autopilot) in fase di rilettura requisiti, a integrazione del posizionamento job-led + privacy wedge (#14 E7): (1) ecosistema di app comode/veloci/a costi sostenibili per piccole e medie imprese — più tempo sul business, meno sulla gestione; (2) un'unica piattaforma per tutte le esigenze, ecosistema in continua crescita (un account, tanti strumenti); (3) 'Ready for AI'; (4) tutto ospitato in EU, pieni diritti GDPR. I contenuti on-brand delle 5 lingue sono costruiti su questi quattro pilastri. Mi affido all'agente per la stesura dei testi.",
+    "files": [
+      { "file": "changes/0047-use-case-0037-homepage-nav-footer/requirements.md", "description": "Sezione 'Pilastri del messaggio' e sequenza homepage/why aggiornate coi quattro pilastri." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "Pilastro 'Ready for AI' (deciso dallo SVILUPPATORE): ogni app dell'ecosistema è distribuita anche come strumento richiamabile dagli assistenti AI tramite MCP (Model Context Protocol — standard aperto con cui gli assistenti AI, es. ChatGPT/Claude/Perplexity, invocano servizi esterni); l'utente chiede in chat, l'assistente esegue l'operazione nell'app. È un secondo cuneo differenziante accanto alla privacy EU. La capacità di prodotto NON esiste ancora (use case dedicati futuri, a cura dello sviluppatore): a livello marketing si ANTICIPA con forte visibilità ma inquadrata come principio di design/visione dell'ecosistema, SENZA affermare disponibilità già attiva su ogni app — onestà del claim, requisito anche per la revisione di dominio Paddle. MCP va spiegato in linguaggio piano nei contenuti. Tema tracciato come voce trasversale GRANDE in docs/_BACKLOG.md, con la riconciliazione dei contenuti del sito allo stato reale prima del go-live.",
+    "files": [
+      { "file": "docs/_BACKLOG.md", "description": "Nuova sezione 'Prodotto — Ready for AI: app distribuite via MCP' (tema trasversale GRANDE, use case dedicati futuri; il sito anticipa il concetto onestamente)." }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "Formulazione del pilastro 'Ready for AI' confermata dallo SVILUPPATORE: 'visione forte ma onesta' — pilastro molto visibile, formulato come principio di design/visione dell'ecosistema (app progettate per essere richiamate dagli assistenti AI), SENZA affermare che ogni app è già richiamabile ora. Riconciliazione coi contenuti reali prima del go-live (tracciata in docs/_BACKLOG.md). Scartata la formulazione 'disponibilità piena' per rischio di claim non veritiero (utenti + revisione dominio Paddle)."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Top nav responsive SENZA menu a scomparsa (hamburger): le voci restano visibili e vanno a capo (flex-wrap) su schermi piccoli. Motivo: evitare un ulteriore island interattivo (JS) su un sito statico SEO/perf-first per un numero ridotto di voci; il wrap è sufficiente e accessibile. Se il numero di voci cresce (es. all'arrivo di Blog, UC 0042), rivalutare un menu compatto.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Header con nav flex-wrap, senza hamburger." }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) URL esterni e contatti (login/registrazione SPA, mail support, security.txt) centralizzati in site/src/lib/links.ts, riusati da layout e pagine (una sola fonte, niente duplicazione).",
+    "files": [
+      { "file": "site/src/lib/links.ts", "description": "APP_LOGIN, APP_SIGNUP, SUPPORT_EMAIL, SECURITY_TXT." }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) I bottoni della newsletter (homepage e footer) sono resi come type=button disabled: la struttura visuale è presente ma NON finge un invio riuscito, coerente con l'assenza di backend (UC 0039). All'atterraggio di UC 0039 il form va collegato all'endpoint reale con consenso.",
+    "files": [
+      { "file": "site/src/pages/[lang]/index.astro", "description": "Sezione newsletter: form con bottone disabilitato." },
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Newsletter nel footer: form con bottone disabilitato." }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Gate privacy/RoPA (UC 0031) eseguito (tools/compliance npm run privacy-scan): nessun segnale. Coerente con l'assenza di trattamento (pagine statiche). Il typecheck 'astro check' NON è nella suite canonica del sito (run-tests.sh site = vitest + astro build + controllo post-build) e richiede l'installazione interattiva di @astrojs/check: non installato/eseguito; la parità di TIPO dei contenuti è comunque garantita dal Record<Locale, MarketingContent> in fase di build e dal test vitest sui valori."
+  }
+]

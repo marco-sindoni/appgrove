@@ -52,3 +52,10 @@ Contenuti pubblici, nessun dato personale. Misura via Plausible (cookieless) + r
   2. Contenuti question-based GEO + internal linking alle landing app.
   3. Schema.org Article + hreflang; misura Plausible/referral AI.
   4. Check CI 5 lingue/link/published verde.
+
+## Punti aperti / decisioni differite
+
+- **Voce "Blog" nella top nav del sito** _(tracciato dalla change `0047-use-case-0037-…`)_: la nav della vetrina è nata
+  **senza** la voce "Blog" (#14 27 la prevede) perché il blog non esiste ancora e un link a una pagina inesistente
+  romperebbe il check "link interni non rotti". Quando questo use case atterra, aggiungere la voce "Blog" alla top nav
+  (`site/src/layouts/BaseLayout.astro` / modello marketing) nelle 5 lingue.

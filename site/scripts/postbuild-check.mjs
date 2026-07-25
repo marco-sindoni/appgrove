@@ -19,6 +19,9 @@ const DIST = path.join(ROOT, 'dist')
 
 const LOCALES = ['en', 'it', 'fr', 'es', 'de']
 const LEGAL_COMPONENTS = ['privacy', 'terms', 'refund', 'cookie', 'subprocessors']
+// Pagine brand localizzate attese in ogni lingua (UC 0037): home + why + pricing.
+// Percorso relativo a /<lang>/ ('' = home). I legali sono verificati a parte.
+const BRAND_PAGES = ['', 'why', 'pricing']
 const indexable = process.env.SITE_INDEXABLE === 'true'
 
 const errors = []
@@ -51,10 +54,15 @@ function urlOf(file) {
   return rel
 }
 
-// 1. Parità 5 lingue: home + legali.
+// 1. Parità 5 lingue: pagine brand (home, why, pricing) + legali.
 for (const lang of LOCALES) {
-  const home = path.join(DIST, lang, 'index.html')
-  if (!fs.existsSync(home)) fail(`parità: manca la home per lingua "${lang}" (${relFromDist(home)})`)
+  for (const page of BRAND_PAGES) {
+    const p = path.join(DIST, lang, page, 'index.html')
+    if (!fs.existsSync(p)) {
+      const label = page === '' ? 'home' : `pagina "${page}"`
+      fail(`parità: manca la ${label} per lingua "${lang}" (${relFromDist(p)})`)
+    }
+  }
   for (const c of LEGAL_COMPONENTS) {
     const p = path.join(DIST, lang, 'legal', c, 'index.html')
     if (!fs.existsSync(p)) fail(`parità: manca il legale "${c}" in lingua "${lang}" (${relFromDist(p)})`)

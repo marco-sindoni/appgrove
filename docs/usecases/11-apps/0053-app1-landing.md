@@ -54,3 +54,10 @@ coerenti con #09 (la landing è "vetrina", non checkout).
   2. Finalizzazione con screenshot reali + OG + review utente → published.
   3. SEO/GEO per-app coerenti; check CI verde.
   4. La homepage mostra un'app reale prima della sottomissione Paddle.
+
+## Punti aperti / decisioni differite
+
+- **Collegare le card della vetrina in homepage alle landing app** _(tracciato dalla change `0047-use-case-0037-…`)_: la
+  homepage del sito presenta la vetrina app in modo **onesto col catalogo piccolo** (strumento faro "in arrivo" + "altri
+  strumenti in arrivo"), ma **senza link** perché le landing per-app non esistono ancora. Quando questo use case (e UC 0038)
+  atterra, collegare le card della sezione `#apps` della homepage alle rispettive landing.

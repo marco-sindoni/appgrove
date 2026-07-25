@@ -2,6 +2,30 @@
 
 Lista dei temi sollevati durante le sessioni di decisione, da affrontare nell'argomento giusto (o in uno dedicato).
 
+## Prodotto — "Ready for AI": app dell'ecosistema distribuite come strumenti richiamabili dagli assistenti AI (richiesto 2026-07-25) — GRANDE 🤖
+
+Sollevato dall'utente durante la change `0047-use-case-0037-…` (contenuti marketing della homepage). Idea di prodotto
+**nuova e strategica**: ogni applicazione del marketplace è esposta anche come **strumento richiamabile dagli assistenti
+AI** tramite **MCP** (Model Context Protocol — lo standard aperto con cui gli assistenti AI, es. ChatGPT, Claude,
+Perplexity, invocano strumenti e servizi esterni). In pratica l'utente, dalla chat del suo assistente AI, chiede in
+linguaggio naturale di fare un'operazione (es. "emetti la fattura al cliente X") e l'assistente la esegue chiamando l'app
+di appgrove. È un **secondo cuneo (wedge) differenziante** accanto alla privacy EU, ed è ottimo anche per la GEO
+(essere non solo citati, ma **operativamente richiamabili** dagli assistenti).
+
+**Stato attuale**: la capacità **non esiste** ancora nel prodotto. L'utente la introdurrà con **use case dedicati**
+(server MCP per app, autenticazione delegata, mappatura operazioni→strumenti, quota/entitlement sulle chiamate AI,
+sicurezza e audit). Da valutare tra l'altro: dove vive il server MCP (per-app in `services/<app>` vs gateway centrale),
+il modello di autenticazione/consenso dall'assistente AI verso il tenant, il riuso dell'enforcement entitlement/quota
+(UC 0027), l'industrializzazione in `new-application` (UC 0046) / `microsaas_app` (UC 0004), e la postura privacy
+(nessun dato personale verso l'assistente oltre il necessario).
+
+**Anticipo a livello marketing (deciso dall'utente, change 0047)**: il sito vetrina **anticipa** questo concetto come
+**pilastro forte** del messaggio (homepage + "Perché appgrove"), inquadrato come **principio di design dell'ecosistema /
+visione**, senza dichiararlo già attivo su ogni app (onestà del claim, requisito anche per la revisione di dominio di
+Paddle). **Da riconciliare prima del go-live**: quando la capacità MCP atterra, allineare i contenuti del sito allo stato
+reale (da "progettato per l'AI" a "richiamabile dalla tua AI", con prova). **Owner futuro**: decisione/roadmap di
+prodotto trasversale (use case dedicati da creare), non un singolo UC esistente.
+
 ## Architettura di piattaforma — accoppiamento inter-servizio app↔core (richiesto 2026-06-29) — GRANDE 🏛️
 
 Sollevato durante UC 0027 (change `0023-use-case-0027-…`, enforcement entitlement/quota). L'enforcement fine gira
