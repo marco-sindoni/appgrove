@@ -1,0 +1,35 @@
+---
+// Documenti legali per lingua (UC 0036): renderizzati da content/legal/*.md con
+// i token del titolare risolti da entity.yaml. Solo i contenuti `published`
+// finiscono in output (gate #14 52) via publishedLegalPaths().
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { loadLegalDoc, publishedLegalPaths, type LegalComponent } from '../../../lib/legal.ts'
+import type { Locale } from '../../../lib/i18n.ts'
+
+export function getStaticPaths() {
+  return publishedLegalPaths().map(({ component, lang }) => ({
+    params: { lang, component },
+  }))
+}
+
+const lang = Astro.params.lang as Locale
+const component = Astro.params.component as LegalComponent
+const doc = loadLegalDoc(component, lang)
+
+const titles: Record<string, string> = {
+  privacy: 'Privacy Policy',
+  terms: 'Terms & Conditions',
+  refund: 'Refund Policy',
+  cookie: 'Cookie',
+  subprocessors: 'Sub-processors',
+}
+---
+
+<BaseLayout lang={lang} title={titles[component] ?? component} pathWithinLocale={`/legal/${component}/`}>
+  <article class="prose-legal">
+    <p class="mb-6 text-sm text-fg-faint">
+      v{doc.frontmatter.version} · {doc.frontmatter.effective_date}
+    </p>
+    <div set:html={doc.html} />
+  </article>
+</BaseLayout>

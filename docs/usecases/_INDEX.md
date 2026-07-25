@@ -81,7 +81,7 @@ AWS finché il prodotto non gira offline.
 | 41 | [0048](10-skills-tooling/0048-skill-drop-application.md) | skill `drop-application` | Skills & Tooling | 0004, 0046 | ✅ |
 | 42 | [0047](10-skills-tooling/0047-skill-pricing-change.md) | skill `pricing-change` | Skills & Tooling | 0022 | ✅ |
 | 43 | [0002](01-business-legal/0002-documenti-legali-multilingua.md) | Documenti legali reali 5 lingue | Business & Legal | — | ✅ |
-| 44 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | 🟡 |
+| 44 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | ✅ |
 | 45 | [0037](09-marketing-site/0037-homepage-nav-footer.md) | Homepage + nav/footer | Marketing Site | 0036 | ⬜ |
 | 46 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ⬜ |
 | 47 | [0057](10-skills-tooling/0057-skill-finalize-landing.md) | skill `finalize-landing` | Skills & Tooling | 0038, 0046, 0036 | ⬜ |

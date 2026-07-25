@@ -1,0 +1,93 @@
+---
+// Layout di base della vetrina (UC 0036): <head> con hreflang + x-default,
+// gate di indicizzazione (noindex fino al go-live), brand del design system,
+// header col selettore lingua e footer coi documenti legali.
+import '../styles/global.css'
+import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
+import {
+  LOCALES,
+  LOCALE_LABELS,
+  hreflangAlternates,
+  normalizePath,
+  type Locale,
+} from '../lib/i18n.ts'
+import { LEGAL_COMPONENTS } from '../lib/legal.ts'
+
+interface Props {
+  lang: Locale
+  title: string
+  description?: string
+  /** Percorso DOPO il segmento di lingua, es. `/legal/privacy/`. Default `/`. */
+  pathWithinLocale?: string
+}
+
+const { lang, title, description, pathWithinLocale = '/' } = Astro.props
+const path = normalizePath(pathWithinLocale)
+
+// Gate di indicizzazione (#14 54): `noindex` finché SITE_INDEXABLE !== 'true'
+// (rimozione = atto operativo al go-live). Default: non indicizzabile.
+const indexable = import.meta.env.SITE_INDEXABLE === 'true'
+
+const alternates = hreflangAlternates(path)
+const canonical = new URL(`/${lang}${path}`, Astro.site).toString()
+
+const langOptions = LOCALES.map((loc) => ({
+  locale: loc,
+  label: LOCALE_LABELS[loc],
+  href: `/${loc}${path}`,
+}))
+
+const legalLabels: Record<string, string> = {
+  privacy: 'Privacy',
+  terms: 'Terms',
+  refund: 'Refund',
+  cookie: 'Cookie',
+  subprocessors: 'Sub-processors',
+}
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · appgrove</title>
+    {description && <meta name="description" content={description} />}
+    {!indexable && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonical} />
+    {
+      alternates.map((alt) => (
+        <link rel="alternate" hreflang={alt.hreflang} href={new URL(alt.href, Astro.site).toString()} />
+      ))
+    }
+  </head>
+  <body class="min-h-screen bg-bg text-fg">
+    <header class="border-b border-line">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
+        <a href={`/${lang}/`} class="text-lg font-extrabold tracking-tight">appgrove</a>
+        <div class="flex items-center gap-4">
+          <LanguageSwitcher current={lang} options={langOptions} client:load />
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-10">
+      <slot />
+    </main>
+
+    <footer class="mt-16 border-t border-line">
+      <div class="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-fg-muted">
+        <nav class="flex flex-wrap gap-x-4 gap-y-1">
+          {
+            LEGAL_COMPONENTS.map((c) => (
+              <a href={`/${lang}/legal/${c}/`} class="hover:text-fg">
+                {legalLabels[c] ?? c}
+              </a>
+            ))
+          }
+        </nav>
+        <p>© {new Date().getFullYear()} appgrove — all-EU, GDPR-first.</p>
+      </div>
+    </footer>
+  </body>
+</html>

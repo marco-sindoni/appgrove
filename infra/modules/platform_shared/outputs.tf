@@ -244,3 +244,18 @@ output "auth_lambda_log_group_name" {
   description = "Log group della Lambda BFF auth."
   value       = aws_cloudwatch_log_group.auth_lambda.name
 }
+
+output "site_bucket_name" {
+  description = "Bucket dei file della vetrina Astro (UC 0036): destinazione del deploy statico (pipeline, UC 0005)."
+  value       = aws_s3_bucket.site.bucket
+}
+
+output "site_distribution_id" {
+  description = "ID della distribuzione CloudFront della vetrina (per l'invalidation della pipeline)."
+  value       = aws_cloudfront_distribution.site.id
+}
+
+output "site_url" {
+  description = "URL pubblico della vetrina."
+  value       = "https://${local.site_host}"
+}

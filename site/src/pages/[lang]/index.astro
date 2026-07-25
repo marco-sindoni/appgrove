@@ -1,0 +1,25 @@
+---
+// Home placeholder per lingua (UC 0036). Lo scheletro non porta i contenuti
+// marketing veri (homepage, value prop): quelli sono di UC 0037. Qui c'è la sola
+// shell di brand, per verificare i18n, routing e resa del design system.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { LOCALES, type Locale } from '../../lib/i18n.ts'
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }))
+}
+
+const lang = Astro.params.lang as Locale
+---
+
+<BaseLayout lang={lang} title="appgrove" description="Strumenti semplici e focalizzati per micro-business europei — all-EU, GDPR-first.">
+  <section class="py-12">
+    <p class="mb-3 inline-flex rounded-pill border border-line bg-surface-2 px-3 py-1 text-xs font-semibold text-fg-muted">
+      all-EU · GDPR-first
+    </p>
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight">appgrove</h1>
+    <p class="prose-legal text-lg text-fg-muted">
+      Un account, tanti strumenti che crescono con te. Contenuti in arrivo.
+    </p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,26 @@
+---
+// Pagina "coming soon" del backoffice (UC 0036, #14 B4): destinata a
+// app.appgrove.app durante il rollout statico-first — dominio live e
+// sottomettibile a Paddle mentre l'app non è ancora servita da quel host.
+// Pagina statica, brand del design system, sempre noindex.
+import '../styles/global.css'
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>appgrove — coming soon</title>
+  </head>
+  <body class="min-h-screen bg-bg text-fg">
+    <main class="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-4 text-center">
+      <p class="mb-4 inline-flex rounded-pill border border-line bg-surface-2 px-3 py-1 text-xs font-semibold text-fg-muted">
+        all-EU · GDPR-first
+      </p>
+      <h1 class="mb-4 text-4xl font-extrabold tracking-tight">appgrove</h1>
+      <p class="text-lg text-fg-muted">Coming soon.</p>
+    </main>
+  </body>
+</html>

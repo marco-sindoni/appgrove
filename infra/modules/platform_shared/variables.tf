@@ -63,3 +63,25 @@ variable "auth_lambda_s3_key" {
   type        = string
   default     = ""
 }
+
+variable "site_indexable" {
+  description = <<-EOT
+    Vetrina (UC 0036, #14 54): se false (default) la distribuzione aggiunge
+    l'header X-Robots-Tag: noindex e le pagine restano non indicizzabili fino al
+    go-live. Passare a true al lancio rimuove il noindex (atto operativo).
+  EOT
+  type        = bool
+  default     = false
+}
+
+variable "site_basic_auth_userpass" {
+  description = <<-EOT
+    Vetrina (UC 0036, #14 54): credenziali "utente:password" per la basic auth
+    dell'ambiente TEST (protezione + niente indicizzazione prima del tempo).
+    Attiva SOLO in test e SOLO se non vuota (nessun segreto committato: default
+    vuoto → basic auth disattivata). In prod è ignorata (sito pubblico per Paddle).
+  EOT
+  type        = string
+  default     = ""
+  sensitive   = true
+}
