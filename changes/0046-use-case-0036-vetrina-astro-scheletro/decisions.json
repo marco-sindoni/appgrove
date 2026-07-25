@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano dello sviluppatore. Richiesta esplicitamente all'invocazione."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0036 (Vetrina Astro skeleton), file docs/usecases/09-marketing-site/0036-vetrina-astro-scheletro.md: l'invocazione lo nomina e lo scope combacia. Da qui la forma del branch NNNN-use-case-0036-… (change #0046).",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0036 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Collocazione del progetto Astro: cartella top-level `site/`, artefatto separato dalle due SPA (coerente con #14 12/13 'il sito è artefatto separato'). Non entra nel workspace npm di `frontend/`: le SPA restano Vite/React, il sito è Astro a sé. Scartato `frontend/apps/site` perché mescolerebbe build e cicli di test dei due mondi.",
+    "files": [
+      { "file": "site/", "description": "Nuovo progetto Astro SSG, radice a sé con proprio package.json e lockfile." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Riuso del design system (UC 0019) nel sito: si riusano i soli token di brand attraverso gli export SORGENTE del pacchetto `@appgrove/design-system` — il preset Tailwind (`./preset`), `./tokens.css` e `./fonts.css` — così il sito resta on-brand senza accoppiarsi alla build (dist) del design system. Il riuso profondo dei componenti React primitivi negli island è DIFFERITO a quando arriveranno i contenuti interattivi veri (UC 0037), tracciato come rimando. Gli island dello scheletro (selettore lingua) sono minimali e stilati col preset.",
+    "files": [
+      { "file": "site/", "description": "Dipendenza verso frontend/packages/design-system per preset Tailwind + tokens.css + fonts.css." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Cosa renderizza lo scheletro: (a) le pagine LEGALI già esistenti in content/legal/ (5 componenti privacy/terms/refund/cookie/subprocessors × 5 lingue) con sostituzione dei token; (b) una HOME placeholder per lingua (shell di brand, nessun contenuto marketing reale); (c) la pagina BACKOFFICE 'coming soon' per app.appgrove.app. I contenuti marketing veri (homepage, landing per-app) restano ESCLUSI e di proprietà di UC 0037/0038. Ragione: lo scheletro deve essere renderizzabile e verificabile ora, e i legali sono l'unico contenuto già disponibile nel repo.",
+    "files": [
+      { "file": "content/legal/", "description": "Fonte dei markdown legali renderizzati dal sito (nessuna duplicazione dei testi)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Contratto di sostituzione dei token {{titolare.<campo>}} (punto aperto posseduto da UC 0036, ereditato da change 0045/UC 0002): il renderer del sito sostituisce ogni token con il valore da content/legal/entity.yaml PRIMA di emettere la pagina; un token senza chiave è errore di build; a fine build si asserisce che nessun `{{` residuo compaia nell'HTML renderizzato dei legali. Chiude il punto aperto in docs/usecases/09-marketing-site/0036-*.md.",
+    "files": [
+      { "file": "content/legal/entity.yaml", "description": "Fonte unica dei valori del titolare per la sostituzione dei token." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) i18n del sito: subpath per lingua /en|it|fr|es|de/… con hreflang + x-default su ogni pagina; default EN; root `/` reindirizza per Accept-Language con fallback EN (#14 14). L'i18n del sito è indipendente dal pacchetto @appgrove/i18n (react-i18next runtime, solo EN/IT, per le SPA): il sito è statico e guidato dal frontmatter `lang` dei contenuti.",
+    "files": [
+      { "file": "site/", "description": "Configurazione i18n Astro con le 5 lingue, hreflang/x-default, redirect di root." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Gate di pubblicazione e indicizzazione: la build renderizza solo i contenuti con `status: published` (le bozze restano nel repo, fuori dall'output); ogni pagina porta `noindex` finché una variabile d'ambiente/flag di build non lo disattiva (rimozione = atto operativo al go-live, #14 54). In test la protezione aggiuntiva è basic auth via CloudFront Function.",
+    "files": [
+      { "file": "site/", "description": "Gate published e meta noindex controllato da flag di build." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Infra di hosting del sito: si scrive ORA la Terraform della distribuzione dedicata (bucket S3 privato + OAC + CloudFront + Route53 + ACM) ricalcando il pattern delle SPA in infra/modules/platform_shared/cloudfront.tf, più una CloudFront Function di basic auth per l'ambiente test e l'header noindex. L'APPLY resta operativo/differito (phased-env: locale→test→prod, niente infra accesa early): in questa change l'infra deve solo passare fmt+validate. Domini: appgrove.app (vetrina) + app.appgrove.app (backoffice 'coming soon').",
+    "files": [
+      { "file": "infra/", "description": "Nuova distribuzione statica del sito vetrina, come codice non applicato; fmt+validate verdi." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Controlli di qualità del sito eseguiti al build/test locale (nuova area `site` in run-tests.sh): (1) `astro build` verde; (2) parità 5 lingue delle rotte del sito (build rossa se manca una lingua); (3) nessun link interno rotto; (4) solo `status: published` in output; (5) nessun token `{{` residuo nell'HTML dei legali; (6) hreflang completo. La parità 5-lingue dei markdown legali resta anche in tools/compliance (UC 0030), non si duplica quella logica: qui si verifica la resa del sito.",
+    "files": [
+      { "file": "run-tests.sh", "description": "Nuova area `site` aggiunta all'entrypoint unico dei test." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La change NON tocca dati personali: sito statico, nessun dato personale a riposo (UC 0036 §7). Il primo trattamento del sito sarà la newsletter, di proprietà di UC 0039. Nessun manifesto dati, nessuna voce RoPA, gate privacy/RoPA non applicabile.",
+    "files": []
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Pipeline CI di deploy del sito (build → S3 → invalidazione CloudFront, #14 15): la BUILD e i CHECK del sito entrano nel gate CI tramite l'area `site` di run-tests.sh (verificabile subito). Il JOB di deploy reale verso test/prod dipende dall'infra applicata e da segreti non ancora presenti (phased-env): viene predisposto ma la sua ATTIVAZIONE è operativa, tracciata come rimando in UC 0036. Non si anticipa il go-live.",
+    "files": []
+  }
+]
