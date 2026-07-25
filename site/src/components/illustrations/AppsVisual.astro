@@ -1,0 +1,59 @@
+---
+// Illustrazione "un account, ogni strumento" (UC 0037): una finestra con una griglia
+// di app, una evidenziata. On-brand (token del design system, tema chiaro/scuro).
+// Decorativa: aria-hidden.
+---
+
+<svg
+  viewBox="0 0 480 340"
+  class="ag-illustration h-auto w-full"
+  data-illustration="apps"
+  role="presentation"
+  aria-hidden="true"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- finestra -->
+  <rect x="16" y="20" width="448" height="300" rx="18" class="fill-surface stroke-line" stroke-width="1.5" />
+  <!-- barra del titolo -->
+  <path d="M16 38 a18 18 0 0 1 18 -18 h412 a18 18 0 0 1 18 18 v20 h-448 z" class="fill-surface-2" />
+  <g class="fill-line">
+    <circle cx="40" cy="39" r="5" />
+    <circle cx="58" cy="39" r="5" />
+    <circle cx="76" cy="39" r="5" />
+  </g>
+
+  <!-- griglia 3x2 di app; la prima è evidenziata (accento) -->
+  <g>
+    <!-- riga 1 -->
+    <g>
+      <rect x="52" y="92" width="112" height="88" rx="12" class="fill-accent" />
+      <rect x="72" y="112" width="34" height="34" rx="9" class="fill-accent-contrast" opacity="0.9" />
+      <rect x="72" y="156" width="72" height="8" rx="4" class="fill-accent-contrast" opacity="0.7" />
+    </g>
+    <g class="fill-surface-2 stroke-line" stroke-width="1.5">
+      <rect x="184" y="92" width="112" height="88" rx="12" />
+      <rect x="316" y="92" width="112" height="88" rx="12" />
+    </g>
+    <!-- riga 2 -->
+    <g class="fill-surface-2 stroke-line" stroke-width="1.5">
+      <rect x="52" y="200" width="112" height="88" rx="12" />
+      <rect x="184" y="200" width="112" height="88" rx="12" />
+      <rect x="316" y="200" width="112" height="88" rx="12" />
+    </g>
+    <!-- glifi interni neutri -->
+    <g class="fill-line">
+      <rect x="204" y="112" width="30" height="30" rx="8" />
+      <rect x="336" y="112" width="30" height="30" rx="8" />
+      <rect x="72" y="220" width="30" height="30" rx="8" />
+      <rect x="204" y="220" width="30" height="30" rx="8" />
+      <rect x="336" y="220" width="30" height="30" rx="8" />
+    </g>
+    <g class="fill-line" opacity="0.7">
+      <rect x="204" y="152" width="72" height="8" rx="4" />
+      <rect x="336" y="152" width="72" height="8" rx="4" />
+      <rect x="72" y="260" width="72" height="8" rx="4" />
+      <rect x="204" y="260" width="72" height="8" rx="4" />
+      <rect x="336" y="260" width="72" height="8" rx="4" />
+    </g>
+  </g>
+</svg>

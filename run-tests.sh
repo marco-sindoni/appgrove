@@ -23,8 +23,9 @@
 #                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
 #                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
 #                Chiude la classe di bug "l'app non parte fuori dal profilo test" (regressione queue-prefix).
-#   • site     — site/ (Astro SSG, UC 0036)    → vitest (renderer legali/i18n) + `astro build` + controllo
-#                post-build (parità 5 lingue, nessun token residuo, hreflang, noindex, link interni).
+#   • site     — site/ (Astro SSG, UC 0036)    → vitest (renderer legali/i18n + template landing via Container API,
+#                UC 0038) + `astro build` + controllo post-build (parità 5 lingue, nessun token residuo, hreflang,
+#                noindex, link interni, + landing per-app: parità 5 lingue + Open Graph, UC 0038).
 #
 # Esegue TUTTE le aree selezionate (non si ferma al primo errore), raccoglie gli esiti e ritorna
 # exit-code != 0 se QUALSIASI suite fallisce. È la SORGENTE DI VERITÀ unica per "lanciare tutti i test".

@@ -83,7 +83,7 @@ AWS finché il prodotto non gira offline.
 | 43 | [0002](01-business-legal/0002-documenti-legali-multilingua.md) | Documenti legali reali 5 lingue | Business & Legal | — | ✅ |
 | 44 | [0036](09-marketing-site/0036-vetrina-astro-scheletro.md) | Vetrina Astro skeleton (S3+CloudFront) | Marketing Site | 0019, 0003 | ✅ |
 | 45 | [0037](09-marketing-site/0037-homepage-nav-footer.md) | Homepage + nav/footer | Marketing Site | 0036 | ✅ |
-| 46 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ⬜ |
+| 46 | [0038](09-marketing-site/0038-template-landing-per-app.md) | Template landing per-app | Marketing Site | 0036 · (0046,0057) | ✅ |
 | 47 | [0057](10-skills-tooling/0057-skill-finalize-landing.md) | skill `finalize-landing` | Skills & Tooling | 0038, 0046, 0036 | ⬜ |
 | 48 | [0040](09-marketing-site/0040-seo-tecnico.md) | SEO tecnico | Marketing Site | 0036 | ⬜ |
 | 49 | [0041](09-marketing-site/0041-geo-llms.md) | GEO (`llms.txt`, crawler AI) | Marketing Site | 0036 | ⬜ |

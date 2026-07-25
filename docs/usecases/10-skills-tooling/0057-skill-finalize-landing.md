@@ -58,3 +58,18 @@ Verifica: bozza → published con placeholder risolti, hreflang/Schema.org compl
   2. Imposta `published: true`; non fa deploy (CI al merge).
   3. Flusso content-PR leggero (branch+PR, **no** gate test/snapshot); check CI 5 lingue + SEO verde.
   4. Gestisce il caso "landing stale" segnalato da `new-change`.
+
+## Punti aperti / decisioni differite
+
+- **Contratto consegnato da UC 0038** _(tracciato dalla change `0048-use-case-0038-…`)_: il **template landing** e il modello
+  dati esistono e sono ciò che questa skill deve **consumare** per finalizzare/pubblicare:
+  - registro `site/src/content/landings/index.ts` (voci `Landing` con `appId` + `status` + `content` per lingua);
+  - tipo `site/src/content/landings/types.ts`: `LandingLocaleContent` con le 8 sezioni, `screenshot.src` (`null` in bozza →
+    riempire con la cattura reale), `meta.ogImage` (`null` in bozza → riempire con l'immagine OG generata), `slug` localizzato;
+  - transizione `draft → published` = cambiare `status` a livello app (poi il build renderizza automaticamente, gate #14 52);
+  - `site/src/lib/landings.ts`: `RESERVED_SLUGS` (slug vietati), `validateLandings()` (da far passare), `landingParams()`
+    (i path che il build genererà una volta `published`);
+  - il controllo post-build (`site/scripts/postbuild-check.mjs`) verifica già, sulle landing pubblicate, parità 5 lingue +
+    Open Graph presenti: la finalizzazione deve lasciare la vetrina verde.
+  Restano di competenza di **questa** skill (DoD): cattura screenshot reali via Playwright + seed, generazione immagine OG,
+  review interattiva 5 lingue, e il caso **"landing stale"** segnalato dal gate qualità di `new-change` (#14 55).
