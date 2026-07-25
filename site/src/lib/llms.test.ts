@@ -31,10 +31,17 @@ describe('llms.txt multilingua (UC 0041)', () => {
     }
   })
 
-  it('senza landing pubblicate: riga onesta "nessuna app" (la fixture è draft)', () => {
-    const body = buildLlmsTxt({ locale: DEFAULT_LOCALE, siteUrl: SITE })
-    // Il registro reale ha solo la fixture `example` in draft → nessuna app pubblicata.
+  it('senza landing pubblicate: riga onesta "nessuna app"', () => {
+    // Registro esplicitamente senza pubblicate (solo bozze) → la sezione App è onesta.
+    const body = buildLlmsTxt({ locale: DEFAULT_LOCALE, siteUrl: SITE, landings: [] })
     expect(body).toMatch(/No apps are published yet/i)
+  })
+
+  it('il registro reale espone la landing pubblicata dell\'app #1 "fatture" (UC 0053)', () => {
+    // Dopo UC 0053 la landing di fatture è published → compare fra le App di llms.txt.
+    const body = buildLlmsTxt({ locale: 'it', siteUrl: SITE })
+    expect(body).not.toMatch(/No apps are published yet/i)
+    expect(body).toContain(`${SITE}/it/fatture/`)
   })
 
   it('con una landing pubblicata: compare fra le App', () => {

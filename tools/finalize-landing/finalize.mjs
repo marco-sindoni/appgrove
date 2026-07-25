@@ -132,8 +132,10 @@ async function cmdScreenshots(opts) {
     appId,
     locales: localesOf(opts),
     outDir,
-    metric: opts.metric && opts.metric !== true ? opts.metric : 'items',
-    freeCap: opts['free-cap'] && opts['free-cap'] !== true ? Number(opts['free-cap']) : 10,
+    // Non forzare default qui: se l'opzione manca si lascia decidere al seed per-app
+    // (resolveSeed). Passare 'items'/10 di default scavalcherebbe il descrittore dell'app.
+    metric: opts.metric && opts.metric !== true ? opts.metric : undefined,
+    freeCap: opts['free-cap'] && opts['free-cap'] !== true ? Number(opts['free-cap']) : undefined,
   })
   for (const p of produced) info(`✓ screenshot: ${path.relative(root, p)}`)
 }

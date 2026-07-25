@@ -16,6 +16,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { LOCALES } from './branding.mjs'
+import { resolveSeed } from './seeds.mjs'
 
 const VIEWPORT = { width: 1280, height: 800 }
 
@@ -43,16 +44,16 @@ export async function loadChromium() {
 
 /**
  * Applica alla pagina gli stub delle rotte per una sessione autenticata come owner, con il
- * backend dell'app simulato. Speculare a `mockAuthed` delle prove e2e generate.
+ * backend dell'app simulato. Speculare a `mockAuthed` delle prove e2e generate. Le rotte
+ * dati (lista + quota + entitlement) sono derivate dal `seed` risolto per-app: risorsa di
+ * lista, metric e record cambiano da app ad app senza cablare nulla qui dentro.
  */
-async function installMocks(page, { appId, origin, metric, freeCap }) {
+async function installMocks(page, { appId, origin, seed }) {
   const accessToken = jwt({ sub: 'u1', tenant_id: 'tenant-1', roles: ['owner'], upn: 'owner@acme.test' })
   const tokenBody = { access_token: accessToken, id_token: jwt({ sub: 'u1', email: 'owner@acme.test', name: 'Owner' }), token_type: 'Bearer' }
-  const items = [
-    { id: 'item-1', code: '2026-0001', contactName: 'Mario Rossi', status: 'active', currency: 'EUR', totalAmount: 120 },
-    { id: 'item-2', code: '2026-0002', contactName: 'Anna Bianchi', status: 'active', currency: 'EUR', totalAmount: 340 },
-  ]
-  const quota = { metric, used: items.length, limit: freeCap, remaining: freeCap - items.length }
+  const { listPath, metric, freeCap, records } = seed
+  const envelope = { content: records, page: 0, size: 20, totalElements: records.length, totalPages: 1 }
+  const quota = { metric, used: records.length, limit: freeCap, remaining: freeCap - records.length }
 
   await page.route('**/config.json', (r) => r.fulfill({ json: { env: 'local', authBaseUrl: origin, coreBaseUrl: origin, cognito: { userPoolId: '', clientId: '' } } }))
   await page.route('**/api/auth/refresh', (r) => r.fulfill({ json: tokenBody }))
@@ -60,8 +61,8 @@ async function installMocks(page, { appId, origin, metric, freeCap }) {
   await page.route('**/api/platform/v1/accounts/me', (r) => r.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }))
   await page.route('**/api/platform/v1/me/entitlements', (r) => r.fulfill({ json: { entitlements: [{ appSlug: appId, tierKey: 'free', limits: { [metric]: { cap: freeCap, nature: 'flow', window: 'month' } } }] } }))
   await page.route(`**/api/${appId}/v1/quota`, (r) => r.fulfill({ json: quota }))
-  await page.route(`**/api/${appId}/v1/items?*`, (r) => r.fulfill({ json: { content: items, page: 0, size: 20, totalElements: items.length, totalPages: 1 } }))
-  await page.route(`**/api/${appId}/v1/items`, (r) => r.fulfill({ json: { content: items, page: 0, size: 20, totalElements: items.length, totalPages: 1 } }))
+  await page.route(`**/api/${appId}/v1/${listPath}?*`, (r) => r.fulfill({ json: envelope }))
+  await page.route(`**/api/${appId}/v1/${listPath}`, (r) => r.fulfill({ json: envelope }))
 }
 
 /**
@@ -69,9 +70,13 @@ async function installMocks(page, { appId, origin, metric, freeCap }) {
  * `baseURL` (es. l'anteprima Astro/Vite del frontend). Scrive `hero.<locale>.png` in `outDir`
  * e ritorna la lista dei percorsi prodotti. Il chiamante avvia e ferma il server dell'app.
  */
-export async function captureShots({ baseURL, appId, locales = LOCALES, outDir, metric = 'items', freeCap = 10 }) {
+export async function captureShots({ baseURL, appId, locales = LOCALES, outDir, metric, freeCap }) {
   const chromium = await loadChromium()
   const origin = new URL(baseURL).origin
+  // Seed guidato dai dati per-app (default generico se l'app non ha un descrittore).
+  // metric/freeCap passati dalla CLI hanno la precedenza sui valori del descrittore.
+  const base = await resolveSeed(appId)
+  const seed = { ...base, metric: metric ?? base.metric, freeCap: freeCap ?? base.freeCap }
   fs.mkdirSync(outDir, { recursive: true })
   const browser = await chromium.launch()
   const produced = []
@@ -79,7 +84,7 @@ export async function captureShots({ baseURL, appId, locales = LOCALES, outDir, 
     for (const locale of locales) {
       const context = await browser.newContext({ viewport: VIEWPORT, locale, extraHTTPHeaders: { 'Accept-Language': locale } })
       const page = await context.newPage()
-      await installMocks(page, { appId, origin, metric, freeCap })
+      await installMocks(page, { appId, origin, seed })
       await page.goto(`${baseURL}/app/${appId}`, { waitUntil: 'networkidle' })
       const outPath = path.join(outDir, `hero.${locale}.png`)
       await page.screenshot({ path: outPath })

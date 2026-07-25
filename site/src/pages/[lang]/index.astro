@@ -9,6 +9,7 @@ import { LOCALES, type Locale } from '../../lib/i18n.ts'
 import { MARKETING } from '../../content/marketing/index.ts'
 import { APP_SIGNUP } from '../../lib/links.ts'
 import { brandHref } from '../../lib/routes.ts'
+import { fattureLanding } from '../../content/landings/fatture/index.ts'
 import { faqPageJsonLd } from '../../lib/seo.ts'
 import FaqSection from '../../components/FaqSection.astro'
 import NewsletterForm from '../../components/NewsletterForm.tsx'
@@ -24,6 +25,10 @@ export function getStaticPaths() {
 
 const lang = Astro.params.lang as Locale
 const t = MARKETING[lang]
+
+// Link alla landing pubblicata dell'app faro "fatture" (UC 0053): la card #apps smette
+// di essere solo un annuncio e porta alla pagina reale (slug per-lingua, /<lang>/<slug>/).
+const flagshipHref = `/${lang}/${fattureLanding.content[lang].slug}/`
 
 // Dato strutturato FAQPage della homepage (UC 0041, GEO): la FAQ generale di marca.
 const jsonLd = faqPageJsonLd(t.faq.items)
@@ -66,7 +71,10 @@ const jsonLd = faqPageJsonLd(t.faq.items)
       <AppsVisual />
     </div>
     <div class="mt-8 grid gap-4 sm:grid-cols-2">
-      <article class="rounded-lg border border-line bg-surface p-5">
+      <a
+        href={flagshipHref}
+        class="block rounded-lg border border-line bg-surface p-5 transition hover:border-accent hover:bg-surface-2"
+      >
         <div class="mb-2 flex items-center gap-2">
           <h3 class="text-lg font-semibold">{t.apps.flagshipName}</h3>
           <span class="rounded-pill bg-surface-2 px-2 py-0.5 text-xs font-semibold text-fg-muted">
@@ -75,7 +83,7 @@ const jsonLd = faqPageJsonLd(t.faq.items)
         </div>
         <p class="text-sm font-medium text-fg-muted">{t.apps.flagshipCategory}</p>
         <p class="mt-2 text-sm text-fg-muted">{t.apps.flagshipDescription}</p>
-      </article>
+      </a>
       <article class="rounded-lg border border-dashed border-line p-5">
         <h3 class="text-lg font-semibold">{t.apps.moreTitle}</h3>
         <p class="mt-2 text-sm text-fg-muted">{t.apps.moreText}</p>
