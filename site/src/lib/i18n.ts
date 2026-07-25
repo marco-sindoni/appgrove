@@ -33,6 +33,24 @@ export function hreflangAlternates(pathWithinLocale: string): Array<{ hreflang: 
   return alternates
 }
 
+/**
+ * Come `hreflangAlternates`, ma con un percorso DIVERSO per lingua (slug localizzati,
+ * UC 0040): per ogni lingua l'hreflang punta al SUO percorso reale, e `x-default`
+ * al percorso della lingua di default. `pathsByLocale[loc]` è il percorso dentro la
+ * lingua `loc` (con slash iniziale/finale). È il presidio contro gli hreflang rotti
+ * quando lo slug cambia da lingua a lingua (es. /en/why/ ↔ /it/perche/).
+ */
+export function hreflangAlternatesByLocale(
+  pathsByLocale: Record<Locale, string>,
+): Array<{ hreflang: string; href: string }> {
+  const alternates = LOCALES.map((loc) => ({
+    hreflang: loc as string,
+    href: `/${loc}${normalizePath(pathsByLocale[loc])}`,
+  }))
+  alternates.push({ hreflang: 'x-default', href: `/${DEFAULT_LOCALE}${normalizePath(pathsByLocale[DEFAULT_LOCALE])}` })
+  return alternates
+}
+
 /** Garantisce slash iniziale e finale (coerente con trailingSlash: 'always'). */
 export function normalizePath(path: string): string {
   let p = path.startsWith('/') ? path : `/${path}`

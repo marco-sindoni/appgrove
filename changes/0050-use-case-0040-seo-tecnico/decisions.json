@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano dello sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "La change implementa lo use case 0040 (SEO tecnico del sito vetrina Astro), area 09-marketing-site. Branch nella forma NNNN-use-case-YYYY-… con NNNN=0050 (prossimo progressivo in changes/) e YYYY=0040. Lo use case passa a 🟡 in docs/usecases/_INDEX.md all'apertura e a ✅ alla chiusura.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Riga UC 0040 portata a 🟡 (in corso)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Perimetro della change fissato sui due Punti aperti dello UC 0040 (slug brand localizzati; JSON-LD + sitemap/robots) più le voci DoD mancanti (misurazione, keyword strategy, check SEO in CI). Restano fuori, come rimandi ai loro use case: llms.txt/consenso crawler AI (UC 0041), contenuti blog + Schema Article (UC 0042), SEO per-app generato (new-application UC 0046), connessione reale Search Console/Bing e attivazione Plausible (atto operativo post-go-live)."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Scoperto un difetto latente: hreflangAlternates(i18n.ts) usa un unico percorso per tutte le lingue, quindi gli hreflang delle landing (slug diversi per lingua) puntano a URL inesistenti; il controllo post-build ne verificava solo la presenza, non la risoluzione. La correzione è la fondazione della change: un modello di percorso per-lingua (routes.ts) usato sia dagli hreflang sia dagli slug brand localizzati, più un'asserzione post-build che verifica la RISOLUZIONE degli hreflang.",
+    "files": [
+      { "file": "site/src/lib/i18n.ts", "description": "hreflangAlternates esteso a percorsi per-lingua (mappa Record<Locale,path>)." },
+      { "file": "site/src/lib/routes.ts", "description": "Nuovo: identità di pagina → percorso localizzato per lingua; helper link + mappa hreflang." },
+      { "file": "site/scripts/postbuild-check.mjs", "description": "Nuova asserzione: gli hreflang devono risolvere a pagine reali in dist/." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Slug brand localizzati (why→perche/pourquoi/por-que/warum, pricing→prezzi/tarifs/precios/preise; home senza slug). Vincolo Astro (una sola rotta dinamica per /<lang>/<slug>/): le pagine brand statiche why.astro/pricing.astro vengono unite nel dispatcher [lang]/[slug].astro che emette brand+landing; i corpi diventano componenti. RESERVED_SLUGS diventa per-lingua. Nessun redirect: sito pre-go-live (noindex), nessun URL già indicizzato. Gli slug tradotti sono una proposta rivedibile in fase di approvazione requisiti."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) sitemap.xml e robots.txt come endpoint Astro propri, SENZA @astrojs/sitemap (non gestisce slug localizzati non uniformi e aggiunge una dipendenza): coerente con cost-min e output autoconsistente. robots.txt rispetta il gate noindex (Disallow / finché SITE_INDEXABLE!==true; altrimenti Allow + riga Sitemap). Consenso crawler AI (llms.txt) resta a UC 0041."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) JSON-LD: Organization (marchio 'appgrove', non la ragione sociale 'DA COMPILARE' del titolare) + BreadcrumbList su tutte le pagine; SoftwareApplication (offers dai tier di prezzo, parser prezzo/valuta tollerante che omette il prezzo se non interpretabile) + FAQPage sulle landing published. Article escluso (dipende dal blog, UC 0042)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Misurazione cablata ma spenta di default: snippet Plausible (deciso #14 33) emesso solo con env PUBLIC_PLAUSIBLE_DOMAIN valorizzata E sito indicizzabile; meta di verifica Search Console/Bing solo se env valorizzate (SITE_VERIFICATION_GOOGLE/BING). Pre-go-live nessun cambiamento di comportamento. Attivazione reale = atto operativo post-go-live."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il sito non era cablato in CI (verify-pr.yml privo di job/filtro per site/). Si aggiunge un job 'site' con path-filter site/** (+ content/legal/** e run-tests.sh) che esegue ./run-tests.sh site, rendendo bloccante il check SEO in PR (DoD 'check CI SEO verde'). Keyword strategy documentata in site/SEO.md (artefatto di guida al copy, non codice).",
+    "files": [
+      { "file": ".github/workflows/verify-pr.yml", "description": "Nuovo filtro 'site' e job 'site' bloccante (vitest + astro build + controllo SEO)." },
+      { "file": "site/SEO.md", "description": "Assetto SEO tecnico + keyword strategy a due livelli (app/brand) + nicchia EU/GDPR." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Correzione di un difetto latente del gate di indicizzazione (di UC 0036, ma sul percorso di questa change): BaseLayout leggeva import.meta.env.SITE_INDEXABLE, che Astro NON popola dalle variabili di shell (espone solo quelle con prefisso PUBLIC_), quindi il rebuild go-live 'SITE_INDEXABLE=true' non avrebbe rimosso il noindex e il controllo post-build (che usa correttamente process.env) sarebbe diventato rosso. Si passa a process.env in BaseLayout (gate noindex + misurazione) e nell'endpoint robots.txt, coerente con astro.config.mjs (SITE_URL) e con postbuild-check.mjs. Verificato: modalità default = noindex+Disallow; SITE_INDEXABLE=true = noindex rimosso + robots Allow + Sitemap.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Gate noindex + Plausible + meta verifica letti da process.env (non import.meta.env)." },
+      { "file": "site/src/pages/robots.txt.ts", "description": "Gate indicizzazione da process.env." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Conseguenza della localizzazione degli slug brand: le copie di prima linea degli slug riservati nei tool di scaffolding (tools/new-application/lib/context.mjs e tools/finalize-landing/lib/branding.mjs) elencavano solo 'why'/'pricing' inglesi. Aggiunti gli slug brand localizzati (perche/prezzi/pourquoi/tarifs/por-que/precios/warum/preise) in un unico insieme (over-reserve innocuo). Il gate preciso per-lingua resta validateLandings() lato sito, coperto dai test dell'area 'site'.",
+    "files": [
+      { "file": "tools/new-application/lib/context.mjs", "description": "RESERVED_LANDING_SLUGS include gli slug brand localizzati." },
+      { "file": "tools/finalize-landing/lib/branding.mjs", "description": "RESERVED_SLUGS include gli slug brand localizzati." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il controllo di parità 5 lingue nel post-build usava slug brand fissi inglesi ('why'/'pricing'): aggiornato a una mappa BRAND_SLUGS localizzata (allineata a src/lib/routes.ts). Il disallineamento fra le due mappe fa fallire il controllo (parità) → drift rumoroso, non silenzioso. Nuove asserzioni SEO nel post-build: title/description non vuoti; hreflang che RISOLVONO in dist; sitemap.xml/robots.txt presenti e ben formati; JSON-LD valido con Organization ovunque e SoftwareApplication+FAQPage sulle landing.",
+    "files": [
+      { "file": "site/scripts/postbuild-check.mjs", "description": "Parità con slug localizzati + asserzioni SEO (meta, hreflang risolvibili, sitemap/robots, JSON-LD)." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Attivazione reale della misurazione rimandata come atto operativo post-go-live (non decisa qui): connessione a Google Search Console e Bing Webmaster e attivazione dell'account/dominio Plausible. Il codice è cablato e spento di default; tracciato nei Punti aperti dello UC 0040 e in site/SEO.md."
+  }
+]

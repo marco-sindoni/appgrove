@@ -6,23 +6,29 @@
 import { LANDINGS } from '../content/landings/index.ts'
 import type { Landing } from '../content/landings/types.ts'
 import { LOCALES, type Locale } from './i18n.ts'
+import { BRAND_KEYS, BRAND_SLUGS } from './routes.ts'
 
 /**
- * Slug riservati: percorsi già occupati da pagine statiche del sito. Una landing
- * NON può usarli (validazione), così lo slug localizzato alla radice della lingua
- * (dec. #14 31, es. /en/invoicing/) non collide con /why/, /pricing/, /legal/…
- * In Astro le rotte statiche hanno comunque priorità sulla dinamica [slug]: la
- * lista rende il vincolo esplicito e testato invece che implicito.
+ * Slug riservati NON localizzati: percorsi occupati da rotte del sito che hanno lo
+ * stesso segmento in tutte le lingue (legali, ancore, pagine di servizio). Le pagine
+ * brand (why/pricing) hanno invece slug localizzati e sono riservate PER LINGUA
+ * (vedi `reservedSlugs`), da UC 0040.
  */
-export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
-  'why',
-  'pricing',
-  'legal',
-  'apps',
-  'blog',
-  'support',
-  'coming-soon',
-])
+const STATIC_RESERVED_SLUGS: readonly string[] = ['legal', 'apps', 'blog', 'support', 'coming-soon']
+
+/**
+ * Slug riservati per una lingua: gli statici più lo slug brand localizzato di QUELLA
+ * lingua (es. in it: `prezzi`, `perche`). Una landing non può rivendicarli, così lo
+ * slug alla radice della lingua (dec. #14 31, es. /it/fatture/) non collide con
+ * /it/prezzi/, /it/perche/, /it/legal/… Il dispatcher [lang]/[slug].astro serve
+ * brand e landing dalla STESSA rotta: senza questo vincolo due entry potrebbero
+ * reclamare lo stesso URL.
+ */
+export function reservedSlugs(lang: Locale): ReadonlySet<string> {
+  const set = new Set<string>(STATIC_RESERVED_SLUGS)
+  for (const key of BRAND_KEYS) set.add(BRAND_SLUGS[key][lang])
+  return set
+}
 
 /** Le sole landing pubblicate (gate #14 52). */
 export function publishedLandings(landings: readonly Landing[] = LANDINGS): Landing[] {
@@ -36,14 +42,14 @@ export function publishedLandings(landings: readonly Landing[] = LANDINGS): Land
  */
 export function landingParams(landings: readonly Landing[] = LANDINGS): Array<{
   params: { lang: Locale; slug: string }
-  props: { landing: Landing; lang: Locale }
+  props: { kind: 'landing'; landing: Landing; lang: Locale }
 }> {
   const out = []
   for (const landing of publishedLandings(landings)) {
     for (const lang of LOCALES) {
       out.push({
         params: { lang, slug: landing.content[lang].slug },
-        props: { landing, lang },
+        props: { kind: 'landing' as const, landing, lang },
       })
     }
   }
@@ -72,8 +78,8 @@ export function validateLandings(landings: readonly Landing[] = LANDINGS): strin
         errors.push(`${l.appId}/${lang}: slug non valido "${slug}" (atteso minuscolo [a-z0-9-])`)
         continue
       }
-      if (RESERVED_SLUGS.has(slug)) {
-        errors.push(`${l.appId}/${lang}: slug riservato "${slug}" (collide con una pagina statica)`)
+      if (reservedSlugs(lang).has(slug)) {
+        errors.push(`${l.appId}/${lang}: slug riservato "${slug}" (collide con una pagina brand/di servizio)`)
       }
       const key = `${lang}:${slug}`
       const prev = seen.get(key)

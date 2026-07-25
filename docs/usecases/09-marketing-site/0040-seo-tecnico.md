@@ -61,6 +61,13 @@ utenti), compatibili con la postura purista (#14 33). Manifest: N/A.
 
 ## Punti aperti / decisioni differite
 
+> **✅ Implementato dalla change `0050-use-case-0040-seo-tecnico`** (2026-07-25): entrambi i punti sotto sono
+> risolti (slug brand localizzati con hreflang corretti; JSON-LD + sitemap.xml/robots.txt), più meta+OG
+> coerenti, keyword strategy (`site/SEO.md`), misurazione cablata (spenta di default) e check SEO bloccante in
+> CI. **Resta operativo post-go-live** (non codice): connessione reale a Google Search Console e Bing Webmaster
+> e attivazione account/dominio Plausible; rimozione del `noindex` col rebuild `SITE_INDEXABLE=true` (runbook
+> UC 0036). Slug localizzati **solo** delle pagine brand (why/pricing): i legali restano con slug non tradotto.
+
 - **Slug di pagina localizzati per lingua** _(tracciato dalla change `0047-use-case-0037-…`)_: homepage/why/pricing del
   sito nascono con slug in inglese sotto il prefisso di lingua (`/it/pricing/`, non `/it/prezzi/`). Gli slug localizzati
   (#14 31), legati da hreflang, sono ottimizzazione SEO che appartiene a questo use case. Quando verrà implementato,

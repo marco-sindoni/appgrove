@@ -13,10 +13,12 @@
 /** Le 5 lingue del sito vetrina (UC 0036). EN è la sorgente marketing. */
 export const LOCALES = ['en', 'it', 'fr', 'es', 'de']
 
-/** Slug riservati a pagine statiche del sito — allineato a site/src/lib/landings.ts. */
+// Slug riservati del sito — allineato a site/src/lib/routes.ts (BRAND_SLUGS) e
+// landings.ts. Include gli slug brand LOCALIZZATI per lingua (UC 0040): perche/prezzi/
+// pourquoi/tarifs/… Over-reserve innocuo (il gate preciso per-lingua è validateLandings()).
 export const RESERVED_SLUGS = new Set([
-  'why',
-  'pricing',
+  'why', 'perche', 'pourquoi', 'por-que', 'warum',
+  'pricing', 'prezzi', 'tarifs', 'precios', 'preise',
   'legal',
   'apps',
   'blog',

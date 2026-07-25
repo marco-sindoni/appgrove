@@ -28,9 +28,13 @@ export const APP_ID_PATTERN = /^[a-z][a-z0-9_]{0,30}$/
  * di `tools/compliance` e `postbuild-check.mjs`: costanti piccole e stabili
  * ricopiate oltre il confine dello strumento, non un import cross-pacchetto fragile.
  */
+// Include gli slug brand LOCALIZZATI (UC 0040): le pagine "why"/"pricing" hanno slug
+// tradotto per lingua (perche/prezzi/pourquoi/tarifs/…). Ricopiati qui in un unico
+// insieme (over-reserve innocuo: il gate preciso per-lingua resta validateLandings()
+// lato sito). Allineato a site/src/lib/routes.ts (BRAND_SLUGS).
 export const RESERVED_LANDING_SLUGS = new Set([
-  'why',
-  'pricing',
+  'why', 'perche', 'pourquoi', 'por-que', 'warum',
+  'pricing', 'prezzi', 'tarifs', 'precios', 'preise',
   'legal',
   'apps',
   'blog',

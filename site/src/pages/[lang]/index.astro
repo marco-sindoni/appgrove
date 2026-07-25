@@ -8,6 +8,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 import { LOCALES, type Locale } from '../../lib/i18n.ts'
 import { MARKETING } from '../../content/marketing/index.ts'
 import { APP_SIGNUP } from '../../lib/links.ts'
+import { brandHref } from '../../lib/routes.ts'
 import HeroVisual from '../../components/illustrations/HeroVisual.astro'
 import AppsVisual from '../../components/illustrations/AppsVisual.astro'
 import EcosystemVisual from '../../components/illustrations/EcosystemVisual.astro'
@@ -170,7 +171,7 @@ const t = MARKETING[lang]
         {t.finalCta.primary}
       </a>
       <a
-        href={`/${lang}/why/`}
+        href={brandHref('why', lang)}
         class="rounded-pill border border-line px-5 py-2.5 font-semibold hover:bg-surface-2"
       >
         {t.finalCta.secondary}

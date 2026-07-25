@@ -1,0 +1,48 @@
+---
+// Corpo della pagina "Prezzi — come funziona la fatturazione" (UC 0037), estratto da
+// [lang]/pricing.astro quando la pagina è passata al dispatcher [lang]/[slug].astro
+// per avere slug localizzati (UC 0040). Spiega il MODELLO di fatturazione, SENZA
+// prezzi numerici (i prezzi veri stanno sulle landing app, UC 0038). Contenuti dal
+// modello marketing. Il link ai legali resta con slug non localizzato (/<lang>/legal/…).
+import type { Locale } from '../lib/i18n.ts'
+import { MARKETING } from '../content/marketing/index.ts'
+import { APP_SIGNUP } from '../lib/links.ts'
+
+interface Props {
+  lang: Locale
+}
+
+const { lang } = Astro.props
+const t = MARKETING[lang]
+---
+
+<section class="py-8">
+  <h1 class="text-4xl font-extrabold tracking-tight">{t.pricing.title}</h1>
+  <p class="mt-4 max-w-2xl text-lg text-fg-muted">{t.pricing.intro}</p>
+</section>
+
+<div class="grid gap-6 sm:grid-cols-2">
+  {
+    t.pricing.sections.map((s) => (
+      <section class="rounded-lg border border-line bg-surface p-6">
+        <h2 class="text-xl font-bold tracking-tight">{s.title}</h2>
+        <p class="mt-2 text-fg-muted">{s.body}</p>
+      </section>
+    ))
+  }
+</div>
+
+<p class="mt-6">
+  <a href={`/${lang}/legal/refund/`} class="font-semibold text-accent underline">
+    {t.pricing.refundLinkText}
+  </a>
+</p>
+
+<section class="mt-12 border-t border-line py-10">
+  <a
+    href={APP_SIGNUP}
+    class="rounded-pill bg-accent px-5 py-2.5 font-semibold text-accent-contrast hover:opacity-90"
+  >
+    {t.finalCta.primary}
+  </a>
+</section>

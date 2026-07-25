@@ -9,9 +9,12 @@ import {
   LOCALES,
   LOCALE_LABELS,
   hreflangAlternates,
+  hreflangAlternatesByLocale,
   normalizePath,
   type Locale,
 } from '../lib/i18n.ts'
+import { brandHref } from '../lib/routes.ts'
+import { organizationJsonLd, serializeJsonLd } from '../lib/seo.ts'
 import { LEGAL_COMPONENTS } from '../lib/legal.ts'
 import { MARKETING } from '../content/marketing/index.ts'
 import { APP_LOGIN, APP_SIGNUP, SUPPORT_EMAIL, SECURITY_TXT } from '../lib/links.ts'
@@ -22,34 +25,58 @@ interface Props {
   description?: string
   /** Percorso DOPO il segmento di lingua, es. `/legal/privacy/`. Default `/`. */
   pathWithinLocale?: string
+  /**
+   * Percorso hreflang PER LINGUA (slug localizzati, UC 0040): quando presente ogni
+   * hreflang punta al percorso reale della sua lingua. Assente → stesso percorso per
+   * tutte le lingue (corretto per home e legali, che hanno segmento identico).
+   */
+  hreflangPaths?: Record<Locale, string>
   /** Immagine Open Graph (URL relativa alla radice); assente → nessuna og:image (es. bozze landing). */
   ogImage?: string | null
   /** Identità dell'app per le pagine landing (UC 0038): marcatore usato dal controllo post-build. */
   appId?: string
+  /** Dati strutturati Schema.org specifici della pagina (UC 0040); Organization è aggiunta qui. */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[]
 }
 
-const { lang, title, description, pathWithinLocale = '/', ogImage, appId } = Astro.props
+const { lang, title, description, pathWithinLocale = '/', hreflangPaths, ogImage, appId, jsonLd } = Astro.props
 const path = normalizePath(pathWithinLocale)
 const t = MARKETING[lang]
 
 // Gate di indicizzazione (#14 54): `noindex` finché SITE_INDEXABLE !== 'true'
-// (rimozione = atto operativo al go-live). Default: non indicizzabile.
-const indexable = import.meta.env.SITE_INDEXABLE === 'true'
+// (rimozione = atto operativo al go-live). Default: non indicizzabile. Si legge da
+// process.env: il frontmatter Astro gira in Node al build, e import.meta.env NON
+// espone le variabili di shell non prefissate PUBLIC_ (corretto in UC 0040, così il
+// rebuild go-live `SITE_INDEXABLE=true` ha davvero effetto — coerente con astro.config).
+const indexable = process.env.SITE_INDEXABLE === 'true'
 
-const alternates = hreflangAlternates(path)
+const alternates = hreflangPaths ? hreflangAlternatesByLocale(hreflangPaths) : hreflangAlternates(path)
 const canonical = new URL(`/${lang}${path}`, Astro.site).toString()
 
+// Selettore lingua: se gli slug sono localizzati, ogni voce punta al percorso della SUA
+// lingua (altrimenti si finirebbe su un URL inesistente, es. /en/perche/).
 const langOptions = LOCALES.map((loc) => ({
   locale: loc,
   label: LOCALE_LABELS[loc],
-  href: `/${loc}${path}`,
+  href: hreflangPaths ? `/${loc}${normalizePath(hreflangPaths[loc])}` : `/${loc}${path}`,
 }))
 
 const navLinks = [
   { label: t.nav.app, href: `/${lang}/#apps` },
-  { label: t.nav.why, href: `/${lang}/why/` },
-  { label: t.nav.pricing, href: `/${lang}/pricing/` },
+  { label: t.nav.why, href: brandHref('why', lang) },
+  { label: t.nav.pricing, href: brandHref('pricing', lang) },
 ]
+
+// Dati strutturati (UC 0040): Organization su OGNI pagina, più i nodi specifici della
+// pagina (BreadcrumbList, SoftwareApplication, FAQPage). `<` neutralizzato in serializzazione.
+const pageJsonLd = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : []
+const jsonLdGraph = [organizationJsonLd(new URL('/', Astro.site).toString(), SUPPORT_EMAIL), ...pageJsonLd]
+
+// Misurazione (UC 0040, #14 33), cablata ma SPENTA di default: emessa solo quando
+// configurata E il sito è indicizzabile (pre-go-live non si misura nulla di reale).
+const plausibleDomain = process.env.PUBLIC_PLAUSIBLE_DOMAIN
+const verifyGoogle = process.env.SITE_VERIFICATION_GOOGLE
+const verifyBing = process.env.SITE_VERIFICATION_BING
 
 // Etichette brevi dei documenti legali (nomi propri dei documenti, riconoscibili).
 const legalLabels: Record<string, string> = {
@@ -94,6 +121,23 @@ const year = new Date().getFullYear()
     {/* Marcatore delle pagine landing per-app: consente al controllo post-build di
         riconoscerle e verificarne parità 5 lingue + Open Graph (UC 0038). */}
     {appId && <meta name="ag:app-id" content={appId} />}
+
+    {/* Dati strutturati Schema.org (UC 0040): Organization + nodi di pagina. */}
+    {
+      jsonLdGraph.map((node) => (
+        <script type="application/ld+json" set:html={serializeJsonLd(node)} />
+      ))
+    }
+
+    {/* Verifica proprietà motori (UC 0040): solo se configurata; connessione reale post-go-live. */}
+    {verifyGoogle && <meta name="google-site-verification" content={verifyGoogle} />}
+    {verifyBing && <meta name="msvalidate.01" content={verifyBing} />}
+
+    {/* Misurazione Plausible (#14 33): solo se configurata E indicizzabile. Analytics
+        cookieless, nessun dato personale (postura purista, memoria eu-data-residency). */}
+    {indexable && plausibleDomain && (
+      <script defer data-domain={plausibleDomain} src="https://plausible.io/js/script.js"></script>
+    )}
   </head>
   <body class="flex min-h-screen flex-col bg-bg text-fg">
     <header class="border-b border-line">

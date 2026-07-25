@@ -6,7 +6,7 @@ import {
   publishedLandings,
   landingParams,
   validateLandings,
-  RESERVED_SLUGS,
+  reservedSlugs,
 } from '../../lib/landings.ts'
 import { LOCALES, DEFAULT_LOCALE } from '../../lib/i18n.ts'
 
@@ -80,21 +80,22 @@ describe('registro landing — validazione e gate (UC 0038)', () => {
     expect(validateLandings()).toEqual([])
   })
 
-  it('nessuno slug coincide con uno riservato', () => {
+  it('nessuno slug coincide con uno riservato (per la sua lingua)', () => {
     for (const landing of LANDINGS) {
       for (const lang of LOCALES) {
-        expect(RESERVED_SLUGS.has(landing.content[lang].slug)).toBe(false)
+        expect(reservedSlugs(lang).has(landing.content[lang].slug)).toBe(false)
       }
     }
   })
 
-  it('validateLandings segnala uno slug riservato', () => {
+  it('validateLandings segnala uno slug riservato (slug brand localizzato)', () => {
+    // 'prezzi' è lo slug brand italiano (UC 0040): una landing non può rivendicarlo in it.
     const bad = [
       {
         appId: 'bad',
         status: 'published' as const,
         content: Object.fromEntries(
-          LOCALES.map((l) => [l, { ...LANDINGS[0].content[l], slug: 'pricing' }]),
+          LOCALES.map((l) => [l, { ...LANDINGS[0].content[l], slug: l === 'it' ? 'prezzi' : `bad-${l}` }]),
         ) as (typeof LANDINGS)[number]['content'],
       },
     ]
