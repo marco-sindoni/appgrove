@@ -20,6 +20,30 @@ import path from 'node:path'
 export const APP_ID_PATTERN = /^[a-z][a-z0-9_]{0,30}$/
 
 /**
+ * Slug riservati per le landing del sito vetrina: DEVE restare allineato con
+ * `site/src/lib/landings.ts` (RESERVED_SLUGS). Lo slug della bozza si deriva
+ * dall'identificativo app (underscore → trattino); se coincide con una pagina
+ * statica del sito, `validateLandings()` diventerebbe rosso al primo `site` test.
+ * Duplicare qui la lista (invece di importarla da `site/`) segue lo stesso schema
+ * di `tools/compliance` e `postbuild-check.mjs`: costanti piccole e stabili
+ * ricopiate oltre il confine dello strumento, non un import cross-pacchetto fragile.
+ */
+export const RESERVED_LANDING_SLUGS = new Set([
+  'why',
+  'pricing',
+  'legal',
+  'apps',
+  'blog',
+  'support',
+  'coming-soon',
+])
+
+/** Slug della landing dall'identificativo app: minuscolo [a-z0-9-] (underscore → trattino). */
+export function toLandingSlug(appId) {
+  return appId.replace(/_/g, '-')
+}
+
+/**
  * Nomi che un'app non può assumere: sono già presi da servizi di piattaforma o
  * da convenzioni del monorepo. Prenderli non darebbe un errore subito, ma rotte
  * e schemi sovrapposti molto più tardi.
@@ -142,6 +166,9 @@ export function buildContext(options) {
     APP_CLASS: appClass,
     APP_CAMEL: toCamelCase(appId),
     APP_NAME: options.appName ?? toDisplayName(appId),
+    // Slug della bozza landing: uguale per tutte e 5 le lingue (la localizzazione
+    // dello slug è una rifinitura di `finalize-landing`, UC 0057). Minuscolo [a-z0-9-].
+    LANDING_SLUG: toLandingSlug(appId),
     SCHEMA: `app_${appId}`,
     HTTP_PORT: String(options.port),
     DEBUG_PORT: String(DEBUG_PORT_BASE + options.port - DEFAULT_HTTP_PORT),

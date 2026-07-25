@@ -83,6 +83,14 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   8 sezioni + screenshot placeholder `src: null`, `ogImage: null`) aggiungendo una voce `status: 'draft'` al registro
   `site/src/content/landings/index.ts` con lo slug localizzato per lingua (evitando gli `RESERVED_SLUGS`). UC 0038 escludeva
   esplicitamente la modifica alla skill "in sé"; qui è dove va fatta. **Proprietario**: UC 0046.
+  > ✅ **chiuso dalla change `0049-use-case-0057-…` (2026-07-25).** Verificato in codice che il generatore
+  > `tools/new-application/generate.mjs` **non** scriveva alcuna voce landing (l'array `creates` espandeva solo
+  > service/frontend-module/frontend-e2e/compliance/pricing): la prosa di `new-application` la dava per fatta, il
+  > codice no. Poiché UC 0046 è già ✅ in main, differire qui sarebbe stato un rimando orfano; e senza bozza la
+  > skill `finalize-landing` (UC 0057) è inservibile. La generazione della bozza è quindi stata **implementata in
+  > quella change**: nuovo template `tools/new-application/templates/landings/` (5 file lingua con placeholder
+  > `screenshot.src: null`, `ogImage: null`) + passo del generatore che registra la voce `status: 'draft'` in
+  > `site/src/content/landings/index.ts`. `finalize-landing` la consuma e la porta a `published`.
 
 - ✅ **chiuso dalla change 0041** — la scoperta automatica è reale: `dev/lib/services.sh` deriva la mappa
   servizio → identificativo app → porta → schema dagli `application.properties` già presenti nei servizi, e

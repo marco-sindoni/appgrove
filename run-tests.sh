@@ -8,8 +8,8 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change (UC 0046/0048/0047) →
-#                collaudo delle skill `new-application`, `drop-application` e `pricing-change`:
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing (UC 0046/0048/0047/0057) →
+#                collaudo delle skill `new-application`, `drop-application`, `pricing-change` e `finalize-landing`:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
 #                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
 #                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
@@ -199,6 +199,14 @@ run_tooling() {
     ( cd "$ROOT/tools/pricing-change" && { npm ci || npm install; } ) >/dev/null 2>&1 || true
   fi
   ( cd "$ROOT/tools/pricing-change" && npm test )        || rc=1
+  # (5) skill finalize-landing: immagine Open Graph + preflight + transizione draft→published (UC 0057).
+  # La cattura screenshot (Playwright) SALTA con grazia se il browser non è disponibile; qui non si
+  # scarica un browser (la cache è globale e condivisa col frontend). Il download del browser di
+  # Playwright si salta in install: già presente in cache, oppure lo installa l'area frontend.
+  if [ ! -d "$ROOT/tools/finalize-landing/node_modules" ] && [ -f "$ROOT/tools/finalize-landing/package-lock.json" ]; then
+    ( cd "$ROOT/tools/finalize-landing" && export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 && { npm ci || npm install; } ) >/dev/null 2>&1 || true
+  fi
+  ( cd "$ROOT/tools/finalize-landing" && npm test )      || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

@@ -23,6 +23,9 @@ export function removedTrees(appId) {
   return [
     `services/${appId}`,
     `frontend/apps/backoffice/src/modules/${appId}`,
+    // Cartella della bozza landing (5 file lingua + index per-app), specchio della
+    // destinazione `site/src/content/landings/<id>` di buildPlan (UC 0046 → UC 0057).
+    `site/src/content/landings/${appId}`,
   ]
 }
 

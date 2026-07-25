@@ -96,3 +96,13 @@ responsabilità dei cambi che la skill produce.
   5. La modalità (autopilot / classica) è dichiarabile all'invocazione e, se non dichiarata, chiesta come prima azione;
      in autopilot ogni scelta dell'agente è registrata e marcata come tale.
   6. Gli hook privacy/RoPA e baseline sono **tracciati** come lavoro di UC 0031 / regole #10 (questo UC resta 🟡 finché non wired).
+
+## Punti aperti / decisioni differite
+
+- ✅ **Segnale "landing stale" dal gate qualità di `new-change`** _(chiuso dalla change `0049-use-case-0057-…`,
+  2026-07-25)_: quando una change modifica in modo rilevante feature o pricing di un'app, la chiusura di
+  `new-change` **segnala che la landing dell'app può essere diventata stale** e propone di ri-eseguire
+  `/finalize-landing <app_id>` (#14 dec.55, UC 0038 §5). Poiché UC 0044 è già ✅ in main, differire qui sarebbe
+  stato un rimando orfano: il promemoria minimale è stato aggiunto in quella change a
+  `.claude/skills/new-change/step-04-close.md` (nessuna nuova infrastruttura). La skill `finalize-landing` (UC 0057)
+  è ri-eseguibile su una landing pubblicata, così "gestisce" lo stale lato consumo.
