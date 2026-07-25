@@ -39,5 +39,22 @@
   {
     "id": 8,
     "decision": "(autopilot) La skill non tratta dati personali: produce guida/checklist/UTM/copy e non archivia dati di visitatori. Il suo scopo è anzi impedire l'introduzione di tracciamento con dati personali. Manifesto dati N/A, nessun gate privacy/RoPA runtime (coerente con UC 0050 §7)."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Tracciamento delle decisioni differite: (a) l'assistente Playwright non-headless resta evoluzione futura, annotato in UC 0050 (nuova sezione 'Punti aperti / decisioni differite'), in docs/_BACKLOG.md e nella memoria skills-backlog; (b) il coordinamento tra i goal Plausible (posseduti da UC 0039) e le convenzioni UTM della skill è annotato con rimandi gemelli in UC 0050 e in UC 0039.",
+    "files": [
+      { "file": "docs/usecases/10-skills-tooling/0050-skill-campaign-guide.md", "description": "Aggiunta sezione 'Punti aperti / decisioni differite': assistente Playwright + coordinamento goal↔UTM." },
+      { "file": "docs/usecases/09-marketing-site/0039-newsletter-consenso-plausible.md", "description": "Aggiunto rimando: quando UC 0039 definirà i goal Plausible, allinearne i nomi allo schema UTM della skill." },
+      { "file": "docs/_BACKLOG.md", "description": "Voce campaign-guide marcata implementata (change 0053); resta aperta solo l'evoluzione Playwright." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "Gate privacy UC 0031: lo scanner segnali (npm run privacy-scan) non ha rilevato alcun segnale — la change tocca solo Markdown/skill/documentazione, nessun campo dati, migrazione, dipendenza o manifesto. Nessuna classificazione MAJOR/MINOR necessaria."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Nota di merge tracciata: la change modifica docs/usecases/09-marketing-site/0039-newsletter-consenso-plausible.md (una riga nella sezione 'Punti aperti'), file toccato anche dalla sessione parallela change/0052 (UC 0039). È l'unico punto di contatto su file condivisi; l'edit è un'append a fine lista, conflitto di merge al più banale. Scelta consapevole: il rimando appartiene per costituzione allo use case che lo possiede (UC 0039), quindi va lì nonostante il piccolo rischio di merge."
   }
 ]
