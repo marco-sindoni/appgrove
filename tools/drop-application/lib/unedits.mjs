@@ -113,6 +113,41 @@ export function uneditElasticMq(content, ctx) {
   return { content: lines.join('\n'), changed: true }
 }
 
+/**
+ * Toglie la landing dal registro del sito vetrina: la riga di import della
+ * `Landing` per-app e la voce nell'array LANDINGS (gestendo i separatori a virgola).
+ * Inverso di `editLandingsIndex`. La CARTELLA per-app (`<id>/*.ts`) la rimuove
+ * `removedTrees` in plan.mjs; qui si disfa solo la modifica al file condiviso.
+ */
+export function uneditLandingsIndex(content, ctx) {
+  const appCamel = ctx.APP_CAMEL ?? toCamelCase(ctx.APP_ID)
+  const landingName = `${appCamel}Landing`
+  const importLine = `import { ${landingName} } from './${ctx.APP_ID}/index.ts'`
+
+  let next = content
+  let changed = false
+
+  if (next.includes(importLine)) {
+    next = next.replace(new RegExp(`${escapeRe(importLine)}\\r?\\n`), '')
+    changed = true
+  }
+
+  const arrayRe = /(export const LANDINGS: Landing\[\] = \[)([^\]]*)(\])/
+  const match = next.match(arrayRe)
+  if (match) {
+    const items = match[2]
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s !== '' && s !== landingName)
+    if (items.length !== match[2].split(',').map((s) => s.trim()).filter((s) => s !== '').length) {
+      next = next.replace(arrayRe, (_m, open, _inner, close) => `${open}${items.join(', ')}${close}`)
+      changed = true
+    }
+  }
+
+  return { content: next, changed }
+}
+
 /** Mappa percorso → funzione inversa. Le CHIAVI devono coprire EDITED_FILES (test di parità). */
 export const UNEDITORS = {
   'services/pom.xml': uneditServicesPom,
@@ -120,6 +155,7 @@ export const UNEDITORS = {
   'frontend/apps/backoffice/package.json': uneditBackofficePackageJson,
   'services/core/src/main/resources/pricing/index.yaml': uneditPricingIndex,
   'dev/elasticmq.conf': uneditElasticMq,
+  'site/src/content/landings/index.ts': uneditLandingsIndex,
 }
 
 /** I file condivisi da disfare, nello stesso ordine del generatore (sorgente unica). */

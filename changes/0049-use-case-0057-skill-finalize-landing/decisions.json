@@ -65,5 +65,37 @@
   {
     "id": 10,
     "decision": "Principio di coerenza emerso con lo sviluppatore e applicato a tutta la change: NON differire lavoro a uno use case già ✅ in main — sarebbe un rimando orfano che nessuno raccoglie. Se il lavoro è necessario per la coerenza della change (bozza landing per UC 0046; segnale stale per UC 0044), va fatto qui. Restano legittimamente differibili solo i punti aperti di UC 0057 stesso (in corso) e i raffinamenti non necessari alla funzione (es. seed completo dello stack reale per gli screenshot)."
+  },
+  {
+    "id": 11,
+    "decision": "Implementazione generazione bozza: nuovo template tools/new-application/templates/landings/@@APP_ID@@/ con 5 file lingua + index.ts per-app (assembla la Landing, status:'draft'); slug della bozza = identificativo app con underscore→trattino (context toLandingSlug/LANDING_SLUG), con guardia che rifiuta gli slug riservati del sito (RESERVED_LANDING_SLUGS, allineato a site/src/lib/landings.ts). Il registro condiviso site/src/content/landings/index.ts si modifica via editor dedicato (editLandingsIndex): import della Landing per-app + voce nell'array LANDINGS. Il badge dell'hero porta il sentinella «DA RIFINIRE» che il preflight di finalize-landing rifiuta.",
+    "files": [
+      { "file": "tools/new-application/templates/landings/@@APP_ID@@/en.ts", "description": "Lingua sorgente marketing; le altre 4 (it/fr/es/de) sono traduzioni della stessa copy generica on-brand." },
+      { "file": "tools/new-application/lib/context.mjs", "description": "LANDING_SLUG + toLandingSlug + RESERVED_LANDING_SLUGS (allineato a site)." },
+      { "file": "tools/new-application/lib/edits.mjs", "description": "editLandingsIndex + registrazione in EDITED_FILES/EDITORS." },
+      { "file": "tools/new-application/generate.mjs", "description": "Espansione del template landings in buildPlan, validazione slug riservato, pulizia cartella landing nel rollback." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "Ripple obbligatorio su drop-application (UC 0048), inverso di new-application: poiché il generatore ora crea la cartella landing e modifica il registro, il de-generatore deve rimuoverli, altrimenti il test round-trip 'genera→de-genera: repo identico' si rompe. Aggiunti: site/src/content/landings/<id> in removedTrees e uneditLandingsIndex in UNEDITORS. UNEDITED_FILES importa EDITED_FILES (sorgente unica), quindi il file condiviso è coperto per costruzione; il test di parità delle CHIAVI UNEDITORS↔EDITORS ha imposto l'inverso.",
+    "files": [
+      { "file": "tools/drop-application/lib/plan.mjs", "description": "removedTrees include la cartella landing per-app." },
+      { "file": "tools/drop-application/lib/unedits.mjs", "description": "uneditLandingsIndex: inverso di editLandingsIndex, registrato in UNEDITORS." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "Sistemato un test fragile preesistente in site/src/content/landings/landings.test.ts: il gate draft/published assumeva UNA sola landing (params.length === 5). Generalizzato a 5×N landing pubblicate, con verifica per-landing di lingue e slug via p.props.landing. Senza la correzione, la prima app reale generata da new-application avrebbe fatto diventare rosso il test del sito.",
+    "files": [
+      { "file": "site/src/content/landings/landings.test.ts", "description": "Test del gate reso robusto al registro cresciuto (più landing)." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Gate privacy/RoPA (UC 0031): lo scanner ha segnalato due nuove dipendenze in tools/finalize-landing/package.json (playwright, sharp) come 'potenziali responsabili esterni'. Classificazione: NON è un cambio su dati personali e NON introduce un responsabile esterno del trattamento. Motivo: sono strumenti di BUILD LOCALI (cattura screenshot con dati finti mock-route; rasterizzazione di un'immagine SVG che generiamo noi), eseguiti sulla macchina dello sviluppatore, MAI in produzione e MAI sul percorso dei dati utente; non trattano alcun dato personale né trasferiscono dati a terzi. Nessun aggiornamento a manifesto/RoPA. Cambio MINOR (nessuna modifica a finalità/basi giuridiche/categorie di dati/conservazione). Caso non ambiguo → risolto in autopilot.",
+    "files": [
+      { "file": "tools/finalize-landing/package.json", "description": "Dipendenze di build locali (playwright, sharp): non responsabili esterni, nessun dato personale." }
+    ]
   }
 ]

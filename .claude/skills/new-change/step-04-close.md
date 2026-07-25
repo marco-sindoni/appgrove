@@ -184,6 +184,26 @@ and tell me which. I will not ask for commit consent until this is resolved.
 Then STOP and resolve it before going further. This gate is symmetric to the deferred-decisions one above:
 both exist because the thing they guard is invisible at commit time and expensive later.
 
+## Promemoria "landing stale" (UC 0057, #14 dec.55)
+
+Before the commit gate, check whether this change may have made a **published landing stale**. A landing tells an
+app's story (features, pricing): when a change alters that story, the landing can drift out of date. This is a
+**reminder**, not a gate — it never blocks the commit.
+
+Heuristic on the diff (`git diff --name-only "$DEFAULT_BRANCH"...HEAD`): if the change touched an app's
+**feature or pricing surface** — `services/<app>/` (an app, not `core`/`commons`),
+`frontend/apps/backoffice/src/modules/<app>/`, or `services/core/src/main/resources/pricing/<app>.yaml` — and that
+app has a **published** landing (`site/src/content/landings/<app>/index.ts` contains `status: 'published'`), then
+note it in the implementation log's "Note per il revisore" and tell the developer:
+
+```
+ℹ La landing di "<app>" è pubblicata e questa change ne ha toccato feature/pricing: potrebbe essere stale.
+  Valuta di ri-eseguire /finalize-landing <app> (ri-cattura screenshot + riallinea copy). Non blocca il commit.
+```
+
+A **draft** landing (`status: 'draft'`) is not stale — it is not online yet. Only `published` landings trigger the
+reminder. `finalize-landing` is re-runnable on a published landing exactly for this (UC 0057 DoD #4).
+
 ## MANDATORY STOP — commit consent gate
 
 Do **not** commit yet. Summarize what will be committed (the changed files, the `implementation-log.md` and the

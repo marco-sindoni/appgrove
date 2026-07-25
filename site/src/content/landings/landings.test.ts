@@ -103,19 +103,25 @@ describe('registro landing — validazione e gate (UC 0038)', () => {
   })
 
   it('gate: le bozze sono escluse dai path, le pubblicate incluse', () => {
-    // La fixture "example" è draft → nessun path generato.
+    // Nel registro reale ogni landing è draft (fixture "example" + eventuali bozze
+    // generate da new-application) → nessun path generato.
     expect(publishedLandings().length).toBe(0)
     expect(landingParams()).toEqual([])
 
-    // Con la stessa landing marcata published: 5 lingue × 1 landing = 5 path.
+    // Con tutte le landing marcate published: 5 lingue × N landing.
+    // Non si assume UNA sola landing: il generatore new-application (UC 0046) ne
+    // aggiunge una per ogni app, e questo test deve reggere il registro cresciuto.
     const asPublished = LANDINGS.map((l) => ({ ...l, status: 'published' as const }))
     const params = landingParams(asPublished)
-    expect(params.length).toBe(LOCALES.length)
-    const langs = params.map((p) => p.params.lang).sort()
-    expect(langs).toEqual([...LOCALES].sort())
-    // Ogni path porta lo slug localizzato corretto.
+    expect(params.length).toBe(LOCALES.length * asPublished.length)
+    // Ogni landing pubblicata compare in tutte e 5 le lingue.
+    for (const landing of asPublished) {
+      const langs = params.filter((p) => p.props.landing.appId === landing.appId).map((p) => p.params.lang).sort()
+      expect(langs, `lingue di "${landing.appId}"`).toEqual([...LOCALES].sort())
+    }
+    // Ogni path porta lo slug localizzato della SUA landing.
     for (const p of params) {
-      expect(p.params.slug).toBe(asPublished[0].content[p.params.lang].slug)
+      expect(p.params.slug).toBe(p.props.landing.content[p.params.lang].slug)
     }
   })
 })

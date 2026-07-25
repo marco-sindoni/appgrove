@@ -1,0 +1,14 @@
+{
+  "name": "appgrove-finalize-landing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Metà meccanica della skill finalize-landing (UC 0057): generazione immagine Open Graph, cattura screenshot (Playwright), preflight di pubblicazione e transizione draft→published. La skill conversazionale raccoglie le decisioni e chiama questi comandi.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "playwright": "^1.50.1",
+    "sharp": "^0.34.0"
+  }
+}

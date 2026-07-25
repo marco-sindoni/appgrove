@@ -22,6 +22,7 @@ export const EDITED_FILES = [
   'frontend/apps/backoffice/package.json',
   'services/core/src/main/resources/pricing/index.yaml',
   'dev/elasticmq.conf',
+  'site/src/content/landings/index.ts',
 ]
 
 /** Aggiunge il modulo Maven all'elenco dei moduli aggregati. */
@@ -171,6 +172,43 @@ export function editElasticMq(content, ctx) {
   return lines.join('\n')
 }
 
+/**
+ * Registra la BOZZA di landing nel registro del sito vetrina (UC 0046 → UC 0057):
+ * import della `Landing` assemblata nella cartella per-app + voce nell'array LANDINGS.
+ * Lo stato è `draft` dentro il file per-app (`<app>/index.ts`), quindi comparire qui
+ * NON significa comparire online: il build renderizza solo le landing `published`
+ * (gate #14 52). `finalize-landing` porta poi la bozza a `published`.
+ */
+export function editLandingsIndex(content, ctx) {
+  const importLine = `import { ${ctx.APP_CAMEL}Landing } from './${ctx.APP_ID}/index.ts'`
+  if (content.includes(importLine)) {
+    throw new Error(`landings/index.ts importa già la landing di ${ctx.APP_ID}`)
+  }
+
+  // L'import va dopo l'ultimo import relativo (le fixture/landing esistenti), così
+  // l'elenco resta leggibile e sopra la definizione delle costanti.
+  const importRe = /^import .+ from '\.\/.+'$/gm
+  const matches = [...content.matchAll(importRe)]
+  if (matches.length === 0) {
+    throw new Error('landings/index.ts: nessun import relativo trovato (formato cambiato?)')
+  }
+  const last = matches[matches.length - 1]
+  const insertAt = last.index + last[0].length
+  let next = content.slice(0, insertAt) + '\n' + importLine + content.slice(insertAt)
+
+  // Voce nell'array LANDINGS.
+  const arrayRe = /(export const LANDINGS: Landing\[\] = \[)([^\]]*)(\])/
+  if (!arrayRe.test(next)) {
+    throw new Error('landings/index.ts: array LANDINGS non trovato (formato cambiato?)')
+  }
+  next = next.replace(arrayRe, (_m, open, inner, close) => {
+    const trimmed = inner.trim()
+    const separator = trimmed === '' ? '' : ', '
+    return `${open}${trimmed}${separator}${ctx.APP_CAMEL}Landing${close}`
+  })
+  return next
+}
+
 /** Mappa percorso → funzione di modifica, nell'ordine di EDITED_FILES. */
 export const EDITORS = {
   'services/pom.xml': editServicesPom,
@@ -178,4 +216,5 @@ export const EDITORS = {
   'frontend/apps/backoffice/package.json': editBackofficePackageJson,
   'services/core/src/main/resources/pricing/index.yaml': editPricingIndex,
   'dev/elasticmq.conf': editElasticMq,
+  'site/src/content/landings/index.ts': editLandingsIndex,
 }

@@ -69,10 +69,12 @@ import {
   APP_ID_PATTERN,
   QUOTA_NATURES,
   RESERVED_APP_IDS,
+  RESERVED_LANDING_SLUGS,
   VARIANT_RE,
   buildContext,
   discoverServices,
   nextFreePort,
+  toLandingSlug,
 } from './lib/context.mjs'
 import { EDITED_FILES, EDITORS } from './lib/edits.mjs'
 
@@ -187,6 +189,17 @@ function validate(opts, services) {
   const taken = services.find((s) => s.appId === opts.appId || s.svc === opts.appId)
   if (taken) {
     die(`esiste già un servizio con questo identificativo: services/${taken.svc} (app_id "${taken.appId}")`)
+  }
+
+  // Lo slug della bozza landing deriva dall'identificativo: se coincide con una
+  // pagina statica del sito (RESERVED_SLUGS di site/src/lib/landings.ts) la vetrina
+  // diventerebbe rossa al primo `site` test. Si blocca qui, con un messaggio chiaro.
+  const landingSlug = toLandingSlug(opts.appId)
+  if (RESERVED_LANDING_SLUGS.has(landingSlug)) {
+    die(
+      `lo slug della landing derivato da "${opts.appId}" ("${landingSlug}") è riservato a una pagina\n`
+      + `  statica del sito vetrina. Scegliere un altro identificativo app.`,
+    )
   }
 
   if (opts.port === undefined) {
@@ -333,6 +346,9 @@ function buildPlan(ctx) {
     ...expand(path.join(TEMPLATES, 'frontend-e2e'), 'frontend/apps/backoffice/e2e', ctx),
     ...expand(path.join(TEMPLATES, 'compliance'), 'docs/compliance/manifests', ctx),
     ...expand(path.join(TEMPLATES, 'pricing'), 'services/core/src/main/resources/pricing', ctx),
+    // Bozza landing del sito vetrina (UC 0046 → UC 0057): 5 file lingua + index per-app,
+    // stato `draft`, screenshot/ogImage null. `finalize-landing` la porta a `published`.
+    ...expand(path.join(TEMPLATES, 'landings'), 'site/src/content/landings', ctx),
   ]
   return { ctx, creates, edits: EDITED_FILES }
 }
@@ -496,6 +512,10 @@ function main() {
     fs.rmSync(path.join(REPO_ROOT, `services/${ctx.APP_ID}`), { recursive: true, force: true })
     fs.rmSync(
       path.join(REPO_ROOT, `frontend/apps/backoffice/src/modules/${ctx.APP_ID}`),
+      { recursive: true, force: true },
+    )
+    fs.rmSync(
+      path.join(REPO_ROOT, `site/src/content/landings/${ctx.APP_ID}`),
       { recursive: true, force: true },
     )
     die(`generazione fallita e ANNULLATA (nulla è rimasto a metà): ${err.message}`)

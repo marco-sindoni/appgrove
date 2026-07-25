@@ -9,6 +9,7 @@ import {
   uneditElasticMq,
   uneditRegistry,
   uneditBackofficePackageJson,
+  uneditLandingsIndex,
 } from '../lib/unedits.mjs'
 import { EDITORS, EDITED_FILES } from '../../new-application/lib/edits.mjs'
 
@@ -79,6 +80,24 @@ test('elasticmq.conf: unedit annulla edit', () => {
   assert.equal(content, before)
 })
 
+test('landings/index.ts: unedit annulla edit (import + voce array)', () => {
+  const before = [
+    "import type { Landing } from './types.ts'",
+    "import { en } from './example/en.ts'",
+    '',
+    "const example: Landing = { appId: 'example', status: 'draft', content: { en } as never }",
+    '',
+    'export const LANDINGS: Landing[] = [example]',
+    '',
+  ].join('\n')
+  const edited = EDITORS['site/src/content/landings/index.ts'](before, CTX)
+  assert.ok(edited.includes("from './demo9/index.ts'"))
+  assert.ok(edited.includes('demo9Landing'))
+  const { content, changed } = uneditLandingsIndex(edited, CTX)
+  assert.equal(changed, true)
+  assert.equal(content, before)
+})
+
 // ── Idempotenza: disfare due volte è sicuro (seconda volta = nessun cambiamento) ──
 test('tutte le unedit sono idempotenti: assenza del marcatore → changed:false', () => {
   const clean = {
@@ -88,6 +107,8 @@ test('tutte le unedit sono idempotenti: assenza del marcatore → changed:false'
       "import { fattureManifest } from '../modules/fatture/manifest'\n\nexport const MODULES: ModuleManifest[] = [fattureManifest]\n",
     'frontend/apps/backoffice/package.json': JSON.stringify({ scripts: { build: 'x' } }, null, 2) + '\n',
     'dev/elasticmq.conf': '    queues {\n        paddle-webhooks { }\n    }\n',
+    'site/src/content/landings/index.ts':
+      "import type { Landing } from './types.ts'\nimport { en } from './example/en.ts'\n\nexport const LANDINGS: Landing[] = [example]\n",
   }
   for (const [file, content] of Object.entries(clean)) {
     const { changed } = UNEDITORS[file](content, CTX)
