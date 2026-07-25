@@ -23,6 +23,8 @@
 #                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
 #                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
 #                Chiude la classe di bug "l'app non parte fuori dal profilo test" (regressione queue-prefix).
+#   • site     — site/ (Astro SSG, UC 0036)    → vitest (renderer legali/i18n) + `astro build` + controllo
+#                post-build (parità 5 lingue, nessun token residuo, hreflang, noindex, link interni).
 #
 # Esegue TUTTE le aree selezionate (non si ferma al primo errore), raccoglie gli esiti e ritorna
 # exit-code != 0 se QUALSIASI suite fallisce. È la SORGENTE DI VERITÀ unica per "lanciare tutti i test".
@@ -48,12 +50,12 @@ usage() { sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 AREAS=()
 for a in "$@"; do
   case "$a" in
-    backend|frontend|infra|compliance|tooling|smoke) AREAS+=("$a") ;;
+    backend|frontend|infra|compliance|tooling|smoke|site) AREAS+=("$a") ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | tooling | smoke)" >&2; exit 2 ;;
+    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | tooling | smoke | site)" >&2; exit 2 ;;
   esac
 done
-[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance tooling smoke)
+[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance tooling smoke site)
 
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
@@ -206,6 +208,25 @@ run_smoke() {
   "$ROOT/tools/smoke/boot-profiles.sh"   || rc=1
   "$ROOT/tools/smoke/stack-headless.sh"  || rc=1
   if [ "$rc" -eq 0 ]; then ok "smoke: ok"; record smoke OK; else fail "smoke: fallito"; record smoke FAIL; fi
+}
+
+# Vetrina Astro (UC 0036): renderer dei legali/i18n (vitest) + build statica reale
+# + controllo post-build (parità 5 lingue, token risolti, hreflang, noindex, link).
+run_site() {
+  hdr "SITE — site/ (Astro SSG: vitest + astro build + controllo post-build)"
+  if ! command -v node >/dev/null 2>&1; then
+    warn "node non installato: salto il check site."; record site SKIP; return
+  fi
+  if [ ! -d "$ROOT/site/node_modules" ]; then
+    warn "site/node_modules assente: installo le dipendenze (npm ci)…"
+    ( cd "$ROOT/site" && { npm ci || npm install; } ) \
+      || { fail "site: install dipendenze fallita"; record site FAIL; return; }
+  fi
+  local rc=0
+  ( cd "$ROOT/site" && npm test )      || rc=1
+  ( cd "$ROOT/site" && npm run build ) || rc=1
+  ( cd "$ROOT/site" && npm run check ) || rc=1
+  if [ "$rc" -eq 0 ]; then ok "site: ok"; record site OK; else fail "site: check falliti"; record site FAIL; fi
 }
 
 for area in "${AREAS[@]}"; do "run_$area"; done

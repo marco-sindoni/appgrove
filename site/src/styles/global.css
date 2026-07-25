@@ -1,0 +1,81 @@
+/*
+ * Stili globali della vetrina (UC 0036). Il brand arriva dal design system
+ * (UC 0019): token (colori/raggi/ombre/tipografia) e font self-hosted, gli
+ * stessi delle SPA. Nessuna dipendenza da Google Fonts a runtime.
+ */
+@import '@appgrove/design-system/tokens.css';
+@import '@appgrove/design-system/fonts.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: var(--ag-font-sans);
+    background-color: rgb(var(--ag-bg));
+    color: rgb(var(--ag-text));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+  }
+
+  /* Contenuto lungo (documenti legali): ritmo tipografico leggibile. */
+  .prose-legal {
+    max-width: 72ch;
+    line-height: 1.7;
+  }
+  .prose-legal h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+  .prose-legal h2 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+  .prose-legal h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .prose-legal p,
+  .prose-legal ul,
+  .prose-legal ol {
+    margin-bottom: 1rem;
+  }
+  .prose-legal ul,
+  .prose-legal ol {
+    padding-left: 1.5rem;
+    list-style: revert;
+  }
+  .prose-legal a {
+    color: rgb(var(--ag-accent));
+    text-decoration: underline;
+  }
+  .prose-legal strong {
+    font-weight: 700;
+  }
+  .prose-legal table {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  .prose-legal th,
+  .prose-legal td {
+    border: 1px solid rgb(var(--ag-border));
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  .prose-legal th {
+    background-color: rgb(var(--ag-surface-2));
+    font-weight: 600;
+  }
+}

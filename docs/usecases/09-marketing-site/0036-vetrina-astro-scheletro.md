@@ -64,8 +64,30 @@ trattamento. **Residency**: S3/CloudFront in setup UE (#13 I). Manifest: N/A per
 
 ## Punti aperti / decisioni differite
 
-- **Contratto di sostituzione dei token `{{titolare.*}}` dei legali** (da change 0045, UC 0002): i markdown in
-  `content/legal/` contengono token `{{titolare.<campo>}}` (nome/sede/P.IVA/email) la cui fonte unica è
-  `content/legal/entity.yaml`. Il rendering delle policy nel sito **deve sostituire** ogni token con il valore da
-  `entity.yaml` prima di pubblicare (contratto in `content/legal/README.md`). *Perché differito*: il renderer del sito
-  nasce qui. *Owner*: UC 0036.
+- ✅ **RISOLTO (change 0046)** — **Contratto di sostituzione dei token `{{titolare.*}}` dei legali** (da change 0045,
+  UC 0002): il renderer del sito (`site/src/lib/legal.ts`) sostituisce ogni token con il valore da
+  `content/legal/entity.yaml` prima di emettere l'HTML; un token orfano è errore di build; il controllo post-build
+  asserisce che nessun `{{` residuo compaia nei legali renderizzati. Contratto onorato come da `content/legal/README.md`.
+
+### Rimandi aperti dallo scheletro (change 0046)
+
+- **Contenuti marketing veri** (homepage, value prop, sezioni): la home è oggi una *placeholder*. *Owner*: **UC 0037**.
+- **Landing per-app** (generate da `new-application`/`finalize-landing`): *Owner*: **UC 0038** (#14 51).
+- **Redirect di root per `Accept-Language` all'edge**: oggi la scelta di lingua su `/` è lato client (JavaScript nel
+  `index.html`). La versione robusta (CloudFront Function che legge `Accept-Language`) è una rifinitura infra. *Perché
+  differito*: non serve allo scheletro (il redirect client funziona); *Owner*: UC 0036 (rifinitura) o UC 0040 (SEO).
+- **Attivazione operativa dell'hosting** (phased-env): `terraform apply` della distribuzione vetrina, delega DNS,
+  **copertura del certificato per l'apex di test** (`test.appgrove.app` non è coperto dal wildcard `*.test.appgrove.app`
+  — al momento dell'apply il certificato di test va esteso all'apex, oppure la vetrina di test usa un host `www.`),
+  provisioning delle **credenziali basic-auth** (`TF_VAR_site_basic_auth_userpass`), **rimozione del `noindex`** al
+  go-live (`site_indexable = true` + rebuild con `SITE_INDEXABLE=true`). *Owner*: UC 0036 (runbook operativo).
+- **Job CI di deploy della vetrina** (build → S3 → invalidazione CloudFront, #14 15): predisposti bucket/distribuzione e
+  output Terraform (`site_bucket_name`, `site_distribution_id`); il job di deploy reale dipende dall'infra applicata e da
+  segreti non presenti. *Owner*: UC 0036 / pipeline UC 0005.
+- **Riuso profondo dei componenti React del design system** negli island: oggi si riusano solo i token di brand (preset
+  Tailwind + `tokens.css`/`fonts.css`). L'import dei primitivi React (`@appgrove/design-system` dist) negli island
+  arriverà coi contenuti interattivi. *Owner*: UC 0037.
+- **Host della pagina backoffice "coming soon"**: l'artefatto contiene `/coming-soon/`, ma l'host `app.<env>.appgrove.app`
+  resta della SPA backoffice (`infra/modules/platform_shared/cloudfront.tf`). Quale host serva la "coming soon" durante un
+  eventuale rollout statico-first è scelta operativa (la fase statico-first è di fatto superata: SPA e backend già
+  costruiti). *Owner*: UC 0036 (rollout).

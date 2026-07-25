@@ -1,0 +1,28 @@
+// CloudFront Function (viewer-request) della vetrina (UC 0036), generata da
+// Terraform via templatefile. Due compiti:
+//   1) riscrittura degli URL "puliti" verso i file index.html generati da Astro
+//      (trailingSlash: 'always', build.format: 'directory');
+//   2) SOLO in test: basic auth (#14 54) — la protezione dell'ambiente di prova,
+//      così Paddle/crawler non lo vedono. In prod il blocco è assente.
+function handler(event) {
+  var request = event.request;
+%{ if basic_auth_enabled ~}
+  var headers = request.headers;
+  var expected = "Basic ${basic_auth_b64}";
+  if (!headers.authorization || headers.authorization.value !== expected) {
+    return {
+      statusCode: 401,
+      statusDescription: "Unauthorized",
+      headers: { "www-authenticate": { value: "Basic realm=\"appgrove\"" } }
+    };
+  }
+%{ endif ~}
+  var uri = request.uri;
+  if (uri.endsWith("/")) {
+    request.uri = uri + "index.html";
+  } else if (uri.lastIndexOf(".") < uri.lastIndexOf("/")) {
+    // Percorso senza estensione (es. /it/legal/privacy) → aggiungi /index.html.
+    request.uri = uri + "/index.html";
+  }
+  return request;
+}

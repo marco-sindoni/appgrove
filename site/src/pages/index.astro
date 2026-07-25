@@ -1,0 +1,31 @@
+---
+// Root `/` (#14 14): reindirizza alla lingua dell'utente secondo la preferenza
+// del browser, con EN di ripiego. Su hosting statico (S3+CloudFront) la scelta
+// per-lingua avviene lato client; il redirect edge basato su Accept-Language è
+// una rifinitura infra differita (annotata in UC 0036).
+import { LOCALES, DEFAULT_LOCALE } from '../lib/i18n.ts'
+const locales = JSON.stringify(LOCALES)
+---
+
+<!doctype html>
+<html lang={DEFAULT_LOCALE}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>appgrove</title>
+    <link rel="alternate" hreflang="x-default" href={`/${DEFAULT_LOCALE}/`} />
+    <script is:inline define:vars={{ locales, DEFAULT_LOCALE }}>
+      const supported = JSON.parse(locales)
+      const pref = (navigator.languages || [navigator.language || DEFAULT_LOCALE])
+        .map((l) => l.slice(0, 2).toLowerCase())
+        .find((l) => supported.includes(l))
+      const target = pref || DEFAULT_LOCALE
+      window.location.replace(`/${target}/`)
+    </script>
+    <meta http-equiv="refresh" content={`0; url=/${DEFAULT_LOCALE}/`} />
+  </head>
+  <body>
+    <p>Redirecting to <a href={`/${DEFAULT_LOCALE}/`}>appgrove</a>…</p>
+  </body>
+</html>
