@@ -20,9 +20,11 @@
   },
   {
     "id": 4,
-    "decision": "(autopilot) Precondizione stretta: finalize-landing CONSUMA una bozza esistente per app_id, non la crea; se manca si ferma e rimanda a /new-application. Non assorbe la responsabilità di UC 0046 (principio: non anticipare/inglobare il lavoro di un altro use case). Emersa la divergenza: il generatore tools/new-application NON crea davvero la voce landing di bozza (la prosa della skill lo dà per fatto ma il codice no) — tracciata come decisione differita in UC 0046 (proprietario).",
+    "decision": "(autopilot, poi corretta con lo sviluppatore) Precondizione: finalize-landing CONSUMA una bozza esistente per app_id, non la crea; se manca si ferma. Emersa la divergenza: il generatore tools/new-application NON crea la voce landing di bozza (la prosa della skill lo dà per fatto, il codice no). REVISIONE: lo sviluppatore ha osservato che UC 0046 è già ✅ in main, quindi un rimando differito lì è ORFANO (nessuna change futura lo raccoglie) e senza bozza finalize-landing è inservibile. Decisione finale: la generazione della bozza si fa IN QUESTA CHANGE dentro tools/new-application/ (nuovo template landings + passo del generatore che scrive i 5 file lingua con placeholder + voce status:'draft' nel registro). Così new-application crea la bozza e finalize-landing la finalizza; entrambe coerenti.",
     "files": [
-      { "file": "docs/usecases/10-skills-tooling/0046-skill-new-application.md", "description": "Punto aperto da annotare: il generatore non scrive la bozza landing in site/src/content/landings/; finalize-landing la richiede come precondizione." }
+      { "file": "tools/new-application/templates/", "description": "Nuovo template landings/ (5 file lingua con placeholder: screenshot.src=null, ogImage=null) espanso dal generatore." },
+      { "file": "tools/new-application/generate.mjs", "description": "Aggiunto il passo che genera la bozza landing e la registra in site/src/content/landings/index.ts con status:'draft'." },
+      { "file": "site/src/content/landings/index.ts", "description": "File condiviso su cui il generatore aggiunge la voce di bozza della nuova app (append, come per gli altri registri)." }
     ]
   },
   {
@@ -55,9 +57,13 @@
   },
   {
     "id": 9,
-    "decision": "(autopilot) Idempotenza: la skill è ri-eseguibile anche su una landing già 'published' (ri-finalizzazione = ri-cattura screenshot + ri-rifinitura copy mantenendo published). È così che UC 0057 DoD #4 'gestisce il caso landing stale'. L'EMISSIONE del segnale di landing stale dal gate qualità di new-change (quando una change cambia feature/pricing di un'app) è lato new-change: tracciata come decisione differita nel suo use case, non implementata qui per non allargare lo scope.",
+    "decision": "(autopilot, poi corretta con lo sviluppatore) Idempotenza: la skill è ri-eseguibile su una landing già 'published' (ri-finalizzazione = ri-cattura + ri-copy mantenendo published) — così UC 0057 DoD #4 'gestisce' lo stale lato consumo. L'EMISSIONE del segnale stale è lato new-change: l'avevo differita a UC 0044, ma anche UC 0044 è già ✅ in main → rimando ORFANO. Decisione finale: si aggiunge IN QUESTA CHANGE un promemoria minimale in new-change step-04 (alla chiusura, se la change ha toccato feature/pricing di un'app con landing pubblicata, ricorda di ri-eseguire /finalize-landing). Nessuna nuova infrastruttura, solo il promemoria previsto da #14 dec.55.",
     "files": [
-      { "file": "docs/usecases/10-skills-tooling/0044-aggiornamento-skill-new-change.md", "description": "Punto aperto: il gate qualità di new-change dovrebbe segnalare la landing stale e proporre /finalize-landing (#14 dec.55)." }
+      { "file": ".claude/skills/new-change/step-04-close.md", "description": "Aggiunto il promemoria 'landing stale' alla chiusura (euristica: change tocca services/<app> o pricing di un'app con landing published → suggerisce /finalize-landing)." }
     ]
+  },
+  {
+    "id": 10,
+    "decision": "Principio di coerenza emerso con lo sviluppatore e applicato a tutta la change: NON differire lavoro a uno use case già ✅ in main — sarebbe un rimando orfano che nessuno raccoglie. Se il lavoro è necessario per la coerenza della change (bozza landing per UC 0046; segnale stale per UC 0044), va fatto qui. Restano legittimamente differibili solo i punti aperti di UC 0057 stesso (in corso) e i raffinamenti non necessari alla funzione (es. seed completo dello stack reale per gli screenshot)."
   }
 ]

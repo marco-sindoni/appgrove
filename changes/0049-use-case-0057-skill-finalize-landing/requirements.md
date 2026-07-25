@@ -1,7 +1,7 @@
 # Change 0049: skill `finalize-landing` — bozza landing → landing pubblicata
 
 **Branch**: `change/0049-use-case-0057-skill-finalize-landing`
-**Aree**: `.claude/skills/finalize-landing/` (skill), `tools/finalize-landing/` (helper deterministico + test), `site/` (convenzione asset + eventuale preflight), `run-tests.sh` (registrazione test area tooling), `docs/` (indice esecuzione + rimandi)
+**Aree**: `.claude/skills/finalize-landing/` (skill nuova), `tools/finalize-landing/` (helper deterministico + test), `tools/new-application/` (generazione della bozza landing, prima mancante), `.claude/skills/new-change/` (promemoria "landing stale" in chiusura), `site/` (convenzione asset + eventuale preflight), `run-tests.sh` (registrazione test area tooling), `docs/` (indice esecuzione + use case 0044/0046)
 **Data**: 2026-07-25
 **Autore**: Platform Engineering (modalità autopilot)
 **Use case sorgente**: [docs/usecases/10-skills-tooling/0057-skill-finalize-landing.md](../../docs/usecases/10-skills-tooling/0057-skill-finalize-landing.md)
@@ -46,8 +46,22 @@ vetrina (parità 5 lingue + Open Graph), **senza** deploy manuale e **senza** ch
      presenti, nessun testo-placeholder residuo, parità 5 lingue, slug validi via `validateLandings()`); solo se il
      preflight è verde imposta `status: 'published'` a livello app in `site/src/content/landings/index.ts`.
 
-**Precondizione stretta** (decisione 4): la skill consuma una **bozza esistente** per `app_id`; se manca, si ferma e
-rimanda a `/new-application`. Non crea la bozza (è responsabilità di UC 0046).
+**Generazione della bozza in `new-application`** (decisione 4, corretta con lo sviluppatore): il generatore
+`tools/new-application/` oggi **non** scrive la voce landing di bozza (la prosa della skill lo dà per fatto, il codice
+no). Poiché UC 0046 è già ✅ in main, differire lì sarebbe un **rimando orfano** e senza bozza `finalize-landing` è
+inservibile: quindi la generazione della bozza si fa **in questa change**. Si aggiunge un template `landings/`
+(5 file lingua con placeholder: `screenshot.src: null`, `ogImage: null`, copy on-brand di partenza) e un passo del
+generatore che scrive quei file e registra la voce `status: 'draft'` in `site/src/content/landings/index.ts`, con slug
+localizzato per lingua (evitando gli `RESERVED_SLUGS`). `finalize-landing` consuma quella bozza.
+
+**Precondizione della skill**: `finalize-landing` consuma una **bozza esistente** per `app_id`; se manca, si ferma con
+un messaggio che rimanda a `/new-application`. Non crea la bozza da sé (ora la crea il generatore).
+
+**Promemoria "landing stale"** (decisione 9, corretta con lo sviluppatore): il segnale che una change ha reso stale
+una landing era differito a UC 0044, anch'esso già ✅ → altro rimando orfano. Si aggiunge quindi **in questa change**
+un promemoria minimale alla chiusura di `new-change` (`step-04-close.md`): se la change ha toccato feature/pricing di
+un'app che ha una landing `published`, ricorda di ri-eseguire `/finalize-landing <app_id>` (#14 dec.55). Nessuna nuova
+infrastruttura. La skill `finalize-landing` è comunque **ri-eseguibile** su una landing pubblicata (gestione lato consumo).
 
 **Registrazione test**: i test dell'helper entrano in `run-tests.sh` (area **tooling**, dove sono elencati gli altri
 strumenti); l'area **site** continua a validare le landing pubblicate (vitest + `astro build` + `postbuild-check`).
@@ -60,11 +74,6 @@ strumenti); l'area **site** continua a validare le landing pubblicate (vitest + 
   **strumento**; nessuna app reale viene pubblicata qui. La fixture `example` resta `draft` (decisione 6).
 - **Il deploy / la pubblicazione effettiva** → la fa la CI al merge (UC 0036/0005, #14 dec.53). La skill scrive
   contenuti e apre la PR, non pubblica.
-- **La generazione della bozza** e la correzione della divergenza "il generatore non scrive la bozza" → **UC 0046**
-  (tracciata come decisione differita nel suo file).
-- **L'emissione del segnale "landing stale"** dal gate qualità di `new-change` → lato `new-change`/UC 0044 (tracciata
-  come decisione differita). Qui la skill garantisce solo di essere **ri-eseguibile** su una landing già pubblicata
-  (decisione 9).
 - **Il template/struttura della landing** (UC 0038), **la homepage e le pagine non-app** (UC 0037), **i testi legali**
   (UC 0002) — la skill copre solo le landing per-app.
 - **Seed completo dello stack reale** (Postgres + `seed.sql`) per gli screenshot → raffinamento tracciato; il default
@@ -86,9 +95,13 @@ strumenti); l'area **site** continua a validare le landing pubblicate (vitest + 
 - [ ] La skill è **idempotente**: ri-eseguirla su una landing già `published` la ri-finalizza (ri-cattura + ri-copy)
       mantenendo `published`, senza errori.
 - [ ] La precondizione è gestita: su `app_id` senza bozza, la skill si ferma con un messaggio che rimanda a
-      `/new-application` (non crea la bozza).
-- [ ] La divergenza (generatore non scrive la bozza) e il segnale landing-stale sono tracciati come decisioni
-      differite nei rispettivi use case (UC 0046, UC 0044).
+      `/new-application` (la bozza la crea il generatore, non `finalize-landing`).
+- [ ] **`new-application` genera la bozza**: il generatore scrive i 5 file lingua con placeholder e registra la voce
+      `status: 'draft'` in `site/src/content/landings/index.ts`; il collaudo di parità/smoke del tooling resta verde.
+- [ ] **Promemoria "landing stale"** presente nella chiusura di `new-change` (step-04): documentato l'euristica che, su
+      change che toccano feature/pricing di un'app con landing pubblicata, suggerisce `/finalize-landing`.
+- [ ] I due use case toccati (UC 0046 bozza, UC 0044 segnale stale) sono aggiornati come **chiusi da questa change**,
+      non come rimandi orfani a use case già completati.
 
 ## Invarianti appgrove toccati
 
@@ -100,8 +113,12 @@ quest'area comunque da mantenere:
   pubblicare una landing incompleta. La skill **non** pubblica né fa deploy (#14 dec.53).
 - **Parità 5 lingue bloccante** (UC 0038/0030): la finalizzazione deve lasciare la vetrina verde al controllo
   post-build (parità 5 lingue + Open Graph presenti).
-- **Parità dei modelli di scaffolding**: aggiungere `tools/finalize-landing/` non deve far diventare rosso il
-  collaudo di parità (`tools/scaffold-parity`); nessun percorso-sorgente di `new-application` è toccato.
+- **Parità dei modelli di scaffolding**: la change **estende** il generatore `new-application` con un nuovo template
+  `landings/`. È contenuto generato **nuovo**, non uno specchio di un file di `fatture` (app #1 non ha landing → UC 0053),
+  quindi non introduce divergenza rispetto a `fatture`. Vincolo: il collaudo di parità e il collaudo "livello 3" del
+  tooling (`tools/scaffold-parity` + `generate-smoke.sh`) devono restare **verdi** — l'app generata deve nascere con una
+  bozza landing valida (5 lingue, slug validi, `status: 'draft'`). Se il collaudo tocca un percorso-sorgente, si applica
+  il gate di parità di `new-change` (step-04): aggiornare i template o registrare la deviazione in `docs/_PARITA-SCAFFOLD.md`.
 
 ## Requisiti di test
 
@@ -112,6 +129,8 @@ quest'area comunque da mantenere:
 - **Cattura screenshot**: una prova che, contro una pagina servita col seed mock-route, produce un PNG per lingua nel
   percorso atteso (può essere segnata come prova più pesante/ambiente-dipendente se serve, ma il meccanismo deve
   essere dimostrato, non solo descritto).
+- **Generazione bozza (area tooling)**: il collaudo di parità/livello-3 (`generate-smoke.sh`) deve mostrare che l'app
+  generata nasce con una bozza landing valida (5 lingue, slug validi, `status: 'draft'`); `./run-tests.sh tooling` verde.
 - **Regressione vetrina (area site)**: `./run-tests.sh site` resta verde; `example` resta `draft`.
 - **Nessun test applicativo** oltre a questi: una landing non ha logica applicativa (UC 0057 §9).
 
@@ -120,5 +139,5 @@ quest'area comunque da mantenere:
 | Area | Impatto |
 |---|---|
 | Breaking change | No |
-| Contratto cross-area | N/A a runtime. Consuma il contratto dati landing di UC 0038 (`site/src/content/landings/types.ts`, `lib/landings.ts`) — di sola lettura/append, non lo modifica. |
-| Version bump | minor (nuova skill + nuovo strumento; nessun cambiamento incompatibile) |
+| Contratto cross-area | N/A a runtime. Consuma il contratto dati landing di UC 0038 (`site/src/content/landings/types.ts`, `lib/landings.ts`) — lettura/append, non lo modifica. Estende il generatore `new-application` (nuovo template + passo) e la chiusura di `new-change` (promemoria). |
+| Version bump | minor (nuova skill + nuovo strumento + generazione bozza in `new-application`; nessun cambiamento incompatibile) |
