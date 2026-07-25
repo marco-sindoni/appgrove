@@ -21,14 +21,22 @@ Tutto dentro `site/` (nessun'altra area toccata).
 - Nuovo modulo tipizzato in `site/src/content/marketing/`: un tipo condiviso `MarketingContent` (forma di homepage, "Perché appgrove", "Prezzi", etichette di navigazione e footer) e un indice `Record<Locale, MarketingContent>` con le 5 lingue (`en`, `it`, `fr`, `es`, `de`), EN come sorgente. La parità di forma è garantita a tempo di compilazione.
 - Contenuti **AI-generati on-brand** (tono lean), soggetti alla **revisione dell'utente** (gate di rilettura requisiti + gate commit).
 
-**2. Homepage** (`site/src/pages/[lang]/index.astro`, riscrive il segnaposto) con la sequenza narrativa decisa (#14 26):
-hero (promessa "strumenti semplici che crescono con te") → **vetrina app** onesta col catalogo piccolo (strumento faro "in arrivo" + "altri strumenti in arrivo", nessun link a landing inesistenti) → cross-sell "un account, tanti strumenti" → **sezione privacy/EU** (cuneo, firma di fiducia non headline) → **newsletter** (struttura visuale, senza backend) → **CTA** (registrati/esplora). Ancora `#apps` sulla sezione vetrina.
+**Pilastri del messaggio** (indicati dallo sviluppatore, integrano il posizionamento job-led + privacy wedge #14 E7). Sono i concetti portanti su cui costruire homepage e "Perché appgrove":
+1. **Ecosistema di app comode, veloci e a costi sostenibili** per piccole e medie imprese: più tempo per concentrarsi sul business, meno tempo speso nella gestione.
+2. **Un'unica piattaforma per tutte le esigenze**, con un ecosistema di app **in continua crescita** ("un account, tanti strumenti").
+3. **Ready for AI** (pilastro nuovo, forte visibilità): ogni app è distribuita anche come **strumento richiamabile dagli assistenti AI** tramite **MCP** (Model Context Protocol — lo standard aperto con cui gli assistenti AI, es. ChatGPT, Claude, Perplexity, invocano servizi esterni). L'utente chiede in chat, l'assistente esegue l'operazione nell'app. **Inquadramento onesto**: presentato come **principio di design / visione dell'ecosistema**, senza affermare che sia già attivo su ogni app (la capacità è futura, use case dedicati; tracciata in `docs/_BACKLOG.md`). Da riconciliare con lo stato reale prima del go-live.
+4. **Tutto ospitato in EU, pieni diritti GDPR** (il cuneo privacy come firma di fiducia, non headline).
+
+I pilastri 3 e 4 sono i due **cunei differenzianti** (AI-ready + privacy EU), ottimi anche per la futura GEO.
+
+**2. Homepage** (`site/src/pages/[lang]/index.astro`, riscrive il segnaposto) con la sequenza narrativa decisa (#14 26), estesa col pilastro AI:
+hero (promessa "strumenti semplici che crescono con te" + risparmio di tempo per il business) → **vetrina app** onesta col catalogo piccolo (strumento faro "in arrivo" + "altri strumenti in arrivo", nessun link a landing inesistenti) → cross-sell "un account, tanti strumenti" (ecosistema in crescita) → **sezione "Ready for AI"** (app richiamabili dagli assistenti AI via MCP, inquadramento onesto/visione) → **sezione privacy/EU** (cuneo, firma di fiducia non headline) → **newsletter** (struttura visuale, senza backend) → **CTA** (registrati/esplora). Ancora `#apps` sulla sezione vetrina.
 
 **3. Top nav** (nel `BaseLayout` condiviso): **App** (ancora a `/<lang>/#apps`) · **Perché appgrove** (`/<lang>/why/`) · **Prezzi** (`/<lang>/pricing/`) · **Login** (`https://app.appgrove.app/`) + CTA **Registrati** (`https://app.appgrove.app/signup`). Selettore lingua interattivo nell'header (già presente). Responsive.
 
 **4. Footer** (nel `BaseLayout`, arricchito): documenti **legali** (già presenti) · **Support** (`mailto:support@appgrove.app`) · **`security.txt`** (`/.well-known/security.txt`) · **newsletter** (struttura visuale) · copyright del titolare. Selettore lingua resta nell'header.
 
-**5. Pagina "Perché appgrove"** (`site/src/pages/[lang]/why.astro`): mission e valori con il cuneo EU/privacy come firma di fiducia, **senza founder story** né narrativa personale (#14 24, G24).
+**5. Pagina "Perché appgrove"** (`site/src/pages/[lang]/why.astro`): mission e valori con i due cunei differenzianti — **Ready for AI** (ecosistema di app richiamabili dagli assistenti AI, inquadramento visione/design) e **privacy EU/GDPR** come firma di fiducia — più l'ecosistema in crescita e il risparmio di tempo. **Senza founder story** né narrativa personale (#14 24, G24).
 
 **6. Pagina "Prezzi — come funziona la fatturazione"** (`site/src/pages/[lang]/pricing.astro`): spiega il **modello** di fatturazione (mensile/annuale, default annuale; prova gratuita 14 giorni; nessun rimborso, con rimando alla Refund Policy), **senza prezzi numerici** — il prezzo vero sta sulle landing app (UC 0038).
 
@@ -51,7 +59,8 @@ hero (promessa "strumenti semplici che crescono con te") → **vetrina app** one
 
 ## Criteri di accettazione
 
-- [ ] La homepage `/<lang>/` esiste in tutte e 5 le lingue con la sequenza narrativa completa (hero → app → cross-sell → privacy/EU → newsletter → CTA), contenuti on-brand, catalogo onesto anche con una sola app.
+- [ ] La homepage `/<lang>/` esiste in tutte e 5 le lingue con la sequenza narrativa completa (hero → app → cross-sell → **Ready for AI** → privacy/EU → newsletter → CTA), contenuti on-brand che veicolano i quattro pilastri del messaggio, catalogo onesto anche con una sola app.
+- [ ] Il pilastro **Ready for AI** è presente e inquadrato onestamente (design/visione dell'ecosistema, MCP spiegato in linguaggio piano), senza affermare disponibilità già attiva su ogni app.
 - [ ] Le pagine `/<lang>/why/` e `/<lang>/pricing/` esistono in tutte e 5 le lingue con i contenuti descritti (nessuna founder story su "why"; nessun prezzo numerico su "pricing", rimando alla Refund Policy).
 - [ ] Top nav (App · Perché appgrove · Prezzi · Login + Registrati) e footer (legali · Support · security.txt · newsletter · ©) presenti su ogni pagina, coerenti nelle 5 lingue, responsive; i legali sono raggiungibili dalla navigazione.
 - [ ] `/.well-known/security.txt` è servito e valido (Contact, Expires).

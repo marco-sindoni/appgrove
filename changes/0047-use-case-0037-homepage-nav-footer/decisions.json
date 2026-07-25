@@ -86,5 +86,19 @@
   {
     "id": 17,
     "decision": "(autopilot) Nessun dato personale trattato dalla change: sono pagine statiche pubbliche. La sezione privacy/EU DESCRIVE la postura, non raccoglie dati; la cattura email della newsletter è solo struttura visuale, la raccolta reale è UC 0039. Manifesto dati: N/A. Il gate privacy/RoPA (UC 0031) non produce classificazione MAJOR/MINOR perché non c'è trattamento nuovo."
+  },
+  {
+    "id": 18,
+    "decision": "Pilastri del messaggio indicati dallo SVILUPPATORE (non autopilot) in fase di rilettura requisiti, a integrazione del posizionamento job-led + privacy wedge (#14 E7): (1) ecosistema di app comode/veloci/a costi sostenibili per piccole e medie imprese — più tempo sul business, meno sulla gestione; (2) un'unica piattaforma per tutte le esigenze, ecosistema in continua crescita (un account, tanti strumenti); (3) 'Ready for AI'; (4) tutto ospitato in EU, pieni diritti GDPR. I contenuti on-brand delle 5 lingue sono costruiti su questi quattro pilastri. Mi affido all'agente per la stesura dei testi.",
+    "files": [
+      { "file": "changes/0047-use-case-0037-homepage-nav-footer/requirements.md", "description": "Sezione 'Pilastri del messaggio' e sequenza homepage/why aggiornate coi quattro pilastri." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "Pilastro 'Ready for AI' (deciso dallo SVILUPPATORE): ogni app dell'ecosistema è distribuita anche come strumento richiamabile dagli assistenti AI tramite MCP (Model Context Protocol — standard aperto con cui gli assistenti AI, es. ChatGPT/Claude/Perplexity, invocano servizi esterni); l'utente chiede in chat, l'assistente esegue l'operazione nell'app. È un secondo cuneo differenziante accanto alla privacy EU. La capacità di prodotto NON esiste ancora (use case dedicati futuri, a cura dello sviluppatore): a livello marketing si ANTICIPA con forte visibilità ma inquadrata come principio di design/visione dell'ecosistema, SENZA affermare disponibilità già attiva su ogni app — onestà del claim, requisito anche per la revisione di dominio Paddle. MCP va spiegato in linguaggio piano nei contenuti. Tema tracciato come voce trasversale GRANDE in docs/_BACKLOG.md, con la riconciliazione dei contenuti del sito allo stato reale prima del go-live.",
+    "files": [
+      { "file": "docs/_BACKLOG.md", "description": "Nuova sezione 'Prodotto — Ready for AI: app distribuite via MCP' (tema trasversale GRANDE, use case dedicati futuri; il sito anticipa il concetto onestamente)." }
+    ]
   }
 ]
