@@ -1,0 +1,20 @@
+# Configurazione del check dei documenti legali pubblici (UC 0002, #14 C13 / #13 G38).
+#
+# È distinto dal _config.yaml del RoPA interno (docs/compliance/manifests/, oggi it+en):
+# i legali PUBBLICI nascono già a 5 lingue. Il check (tools/compliance/legal-check.mjs)
+# fallisce se un componente non esiste in TUTTE le `required_languages` o se un frontmatter
+# non è valido. Per aggiungere una lingua: elencarla qui e completare i 5 file per componente.
+required_languages:
+  - en
+  - it
+  - fr
+  - es
+  - de
+
+# Componenti legali attesi (un file <componente>.<lang>.md per lingua).
+components:
+  - privacy
+  - terms
+  - refund
+  - cookie
+  - subprocessors

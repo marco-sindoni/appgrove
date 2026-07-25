@@ -1,0 +1,18 @@
+# Fonte unica dei dati del TITOLARE del trattamento (UC 0002; identità posseduta da UC 0001).
+#
+# I documenti legali in content/legal/*.md NON ripetono questi dati: usano token {{titolare.<campo>}}.
+# Alla disponibilità dei dati (persona fisica → ditta individuale, alla monetizzazione — UC 0001)
+# basta modificare QUESTO file: ogni documento — e, in futuro, il sito vetrina (UC 0036) e il
+# rendering in-app (UC 0056) — si aggiorna. Contratto di sostituzione: content/legal/README.md.
+#
+# I valori "DA COMPILARE" sono attesi pre-go-live: il check li elenca come AVVISO non bloccante.
+# Un token usato nei testi ma senza chiave qui è invece un ERRORE bloccante (integrità referenziale).
+titolare:
+  ragione_sociale: "DA COMPILARE"   # nome legale (persona fisica o ditta individuale — UC 0001)
+  forma: "DA COMPILARE"             # es. "persona fisica" oppure "ditta individuale"
+  sede: "DA COMPILARE"              # sede/domiciliazione (indirizzo commerciale, non abitazione — UC 0001)
+  piva: "DA COMPILARE"              # P.IVA (assente in fase free; aperta alla monetizzazione — UC 0001)
+  giurisdizione: "Italia"           # legge applicabile e foro (noto)
+  dominio: "appgrove.app"           # dominio pubblico del servizio (noto)
+  email_privacy: "privacy@appgrove.app"   # contatto per privacy e diritti dell'interessato
+  email_support: "support@appgrove.app"   # contatto per assistenza e questioni contrattuali

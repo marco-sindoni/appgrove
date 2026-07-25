@@ -61,3 +61,11 @@ trattamento. **Residency**: S3/CloudFront in setup UE (#13 I). Manifest: N/A per
   2. Hosting S3+CloudFront+Route53+ACM; backoffice "coming soon"; rollout statico-first.
   3. Test con basic auth + noindex; prod gate `published` + noindex fino al go-live.
   4. Check CI 5 lingue + link verdi; build senza backend.
+
+## Punti aperti / decisioni differite
+
+- **Contratto di sostituzione dei token `{{titolare.*}}` dei legali** (da change 0045, UC 0002): i markdown in
+  `content/legal/` contengono token `{{titolare.<campo>}}` (nome/sede/P.IVA/email) la cui fonte unica è
+  `content/legal/entity.yaml`. Il rendering delle policy nel sito **deve sostituire** ogni token con il valore da
+  `entity.yaml` prima di pubblicare (contratto in `content/legal/README.md`). *Perché differito*: il renderer del sito
+  nasce qui. *Owner*: UC 0036.

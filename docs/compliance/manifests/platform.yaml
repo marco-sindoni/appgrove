@@ -295,12 +295,12 @@ sections:
         Sub-responsabili: **AWS** (hosting, regioni UE — DPA con SCC + certificazione DPF) e
         **Plausible Analytics** (analytics senza cookie, hosting UE). **Paddle** (Merchant of Record)
         è **titolare autonomo** per i dati di pagamento, non sub-responsabile (#13 H45-47).
-        Lista pubblica: `content/subprocessors.md` (UC 0002).
+        Lista pubblica: `content/legal/subprocessors.<lang>.md` (UC 0002).
       en: >-
         Sub-processors: **AWS** (hosting, EU regions — DPA with SCCs + DPF certification) and
         **Plausible Analytics** (cookieless analytics, EU hosting). **Paddle** (Merchant of Record)
         is an **independent controller** for payment data, not a sub-processor (#13 H45-47).
-        Public list: `content/subprocessors.md` (UC 0002).
+        Public list: `content/legal/subprocessors.<lang>.md` (UC 0002).
   - key: transfers
     title:
       it: Trasferimenti extra-UE

@@ -68,6 +68,13 @@ I documenti **descrivono** i trattamenti (non contengono dati utente). Il **log 
 
 ## Punti aperti / decisioni differite
 
+> **Risolti dalla change `0045-use-case-0002-…`**: entrambi i punti sotto sono stati affrontati alla creazione di
+> `content/legal/`. (1) Riporto classificazioni: la scansione degli artefatti delle change trova solo classificazioni
+> **MINOR / piattaforma core** (0029/0030/0035/0037) e nessuna MAJOR → i documenti nascono a baseline `version: 1.0.0`
+> senza bump divergenti. (2) Seed sub-responsabili: `content/legal/subprocessors.<lang>.md` seminato con **AWS +
+> Plausible** (dec. 45); nessuna segnalazione "potenziale nuovo sub-responsabile" negli implementation-log
+> (Cognito/SES = AWS già in lista; Mailpit = solo sviluppo). Il path in `platform.yaml` è stato riconciliato.
+
 - **Riporto delle classificazioni MAJOR/MINOR accumulate** (da change 0027, UC 0031): finché `content/legal/` non
   esiste, il gate privacy di `new-change` registra la classificazione (major/minor + componente + motivazione) negli
   artefatti della change (`requirements.md` campo "Tocca dati personali?" + implementation-log). **Al primo rilascio dei
