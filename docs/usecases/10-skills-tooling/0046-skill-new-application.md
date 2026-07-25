@@ -83,6 +83,11 @@ _Tracciato dalla change `0008-use-case-0011-…` (regola CLAUDE.md "Tracciamento
   8 sezioni + screenshot placeholder `src: null`, `ogImage: null`) aggiungendo una voce `status: 'draft'` al registro
   `site/src/content/landings/index.ts` con lo slug localizzato per lingua (evitando gli `RESERVED_SLUGS`). UC 0038 escludeva
   esplicitamente la modifica alla skill "in sé"; qui è dove va fatta. **Proprietario**: UC 0046.
+  > **Conferma dalla change `0049-use-case-0057-…` (2026-07-25).** Verificato in codice: il generatore
+  > `tools/new-application/generate.mjs` **non** scrive alcuna voce landing (l'array `creates` espande solo
+  > service/frontend-module/frontend-e2e/compliance/pricing); la prosa di `new-application` (SKILL.md, step-04) la
+  > dà per fatta ma il codice no. La skill `finalize-landing` (UC 0057) richiede la bozza come **precondizione
+  > stretta** e si ferma se manca, rimandando a `/new-application`: non assorbe questo lavoro, che resta di UC 0046.
 
 - ✅ **chiuso dalla change 0041** — la scoperta automatica è reale: `dev/lib/services.sh` deriva la mappa
   servizio → identificativo app → porta → schema dagli `application.properties` già presenti nei servizi, e

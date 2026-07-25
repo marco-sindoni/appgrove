@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — dichiarata all'invocazione (\"autopilot mode on\"). Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate umani restano allo sviluppatore: rilettura/approvazione dei requisiti, consenso al commit, consenso al merge."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0057 (skill finalize-landing): il testo dell'invocazione lo nomina esplicitamente e corrisponde allo scope di docs/usecases/10-skills-tooling/0057-skill-finalize-landing.md. Da qui la forma del branch 0049-use-case-0057-skill-finalize-landing.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0057 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Architettura della skill a \"due metà\", ereditata da new-application: la skill (file .claude/skills/finalize-landing/) co-pilota le decisioni umane/creative — rifinitura copy nelle 5 lingue, scelta visual, review interattiva; un helper deterministico (tools/finalize-landing/, coperto da test) esegue i passi meccanici — cattura screenshot, generazione immagine Open Graph, transizione draft→published nel registro, preflight di validazione. Motivo: è il pattern già adottato dalle altre skill di tooling e l'unico che rende credibile \"la meccanica è testata\" invece di sperata.",
+    "files": [
+      { "file": ".claude/skills/finalize-landing/", "description": "Skill nuova: SKILL.md + step, rispecchia formato/tono di new-application ma con chiusura leggera branch+PR." },
+      { "file": "tools/finalize-landing/", "description": "Helper deterministico dei passi meccanici, con test propri registrati in run-tests.sh (area tooling)." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Precondizione stretta: finalize-landing CONSUMA una bozza esistente per app_id, non la crea; se manca si ferma e rimanda a /new-application. Non assorbe la responsabilità di UC 0046 (principio: non anticipare/inglobare il lavoro di un altro use case). Emersa la divergenza: il generatore tools/new-application NON crea davvero la voce landing di bozza (la prosa della skill lo dà per fatto ma il codice no) — tracciata come decisione differita in UC 0046 (proprietario).",
+    "files": [
+      { "file": "docs/usecases/10-skills-tooling/0046-skill-new-application.md", "description": "Punto aperto da annotare: il generatore non scrive la bozza landing in site/src/content/landings/; finalize-landing la richiede come precondizione." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Chiusura con flusso leggero: branch + PR, SENZA il gate test/snapshot pieno di new-change (una landing non ha test applicativi), coerente con #14 dec.53 e UC 0057 §4.6. La validazione avviene comunque: al merge la CI esegue l'area site (vitest + astro build + controllo post-build: parità 5 lingue + Open Graph). La skill scrive contenuti e apre la PR; non pubblica, non fa deploy, non merge.",
+    "files": [
+      { "file": "run-tests.sh", "description": "L'area site già valida le landing pubblicate; l'area tooling va estesa con i test dell'helper finalize-landing." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Test senza pubblicare contenuti finti: la fixture 'example' resta in stato draft (le bozze non vanno online, #14 dec.52). I test dell'helper esercitano la meccanica in isolamento — generazione di un PNG Open Graph valido, transizione di stato su una fixture temporanea, preflight che RIFIUTA la pubblicazione se screenshot.src o meta.ogImage sono null o se restano placeholder di copy. 'example' non viene mai promossa a published.",
+    "files": [
+      { "file": "site/src/content/landings/index.ts", "description": "'example' resta status:'draft'; nessuna app reale pubblicata in questa change (la pubblicazione dell'app #1 è UC 0053, fuori scope)." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Immagine Open Graph = PNG 1200×630 on-brand, generato da un template SVG che usa i token del design system (UC 0019) e lo stile illustrazioni del sito, così ogni app ha un'anteprima social coerente (icona/colore-categoria + titolo). La libreria di rasterizzazione SVG→PNG è una scelta di implementazione (step-03), con vincolo di dipendenze minime; nessuna libreria immagini è oggi presente nel repo.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Consumo già cablato: <meta property=og:image> reso quando meta.ogImage è valorizzato; twitter:card passa a summary_large_image." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Screenshot reali via Playwright, uno per lingua, contro il modulo frontend dell'app buildato. Modello di seed pragmatico di default = intercettazione delle rotte in-browser (mock-route), lo stesso schema delle prove e2e generate da new-application (sessione autenticata sintetica + record in memoria), così la cattura non richiede l'intero stack backend ed è portabile per qualunque app. Il seed completo dello stack reale (Postgres + seed.sql) è un raffinamento tracciato, non il default.",
+    "files": [
+      { "file": "site/src/components/LandingSections.astro", "description": "Consumo già cablato: se screenshot.src è valorizzato mostra <img>, altrimenti il placeholder on-brand; finalize riempie src." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Idempotenza: la skill è ri-eseguibile anche su una landing già 'published' (ri-finalizzazione = ri-cattura screenshot + ri-rifinitura copy mantenendo published). È così che UC 0057 DoD #4 'gestisce il caso landing stale'. L'EMISSIONE del segnale di landing stale dal gate qualità di new-change (quando una change cambia feature/pricing di un'app) è lato new-change: tracciata come decisione differita nel suo use case, non implementata qui per non allargare lo scope.",
+    "files": [
+      { "file": "docs/usecases/10-skills-tooling/0044-aggiornamento-skill-new-change.md", "description": "Punto aperto: il gate qualità di new-change dovrebbe segnalare la landing stale e proporre /finalize-landing (#14 dec.55)." }
+    ]
+  }
+]
