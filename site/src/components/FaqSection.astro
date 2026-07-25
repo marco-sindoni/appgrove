@@ -1,0 +1,28 @@
+---
+// Sezione FAQ riusabile (UC 0041, GEO). Contenuto machine-readable: domande/risposte in
+// HTML semantico (<dl>/<dt>/<dd>), senza JavaScript, così è leggibile sia dalle persone
+// sia dai crawler AI. Il dato strutturato FAQPage (JSON-LD) è emesso a parte dalla pagina
+// che la usa (home, "perché", "prezzi"), riusando faqPageJsonLd di src/lib/seo.ts.
+// Il marcatore data-faq permette al controllo post-build di riconoscere il blocco reso.
+import type { FaqSection } from '../content/marketing/types.ts'
+
+interface Props {
+  faq: FaqSection
+}
+
+const { faq } = Astro.props
+---
+
+<section class="border-t border-line py-12" data-faq aria-label={faq.title}>
+  <h2 class="text-2xl font-bold tracking-tight">{faq.title}</h2>
+  <dl class="mt-6 grid gap-4">
+    {
+      faq.items.map((item) => (
+        <div class="rounded-lg border border-line bg-surface p-5">
+          <dt class="font-semibold">{item.q}</dt>
+          <dd class="mt-2 text-fg-muted">{item.a}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</section>

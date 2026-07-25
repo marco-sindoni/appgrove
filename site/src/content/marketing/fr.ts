@@ -57,6 +57,31 @@ export const fr: MarketingContent = {
       'Aucun traceur caché, aucune donnée revendue',
     ],
   },
+  faq: {
+    title: 'Questions fréquentes',
+    items: [
+      {
+        q: "Qu'est-ce qu'appgrove ?",
+        a: "appgrove est une place de marché entièrement européenne et axée RGPD d'applications micro-SaaS ciblées pour les petites et moyennes entreprises. Un seul compte débloque un écosystème grandissant d'outils simples et abordables, chacun faisant bien une seule chose.",
+      },
+      {
+        q: 'Où mes données sont-elles stockées ?',
+        a: "Toutes les données d'appgrove sont hébergées dans l'Union européenne, sous le droit européen. Aucun traceur caché, et vos données ne sont jamais revendues.",
+      },
+      {
+        q: 'Ai-je des droits RGPD complets ?',
+        a: 'Oui. Les droits RGPD sont intégrés dès la conception — vous pouvez accéder à vos données, les exporter et les effacer. La confidentialité est le socle, pas une option.',
+      },
+      {
+        q: 'Comment fonctionne la tarification ?',
+        a: "Chaque application fixe son prix sur sa propre page. Vous ne payez que les outils que vous utilisez, au mois ou à l'année, et chaque formule payante commence par un essai gratuit de 14 jours.",
+      },
+      {
+        q: 'Puis-je utiliser les applications appgrove avec un assistant IA ?',
+        a: "C'est ainsi que nous concevons l'écosystème : chaque application est conçue pour être appelée par les assistants IA via MCP (Model Context Protocol). Nous y avançons dès aujourd'hui, application par application.",
+      },
+    ],
+  },
   newsletter: {
     title: 'Restez informé',
     body: "On vous prévient quand de nouvelles applications arrivent. Pas de spam, et vous vous désinscrivez quand vous voulez.",
@@ -92,6 +117,27 @@ export const fr: MarketingContent = {
         body: 'Vos données sont hébergées en Europe, sous le droit européen, avec des droits RGPD complets. La confidentialité est le socle, pas une fonctionnalité — aucun traceur caché, et vos données ne sont jamais revendues.',
       },
     ],
+    faq: {
+      title: "En savoir plus sur appgrove",
+      items: [
+        {
+          q: "Qu'est-ce qui distingue appgrove d'une grande suite logicielle ?",
+          a: "appgrove est un écosystème de petites applications ciblées plutôt qu'une seule suite surchargée. Chaque outil fait bien une chose, et un seul compte vous les donne toutes — sans verrouillage, sans silos.",
+        },
+        {
+          q: 'Ai-je besoin d’un compte distinct pour chaque application ?',
+          a: "Non. Un seul compte débloque toutes les applications de l'écosystème, avec une seule connexion et un seul foyer de confiance pour vos données.",
+        },
+        {
+          q: 'Que signifie « Prêtes pour l’IA » ?',
+          a: "Chaque application est conçue pour être appelée par votre assistant IA via MCP, le standard ouvert que les assistants utilisent pour atteindre des outils externes. C'est notre direction de conception, construite application par application.",
+        },
+        {
+          q: 'appgrove est-il vraiment tout européen ?',
+          a: "Oui. Les données sont hébergées en Europe sous le droit européen, avec des droits RGPD complets, aucun traceur caché et aucune revente de données — le socle de confiance derrière tout ce que nous construisons.",
+        },
+      ],
+    },
   },
   pricing: {
     title: 'Tarifs — comment fonctionne la facturation',
@@ -111,11 +157,32 @@ export const fr: MarketingContent = {
         body: 'Essayez avant de payer. Chaque formule payante commence par un essai gratuit de 14 jours — rien ne vous est facturé avant la fin.',
       },
       {
-        title: 'Aucun remboursement',
-        body: "Comme chaque formule commence par un essai gratuit, les abonnements ne sont pas remboursables une fois facturés. Les détails figurent dans notre politique de remboursement.",
+        title: 'Résiliez quand vous voulez',
+        body: "Chaque formule commence par un essai gratuit, vous décidez donc sans risque avant de payer — c'est pourquoi les montants déjà facturés ne sont pas restitués. Dans tous les cas, vous pouvez résilier votre abonnement quand vous voulez : dès le cycle de facturation suivant, plus rien ne vous est facturé, et la période en cours reste active jusqu'à son terme. Les détails figurent dans notre politique de remboursement.",
       },
     ],
     refundLinkText: 'Lire la politique de remboursement',
+    faq: {
+      title: 'Questions sur la facturation',
+      items: [
+        {
+          q: 'Combien coûte appgrove ?',
+          a: "Il n'y a pas de prix unique : chaque application affiche ses propres formules et prix sur sa page. Vous ne payez que les outils que vous utilisez.",
+        },
+        {
+          q: 'Mensuel ou annuel ?',
+          a: "Les deux. L'annuel est proposé par défaut et coûte moins cher sur l'année ; le mensuel offre plus de souplesse. Vous choisissez pour chaque application.",
+        },
+        {
+          q: 'Y a-t-il un essai gratuit ?',
+          a: 'Oui. Chaque formule payante commence par un essai gratuit de 14 jours — rien ne vous est facturé avant la fin.',
+        },
+        {
+          q: 'Puis-je obtenir un remboursement ?',
+          a: "Chaque formule commence par un essai gratuit, vous essayez donc sans risque avant de payer — c'est pourquoi les montants déjà facturés ne sont pas restitués. Vous pouvez toutefois résilier votre abonnement quand vous voulez : dès le cycle de facturation suivant, plus rien ne vous est facturé, et la période en cours reste active jusqu'à son terme. Les détails figurent dans notre politique de remboursement.",
+        },
+      ],
+    },
   },
   footer: {
     tagline: 'Des outils simples qui grandissent avec votre entreprise.',

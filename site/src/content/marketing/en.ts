@@ -58,6 +58,31 @@ export const en: MarketingContent = {
       'No hidden trackers, no data sold',
     ],
   },
+  faq: {
+    title: 'Frequently asked questions',
+    items: [
+      {
+        q: 'What is appgrove?',
+        a: 'appgrove is an all-EU, GDPR-first marketplace of focused micro-SaaS apps for small and medium businesses. One account unlocks a growing ecosystem of simple, affordable tools, each doing one job well.',
+      },
+      {
+        q: 'Where is my data stored?',
+        a: 'All appgrove data is hosted in the European Union, under European law. There are no hidden trackers, and your data is never sold.',
+      },
+      {
+        q: 'Do I get full GDPR rights?',
+        a: 'Yes. GDPR rights are built in by design — you can access, export and erase your data. Privacy is the foundation, not an add-on.',
+      },
+      {
+        q: 'How does pricing work?',
+        a: 'Each app sets its own price on its own page. You pay only for the tools you use, monthly or yearly, and every paid plan starts with a 14-day free trial.',
+      },
+      {
+        q: 'Can I use appgrove apps with an AI assistant?',
+        a: 'That is how we design the ecosystem: every app is built to be reachable by AI assistants through MCP (Model Context Protocol). We are building towards it today, app by app.',
+      },
+    ],
+  },
   newsletter: {
     title: 'Stay in the loop',
     body: 'Get a note when new apps land. No spam, and you can unsubscribe anytime.',
@@ -93,6 +118,27 @@ export const en: MarketingContent = {
         body: 'Your data is hosted in the EU, under European law, with full GDPR rights. Privacy is the foundation, not a feature — no hidden trackers, and your data is never sold.',
       },
     ],
+    faq: {
+      title: 'More about appgrove',
+      items: [
+        {
+          q: 'What makes appgrove different from a big software suite?',
+          a: 'appgrove is an ecosystem of small, focused apps instead of one bloated suite. Each tool does one job well, and one account gives you all of them — no lock-in, no silos.',
+        },
+        {
+          q: 'Do I need a separate account for each app?',
+          a: 'No. One account unlocks every app in the ecosystem, with a single sign-in and one trusted home for your data.',
+        },
+        {
+          q: 'What does "Ready for AI" mean?',
+          a: 'Every app is designed to be called by your AI assistant through MCP, the open standard assistants use to reach external tools. It is our design direction, built app by app.',
+        },
+        {
+          q: 'Is appgrove really all-EU?',
+          a: 'Yes. Data is hosted in the EU under European law, with full GDPR rights, no hidden trackers and no data selling — the trust wedge behind everything we build.',
+        },
+      ],
+    },
   },
   pricing: {
     title: 'Pricing — how billing works',
@@ -112,11 +158,32 @@ export const en: MarketingContent = {
         body: 'Try before you pay. Every paid plan starts with a 14-day free trial — nothing is charged until it ends.',
       },
       {
-        title: 'No refunds',
-        body: 'Because every plan starts with a free trial, subscriptions are non-refundable once billed. The details are in our Refund Policy.',
+        title: 'Cancel anytime',
+        body: 'Every plan starts with a free trial, so you can decide with no risk before you pay — for that reason amounts already billed are not returned. Either way, you can cancel your subscription whenever you like: from the next billing cycle nothing more is charged, and your current period stays active until it ends. The details are in our Refund Policy.',
       },
     ],
     refundLinkText: 'Read the Refund Policy',
+    faq: {
+      title: 'Billing questions',
+      items: [
+        {
+          q: 'How much does appgrove cost?',
+          a: 'There is no single price: each app shows its own plans and prices on its page. You pay only for the tools you use.',
+        },
+        {
+          q: 'Monthly or yearly?',
+          a: 'Both. Yearly is the default and costs less over the year; monthly gives you more flexibility. You choose per app.',
+        },
+        {
+          q: 'Is there a free trial?',
+          a: 'Yes. Every paid plan starts with a 14-day free trial — nothing is charged until it ends.',
+        },
+        {
+          q: 'Can I get a refund?',
+          a: 'Every plan starts with a free trial, so you try with no risk before paying — for that reason amounts already billed are not returned. You can, however, cancel your subscription whenever you like: from the next billing cycle nothing more is charged, and your current period stays active until it ends. The details are in our Refund Policy.',
+        },
+      ],
+    },
   },
   footer: {
     tagline: 'Simple tools that grow with your business.',

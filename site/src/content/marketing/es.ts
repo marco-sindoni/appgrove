@@ -57,6 +57,31 @@ export const es: MarketingContent = {
       'Sin rastreadores ocultos, sin venta de datos',
     ],
   },
+  faq: {
+    title: 'Preguntas frecuentes',
+    items: [
+      {
+        q: '¿Qué es appgrove?',
+        a: 'appgrove es un marketplace totalmente europeo y GDPR primero de aplicaciones micro-SaaS enfocadas para pequeñas y medianas empresas. Una sola cuenta desbloquea un ecosistema en crecimiento de herramientas sencillas y asequibles, cada una hace bien una sola cosa.',
+      },
+      {
+        q: '¿Dónde se almacenan mis datos?',
+        a: 'Todos los datos de appgrove se alojan en la Unión Europea, bajo la ley europea. No hay rastreadores ocultos y tus datos nunca se venden.',
+      },
+      {
+        q: '¿Tengo derechos GDPR completos?',
+        a: 'Sí. Los derechos GDPR están integrados por diseño — puedes acceder, exportar y borrar tus datos. La privacidad es la base, no un añadido.',
+      },
+      {
+        q: '¿Cómo funcionan los precios?',
+        a: 'Cada aplicación fija su propio precio en su página. Pagas solo por las herramientas que usas, mensual o anual, y cada plan de pago empieza con una prueba gratuita de 14 días.',
+      },
+      {
+        q: '¿Puedo usar las aplicaciones de appgrove con un asistente de IA?',
+        a: 'Así diseñamos el ecosistema: cada aplicación está pensada para que los asistentes de IA la invoquen mediante MCP (Model Context Protocol). Estamos avanzando hacia ello hoy, aplicación a aplicación.',
+      },
+    ],
+  },
   newsletter: {
     title: 'Mantente al día',
     body: 'Te avisamos cuando lleguen nuevas aplicaciones. Sin spam, y puedes darte de baja cuando quieras.',
@@ -92,6 +117,27 @@ export const es: MarketingContent = {
         body: 'Tus datos están alojados en la UE, bajo la ley europea, con derechos GDPR completos. La privacidad es la base, no una función — sin rastreadores ocultos, y tus datos nunca se venden.',
       },
     ],
+    faq: {
+      title: 'Más sobre appgrove',
+      items: [
+        {
+          q: '¿Qué diferencia a appgrove de una gran suite de software?',
+          a: 'appgrove es un ecosistema de aplicaciones pequeñas y enfocadas en lugar de una única suite recargada. Cada herramienta hace bien una cosa, y una sola cuenta te las da todas — sin ataduras, sin silos.',
+        },
+        {
+          q: '¿Necesito una cuenta distinta para cada aplicación?',
+          a: 'No. Una sola cuenta desbloquea todas las aplicaciones del ecosistema, con un único acceso y un solo hogar de confianza para tus datos.',
+        },
+        {
+          q: '¿Qué significa "Listas para la IA"?',
+          a: 'Cada aplicación está diseñada para que tu asistente de IA la invoque mediante MCP, el estándar abierto que los asistentes usan para alcanzar herramientas externas. Es nuestra dirección de diseño, construida aplicación a aplicación.',
+        },
+        {
+          q: '¿appgrove es realmente todo europeo?',
+          a: 'Sí. Los datos se alojan en la UE bajo la ley europea, con derechos GDPR completos, sin rastreadores ocultos y sin venta de datos — la base de confianza detrás de todo lo que construimos.',
+        },
+      ],
+    },
   },
   pricing: {
     title: 'Precios — cómo funciona la facturación',
@@ -111,11 +157,32 @@ export const es: MarketingContent = {
         body: 'Prueba antes de pagar. Cada plan de pago empieza con una prueba gratuita de 14 días — no se cobra nada hasta que termina.',
       },
       {
-        title: 'Sin reembolsos',
-        body: 'Como cada plan empieza con una prueba gratuita, las suscripciones no son reembolsables una vez facturadas. Los detalles están en nuestra política de reembolsos.',
+        title: 'Cancela cuando quieras',
+        body: 'Cada plan empieza con una prueba gratuita, así decides sin riesgo antes de pagar — por eso los importes ya cobrados no se devuelven. En cualquier caso, puedes cancelar tu suscripción cuando quieras: desde el siguiente ciclo de facturación no se te cobra nada más, y el periodo en curso sigue activo hasta que termina. Los detalles están en nuestra política de reembolsos.',
       },
     ],
     refundLinkText: 'Leer la política de reembolsos',
+    faq: {
+      title: 'Preguntas sobre facturación',
+      items: [
+        {
+          q: '¿Cuánto cuesta appgrove?',
+          a: 'No hay un precio único: cada aplicación muestra sus propios planes y precios en su página. Pagas solo por las herramientas que usas.',
+        },
+        {
+          q: '¿Mensual o anual?',
+          a: 'Ambos. El anual es el predeterminado y sale más barato al año; el mensual da más flexibilidad. Eliges por cada aplicación.',
+        },
+        {
+          q: '¿Hay prueba gratuita?',
+          a: 'Sí. Cada plan de pago empieza con una prueba gratuita de 14 días — no se cobra nada hasta que termina.',
+        },
+        {
+          q: '¿Puedo obtener un reembolso?',
+          a: 'Cada plan empieza con una prueba gratuita, así pruebas sin riesgo antes de pagar — por eso los importes ya cobrados no se devuelven. No obstante, puedes cancelar tu suscripción cuando quieras: desde el siguiente ciclo de facturación no se te cobra nada más, y el periodo en curso sigue activo hasta que termina. Los detalles están en nuestra política de reembolsos.',
+        },
+      ],
+    },
   },
   footer: {
     tagline: 'Herramientas sencillas que crecen con tu negocio.',

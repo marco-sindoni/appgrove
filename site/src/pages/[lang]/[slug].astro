@@ -15,7 +15,7 @@ import { landingParams } from '../../lib/landings.ts'
 import { brandParams, brandPath, brandHreflangPaths, slugHreflangPaths, type BrandRouteProps } from '../../lib/routes.ts'
 import { LOCALES, type Locale } from '../../lib/i18n.ts'
 import { MARKETING } from '../../content/marketing/index.ts'
-import { breadcrumbJsonLd, landingJsonLd } from '../../lib/seo.ts'
+import { breadcrumbJsonLd, landingJsonLd, faqPageJsonLd } from '../../lib/seo.ts'
 import type { Landing } from '../../content/landings/types.ts'
 
 export function getStaticPaths() {
@@ -60,11 +60,13 @@ if (props.kind === 'landing') {
   pathWithinLocale = brandPath(props.brandKey, lang)
   hreflangPaths = brandHreflangPaths(props.brandKey)
   const url = new URL(`/${lang}${pathWithinLocale}`, Astro.site).toString()
+  // Breadcrumb + FAQPage (UC 0041, GEO): entrambe le pagine brand hanno la loro FAQ.
   jsonLd = [
     breadcrumbJsonLd([
       { name: t.nav.app, url: new URL(`/${lang}/`, Astro.site).toString() },
       { name: title, url },
     ]),
+    faqPageJsonLd(page.faq.items),
   ]
 }
 ---

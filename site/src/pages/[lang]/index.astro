@@ -9,6 +9,8 @@ import { LOCALES, type Locale } from '../../lib/i18n.ts'
 import { MARKETING } from '../../content/marketing/index.ts'
 import { APP_SIGNUP } from '../../lib/links.ts'
 import { brandHref } from '../../lib/routes.ts'
+import { faqPageJsonLd } from '../../lib/seo.ts'
+import FaqSection from '../../components/FaqSection.astro'
 import HeroVisual from '../../components/illustrations/HeroVisual.astro'
 import AppsVisual from '../../components/illustrations/AppsVisual.astro'
 import EcosystemVisual from '../../components/illustrations/EcosystemVisual.astro'
@@ -21,9 +23,12 @@ export function getStaticPaths() {
 
 const lang = Astro.params.lang as Locale
 const t = MARKETING[lang]
+
+// Dato strutturato FAQPage della homepage (UC 0041, GEO): la FAQ generale di marca.
+const jsonLd = faqPageJsonLd(t.faq.items)
 ---
 
-<BaseLayout lang={lang} title="appgrove" description={t.hero.subtitle}>
+<BaseLayout lang={lang} title="appgrove" description={t.hero.subtitle} jsonLd={jsonLd}>
   {/* Hero */}
   <section class="grid items-center gap-8 py-12 sm:py-16 lg:grid-cols-2">
     <div>
@@ -158,6 +163,9 @@ const t = MARKETING[lang]
     </form>
     <p class="mt-3 text-sm text-fg-faint">{t.newsletter.note}</p>
   </section>
+
+  {/* FAQ di marca — contenuto machine-readable + FAQPage JSON-LD (UC 0041, GEO) */}
+  <FaqSection faq={t.faq} />
 
   {/* CTA finale */}
   <section class="border-t border-line py-14">

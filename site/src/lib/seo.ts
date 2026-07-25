@@ -7,6 +7,7 @@
 // SoftwareApplication, FAQPage). Article è escluso: dipende dai contenuti blog (UC 0042).
 
 import type { LandingLocaleContent } from '../content/landings/types.ts'
+import { BRAND } from './brand.ts'
 
 /** Marchio del marketplace: NON la ragione sociale del titolare (che è "DA COMPILARE"). */
 export const BRAND_NAME = 'appgrove'
@@ -27,13 +28,19 @@ export function parsePrice(raw: string): { price: string; priceCurrency: string 
   return { price: match[0].replace(',', '.'), priceCurrency: symbol ? CURRENCY_BY_SYMBOL[symbol] : 'EUR' }
 }
 
-/** Organization del marchio appgrove: presente su ogni pagina (aggiunta dal layout). */
+/**
+ * Organization del marchio appgrove: presente su ogni pagina (aggiunta dal layout).
+ * Porta la descrizione CANONICA (boilerplate `brand.ts`, UC 0041): uno statement fattuale
+ * machine-readable, identico ovunque, che aiuta gli assistenti AI a citare correttamente.
+ */
 export function organizationJsonLd(siteUrl: string, supportEmail: string): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: BRAND_NAME,
     url: siteUrl,
+    slogan: BRAND.tagline,
+    description: BRAND.description,
     contactPoint: {
       '@type': 'ContactPoint',
       email: supportEmail,

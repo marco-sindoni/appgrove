@@ -36,6 +36,13 @@ describe('costruttori JSON-LD (UC 0040)', () => {
     expect(org.url).toBe('https://appgrove.app/')
   })
 
+  it('Organization porta la descrizione canonica (boilerplate, UC 0041)', () => {
+    const org = organizationJsonLd('https://appgrove.app/', 'support@appgrove.app')
+    expect(String(org.description)).toContain('GDPR')
+    expect(String(org.description).length).toBeGreaterThan(80)
+    expect(String(org.slogan).length).toBeGreaterThan(0)
+  })
+
   it('BreadcrumbList numera le tappe da 1', () => {
     const bc = breadcrumbJsonLd([
       { name: 'Home', url: 'https://x/it/' },
