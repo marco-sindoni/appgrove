@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — dichiarata all'invocazione. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano dello sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0041 (GEO — llms.txt, consenso crawler AI, entità canonica). L'invocazione 'implementa change 0041' è stata risolta come use case 0041: il numero di change libero è 0051 (l'ultima è 0050), mentre 0041 è il numero dello use case successivo a 0040 (SEO, appena completato nella change 0050) e risulta ⬜ non implementato in docs/usecases/_INDEX.md. Da qui il branch change/0051-use-case-0041-geo-llms.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0041 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Entità canonica/boilerplate come UNICA versione autorevole in inglese (non per-lingua): 'descrizione identica ovunque' (#14 40) significa una versione riusata verbatim su sito/directory/social, non cinque traduzioni che possono divergere. L'inglese è la lingua franca degli LLM e dei canali off-site. Scelta raccomandata perché massimizza la coerenza dell'entità e riduce il rischio di drift fra canali.",
+    "files": [
+      { "file": "site/src/lib/brand.ts", "description": "Nuovo: boilerplate canonico (nome, categoria, tagline, descrizione, fatti chiave, angolo UE/GDPR, dominio). Fonte unica per llms.txt e per la description dell'Organization JSON-LD." },
+      { "file": "site/src/lib/seo.ts", "description": "organizationJsonLd arricchito con la description canonica presa da brand.ts → statement fattuale machine-readable su ogni pagina." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) llms.txt come endpoint statico Astro (/llms.txt) con costruttore puro separato per essere testabile, senza nuove dipendenze (coerente con l'assetto endpoint-puri di UC 0040). Contenuto in inglese secondo la convenzione llms.txt (titolo, sommario, sezioni con link alle pagine chiave), con una sezione App derivata dalle sole landing PUBBLICATE (vuota finché non ce ne sono → onesta col catalogo, e una app pubblicata compare da sola). Sempre servito; è il gate robots a tenere fuori i crawler pre-go-live.",
+    "files": [
+      { "file": "site/src/lib/llms.ts", "description": "Nuovo: costruttore puro del corpo di llms.txt da brand.ts + link pagine chiave + landing pubblicate." },
+      { "file": "site/src/pages/llms.txt.ts", "description": "Nuovo: endpoint sottile che serve il corpo con Content-Type text/plain." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Consenso ai crawler AI in robots.txt coerente col gate di indicizzazione: pre-go-live Disallow totale (anche per i crawler AI, come per gli altri, coerente col noindex); al go-live (SITE_INDEXABLE=true) Allow generale PIÙ blocchi User-agent espliciti per un insieme curato di crawler di assistenti AI reputabili (GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, anthropic-ai, PerplexityBot, Perplexity-User, Google-Extended, Applebot-Extended) con Allow: /, più riga Sitemap e commento verso /llms.txt. Il wildcard già li ammetterebbe: l'elenco esplicito serve a rendere il consenso VERIFICABILE e testabile ed è la dichiarazione d'intento GEO (#14 39: solo contenuto marketing, nessun dato utente). Corpo estratto in un costruttore puro per i test (come sitemap.ts).",
+    "files": [
+      { "file": "site/src/lib/robots.ts", "description": "Nuovo: costruttore puro del corpo robots (gate indicizzazione + blocchi crawler AI + Sitemap + rimando llms.txt)." },
+      { "file": "site/src/pages/robots.txt.ts", "description": "Ridotto a endpoint sottile che delega al costruttore puro." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Contenuti machine-readable a livello brand = FAQ Q&A sulla homepage con FAQPage JSON-LD (#14 37), la leva GEO più forte per le query di marca. Aggiunto un campo faq a MarketingContent (5 domande, nelle 5 lingue, parità a compile-time + test dei valori), reso in fondo alla home e riusando faqPageJsonLd già esistente. Le tabelle di confronto vs concorrenti sono invece rimandate al blog (UC 0042): sono outward-facing e con affermazioni sui competitor, fuori scope qui.",
+    "files": [
+      { "file": "site/src/content/marketing/types.ts", "description": "Aggiunto FaqSection/FaqItem e campo faq a MarketingContent." },
+      { "file": "site/src/content/marketing/en.ts", "description": "FAQ brand nelle 5 lingue (en/it/fr/es/de aggiornati in parità)." },
+      { "file": "site/src/pages/[lang]/index.astro", "description": "Sezione FAQ resa in fondo alla home + FAQPage JSON-LD passato al BaseLayout." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) DoD 4 (new-application produce materiale GEO-friendly per-app): soddisfatto dalla pipeline landing ESISTENTE, nessuna modifica ai modelli di scaffolding. Ogni landing generata porta già FAQ→FAQPage, SoftwareApplication e slug/meta canonici localizzati (UC 0038 + UC 0040); una app pubblicata compare da sola nella sezione App di llms.txt. Evitato di toccare tools/new-application per non introdurre deviazioni di parità scaffold senza necessità."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Misurazione referral AI: documentata in site/GEO.md (referrer chatgpt.com/perplexity.ai/… via Plausible già cablato in UC 0040 + check manuali periodici interrogando gli LLM). Nessun codice nuovo di misurazione: l'attivazione reale è post-go-live, tracciata come rimando. sameAs/profili social sull'Organization omessi (nessun profilo reale ancora; off-site = UC 0043), tracciati."
+  },
+  {
+    "id": 9,
+    "decision": "(sviluppatore, al gate di rilettura requisiti) Consenso ai crawler AI: elencare il PIÙ AMPIO insieme possibile di crawler AI/LLM, non solo i pochi reputabili proposti in autopilot (supera la decisione 5 sul punto della copertura). robots.ts elenca esplicitamente, con Allow: /, un insieme curato di user-agent REALI e documentati: OpenAI (GPTBot, ChatGPT-User, OAI-SearchBot), Anthropic (ClaudeBot, anthropic-ai, Claude-Web, Claude-User, Claude-SearchBot), Google-Extended, Applebot-Extended, Perplexity (PerplexityBot, Perplexity-User), CCBot, Meta (Meta-ExternalAgent, Meta-ExternalFetcher, FacebookBot), Amazonbot, ByteDance (Bytespider, TikTokSpider), Cohere (cohere-ai, cohere-training-data-crawler), MistralAI-User, YouBot, PetalBot, DuckAssistBot, Diffbot, Timpibot, Omgilibot/Omgili, AI2Bot. Il wildcard Allow: / copre comunque i non elencati; l'elenco è dichiarazione d'intento verificabile. Postura invariata (#14 39: solo contenuto marketing pubblico)."
+  },
+  {
+    "id": 10,
+    "decision": "(sviluppatore, al gate di rilettura requisiti) llms.txt MULTILINGUA (supera la decisione 4 sul punto della lingua): oltre alla variante radice /llms.txt in inglese, si generano varianti per-lingua /<lang>/llms.txt (en/it/fr/es/de) via endpoint [lang]/llms.txt.ts. Il costruttore puro llms.ts diventa parametrico sulla lingua e attinge ai contenuti marketing GIÀ localizzati (UC 0037) + identità canonica di brand.ts; la variante radice aggiunge una sezione Languages che linka le altre. Coerente con l'i18n a subpath del sito.",
+    "files": [
+      { "file": "site/src/pages/[lang]/llms.txt.ts", "description": "Nuovo: endpoint per-lingua che serve /<lang>/llms.txt." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(sviluppatore, al gate di rilettura requisiti) FAQ OVUNQUE POSSIBILE (estende la decisione 6): la FAQ + FAQPage JSON-LD non solo in homepage ma anche sulle pagine brand 'perché' e 'prezzi'. Il campo faq (FaqSection) è aggiunto a tre contesti di MarketingContent (home + why + pricing) nelle 5 lingue, reso da un componente riusabile FaqSection.astro; il dispatcher [lang]/[slug].astro appende faqPageJsonLd al grafo delle pagine brand. Le landing per-app hanno già FAQ+FAQPage (UC 0038/0040): la FAQ machine-readable è così su tutte le pagine chiave.",
+    "files": [
+      { "file": "site/src/components/FaqSection.astro", "description": "Nuovo: componente riusabile che rende una FaqSection on-brand." },
+      { "file": "site/src/components/WhyContent.astro", "description": "Rende la FAQ della pagina 'perché'." },
+      { "file": "site/src/components/PricingContent.astro", "description": "Rende la FAQ della pagina 'prezzi'." },
+      { "file": "site/src/pages/[lang]/[slug].astro", "description": "Appende faqPageJsonLd(page.faq.items) al JSON-LD delle pagine brand." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(sviluppatore, alla rilettura) Ammorbidito il messaggio sui rimborsi nella pagina prezzi (box informativo + FAQ), nelle 5 lingue: il titolo della sezione passa da negativo ('Nessun rimborso'/'No refunds'/'Aucun remboursement'/'Sin reembolsos'/'Keine Rückerstattungen') a positivo ('Disdici quando vuoi' e equivalenti), evitando la parola 'nessun/no/aucun/sin/keine'. Il corpo spiega senza asprezza (la prova gratuita è la rete di sicurezza; gli importi già addebitati non vengono restituiti) e AGGIUNGE la disdetta libera: 'puoi disdire quando vuoi, dal ciclo di fatturazione successivo non paghi più nulla e il periodo in corso resta attivo fino alla scadenza'. Verificata la coerenza con la Refund Policy legale (content/legal/refund.*.md §2: vendite definitive per il periodo avviato, disdetta evita i rinnovi, periodo in corso attivo fino a scadenza) — nessuna contraddizione, nessun over-promise di rimborso.",
+    "files": [
+      { "file": "site/src/content/marketing/en.ts", "description": "pricing.sections (titolo 'Cancel anytime' + corpo) e pricing.faq (risposta) riscritti; stessa modifica in it/fr/es/de." }
+    ]
+  }
+]

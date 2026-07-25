@@ -16,6 +16,10 @@
 //  10. sitemap.xml e robots.txt presenti; sitemap XML ben formato e non vuota;
 //  11. dati strutturati JSON-LD validi: ogni pagina ha Organization; le landing hanno
 //      SoftwareApplication e FAQPage.
+// GEO (UC 0041):
+//  12. llms.txt radice + per-lingua presenti e ben formati (titolo markdown + link);
+//  13. consenso ai crawler AI in robots.txt quando indicizzabile (+ riga Sitemap);
+//  14. FAQPage JSON-LD su home e pagine brand ("perché"/"prezzi") di ogni lingua.
 // Exit code ≠ 0 su qualsiasi violazione.
 
 import fs from 'node:fs'
@@ -243,11 +247,53 @@ if (!fs.existsSync(sitemapPath)) {
   if (!/<loc>/.test(xml)) fail('sitemap: nessun <loc> (sitemap vuota)')
 }
 const robotsPath = path.join(DIST, 'robots.txt')
+let robotsBody = ''
 if (!fs.existsSync(robotsPath)) {
   fail('robots: dist/robots.txt assente')
 } else {
-  const robots = fs.readFileSync(robotsPath, 'utf8')
-  if (!/User-agent:/i.test(robots)) fail('robots: manca la direttiva User-agent')
+  robotsBody = fs.readFileSync(robotsPath, 'utf8')
+  if (!/User-agent:/i.test(robotsBody)) fail('robots: manca la direttiva User-agent')
+}
+
+// 12. GEO (UC 0041) — llms.txt radice + per-lingua presenti e ben formati (titolo markdown
+//     + almeno un link). Sempre presenti (il gate robots tiene fuori i crawler pre-go-live).
+function checkLlms(file, label) {
+  if (!fs.existsSync(file)) {
+    fail(`llms.txt: ${label} assente (${relFromDist(file)})`)
+    return
+  }
+  const body = fs.readFileSync(file, 'utf8')
+  if (!/^#\s+\S/m.test(body)) fail(`llms.txt: ${label} senza titolo markdown "# …"`)
+  if (!/\]\(https?:\/\//.test(body)) fail(`llms.txt: ${label} senza link assoluti`)
+}
+checkLlms(path.join(DIST, 'llms.txt'), 'radice /llms.txt')
+for (const lang of LOCALES) {
+  checkLlms(path.join(DIST, lang, 'llms.txt'), `/${lang}/llms.txt`)
+}
+
+// 13. GEO (UC 0041) — consenso ai crawler AI in robots.txt QUANDO indicizzabile. Pre-go-live
+//     resta Disallow totale (già coperto): i crawler AI agiscono solo al go-live.
+if (indexable && robotsBody) {
+  for (const ua of ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended']) {
+    if (!robotsBody.includes(`User-agent: ${ua}`)) {
+      fail(`robots: manca il consenso al crawler AI "${ua}" (SITE_INDEXABLE=true)`)
+    }
+  }
+  if (!/^Sitemap:\s/m.test(robotsBody)) fail('robots: manca la riga Sitemap (indicizzabile)')
+}
+
+// 14. GEO (UC 0041) — FAQPage JSON-LD sulle pagine chiave: home + brand ("perché"/"prezzi")
+//     di ogni lingua (le landing hanno già il proprio FAQPage, coperto al punto 6).
+const faqPages = new Set()
+for (const lang of LOCALES) {
+  faqPages.add(`/${lang}/`)
+  for (const byLang of Object.values(BRAND_SLUGS)) faqPages.add(`/${lang}/${byLang[lang]}/`)
+}
+for (const file of localizedPages) {
+  const url = urlOf(file)
+  if (!faqPages.has(url)) continue
+  const { types } = jsonLdTypes(fs.readFileSync(file, 'utf8'))
+  if (!types.includes('FAQPage')) fail(`json-ld: manca FAQPage in ${url} (GEO UC 0041)`)
 }
 
 if (errors.length) {

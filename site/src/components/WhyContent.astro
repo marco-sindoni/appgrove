@@ -6,6 +6,7 @@
 import type { Locale } from '../lib/i18n.ts'
 import { MARKETING } from '../content/marketing/index.ts'
 import { APP_SIGNUP } from '../lib/links.ts'
+import FaqSection from './FaqSection.astro'
 
 interface Props {
   lang: Locale
@@ -30,6 +31,9 @@ const t = MARKETING[lang]
     ))
   }
 </div>
+
+{/* FAQ della pagina "perché" — contenuto machine-readable + FAQPage JSON-LD (UC 0041, GEO) */}
+<FaqSection faq={t.why.faq} />
 
 <section class="mt-12 border-t border-line py-10">
   <a

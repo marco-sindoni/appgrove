@@ -75,10 +75,24 @@ export interface FinalCta {
   secondary: string
 }
 
+/** Voce FAQ machine-readable (UC 0041, GEO): usata per il rendering e per FAQPage JSON-LD. */
+export interface FaqItem {
+  q: string
+  a: string
+}
+
+/** Sezione FAQ (domanda/risposta): resa in pagina e come dato strutturato FAQPage. */
+export interface FaqSection {
+  title: string
+  items: FaqItem[]
+}
+
 export interface WhyPage {
   title: string
   intro: string
   sections: Section[]
+  /** FAQ della pagina "perché" (ecosistema, AI, UE) — GEO UC 0041. */
+  faq: FaqSection
 }
 
 export interface PricingPage {
@@ -87,6 +101,8 @@ export interface PricingPage {
   sections: Section[]
   /** Testo del link alla Refund Policy (documento legale già presente). */
   refundLinkText: string
+  /** FAQ della pagina "prezzi" (fatturazione) — GEO UC 0041. */
+  faq: FaqSection
 }
 
 export interface FooterContent {
@@ -109,6 +125,8 @@ export interface MarketingContent {
   crossSell: FeatureBlock
   ai: FeatureBlock
   privacy: FeatureBlock
+  /** FAQ generale di marca resa in homepage (+ FAQPage JSON-LD) — GEO UC 0041. */
+  faq: FaqSection
   newsletter: NewsletterContent
   finalCta: FinalCta
   why: WhyPage

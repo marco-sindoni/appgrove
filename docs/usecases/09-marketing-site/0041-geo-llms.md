@@ -55,3 +55,19 @@ Solo contenuti marketing pubblici; nessun dato personale. Manifest: N/A.
   2. Contenuti machine-readable (FAQ/confronti/Schema.org) + entità canonica unica.
   3. Misurazione referral AI (Plausible) + check manuali.
   4. `new-application` produce materiale GEO-friendly per-app.
+
+## Stato implementazione
+Implementato nella change [0051-use-case-0041-geo-llms](../../../changes/0051-use-case-0041-geo-llms/). Sintesi: `llms.txt`
+multilingua (radice inglese + `/<lang>/llms.txt`), consenso ai crawler AI in `robots.txt` (elenco ampio, al go-live), FAQ +
+`FAQPage` su home/perché/prezzi nelle 5 lingue (le landing l'avevano già), entità canonica `site/src/lib/brand.ts` iniettata
+nell'`Organization`. Assetto e manutenzione in `site/GEO.md`.
+
+## Punti aperti / decisioni differite
+- **Attivazione reale della misurazione referral AI** (connessione Plausible + calendario dei check manuali sugli LLM):
+  *differito* a **post-go-live** (come la misurazione SEO di UC 0040). *Perché*: pre-go-live il sito è `noindex`/`Disallow`,
+  non c'è traffico reale da misurare. *Owner*: UC 0041 (operativo), coerente col runbook go-live di UC 0036.
+- **Tabelle di confronto vs concorrenti** (citate in #14 37): *differite* a **UC 0042 (blog/risorse)**. *Perché*: sono
+  contenuto outward-facing con affermazioni sui competitor, materia editoriale del blog, non del guscio GEO.
+- **`sameAs` / profili social e directory sull'`Organization`**: *differiti*. *Perché*: non esistono ancora profili reali;
+  la presenza off-site è **UC 0043**. Quando i profili esisteranno, aggiungere `sameAs` in `organizationJsonLd` e copiare il
+  boilerplate canonico (`brand.ts`) verbatim nei canali.

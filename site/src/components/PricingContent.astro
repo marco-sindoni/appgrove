@@ -7,6 +7,7 @@
 import type { Locale } from '../lib/i18n.ts'
 import { MARKETING } from '../content/marketing/index.ts'
 import { APP_SIGNUP } from '../lib/links.ts'
+import FaqSection from './FaqSection.astro'
 
 interface Props {
   lang: Locale
@@ -37,6 +38,9 @@ const t = MARKETING[lang]
     {t.pricing.refundLinkText}
   </a>
 </p>
+
+{/* FAQ della pagina "prezzi" — contenuto machine-readable + FAQPage JSON-LD (UC 0041, GEO) */}
+<FaqSection faq={t.pricing.faq} />
 
 <section class="mt-12 border-t border-line py-10">
   <a
