@@ -3,11 +3,12 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button, cn } from '@appgrove/design-system'
+import { Button, Checkbox, cn } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useConfig } from '../../config'
 import { useAuthStore } from '../../auth/authStore'
 import { signup, resendVerification, refreshSession } from '../../auth/authApi'
+import { subscribeNewsletter } from '../../api/newsletterApi'
 import { signupSchema, workspaceSchema } from '../../auth/schemas'
 import { authErrorMessage } from '../../auth/authErrors'
 import { useCurrentAccount, useUpdateAccountName } from '../../api/hooks'
@@ -90,7 +91,8 @@ function AccountStep({ onDone }: { onDone: (email: string) => void }) {
   const [formError, setFormError] = useState<string | null>(null)
   const form = useForm<z.infer<ReturnType<typeof signupSchema>>>({
     resolver: zodResolver(signupSchema(t)),
-    defaultValues: { email: '', password: '', displayName: '' },
+    // Consenso newsletter (UC 0039): NON pre-spuntato (privacy by default, #13 66).
+    defaultValues: { email: '', password: '', displayName: '', newsletterConsent: false },
   })
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -105,6 +107,15 @@ function AccountStep({ onDone }: { onDone: (email: string) => void }) {
         // senza contesto, e non avrebbe altro modo di sapere in che lingua scrivere.
         locale: i18n.language,
       })
+      // Newsletter (UC 0039): se ha spuntato il consenso, iscrizione con double opt-in sul core
+      // (canale 'signup'). Best-effort e slegata dall'auth: un errore non blocca la registrazione.
+      if (values.newsletterConsent) {
+        await subscribeNewsletter(config.coreBaseUrl, {
+          email: values.email,
+          locale: i18n.language,
+          channel: 'signup',
+        }).catch(() => undefined)
+      }
       onDone(values.email)
     } catch (err) {
       setFormError(authErrorMessage(err, t))
@@ -136,6 +147,10 @@ function AccountStep({ onDone }: { onDone: (email: string) => void }) {
         error={form.formState.errors.password?.message}
         {...form.register('password')}
       />
+      <label htmlFor="signup-newsletter" className="flex items-start gap-2 text-sm text-fg-muted">
+        <Checkbox id="signup-newsletter" className="mt-0.5" {...form.register('newsletterConsent')} />
+        <span>{t('signup.newsletterConsent')}</span>
+      </label>
       {formError && (
         <p role="alert" className="text-sm text-danger">
           {formError}

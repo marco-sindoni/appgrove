@@ -87,7 +87,10 @@ export const it: MarketingContent = {
     body: "Ti avvisiamo quando arrivano nuove app. Niente spam, disiscrizione quando vuoi.",
     placeholder: 'tu@email.com',
     cta: 'Avvisami',
-    note: 'Ti scriveremo solo di appgrove. Le iscrizioni aprono presto.',
+    consentLabel: 'Acconsento a ricevere la newsletter di appgrove. Niente spam, disiscrizione con un clic.',
+    success: "Ci sei quasi: controlla la tua email e conferma l'iscrizione.",
+    error: 'Qualcosa è andato storto. Riprova.',
+    note: 'Ti scriveremo solo di appgrove. Puoi disiscriverti quando vuoi.',
   },
   finalCta: {
     title: 'Pronto a iniziare?',

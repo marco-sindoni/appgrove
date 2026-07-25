@@ -44,6 +44,19 @@ describe('contenuti marketing (UC 0037)', () => {
     })
   }
 
+  // Chiavi newsletter aggiunte con il form attivo (UC 0039): presenti e non vuote
+  // in tutte le lingue. La parità di forma sotto già lo garantirebbe, ma l'esplicito
+  // documenta il contratto del componente NewsletterForm.
+  for (const lang of LOCALES) {
+    it(`[${lang}] chiavi newsletter UC 0039 presenti e non vuote`, () => {
+      const n = MARKETING[lang].newsletter
+      for (const key of ['consentLabel', 'success', 'error'] as const) {
+        expect(n[key], `newsletter.${key} in ${lang}`).toBeTruthy()
+        expect(n[key].trim().length, `newsletter.${key} in ${lang}`).toBeGreaterThan(0)
+      }
+    })
+  }
+
   const reference = shape(MARKETING[DEFAULT_LOCALE])
   for (const lang of LOCALES) {
     if (lang === DEFAULT_LOCALE) continue

@@ -64,7 +64,13 @@ export interface NewsletterContent {
   body: string
   placeholder: string
   cta: string
-  /** Nota: iscrizione non ancora attiva (backend = UC 0039). */
+  /** Testo del consenso accanto alla checkbox (obbligatoria, NON pre-spuntata) — UC 0039. */
+  consentLabel: string
+  /** Messaggio dopo l'invio accettato: double opt-in, conferma via email. */
+  success: string
+  /** Messaggio d'errore generico (risposta non 202 o rete non disponibile). */
+  error: string
+  /** Nota accanto al form (onestà/privacy). */
   note: string
 }
 

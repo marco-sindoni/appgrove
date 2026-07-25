@@ -31,6 +31,28 @@ export function useUpdateAccountName() {
   })
 }
 
+// ── Newsletter (UC 0039) — preferenza dell'utente autenticato, user-scoped (tenant_id dal JWT) ──
+
+/** Stato dell'iscrizione newsletter dell'utente corrente (`GET /newsletter/preference`). */
+export function useNewsletterPreference() {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: ['newsletter', 'preference'],
+    queryFn: () => unwrap(client.GET('/api/platform/v1/newsletter/preference')),
+  })
+}
+
+/** Attiva/disattiva l'iscrizione (`PUT /newsletter/preference`): grant/revoke canale account. */
+export function useSetNewsletterPreference() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (subscribed: boolean) =>
+      unwrap(client.PUT('/api/platform/v1/newsletter/preference', { body: { subscribed } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['newsletter', 'preference'] }),
+  })
+}
+
 // ── Membri & inviti (UC 0059) — tutti gli endpoint sono owner/admin lato core ────────────────
 
 /** Lista membri del tenant (`GET /users`). Una pagina ampia: la UI non pagina (fuori scope). */

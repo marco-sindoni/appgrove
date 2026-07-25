@@ -14,7 +14,9 @@ programmi diversi**, ed è il motivo per cui esiste:
 
 - `layout.html` / `layout.txt` — impaginazione condivisa fra le lingue (grafica minima: intestazione col nome del
   prodotto, corpo, un solo collegamento, nessuna immagine remota e **nessun tracciamento** di aperture o click).
-- `en.json` / `it.json` — le stringhe per lingua, una voce per messaggio (`verify`, `reset`, `invite`).
+- `en.json` / `it.json` — le stringhe per lingua, una voce per messaggio (`verify`, `reset`, `invite`,
+  `newsletter-confirm`). Le prime tre sono email di autenticazione (servizio `auth`, UC 0018);
+  `newsletter-confirm` è la conferma double opt-in della newsletter (servizio `core`, UC 0039).
 
 ## Come vengono resi (identico nei due programmi)
 

@@ -6,6 +6,7 @@ import app.appgrove.commons.gdpr.DataManifests;
 import app.appgrove.commons.gdpr.ExportResult;
 import app.appgrove.commons.gdpr.GdprScope;
 import app.appgrove.commons.gdpr.PurgeResult;
+import app.appgrove.core.newsletter.NewsletterSubscriber;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.Invitation;
 import app.appgrove.core.platform.User;
@@ -51,7 +52,8 @@ public class PlatformDataContract implements AppDataContract {
     public ExportResult exportData(GdprScope scope) {
         Map<String, List<Map<String, Object>>> entities = new LinkedHashMap<>();
         List<String> steps = List.of(
-                "Raccolta account", "Raccolta utenti", "Raccolta inviti", "Raccolta ticket di supporto");
+                "Raccolta account", "Raccolta utenti", "Raccolta inviti", "Raccolta ticket di supporto",
+                "Raccolta iscrizioni newsletter");
 
         entities.put("accounts", query(
                 "select id, name, status, paddle_customer_id, created_at"
@@ -85,6 +87,27 @@ public class PlatformDataContract implements AppDataContract {
                 scope.tenantId(),
                 "id", "ticket_id", "author", "body", "created_at"));
 
+        // Newsletter (UC 0039): platform-level, collegata al tenant per confronto dell'email (chi si è
+        // iscritto con l'email di un utente del tenant). Include gli iscritti anonimi con quella stessa
+        // email (signup/sito), non solo il toggle da account.
+        entities.put("newsletter_subscribers", query(
+                "select id, email, status, locale, origin_channel, confirmed_at, unsubscribed_at, created_at"
+                        + " from platform.newsletter_subscriber"
+                        + " where lower(email) in (select lower(email) from platform.users where tenant_id = ?)"
+                        + " order by email",
+                scope.tenantId(),
+                "id", "email", "status", "locale", "origin_channel", "confirmed_at", "unsubscribed_at",
+                "created_at"));
+
+        entities.put("newsletter_consent_events", query(
+                "select ce.id, ce.subscriber_id, ce.event_type, ce.consent_text_version, ce.channel, ce.occurred_at"
+                        + " from platform.consent_event ce"
+                        + " where ce.subscriber_id in (select ns.id from platform.newsletter_subscriber ns"
+                        + "   where lower(ns.email) in (select lower(email) from platform.users where tenant_id = ?))"
+                        + " order by ce.occurred_at",
+                scope.tenantId(),
+                "id", "subscriber_id", "event_type", "consent_text_version", "channel", "occurred_at"));
+
         return new ExportResult(APP_ID, steps, entities);
     }
 
@@ -104,6 +127,16 @@ public class PlatformDataContract implements AppDataContract {
                     delete(c, "delete from platform.gdpr_export_job_item where tenant_id = ?", scope.tenantId()));
             deleted.put("gdpr_export_job",
                     delete(c, "delete from platform.gdpr_export_job where tenant_id = ?", scope.tenantId()));
+            // Newsletter (UC 0039): collegata per email agli utenti del tenant; eventi prima del
+            // subscriber (FK), e tutto prima del delete di `users` (che ne fornisce le email).
+            deleted.put("consent_event",
+                    delete(c, "delete from platform.consent_event where subscriber_id in ("
+                            + " select ns.id from platform.newsletter_subscriber ns"
+                            + " where lower(ns.email) in (select lower(email) from platform.users where tenant_id = ?))",
+                            scope.tenantId()));
+            deleted.put("newsletter_subscriber",
+                    delete(c, "delete from platform.newsletter_subscriber where lower(email) in ("
+                            + " select lower(email) from platform.users where tenant_id = ?)", scope.tenantId()));
             deleted.put("invitations",
                     delete(c, "delete from platform.invitations where tenant_id = ?", scope.tenantId()));
             deleted.put("subscription",
@@ -127,6 +160,7 @@ public class PlatformDataContract implements AppDataContract {
         DataManifests.collectPersonalData(Invitation.class, "invitations", entries);
         DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
         DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);
+        DataManifests.collectPersonalData(NewsletterSubscriber.class, "newsletter_subscribers", entries);
         return new DataManifest(APP_ID, entries);
     }
 

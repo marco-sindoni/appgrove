@@ -79,5 +79,9 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
   prima attivazione cloud vanno provati e, se serve, corretti — insieme alla scelta di `region`/`log-group`
   (config `appgrove.aws-console.*`).
 - **Link al registro breach**: la console non lo mostra finché il registro non esiste → rimando su UC 0049.
-- **Cambi consenso nella console**: omessi (nessun modello consensi, postura no-consent) → rimando su UC 0039.
+- **Cambi consenso nella console** _(aggiornato dalla change `0052-use-case-0039-…`)_: il consent log ora **esiste**
+  (`platform.consent_event`, UC 0039). Resta da fare, come lavoro di **questo** use case (UC 0034): estendere
+  l'aggregatore `AdminGdprResource.requests()` con una nuova sorgente "cambi consenso" (grant/confirm/revoke della
+  newsletter) e aggiungere il tipo corrispondente nella tabella della pagina admin "Diritti GDPR". Non fatto nella
+  change 0052 per non anticipare lavoro di un altro use case.
 - **Retention di ticket/registri oltre lo sweeper applicativo** → rimando su UC 0035.

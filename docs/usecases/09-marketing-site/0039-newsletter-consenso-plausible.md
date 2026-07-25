@@ -76,13 +76,24 @@ _Tracciato dalla change `0029-use-case-0033-…` (regola CLAUDE.md "Tracciamento
   la voce "cambi consenso"** perché oggi non esiste alcun modello di consenso (postura no-consent). Quando
   qui nascerà il consent log, la console va estesa con il tipo di richiesta corrispondente (nuova sorgente
   nell'aggregatore `AdminGdprResource.requests()` + tipo nella tabella della pagina admin "Diritti GDPR").
-- **Collegare la newsletter del sito vetrina (da change `0047-use-case-0037-…`)**: la homepage e il footer del sito
-  espongono già la **struttura visuale** della newsletter (proposta di valore + campo email + invito), ma senza
-  backend: nessun invio, nessun consenso, nessun Plausible. Quando questo use case verrà implementato deve **collegare
-  quel form** (`site/src/content/marketing/*` per i testi, sezione newsletter di homepage/footer) all'endpoint di
-  raccolta con double opt-in e consent log.
+- ~~**Collegare la newsletter del sito vetrina (da change `0047-use-case-0037-…`)**~~ → **risolto dalla change
+  `0052-use-case-0039-…`**: i due form (homepage e footer) sono ora collegati all'endpoint pubblico del core via
+  l'isola `site/src/components/NewsletterForm.tsx`, con double opt-in, consent log ed evento Plausible.
+
+### Aperti dopo la change 0052 (implementazione UC 0039)
+
+- **Lingue dell'email di conferma oltre en/it**: l'email `newsletter-confirm` segue la convenzione delle email
+  transazionali (UC 0018): en/it con ripiego su en. Il sito è in 5 lingue, quindi un iscritto fr/es/de riceve la
+  conferma in inglese. Estendere `shared/email-templates` (e il set di lingue supportate del renderer) alle 5 lingue
+  è lavoro futuro di questo use case, da coordinare con UC 0018.
+- **Difesa anti-abuso oltre honeypot + limite di frequenza**: l'endpoint pubblico di iscrizione usa un campo esca e un
+  limite di frequenza in memoria per IP; un captcha **UE/cookieless** (mai Google reCAPTCHA, contrario alla postura del
+  progetto) va valutato solo se il volume di spam lo richiederà.
+- **Console admin "Diritti GDPR" (UC 0034)**: con il consent log ora esistente, la console va estesa con la voce
+  "cambi consenso" — è lavoro di UC 0034 (vedi i suoi punti aperti), non di questo use case.
 - **Allineare i goal Plausible con le convenzioni UTM di `campaign-guide` (da change `0053-use-case-0050-…`)**: la
   skill `campaign-guide` (UC 0050) definisce lo schema UTM lato campagna, ma i **goal** che Plausible conta
-  (iscrizione newsletter, click verso l'app, …) nascono qui. Quando questo use case imposterà i goal, sceglierne
-  i nomi in modo coerente con lo schema UTM di `.claude/skills/campaign-guide/reference/convenzioni-utm.md`, così
-  che il report campagna sia leggibile end-to-end (sorgente → visita → goal).
+  (iscrizione newsletter, click verso l'app, …) nascono qui. L'evento `Newsletter: Subscribe` è stato introdotto dalla
+  change 0052; quando questo use case imposterà gli altri goal, sceglierne i nomi in modo coerente con lo schema UTM di
+  `.claude/skills/campaign-guide/reference/convenzioni-utm.md`, così che il report campagna sia leggibile end-to-end
+  (sorgente → visita → goal).

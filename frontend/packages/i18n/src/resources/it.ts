@@ -66,6 +66,8 @@ export const it: Resources = {
     verifyStep: 'Verifica email',
     workspaceStep: 'Workspace',
     doneStep: 'Fatto',
+    newsletterConsent:
+      'Iscrivimi alla newsletter di appgrove. Niente spam, disiscrizione con un clic. Ti chiederemo di confermare via email.',
   },
   verify: {
     title: 'Verifica la tua email',
@@ -127,6 +129,9 @@ export const it: Resources = {
     displayName: 'Nome visualizzato',
     save: 'Salva',
     saved: 'Salvato',
+    newsletter: 'Newsletter',
+    newsletterLabel: 'Ricevi la newsletter di appgrove',
+    newsletterHint: 'Aggiornamenti su nuove app e funzionalità. Puoi disattivarla quando vuoi.',
   },
   // Diritti GDPR self-service (UC 0033) — pagina "I miei dati".
   privacy: {

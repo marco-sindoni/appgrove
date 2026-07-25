@@ -5,6 +5,7 @@
 // (legali · Support · security.txt · newsletter · ©).
 import '../styles/global.css'
 import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
+import NewsletterForm from '../components/NewsletterForm.tsx'
 import {
   LOCALES,
   LOCALE_LABELS,
@@ -209,23 +210,24 @@ const year = new Date().getFullYear()
           <div class="text-sm">
             <p class="mb-2 font-semibold">{t.footer.newsletterTitle}</p>
             <p class="mb-3 text-fg-muted">{t.footer.newsletterBody}</p>
-            {/* Struttura visuale: la raccolta email vera (consenso, Plausible) è UC 0039. */}
-            <form class="flex flex-wrap gap-2" aria-label={t.footer.newsletterTitle}>
-              <input
-                type="email"
-                name="email"
-                autocomplete="email"
-                placeholder={t.footer.newsletterPlaceholder}
-                class="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-1.5 text-sm"
-              />
-              <button
-                type="button"
-                disabled
-                class="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm font-semibold text-fg-muted"
-              >
-                {t.footer.newsletterCta}
-              </button>
-            </form>
+            {/* Raccolta email attiva (UC 0039): double opt-in via endpoint pubblico
+                del core. Isola React con consenso esplicito, campo esca anti-bot ed
+                evento Plausible sul successo; riusa i testi di consenso/esito della
+                sezione newsletter. */}
+            <NewsletterForm
+              apiUrl={import.meta.env.PUBLIC_CORE_API_URL ?? ''}
+              lang={lang}
+              labels={{
+                ariaLabel: t.footer.newsletterTitle,
+                emailPlaceholder: t.footer.newsletterPlaceholder,
+                cta: t.footer.newsletterCta,
+                consentLabel: t.newsletter.consentLabel,
+                success: t.newsletter.success,
+                error: t.newsletter.error,
+              }}
+              variant="footer"
+              client:load
+            />
           </div>
         </div>
 

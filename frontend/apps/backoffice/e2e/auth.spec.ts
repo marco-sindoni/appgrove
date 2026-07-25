@@ -57,9 +57,15 @@ test('signup wizard: account → verifica → workspace → done → dashboard',
   await mockAnonymous(page, authed)
   await page.route('**/api/auth/signup', (route) => route.fulfill({ status: 201, json: { status: 'verification_required' } }))
   await page.route('**/api/platform/v1/accounts/me', (route) => route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }))
+  // Newsletter (UC 0039): l'iscrizione al signup è best-effort; non spuntiamo il consenso in questo flusso.
+  await page.route('**/api/platform/v1/newsletter/**', (route) => route.fulfill({ status: 202 }))
 
   await page.goto('/signup')
-  await page.getByLabel('Email').fill('new@x.io')
+  // UC 0039: il consenso newsletter non è mai pre-attivato (privacy by default).
+  await expect(page.getByRole('checkbox')).not.toBeChecked()
+  // exact: il testo del consenso newsletter contiene la parola "email", quindi il match per
+  // sottostringa di getByLabel colpirebbe anche la checkbox — qui vogliamo solo il campo Email.
+  await page.getByLabel('Email', { exact: true }).fill('new@x.io')
   await page.getByLabel('Password', { exact: true }).fill('Password1!')
   await page.getByRole('button', { name: 'Create account' }).click()
 

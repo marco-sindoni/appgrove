@@ -1,0 +1,155 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano allo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0039 (docs/usecases/09-marketing-site/0039-newsletter-consenso-plausible.md): newsletter con double opt-in + consent log + Plausible cookieless. Numero change progressivo in changes/ = 0052; forma del branch change/0052-use-case-0039-newsletter-consenso-plausible.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0039 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Lo store degli iscritti e la prova di consenso vivono nel servizio core, come dati platform-level NON legati al tenant: le entità estendono BaseEntity (non BaseTenantEntity), sullo schema platform, come già fanno webhook_event e gdpr_purge_audit. Motivo: l'iscrizione dal sito vetrina arriva senza autenticazione, quindi senza claim tenant_id; legare il subscriber al filtro row-level automatico sarebbe impossibile. La migrazione Flyway è la prossima libera, V10.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V10__newsletter_consent.sql", "description": "Nuova migrazione: tabelle platform.newsletter_subscriber e platform.consent_event, senza discriminatore tenant." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Modello dati: platform.newsletter_subscriber (email univoca — unicità su lower(email) come per users — stato pending/confirmed/unsubscribed, lingua, marcatempo di creazione/conferma/disiscrizione, hash SHA-256 single-use del token di conferma con scadenza, riferimento opzionale all'utente quando l'iscrizione nasce da un account) e platform.consent_event (registro APPEND-ONLY, mai aggiornato/cancellato, di ogni evento: tipo grant/confirm/revoke, versione del testo di consenso, canale, marcatempo, riferimento al subscriber). La prova ex art. 7 è la sequenza immutabile di eventi.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/newsletter/NewsletterSubscriber.java", "description": "Entità subscriber (BaseEntity), email con @PersonalData (finalità marketing diretto, base consenso, retention iscritto+24 mesi)." },
+      { "file": "services/core/src/main/java/app/appgrove/core/newsletter/ConsentEvent.java", "description": "Entità registro consensi append-only." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Minimizzazione della prova di consenso: nel consent_event si registrano solo tipo evento, versione del testo, canale e marcatempo — NON indirizzo IP né user-agent. L'art. 7 richiede di poter dimostrare che il consenso è stato dato; canale + versione testo + marcatempo lo soddisfano senza introdurre nuovi dati identificativi, in linea con la postura di minimizzazione e residenza UE del progetto. Se in futuro servisse una prova più robusta (contenzioso), l'aggiunta è tracciata come punto aperto nello UC 0039."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Regole del double opt-in per canale di raccolta: (a) iscrizione dal sito vetrina (endpoint pubblico) → subscriber 'pending' + email di conferma con token single-use; il click di conferma porta a 'confirmed' e scrive l'evento confirm. (b) checkbox al signup (utente la cui email è già verificata dal flusso di registrazione) → subscriber 'confirmed' diretto, evento grant canale 'signup', SENZA seconda email di conferma (sarebbe ridondante). (c) toggle in account → evento grant/revoke canale 'account'. Nessun invio marketing finché lo stato non è 'confirmed'."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) L'email di conferma double opt-in parte dal core riusando i template condivisi in shared/email-templates (nuovo template 'newsletter-confirm') e replicando il pattern di invio già in services/auth: porta MailSender con implementazione SES in cloud e Mailpit in locale, selezionata con @LookupIfProperty. Lingue: en/it con ripiego su en, la stessa convenzione delle email transazionali (UC 0018) — le lingue extra del sito vetrina (fr/es/de) ricevono la mail in inglese. Non si estraggono le lingue email né si rifattorizza auth in questa change.",
+    "files": [
+      { "file": "shared/email-templates/newsletter-confirm.en.json", "description": "Testo email di conferma (slot heading/intro/actionLabel/fallback/footer); gemello .it.json." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'endpoint pubblico di iscrizione (senza JWT, come il webhook Paddle è l'unico precedente pubblico nel core) è difeso da: campo esca ('honeypot') nascosto nel form e limite di frequenza in memoria per indirizzo IP (l'IP è usato solo transitoriamente per il conteggio, MAI persistito). Non si usa un captcha di terze parti: i captcha maggiori (Google reCAPTCHA) sono servizi USA con tracciamento, in contrasto con la postura cookieless/UE del sito e con l'assenza di banner richiesta dallo UC. Il double opt-in è di per sé una difesa (nessun marketing verso email non confermate). Un eventuale captcha UE è tracciato come punto aperto."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La versione del testo di consenso è un identificatore stabile definito lato core (es. 'newsletter-2026-07'), registrato in ogni consent_event. Il testo effettivo mostrato all'utente vive nei contenuti tradotti (sito vetrina nelle 5 lingue, SPA in en/it); quando quel testo cambia in modo sostanziale si incrementa l'identificatore di versione. Così la prova lega ogni consenso alla formulazione esatta vigente in quel momento."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Analytics Plausible: lo snippet cookieless è GIÀ cablato in site/src/layouts/BaseLayout.astro (UC 0040), attivo quando SITE_INDEXABLE=true e PUBLIC_PLAUSIBLE_DOMAIN è impostata. Questa change non riscrive lo snippet: si limita a (a) documentare le due variabili come prerequisito go-live e (b) emettere un evento Plausible personalizzato 'Newsletter: Subscribe' sull'iscrizione riuscita dal sito, best-effort (nessun errore se Plausible è assente). Nessun banner, nessun cookie, nessun dato personale verso Plausible."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il sito vetrina (statico) attiva i due form newsletter oggi inerti (homepage e footer) sostituendoli con un'isola client React (il sito ha già @astrojs/react), con stati idle/loading/success/error e checkbox di consenso NON pre-spuntata. L'URL del core per la POST è esposto come nuova variabile pubblica PUBLIC_CORE_API_URL (prefisso PUBLIC_ perché deve finire nell'HTML/essere letta dal browser). È la prima chiamata runtime del vetrina verso il backend.",
+    "files": [
+      { "file": "site/src/components/NewsletterForm.tsx", "description": "Isola React del subscribe box: email + checkbox consenso non pre-spuntata + stati + evento Plausible." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) SPA backoffice: al signup si aggiunge una checkbox di consenso newsletter NON pre-spuntata (default false) in AccountStep del wizard, con nuovo componente Checkbox nel design-system (oggi esiste solo Switch); il flag viaggia nel body di POST /api/auth/signup ed è propagato al core. In Settings si aggiunge un toggle newsletter (componente Switch esistente) con nuovi endpoint core GET/PATCH della preferenza, user-scoped (tenant_id dal JWT). Stringhe nei cataloghi i18n en/it. Questo soddisfa la parte in-app che lo UC 0033 aveva rimandato a questo use case (toggle + unsubscribe con revoca registrata).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/auth/OnboardingWizard.tsx", "description": "AccountStep: checkbox consenso non pre-spuntata." },
+      { "file": "frontend/apps/backoffice/src/pages/Settings.tsx", "description": "Toggle newsletter (Switch) legato a endpoint core della preferenza." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Diritti GDPR e retention: i subscriber collegati a un utente del tenant entrano nell'export e nella purge per-tenant esistenti (PlatformDataContract). I subscriber anonimi del sito (senza account) sono governati da unsubscribe one-click + retention: sweeper schedulato sul modello di AccountDeletionSweeper che cancella fisicamente i subscriber disiscritti da oltre 24 mesi. La console admin 'Diritti GDPR' (UC 0034) va estesa con il tipo 'cambi consenso' — è lavoro dello UC 0034, quindi NON implementato qui ma tracciato come punto aperto (il consent log che quell'estensione presuppone nasce ora)."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Classificazione privacy della change: MAJOR. Introduce una nuova finalità di trattamento (marketing diretto via newsletter) e una nuova base giuridica (consenso, art. 6.1.a — distinta dalla base contrattuale delle email transazionali). Plausible NON è un nuovo responsabile esterno: risulta già dichiarato come sub-responsabile nel manifesto platform.yaml (sezione 'Destinatari e sub-responsabili'). Le classificazioni sono già stabilite nello UC 0039 (🟢 deciso, sezione 7 e fonti #13): l'autopilot le applica, non le decide da zero. Manifesto dati platform.yaml e RoPA vanno aggiornati con il trattamento newsletter; il bump versione Privacy Policy/Termini è registrato qui in attesa di content/legal."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) REVISIONE del punto d'aggancio del consenso da signup (rivede id 6/12): services/auth NON viene toccato. Il consenso newsletter dato al signup NON viaggia nel body di /api/auth/signup né attraversa la porta IdentityProvider (Local+Cognito+Lambda): sarebbe accoppiamento marketing dentro l'identità, da mantenere in due provider. Invece la SPA, dopo un signup riuscito e se la checkbox è spuntata, chiama direttamente l'endpoint pubblico di iscrizione del core (canale 'signup'). Motivo: la newsletter è concern di piattaforma, non di auth; l'email al signup non è ancora verificata, quindi il double opt-in è comunque corretto.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/auth/OnboardingWizard.tsx", "description": "Dopo signup riuscito con checkbox spuntata: POST best-effort all'endpoint pubblico newsletter del core (canale signup), non un flag nel body auth." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il double opt-in si applica ai canali ANONIMI (sito e checkbox al signup): iscrizione → stato 'pending' + email di conferma con token single-use; il click conferma. Il canale AUTENTICATO (toggle in account) NON richiede double opt-in: l'utente è loggato e possiede già l'email dell'account (verificata), quindi il toggle ON crea/porta il subscriber a 'confirmed' con evento grant canale 'account', il toggle OFF a 'unsubscribed' con evento revoke. Regola generale: identità già provata ⇒ niente seconda conferma; identità non provata ⇒ double opt-in."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Collegamento subscriber ↔ tenant per i diritti GDPR: NON via chiave esterna, ma per confronto dell'email (lower(email) del subscriber ∈ email degli utenti del tenant). Così l'export e la purge per-tenant (PlatformDataContract) coprono sia chi si è iscritto da account (canale 'account') sia chi lo ha fatto al signup/sito con la stessa email. Il subscriber porta un user_id nullable solo come provenienza (valorizzato dal toggle account), non come base del collegamento GDPR. I subscriber anonimi senza corrispondenza restano governati da unsubscribe + sweeper di retention."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Token dei collegamenti via email: il token di CONFERMA double opt-in è single-use, hash SHA-256 su DB (riuso di InvitationTokens del core), con scadenza; il link di DISISCRIZIONE usa invece un token HMAC-SHA256 calcolato dal segreto di configurazione sull'id del subscriber (nessuna colonna, ricalcolabile e verificabile a ogni futura email marketing, che oggi è fuori scope). L'email di conferma contiene la SOLA azione di conferma (un subscriber 'pending' non riceve marketing, quindi non gli serve un link di disiscrizione); l'endpoint di disiscrizione one-click esiste comunque ed è testato."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) L'email di conferma parte dal core riusando i template branded condivisi shared/email-templates (nuovo messaggio 'newsletter-confirm' in en.json/it.json, en/it con ripiego su en come UC 0018) e viene spedita via il Mailer quarkus-mailer GIÀ cablato nel core per il ticketing (Mailpit in dev, MockMailbox in test, relay SES cloud differito come per il supporto), fail-soft come TicketNotifier. Il core ottiene un piccolo renderer dedicato dei template (mirror compatto di EmailTemplates di auth); l'unificazione dei due renderer Java in services/commons è tracciata in docs/_BACKLOG.md (non anticipata qui per non rifattorizzare auth). Rivede id 7 (niente porta MailSender/SES nuova: il Mailer del core basta).",
+    "files": [
+      { "file": "services/core/pom.xml", "description": "Passo maven-resources-plugin che copia shared/email-templates nell'artefatto, come services/auth/pom.xml." }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) L'accesso ai dati newsletter nel core avviene via JDBC diretto (AgroalDataSource), NON via Panache/Hibernate. Motivo scoperto in implementazione: con multitenancy DISCRIMINATOR il resolver tenant di Hibernate (JwtTenantResolver) è fail-closed e solleva TenantNotResolvedException → 403 su qualsiasi apertura di sessione senza JWT, anche per entità non tenant-scoped; l'endpoint pubblico di iscrizione gira proprio senza JWT. È lo stesso motivo per cui PlatformWriter/PlatformDataContract/gli sweeper usano JDBC. Le entità NewsletterSubscriber/ConsentEvent restano @Entity solo per la mappatura Flyway e il manifesto @PersonalData; i repository Panache inizialmente creati sono stati rimossi.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/newsletter/NewsletterService.java", "description": "Logica newsletter interamente su JDBC (connessione + transazione manuali), stile PlatformWriter." }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "Durante l'implementazione un'altra sessione operava in parallelo nella stessa cartella del repo e ha spostato HEAD su change/0053. Per non danneggiare reciprocamente il lavoro (un git checkout avrebbe strappato HEAD all'altra sessione), su decisione dello sviluppatore la change è stata portata avanti in un worktree git dedicato agganciato a questo branch (.claude/worktrees/0052-newsletter), senza toccare la cartella condivisa."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Aggiunto un componente Checkbox riutilizzabile al design system (esisteva solo Switch): serve alla checkbox di consenso non pre-spuntata al signup e sul sito. Il toggle in account usa lo Switch esistente. Il client OpenAPI tipizzato (packages/api-client/src/schema.ts) è stato rigenerato con 'npm run gen' per esporre le nuove rotte /newsletter/preference agli hook.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/components/Checkbox.tsx", "description": "Nuovo primitivo Checkbox (input nativo stilizzato coi token)." }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Decisioni differite tracciate per iscritto negli use case proprietari (regola CLAUDE.md): unificazione dei due renderer Java dei template email in services/commons → docs/_BACKLOG.md; estensione della console admin 'Diritti GDPR' con i 'cambi consenso' ora che il consent log esiste → punto aperto in UC 0034; lingue email oltre en/it e captcha UE per l'endpoint pubblico → punti aperti in UC 0039."
+  },
+  {
+    "id": 24,
+    "decision": "Abilitato il CORS sul servizio core (quarkus.http.cors) per l'iscrizione dal sito vetrina: è la PRIMA chiamata cross-origin verso il core (sito statico su un dominio, API su un altro), la cui POST application/json fa scattare il preflight del browser. Senza CORS il subscribe box del sito non funzionerebbe in un browser reale, in locale e in produzione — buco non intercettato dai test (tutti same-origin). Origini per ambiente: in dev http://localhost:4321 e https://local.appgrove.app; in prod il dominio della vetrina è iniettato dall'infra via QUARKUS_HTTP_CORS_ORIGINS (cors attivo ma origini assenti = cross-origin negato, default sicuro). Nessuna credenziale (l'endpoint pubblico non usa cookie; la preferenza autenticata è same-origin col Bearer). La SPA backoffice resta same-origin e non è toccata.",
+    "files": [
+      { "file": "services/core/src/main/resources/application.properties", "description": "Blocco CORS: cors=true, metodi GET/POST/PUT/OPTIONS, origini per profilo (%dev, %test) e via env in prod." }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "app-start.sh reso autosufficiente da una macchina pulita: (a) ripiega il bootstrap one-time di `dev setup` — CA mkcert nel trust store (mkcert -install) + voci /etc/hosts (idempotenti) — così NON serve più eseguire `./dev.sh setup` a parte; (b) avvia anche il sito vetrina (Astro dev su :4321) oltre a infra + backend + SPA, con PUBLIC_CORE_API_URL=http://localhost:8080 iniettato (coerente col base-url del core e con le origini CORS di dev), così il flusso newsletter dal sito è collaudabile con un solo comando (invariante CLAUDE.md 'Avvio locale'). app-stop.sh ferma anche il sito. Il sito ha install/avvio propri (non è nei workspace npm del frontend); tutto sotto il flag --no-spa.",
+    "files": [
+      { "file": "app-start.sh", "description": "Bootstrap one-time (mkcert -install + ensure_hosts) + avvio sito vetrina (proc_start site 4321) + install/readiness/riepilogo." },
+      { "file": "app-stop.sh", "description": "stop_port site 4321." }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "Su richiesta dello sviluppatore (fuori dallo scope stretto di UC 0039, ma bundlato in questa change perché emerso collaudando in locale): la porta host di Postgres del dev stack passa da 5432 a 5433, per non farsi 'ombreggiare' da un Postgres installato sul Mac (Homebrew postgresql@18 su :5432, che dava 'FATAL: role appgrove does not exist' perché localhost:5432 finiva sul Postgres host anziché sul container). Tutto lo stack già leggeva ${POSTGRES_PORT} (5432 solo come fallback) e il lato interno del container resta 5432: nessun uso hardcoded rotto. Cambiati dev/.env.example (default committato), dev/.env del worktree e la doc dev/README.md.",
+    "files": [
+      { "file": "dev/.env.example", "description": "POSTGRES_PORT=5433 come default del progetto." }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "Correzione di una regressione introdotta dal CORS (id 24), emersa collaudando in locale: con cors=true Quarkus RIFIUTA (403) ogni richiesta il cui Origin non è nella lista, incluse le richieste SAME-ORIGIN non-semplici (POST/PUT/PATCH), per cui il browser invia comunque Origin. La lista iniziale conteneva solo le origini del sito, quindi la SPA backoffice (che chiama il core same-origin via Caddy, coreBaseUrl=https://app.local.appgrove.app) veniva bloccata: la PATCH del workspace al signup non avanzava e la POST di iscrizione newsletter falliva in silenzio (nessuna seconda email). Fix: la lista CORS di dev include TUTTE le origini dei front-end (backoffice, admin, vetrina locale + porte Vite) e i metodi/header usati (PATCH/DELETE, Authorization); in prod i domini app+vetrina restano iniettati via env. Il core gira in quarkus:dev → ricarica a caldo la config.",
+    "files": [
+      { "file": "services/core/src/main/resources/application.properties", "description": "quarkus.http.cors.origins (%dev) esteso a backoffice/admin/vetrina; metodi + PATCH/DELETE; header + Authorization." }
+    ]
+  }
+]

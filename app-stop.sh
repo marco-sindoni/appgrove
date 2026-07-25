@@ -45,6 +45,7 @@ while read -r svc; do
 done <<<"$(services_startup_order)"
 stop_port backoffice 5173
 stop_port admin 5174
+stop_port site 4321
 
 if [ "$APPS_ONLY" -eq 1 ]; then
   ok "App fermate. Stack Compose lasciato attivo (--apps-only)."
