@@ -164,6 +164,71 @@ public class TestData {
                 tenantId, appId);
     }
 
+    // ── Retention/attività (UC 0035) ─────────────────────────────────────────────────
+
+    /** Retrodata l'ultima attività dell'account (per i test dello sweeper inattività). */
+    public void backdateAccountActivity(String tenantId, OffsetDateTime lastActiveAt) {
+        exec("update platform.accounts set last_active_at = ? where id = ?", lastActiveAt, UUID.fromString(tenantId));
+    }
+
+    /** Imposta l'istante dell'avviso di inattività (per allestire la fase 2 direttamente). */
+    public void setInactivityWarnedAt(String tenantId, OffsetDateTime warnedAt) {
+        exec("update platform.accounts set inactivity_warned_at = ? where id = ?", warnedAt, UUID.fromString(tenantId));
+    }
+
+    /** {@code last_active_at} dell'account, o null (per gli assert del filtro di attività). */
+    public java.time.Instant accountLastActiveAt(String tenantId) {
+        return queryInstant("select last_active_at from platform.accounts where id = ?", UUID.fromString(tenantId));
+    }
+
+    /** {@code inactivity_warned_at} dell'account, o null se nessun avviso pendente. */
+    public java.time.Instant accountInactivityWarnedAt(String tenantId) {
+        return queryInstant("select inactivity_warned_at from platform.accounts where id = ?",
+                UUID.fromString(tenantId));
+    }
+
+    /** L'account risulta soft-cancellato ({@code deleted_at} valorizzato)? (per lo sweeper inattività). */
+    public boolean accountSoftDeleted(String tenantId) {
+        return queryInstant("select deleted_at from platform.accounts where id = ?", UUID.fromString(tenantId)) != null;
+    }
+
+    /** Inserisce una riga di prova erasure con {@code executed_at} dato (per lo sweeper retention audit). */
+    public void gdprPurgeAudit(String tenantId, String appId, OffsetDateTime executedAt) {
+        exec("insert into platform.gdpr_purge_audit(id,tenant_id,app_id,reason,deleted_by_entity,total,executed_at)"
+                        + " values (?,?,?,?,?::jsonb,?,?)",
+                UUID.randomUUID(), tenantId, appId, "manual", "{}", 0, executedAt);
+    }
+
+    /** Inserisce una riga di prova limitazione con {@code executed_at} dato (per lo sweeper retention audit). */
+    public void gdprRestrictionAudit(String tenantId, OffsetDateTime executedAt) {
+        exec("insert into platform.gdpr_restriction_audit"
+                        + "(id,tenant_id,target_kind,target_id,action,actor,executed_at)"
+                        + " values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), tenantId, "account", tenantId, "applied", "admin", executedAt);
+    }
+
+    /** Righe totali in una tabella di audit per tenant (per lo sweeper retention audit). */
+    public int auditRowCount(String table, String tenantId) {
+        return queryInt("select count(*) from " + table + " where tenant_id = ?", tenantId);
+    }
+
+    private java.time.Instant queryInstant(String sql, Object... params) {
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            try (var rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                var ts = rs.getTimestamp(1);
+                return ts == null ? null : ts.toInstant();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** Numero di subscription (non cancellate) per {@code (tenant, app)} — per i test di idempotenza. */
     public int subscriptionCount(String tenantId, UUID appId) {
         return queryInt(

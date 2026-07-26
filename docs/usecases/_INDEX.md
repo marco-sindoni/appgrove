@@ -93,7 +93,7 @@ AWS finché il prodotto non gira offline.
 | 53 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ✅ |
 | 54 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | 🟡 |
 | 55 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ✅ |
-| 56 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |
+| 56 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ✅ |
 | 57 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ⬜ |
 | 58 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
 | 59 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ✅ |

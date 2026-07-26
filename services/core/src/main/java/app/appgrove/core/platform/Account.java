@@ -53,6 +53,22 @@ public class Account extends BaseEntity {
     @Column(name = "suspended_reason", length = 32)
     private String suspendedReason;
 
+    /**
+     * Ultima attività autenticata dell'account (UC 0035): base dell'auto-cancellazione per
+     * inattività (24 mesi, #13 E26). Marcatore tecnico di stato. Scritta solo via JDBC dal filtro
+     * di attività (con throttle) e valorizzata dal DEFAULT alla creazione → mappata in <b>sola
+     * lettura</b> ({@code insertable/updatable = false}): l'ORM non la tocca mai.
+     */
+    @Column(name = "last_active_at", insertable = false, updatable = false)
+    private Instant lastActiveAt;
+
+    /**
+     * Istante dell'avviso di inattività inviato (UC 0035); null se nessun avviso pendente. Scritta
+     * solo via JDBC dallo sweeper di inattività → mappata in sola lettura come {@link #lastActiveAt}.
+     */
+    @Column(name = "inactivity_warned_at", insertable = false, updatable = false)
+    private Instant inactivityWarnedAt;
+
     protected Account() {
         // richiesto da JPA
     }
@@ -104,5 +120,13 @@ public class Account extends BaseEntity {
     /** Scadenza della grace (richiesta + 14gg), o null se nessuna eliminazione in corso. */
     public Instant deletionEffectiveAt() {
         return deletionRequestedAt == null ? null : deletionRequestedAt.plus(DELETION_GRACE);
+    }
+
+    public Instant getLastActiveAt() {
+        return lastActiveAt;
+    }
+
+    public Instant getInactivityWarnedAt() {
+        return inactivityWarnedAt;
     }
 }
