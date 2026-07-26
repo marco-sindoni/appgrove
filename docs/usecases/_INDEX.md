@@ -104,7 +104,7 @@ AWS finché il prodotto non gira offline.
 | 57 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ✅ |
 | 58 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ✅ |
 | 59 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ✅ |
-| 60 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | 🟡 |
+| 60 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ✅ |
 
 **Traguardi (milestone) lungo la tabella:**
 - riga **28**: prodotto applicativo completo e testato **offline** (zero AWS);

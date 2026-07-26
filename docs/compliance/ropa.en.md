@@ -37,6 +37,10 @@ Data at rest only in EU regions (eu-west-1; monitoring in eu-central-1) — #13 
 
 At-rest and in-transit encryption; row-level per-tenant isolation (`tenant_id` only from the verified JWT); least-privilege IAM; invitation tokens stored hashed only; soft-delete with scheduled purge (14-day grace); structured logging and audit trail (#02/#05/#06/#08).
 
+### Personal data breach response
+
+Incident Response process prepared in advance (the 72 hours run from awareness): internal runbook `docs/compliance/breach-runbook.md` (detect → assess → contain → notify → document) with a risk-to-data-subjects threshold tree and the encryption lever (art. 34(3)); internal breach register `docs/compliance/breach-register.md` recording ALL breaches, including non-notified ones (art. 33(5)); role-based notification (controller → Garante within 72h art. 33 / data subjects art. 34; processor → the tenant-controller without delay); responsible-disclosure channel `security@appgrove.app` + `security.txt` (#13 J56–J64).
+
 ## Mini-CRM app (multi-user B2B contact management)
 
 Contact data (people at the tenant's client organizations) entered by the tenant into their CRM (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13). The `seat` table holds only the internal identifier of the tenant's members granted access to the app — processed by core as controller — and is therefore not third-party data.

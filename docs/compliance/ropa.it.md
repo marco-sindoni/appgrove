@@ -37,6 +37,10 @@ Dati a riposo solo in regioni UE (eu-west-1; monitoring eu-central-1) — #13 I5
 
 Cifratura at-rest e in-transit; isolamento per-tenant row-level (`tenant_id` solo dal JWT verificato); least-privilege IAM; token di invito persistiti solo come hash; soft-delete con purge programmata (grace 14 giorni); logging strutturato e audit trail (#02/#05/#06/#08).
 
+### Risposta alle violazioni di dati (data breach)
+
+Processo di Incident Response predisposto in anticipo (le 72 ore partono da quando si viene a conoscenza): runbook interno `docs/compliance/breach-runbook.md` (detect → assess → contain → notify → document) con albero delle soglie sul rischio per gli interessati e leva cifratura (art. 34.3); registro breach interno `docs/compliance/breach-register.md` che registra TUTTE le violazioni, anche non notificate (art. 33.5); notifiche per ruolo (titolare → Garante entro 72h art. 33 / interessati art. 34; responsabile → il tenant-titolare senza ritardo); canale di segnalazione responsabile `security@appgrove.app` + `security.txt` (#13 J56–J64).
+
 ## App Mini-CRM (gestione contatti B2B multi-utente)
 
 Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel proprio CRM (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi.

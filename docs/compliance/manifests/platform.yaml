@@ -373,3 +373,24 @@ sections:
         At-rest and in-transit encryption; row-level per-tenant isolation (`tenant_id` only from the
         verified JWT); least-privilege IAM; invitation tokens stored hashed only; soft-delete with
         scheduled purge (14-day grace); structured logging and audit trail (#02/#05/#06/#08).
+  - key: incident_response
+    title:
+      it: Risposta alle violazioni di dati (data breach)
+      en: Personal data breach response
+    body:
+      it: >-
+        Processo di Incident Response predisposto in anticipo (le 72 ore partono da quando si viene a
+        conoscenza): runbook interno `docs/compliance/breach-runbook.md` (detect → assess → contain →
+        notify → document) con albero delle soglie sul rischio per gli interessati e leva cifratura
+        (art. 34.3); registro breach interno `docs/compliance/breach-register.md` che registra TUTTE le
+        violazioni, anche non notificate (art. 33.5); notifiche per ruolo (titolare → Garante entro 72h
+        art. 33 / interessati art. 34; responsabile → il tenant-titolare senza ritardo); canale di
+        segnalazione responsabile `security@appgrove.app` + `security.txt` (#13 J56–J64).
+      en: >-
+        Incident Response process prepared in advance (the 72 hours run from awareness): internal runbook
+        `docs/compliance/breach-runbook.md` (detect → assess → contain → notify → document) with a
+        risk-to-data-subjects threshold tree and the encryption lever (art. 34(3)); internal breach
+        register `docs/compliance/breach-register.md` recording ALL breaches, including non-notified ones
+        (art. 33(5)); role-based notification (controller → Garante within 72h art. 33 / data subjects
+        art. 34; processor → the tenant-controller without delay); responsible-disclosure channel
+        `security@appgrove.app` + `security.txt` (#13 J56–J64).

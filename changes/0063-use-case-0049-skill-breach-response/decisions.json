@@ -59,5 +59,19 @@
   {
     "id": 10,
     "decision": "(autopilot) Fuori scope e già tracciato: il link al registro breach dalla console admin 'Diritti GDPR' (UC 0034) resta di proprietà della change 0030/UC 0034 — già annotato nei 'Punti aperti' dello use case 0049. Non lo si tocca qui. Alla chiusura si aggiornano docs/_BACKLOG.md (sezione 'Data breach' e voce skill breach-response → fatto) e docs/usecases/_INDEX.md (0049 → ✅)."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) In implementazione, il riferimento al processo di Incident Response nel manifesto piattaforma è stato reso come BLOCCO narrativo dedicato `incident_response` (dopo `security`), non estendendo il corpo del blocco `security`: più leggibile nella RoPA e con un titolo proprio ('Risposta alle violazioni di dati'), senza gonfiare la voce sulle misure di sicurezza. Rifinitura della decisione 7; RoPA ri-assemblata, check parità/freshness verde.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Aggiunto blocco narrativo `incident_response` (IT+EN) con runbook/registro/notifica 72h/responsible disclosure." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) A seguito di una prova a tavolino della skill su uno scenario art. 9 (endpoint senza autorizzazione che espone dati sulla salute in chiaro), aggiunta all'albero delle soglie una riga di avvertenza esplicita: la leva cifratura (art. 34.3) NON si applica quando il difetto espone i dati GIÀ decifrati (endpoint/API/log/export), perché la cifratura a riposo del volume non li rende inintelligibili a chi li riceve. Chiarisce il punto più facile da sbagliare nella valutazione del rischio.",
+    "files": [
+      { "file": ".claude/skills/breach-response/reference/albero-soglie.md", "description": "Aggiunta avvertenza: cifratura a riposo ininfluente se i dati sono esposti già in chiaro." }
+    ]
   }
 ]
