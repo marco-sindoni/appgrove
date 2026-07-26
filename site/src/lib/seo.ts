@@ -4,7 +4,7 @@
 // (marketing UC 0037, landing UC 0038) e dai dati del titolare (entity.yaml). Il
 // rendering come <script type="application/ld+json"> avviene nel BaseLayout, che
 // aggiunge SEMPRE Organization e riceve dalle pagine i nodi specifici (BreadcrumbList,
-// SoftwareApplication, FAQPage). Article è escluso: dipende dai contenuti blog (UC 0042).
+// SoftwareApplication, FAQPage, Article). Article è aggiunto dal blog (UC 0042).
 
 import type { LandingLocaleContent } from '../content/landings/types.ts'
 import { BRAND } from './brand.ts'
@@ -129,6 +129,33 @@ export function landingJsonLd(content: LandingLocaleContent, url: string): Recor
     }),
     faqPageJsonLd(content.faq.items),
   ]
+}
+
+/**
+ * Article di una pagina blog (UC 0042): il nodo Schema.org che gli assistenti AI e i
+ * motori usano per capire e citare un contenuto editoriale. `headline`, `inLanguage` e
+ * `datePublished` sono i campi portanti; `publisher` riusa l'identità del marchio, `author`
+ * è l'organizzazione (contenuti AI-generati on-brand, dec. #14 35). Le FAQ della pagina
+ * restano un nodo FAQPage separato (faqPageJsonLd), come per landing e pagine brand.
+ */
+export function articleJsonLd(opts: {
+  headline: string
+  description: string
+  url: string
+  inLanguage: string
+  datePublished: string
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: opts.headline,
+    description: opts.description,
+    inLanguage: opts.inLanguage,
+    datePublished: opts.datePublished,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': opts.url },
+    author: { '@type': 'Organization', name: BRAND_NAME },
+    publisher: { '@type': 'Organization', name: BRAND_NAME },
+  }
 }
 
 /**

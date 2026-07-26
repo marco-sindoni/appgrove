@@ -6,6 +6,7 @@ export const fr: MarketingContent = {
     app: 'Applications',
     why: 'Pourquoi appgrove',
     pricing: 'Tarifs',
+    blog: 'Blog',
     login: 'Se connecter',
     signup: "S'inscrire",
   },

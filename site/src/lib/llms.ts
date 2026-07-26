@@ -17,6 +17,7 @@ import { MARKETING } from '../content/marketing/index.ts'
 import { brandPath } from './routes.ts'
 import { publishedLandings } from './landings.ts'
 import { BRAND } from './brand.ts'
+import { BLOG_UI } from '../content/blog/ui.ts'
 import type { Landing } from '../content/landings/types.ts'
 
 /** Etichette localizzate delle sezioni e dei link (poche, tenute qui per non spargere i18n). */
@@ -75,6 +76,7 @@ export function buildLlmsTxt({ locale, siteUrl, includeLanguages = false, landin
     `- [${L.home}](${abs(`/${locale}/`)}): ${t.hero.title}`,
     `- [${t.nav.why}](${abs(`/${locale}${brandPath('why', locale)}`)}): ${t.why.intro}`,
     `- [${t.nav.pricing}](${abs(`/${locale}${brandPath('pricing', locale)}`)}): ${t.pricing.intro}`,
+    `- [${BLOG_UI[locale].indexTitle}](${abs(`/${locale}/blog/`)}): ${BLOG_UI[locale].indexIntro}`,
     `- [${L.privacy}](${abs(`/${locale}/legal/privacy/`)})`,
     `- [${L.terms}](${abs(`/${locale}/legal/terms/`)})`,
     '',

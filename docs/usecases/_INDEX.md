@@ -34,6 +34,13 @@ AWS finché il prodotto non gira offline.
 > `NNNN-use-case-YYYY-…`), aggiorna **da sola** questo indice: `YYYY` → 🟡 all'avvio (step-01) e → ✅ alla
 > chiusura/merge (step-04). Se si aggiungono nuovi UC, ri-eseguire l'ordinamento dipendenze (local-first).
 
+> **Lavoro residuo non ancora numerato.** Oltre ai 60 use case qui sotto esiste una coda di **task/user story
+> residue** — skill da creare, temi trasversali di piattaforma/prodotto, funzionalità da progettare, deliverable e
+> operazioni di messa in cloud/go-live — che **non sono ancora use case numerati**. Sono raccolte nella
+> [Tabella dei residui](#tabella-dei-residui--lavoro-non-ancora-numerato) in fondo a questo file (sintesi di
+> [docs/_BACKLOG.md](../_BACKLOG.md) e dei "Punti aperti" dei singoli use case). Quando un residuo matura, diventa un
+> UC numerato con `new-usecase` e **sale** nella tabella di esecuzione qui sotto.
+
 ---
 
 | #  | UC | Titolo | Area | Dipendenze | Stato |
@@ -94,7 +101,7 @@ AWS finché il prodotto non gira offline.
 | 54 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | 🟡 |
 | 55 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ✅ |
 | 56 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ✅ |
-| 57 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | 🟡 |
+| 57 | [0042](09-marketing-site/0042-blog-risorse.md) | Blog/risorse | Marketing Site | 0036, 0040 | ✅ |
 | 58 | [0043](09-marketing-site/0043-lancio-paid-social.md) | Lancio paid/social | Marketing Site | 0037, 0039, 0041 · (0050) | ⬜ |
 | 59 | [0050](10-skills-tooling/0050-skill-campaign-guide.md) | skill `campaign-guide` | Skills & Tooling | 0039 | ✅ |
 | 60 | [0049](10-skills-tooling/0049-skill-breach-response.md) | skill `breach-response` | Skills & Tooling | — (0006, 0030) | ⬜ |
@@ -138,3 +145,49 @@ AWS finché il prodotto non gira offline.
   introdotto `webhook_event` + DLQ; l'**observability read-only** di questi (eventi/esito/profondità DLQ +
   drift Paddle) nella **console admin** è tracciata come punto aperto in
   [UC 0021](06-frontend/0021-console-admin-spa.md) (#09 H34, #08) — UC già ✅, evoluzione futura.
+
+---
+
+## Tabella dei residui — lavoro non ancora numerato
+
+Coda del lavoro **residuo** non ancora formalizzato come use case numerato: skill da creare, temi trasversali di
+piattaforma/prodotto, funzionalità da progettare, deliverable e operazioni di **messa in cloud/go-live**. È la sintesi
+navigabile di [docs/_BACKLOG.md](../_BACKLOG.md) e dei "Punti aperti / decisioni differite" dei singoli use case; il
+dettaglio (motivazioni, alternative, owner) resta lì. **Separata dalla tabella di esecuzione** sopra: qui gli elementi
+**non hanno numero UC né posizione topologica**. Quando un residuo matura, si crea l'UC con `new-usecase` e si sposta
+nella tabella di esecuzione.
+
+- **Priorità**: 🔴 alta/bloccante · 🟡 media · ⚪ bassa · ☁ operazione di messa in cloud/go-live.
+- **Stato**: ⬜ da fare · 🟡 in corso · ✅ fatto (quando fatto senza diventare un UC, resta qui marcato).
+
+| # | Voce residua | Area / Categoria | Fonte | Priorità | Stato |
+|----|--------------|------------------|-------|----------|-------|
+| R1 | Skill **`new-blog-post`** — scrivere/aggiungere un articolo di blog (scaffold 5 file-lingua + registro + agganci pilastro↔cluster; co-pilota copy on-brand question-based) | Skills & Tooling | `_BACKLOG` §Skill · UC 0042 · change 0061 | 🟡 | ⬜ |
+| R2 | **"Ready for AI" / MCP** — app dell'ecosistema esposte come strumenti richiamabili dagli assistenti AI (server MCP, auth delegata, mappatura operazioni, quota/entitlement, sicurezza/audit) → use case dedicati da creare | Prodotto / Piattaforma | `_BACKLOG` (GRANDE 🤖) | 🟡 | ⬜ |
+| R3 | **Modello gestione utenti** tenant-level vs per-app (B2C/B2B): invito posti per-app, directory cross-app, ripensare UI "Membri" | Piattaforma | `_BACKLOG` (GRANDE 🏛️) · UC 0059/0017/0013 | 🟡 | ⬜ |
+| R4 | UC **"Gestione abbonamento self-service"** (backoffice Abbonamenti: upgrade/downgrade con gate `flow`/`stock`, disdici/riattiva, uso quota, portale Paddle) | Payments / Frontend | `_BACKLOG` #09 G | 🟡 | ⬜ |
+| R5 | UC **"Pausa subscription self-service"** (pause/resume Paddle) | Payments | `_BACKLOG` #09 E | ⚪ | ⬜ |
+| R6 | **Ticketing nativo in-house** (`support_ticket` + UI backoffice + console admin; privacy SLA 1 mese + supporto generico) | Platform Core / Frontend | `_BACKLOG` #13 D/I | 🟡 | ⬜ |
+| R7 | **"Disabilita applicazione"** (feature admin reversibile: app indisponibile a tutti i tenant, non tocca dati/infra) | Frontend / Admin | `_BACKLOG` §Config admin | 🟡 | ⬜ |
+| R8 | **Search globale** dal workspace del backoffice | Frontend | `_BACKLOG` §Feature deprioritizzate | ⚪ | ⬜ |
+| R9 | **Runbook data breach** interno + **registro breach** (art. 33.5) + **template notifiche** (Garante/interessati/controller) | Compliance & GDPR | `_BACKLOG` §Data breach · (skill = UC 0049) | 🔴 | ⬜ |
+| R10 | **`security.txt`** + `security@appgrove.app` (responsible disclosure), al lancio vetrina | Compliance / Marketing | `_BACKLOG` §Data breach | 🟡 | ⬜ |
+| R11 | **Provider entitlement reale** del backoffice/admin — sostituire `StubEntitlementsProvider` con l'endpoint core | Frontend / Core | `_BACKLOG` UC0020/UC0021 #5 | 🟡 | ⬜ |
+| R12 | **Uscita SES dalla sandbox** (richiesta manuale ad AWS, giorni di attesa) — bloccante go-live | Messa in cloud | `_BACKLOG` §SES · UC 0018 | 🔴 ☁ | ⬜ |
+| R13 | **Gestione rimbalzi/reclami SES** (notifiche, lista di soppressione, allarme sul tasso) | Messa in cloud / Observability | `_BACKLOG` §SES · UC 0018 + UC 0006 | 🔴 ☁ | ⬜ |
+| R14 | **Prima esecuzione live pipeline** + config repo GitHub (`AWS_ACCOUNT_ID`, environment `prod` con reviewer, branch protection, `INFRACOST_API_KEY`, fatturazione runner ARM) | Messa in cloud | `_BACKLOG` §Attivazione ambienti | 🔴 ☁ | ⬜ |
+| R15 | **Smoke reali cloud** alla prima accensione `test` (Cognito UC0015, Pre-Token-Gen UC0016, authorizer edge UC0014, email SES UC0018, health non esposti, webhook Paddle) | Messa in cloud | `_BACKLOG` §Attivazione ambienti | 🔴 ☁ | ⬜ |
+| R16 | **Attivazione ambienti per fasi** — implementazione script `test-start`/`test-stop` (scale 0↔1) + workflow cron; `prod` solo pre-go-live | DevOps & Infra | `_BACKLOG` §Script/tooling · #07 §28 | 🟡 ☁ | ⬜ |
+| R17 | **Unificare in `services/commons`** i due renderer Java dei template email (`auth` + `core`) | Tooling | `_BACKLOG` §Tooling · change 0052 | ⚪ | ⬜ |
+| R18 | **Drift regione** `eu-south-1` (default servizi) vs `eu-west-1` (infra #06 6): correggere/iniettare per-ambiente in cloud | DevOps & Infra | `_BACKLOG` §Script/tooling | 🟡 ☁ | ⬜ |
+| R19 | **`legacy-peer-deps` frontend**: rimuovere quando l'ecosistema aggiorna i peer opzionali a TypeScript 6 | DevX / Tooling | `_BACKLOG` §Backoffice shell | ⚪ | ⬜ |
+| R20 | **Brand kit / token condiviso** nel monorepo (colori, type scale, radii, logo, illustrazioni) come fonte unica per SPA + vetrina + landing; **artwork logo finale** | Frontend / Design | `_BACKLOG` §Brand kit · #14 F | 🟡 | ⬜ |
+
+**Note sulla tabella dei residui:**
+- L'ordine (R1…) è solo un identificativo di riga, **non** un ordine di esecuzione: i residui non hanno il vincolo
+  topologico della tabella di esecuzione.
+- Alcuni residui sono **già coperti in parte** da UC ✅ (es. il portale self-service UC 0028 tocca parte di R4): la voce
+  qui indica il **lavoro ancora aperto**, non l'intera funzionalità.
+- Le voci ☁ (messa in cloud/go-live) sono descritte in dettaglio, passo per passo, nelle sezioni finali di
+  [docs/_BACKLOG.md](../_BACKLOG.md) ("Attivazione ambienti cloud" e "Recapito email SES"): sono la **Definition of Done
+  operativa** che si chiude solo alla prima accensione reale.

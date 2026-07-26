@@ -1,0 +1,57 @@
+---
+// Pagina di un post del blog (UC 0042): pilastro o articolo cluster, slug localizzato,
+// /<lang>/blog/<slug>/. getStaticPaths genera una entry per post × lingua. Emette
+// breadcrumb (Home → Blog → post), Schema.org Article e FAQPage (GEO UC 0041); gli
+// hreflang usano i percorsi REALI di ogni lingua (slug per-lingua), mai URL inesistenti.
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import BlogPostContent from '../../../components/BlogPostContent.astro'
+import { blogParams, blogPath, blogHreflangPaths, blogIndexHref } from '../../../lib/blog.ts'
+import { BLOG_UI } from '../../../content/blog/ui.ts'
+import { MARKETING } from '../../../content/marketing/index.ts'
+import { breadcrumbJsonLd, articleJsonLd, faqPageJsonLd } from '../../../lib/seo.ts'
+import type { BlogPost } from '../../../content/blog/types.ts'
+import type { Locale } from '../../../lib/i18n.ts'
+
+export function getStaticPaths() {
+  return blogParams()
+}
+
+const { post, lang } = Astro.props as { post: BlogPost; lang: Locale }
+const c = post.content[lang]
+const ui = BLOG_UI[lang]
+
+const pathWithinLocale = blogPath(post, lang)
+const url = new URL(`/${lang}${pathWithinLocale}`, Astro.site).toString()
+
+const jsonLd = [
+  breadcrumbJsonLd([
+    { name: MARKETING[lang].nav.app, url: new URL(`/${lang}/`, Astro.site).toString() },
+    { name: ui.breadcrumb, url: new URL(blogIndexHref(lang), Astro.site).toString() },
+    { name: c.title, url },
+  ]),
+  articleJsonLd({
+    headline: c.title,
+    description: c.description,
+    url,
+    inLanguage: lang,
+    datePublished: post.datePublished,
+  }),
+  faqPageJsonLd(c.faq.items),
+]
+---
+
+<BaseLayout
+  lang={lang}
+  title={c.title}
+  description={c.description}
+  pathWithinLocale={pathWithinLocale}
+  hreflangPaths={blogHreflangPaths(post)}
+  jsonLd={jsonLd}
+>
+  <nav aria-label={ui.breadcrumb} class="mx-auto max-w-3xl text-sm text-fg-muted">
+    <a href={`/${lang}/`} class="hover:text-fg">{MARKETING[lang].nav.app}</a>
+    <span class="mx-2">/</span>
+    <a href={blogIndexHref(lang)} class="hover:text-fg">{ui.breadcrumb}</a>
+  </nav>
+  <BlogPostContent post={post} lang={lang} />
+</BaseLayout>

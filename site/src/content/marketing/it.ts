@@ -6,6 +6,7 @@ export const it: MarketingContent = {
     app: 'App',
     why: 'Perché appgrove',
     pricing: 'Prezzi',
+    blog: 'Blog',
     login: 'Accedi',
     signup: 'Registrati',
   },

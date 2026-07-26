@@ -394,6 +394,16 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   4) **conferma definitiva** digitando una **frase casuale generata dalla skill** (es. "oggi la temperatura esterna è gradevole").
   Rispetta le safety di [06-infra-iac](06-infra-iac.md) §K (in prod: valutare snapshot finale del DB prima del drop).
   Distinta da "disabilita applicazione" (reversibile, runtime). Dettaglio in memoria `skills-backlog`.
+- **`new-blog-post`** (richiesto 2026-07-26, durante la change `0061-use-case-0042-…` che costruisce il motore blog) —
+  co-pilota per **aggiungere un articolo al blog/risorse** del sito vetrina (UC [0042](usecases/09-marketing-site/0042-blog-risorse.md)),
+  gemello di `finalize-landing`/`new-application`: **generatore deterministico** (`tools/new-blog-post`) per la parte
+  meccanica (scaffold dei 5 file-lingua `site/src/content/blog/<slug>/{en,it,fr,es,de}.ts` + `index.ts`, entry nel
+  registro, aggancio dei riferimenti reciproci **pilastro↔cluster**, aggiornamento della lista cluster del pilastro) +
+  **co-pilota** che sceglie il pilastro (o ne apre uno nuovo), decide taglio/tema e genera la **copy question-based
+  on-brand nelle 5 lingue** (tono lean, dec. #14 35) con **internal linking** alla landing giusta (via registro
+  `LANDINGS`). Chiude con `astro build` + controllo post-build + **`new-change`** (branch + consenso). Il registro dei
+  contenuti della change 0061 è disegnato apposta perché lo scaffolding sia "aggiungi una cartella, appendi una riga";
+  la validazione (parità 5 lingue, coerenza pilastro↔cluster) fa da rete. Env-agnostica. Memoria `skills-backlog`.
 
 ## Recapito delle email transazionali (SES) — tracciato 2026-07-19 (change `0040`, UC 0018)
 

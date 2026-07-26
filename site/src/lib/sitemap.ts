@@ -13,6 +13,7 @@ import { LOCALES, DEFAULT_LOCALE, normalizePath, type Locale } from './i18n.ts'
 import { BRAND_KEYS, BRAND_SLUGS } from './routes.ts'
 import { publishedLegalPaths } from './legal.ts'
 import { publishedLandings } from './landings.ts'
+import { blogPosts, blogPath } from './blog.ts'
 import type { Landing } from '../content/landings/types.ts'
 
 /** Una pagina in tutte le lingue in cui esiste: `path` è il percorso dentro la lingua. */
@@ -50,6 +51,12 @@ export function collectSitemapGroups(landings?: readonly Landing[]): SitemapGrou
   // Landing pubblicate: slug per-lingua.
   for (const landing of publishedLandings(landings)) {
     groups.push(LOCALES.map((locale) => ({ locale, path: normalizePath(`/${landing.content[locale].slug}/`) })))
+  }
+
+  // Blog (UC 0042): indice (stesso segmento /blog/ per tutte le lingue) + post (slug per-lingua).
+  groups.push(LOCALES.map((locale) => ({ locale, path: '/blog/' })))
+  for (const post of blogPosts()) {
+    groups.push(LOCALES.map((locale) => ({ locale, path: blogPath(post, locale) })))
   }
 
   return groups
