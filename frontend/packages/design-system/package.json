@@ -22,6 +22,7 @@
     "./fonts.css": "./src/styles/fonts.css"
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

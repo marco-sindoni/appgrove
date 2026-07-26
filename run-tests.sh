@@ -97,11 +97,35 @@ ensure_playwright() {
     || warn "Playwright: install del browser fallita (gli e2e potrebbero fallire)."
 }
 
+# I pacchetti-libreria del workspace (frontend/packages/*) sono consumati SOLO dal loro dist/ costruito
+# (package.json exports → ./dist/index.js), che è gitignorato e NON viene ricostruito da vitest né dal
+# `vite build` dell'app. Costruirli qui, prima dei test, tiene l'entrypoint canonico autoconsistente: una
+# modifica ai sorgenti di un pacchetto (es. le traduzioni i18n) non lascia più i consumatori con un dist
+# stantìo (change 0057). Scoperta dinamica come per i servizi: ogni pacchetto con uno script `build` viene
+# incluso da solo, senza toccare questo script quando se ne aggiunge uno nuovo.
+build_frontend_packages() {
+  local args=() d
+  for d in "$ROOT"/frontend/packages/*/; do
+    [ -f "${d}package.json" ] || continue
+    node -e "process.exit(require('${d}package.json').scripts?.build?0:1)" 2>/dev/null \
+      && args+=(--workspace "packages/$(basename "$d")")
+  done
+  [ ${#args[@]} -eq 0 ] && return 0
+  ( cd "$ROOT/frontend" && npm run build "${args[@]}" )
+}
+
 run_frontend() {
   hdr "FRONTEND — frontend/ (npm test + Playwright e2e)"
   if [ ! -d "$ROOT/frontend/node_modules" ]; then
     warn "frontend/node_modules assente: installo le dipendenze (npm ci)…"
     ( cd "$ROOT/frontend" && { npm ci || npm install; } ) || { fail "frontend: install dipendenze fallita"; record frontend FAIL; return; }
+  fi
+  # I consumatori (vitest + `vite build` per gli e2e) risolvono i pacchetti-libreria dal loro dist/: va
+  # costruito prima, altrimenti un dist assente rompe la risoluzione e uno stantìo serve codice vecchio.
+  if build_frontend_packages; then
+    ok "frontend: pacchetti-libreria costruiti"
+  else
+    fail "frontend: build dei pacchetti-libreria fallita"; record frontend FAIL; return
   fi
   local rc=0
   if ( cd "$ROOT/frontend" && npm test ); then
