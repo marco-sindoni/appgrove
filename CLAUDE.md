@@ -157,11 +157,13 @@ Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso
 Catalogo unico di specifiche implementative dettagliate, organizzato **per area in sottocartelle numerate** con
 **numerazione assoluta a 4 cifre** (`NNNN`): indice per area → [docs/usecases/README.md](docs/usecases/README.md) ·
 **ordine di esecuzione + stato implementazione** → [docs/usecases/_INDEX.md](docs/usecases/_INDEX.md) (sync da `new-change`) ·
-template → [docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree: `01-business-legal … 11-apps`.
+template → [docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree **base** `01-business-legal … 11-apps`;
+**epiche evolutive (evo)** `12-ready-for-ai-mcp … 19-debito-tecnico` (lavoro post-base formalizzato dal backlog, change `0064`).
 - Creazione/numerazione/scaffolding: skill **`new-usecase`**; implementazione: **`new-change`** (folder
   `NNNN-use-case-YYYY-…` quando nasce da uno use case).
-- Catalogo: **60 use case** (0001–0060), drill-down scritti (🟢) salvo 0002/0044/0055/0056/0057/0059 in corso (🟡) e 0060
-  da scrivere (🔴). Esempio migrato: [0017 — Flussi auth](docs/usecases/05-auth/0017-flussi-auth.md) (UC1–UC10). 0055–0057
+- Catalogo: **60 use case base** (0001–0060) + **29 storie evo** (0061–0089, epiche 12–19, change `0064`) = **89** in tutto.
+  Le evo hanno drill-down scritto (🟢) ma **fuori dall'ordine topologico** finché non maturano. Esempio migrato:
+  [0017 — Flussi auth](docs/usecases/05-auth/0017-flussi-auth.md) (UC1–UC10). 0055–0057
   aggiunti dopo la revisione di copertura requisiti→use case (infra condivisa per-env, ri-accettazione legali runtime, skill
   `finalize-landing`); **0058** scorporato da UC 0010 (flussi auth locali completi) nella change `0009-use-case-0010-…`;
   **0059** (gestione membri & inviti UI) scorporato da UC 0017 nella change `0012-use-case-0017-…`;

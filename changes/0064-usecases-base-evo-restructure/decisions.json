@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — dichiarata all'invocazione. L'agente risponde alle domande di approfondimento secondo l'opzione raccomandata e traccia ogni scelta; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano allo sviluppatore. Su punti non propri l'autopilot si ferma e chiede."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change NON implementa uno use case numerato: è una riorganizzazione della struttura del catalogo use case stesso (docs/usecases/). Nessun UC in docs/usecases/ o in _INDEX.md copre \"riorganizzare le cartelle usecases in base-implementation + evo\". Quindi forma di branch/cartella normale NNNN-brief-description (0064-usecases-base-evo-restructure), senza YYYY. _INDEX.md non va marcato in corso/implementato per un singolo UC."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Aree toccate: solo documentazione/Markdown (docs/usecases/**, indici, e aggiornamento dei riferimenti relativi in docs/*.md, CLAUDE.md, skill, site, infra README). Nessun codice eseguibile → le suite backend/frontend/infra non si applicano (regola SKILL: change solo-docs = test non applicabili). Verifica di coerenza dei link al posto dei test."
+  },
+  {
+    "id": 4,
+    "decision": "Numerazione delle nuove storie 'evo': continua la sequenza assoluta/globale a 4 cifre dal primo libero, cioè da 0061 (gli UC esistenti arrivano a 0060). Domanda posta allo sviluppatore perché l'istruzione iniziale (ripartire da 0055) confliggeva con l'invariante CLAUDE.md 'numerazione assoluta a 4 cifre, globale/unica': far ripartire da 0055 avrebbe creato due 0055…0060. Scelta dello sviluppatore = 0061+ (opzione raccomandata dall'agente), niente collisione, invariante rispettato."
+  },
+  {
+    "id": 5,
+    "decision": "REVISIONE DEL REQUISITO da parte dello sviluppatore (annulla la Parte 1 dell'invocazione): NON si crea la cartella 'base-implementation' e NON si crea la cartella 'evo'; NULLA viene spostato dalla root di docs/usecases/. Le cartelle-area esistenti 01–11 restano dove sono (quindi i 278 riferimenti 'usecases/0N-…' nel repo NON si rompono e non vanno toccati). Le 'epiche' diventano NUOVE cartelle-area numerate proseguendo da 12 (12-…, 13-…) direttamente sotto docs/usecases/, accanto a 01–11; le storie sono file NNNN-slug.md con numerazione globale da 0061. Motivo: elimina in un colpo sia la collisione di numerazione sia la rottura di massa dei link, ed estende la convenzione esistente 'cartella-area numerata + UC a 4 cifre globali' invece di introdurre un albero parallelo.",
+    "files": [
+      { "file": "docs/usecases/", "description": "Aggiunta di nuove cartelle-area 12..N per le epiche evolutive; nessuno spostamento delle cartelle 01–11." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il backlog aperto è stato raggruppato in 8 epiche (cartelle-area 12–19) e 29 storie (UC 0061–0089), confermate allo sviluppatore al gate requisiti. Cluster: 12 ready-for-ai-mcp (R2, 0061–0066), 13 abbonamenti-self-service (R4/R5/R21 + leve K50/K51, 0067–0071), 14 modello-utenti-multiapp (R3, 0072–0074), 15 supporto-e-piattaforma (R6/R7/R11, 0075–0077), 16 messa-in-cloud-golive (R12–R16/R18/R10, 0078–0083), 17 skill-e-tooling-contenuto (R1/R17, 0084–0085), 18 brand-e-design-system (R20, 0086–0087), 19 debito-tecnico (R8/R19, 0088–0089). ESCLUSI perché già fatti: R9 breach (change 0063), campaign-guide (0053), accoppiamento app↔core (risolto 0041), Console/Self-service GDPR (0033/0034)."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Le 29 storie sono state redatte col template di casa (docs/usecases/_TEMPLATE.md: header Area/Fase=evo/Stato=🟢 scritto + sezioni 1–10 + 'Punti aperti / decisioni differite'), delegando la stesura a 8 sotto-agenti (uno per epica) con brief autoconsistenti derivati dal backlog. Convenzione anti-link-rotti imposta ai sotto-agenti: i riferimenti ad altri use case sono in TESTO SEMPLICE ('UC NNNN (titolo)'), i link Markdown solo tra file fratelli della stessa epica; così nessun link relativo verso file esterni all'epica viene introdotto (verificato: 0 link esterni)."
+  },
+  {
+    "id": 8,
+    "decision": "Politica sui riferimenti esistenti: poiché la revisione dello sviluppatore ha eliminato ogni spostamento (decisione #5), i 278 riferimenti 'usecases/0N-…' sparsi nel repo (inclusi i registri storici in changes/*/) restano VALIDI e NON sono stati toccati — nessun link rotto da riparare. Gli unici aggiornamenti a documenti vivi sono l'estensione del catalogo (README.md + _INDEX.md) e l'allineamento del conteggio/aree in CLAUDE.md (da '60 use case, aree 01–11' a '89 use case, aree base 01–11 + evo 12–19').",
+    "files": [
+      { "file": "docs/usecases/README.md", "description": "Aggiunta sezione 'Epiche evolutive (evo)' con le tabelle delle 8 epiche (12–19) e link alle 29 storie; nota di numerazione aggiornata (0055–0060 base, evo da 0061)." },
+      { "file": "docs/usecases/_INDEX.md", "description": "Banner di formalizzazione sotto la 'Tabella dei residui' + nuova sezione 'Formalizzazione in epiche evo' con mappatura residuo→UC. La tabella di esecuzione topologica (righe 1–60) è INTATTA." },
+      { "file": "CLAUDE.md", "description": "Sezione 'Casi d'uso': aree base + epiche evo; conteggio 60 base + 29 evo = 89." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Collocazione delle storie evo negli indici: NON entrano nell'ordine di esecuzione topologico di _INDEX.md (Fase = evo, lavoro post-base non ancora schedulato); ci saliranno quando maturano, come già prevede la regola scritta in _INDEX.md. La 'Tabella dei residui' è conservata come registro d'origine (motivazioni/fonti) e arricchita con la mappatura residuo→UC, invece di essere cancellata."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Tracciamento del lavoro lasciato fuori e dei punti non decisi: (a) le epiche 12 (Ready for AI) e 14 (modello utenti) e la storia 0069 (trial una-tantum) sono DIREZIONE DI PRODOTTO non ancora decisa — marcato esplicitamente nei 'Punti aperti' delle rispettive storie, che ne restano proprietarie; (b) il debito tecnico frontend 'runtime auth/sessione condiviso (@appgrove/app-runtime)', punto aperto di UC 0021 #18, NON è stato trasformato in storia (resta tracciato in UC 0021, promuovibile quando maturo) — annotato nei 'Punti aperti' di UC 0089; (c) le leve K50/K51 (bundling, riconciliazione), assenti dalla tabella residui ma presenti in _BACKLOG §Pagamenti, sono state formalizzate (UC 0070/0071) e la loro origine annotata nella mappatura."
+  },
+  {
+    "id": 11,
+    "decision": "Creato docs/usecases/EPICS-WAVE-2.md: indice di esecuzione dell'onda 2 (le 29 storie evo), stesso pattern di _INDEX.md — ordinamento topologico sulle dipendenze effettive, da implementare dall'alto verso il basso. Osservazione chiave: TUTTI i prerequisiti base (UC 0001–0060) sono già in main, quindi non vincolano l'ordine dell'onda 2 (colonna 'Dip. base ✅' informativa, come le ☁ in _INDEX.md); l'unico vincolo d'ordine reale sono le dipendenze FRA storie evo (colonna 'Dip. evo'). (autopilot) Strategia scelta a parità di vincolo: 'prerequisiti-interni e lavoro deciso prima, decisioni-di-prodotto dopo', in 5 fasi (A abilitanti piattaforma · B messa in cloud/go-live · C self-service/supporto/contenuti · D direzione prodotto da decidere: epiche 12 e 14 e storia 0069 · E bassa priorità). Correttezza verificata a macchina: 29 righe, ogni 'Dip. evo' compare più in alto, zero violazioni; 29 link storia risolti.",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Nuovo indice di esecuzione topologico dell'onda 2 (evo 0061–0089); catene evo esplicitate (12: 0061→0062-0065→0066; 14: 0072→0073→0074; 16: 0080→0082→0081, 0079→0078; 18: 0086→0087)." },
+      { "file": "docs/usecases/README.md", "description": "Aggiunto puntatore a EPICS-WAVE-2.md nell'introduzione della sezione 'Epiche evolutive (evo)' (pattern 'due indici, due assi')." }
+    ]
+  }
+]

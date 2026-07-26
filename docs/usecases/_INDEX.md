@@ -150,6 +150,13 @@ AWS finché il prodotto non gira offline.
 
 ## Tabella dei residui — lavoro non ancora numerato
 
+> **AGGIORNAMENTO (change `0064`).** La maggior parte dei residui aperti qui sotto è stata **formalizzata** in storie
+> use case numerate, raggruppate nelle **epiche evolutive `12`–`19`** (numerazione UC continua da `0061`; vedi il
+> catalogo [README.md](README.md) → "Epiche evolutive (evo)"). La **mappatura residuo → UC** è nella sezione
+> [Formalizzazione in epiche evo](#formalizzazione-in-epiche-evo-change-0064) in fondo. La tabella resta come **registro
+> d'origine** (motivazioni/fonti); le storie **non** entrano ancora nell'ordine topologico di esecuzione sopra (Fase =
+> evo): vi salgono quando maturano.
+
 Coda del lavoro **residuo** non ancora formalizzato come use case numerato: skill da creare, temi trasversali di
 piattaforma/prodotto, funzionalità da progettare, deliverable e operazioni di **messa in cloud/go-live**. È la sintesi
 navigabile di [docs/_BACKLOG.md](../_BACKLOG.md) e dei "Punti aperti / decisioni differite" dei singoli use case; il
@@ -192,3 +199,35 @@ nella tabella di esecuzione.
 - Le voci ☁ (messa in cloud/go-live) sono descritte in dettaglio, passo per passo, nelle sezioni finali di
   [docs/_BACKLOG.md](../_BACKLOG.md) ("Attivazione ambienti cloud" e "Recapito email SES"): sono la **Definition of Done
   operativa** che si chiude solo alla prima accensione reale.
+
+### Formalizzazione in epiche evo (change `0064`)
+
+Mappatura dei residui in storie use case numerate (epiche `12`–`19`, catalogo in [README.md](README.md)). I residui **non**
+mappati restano aperti come qui indicato.
+
+| Residuo | Formalizzato in | Epica |
+|---|---|---|
+| R1 (`new-blog-post`) | UC 0084 | 17-skill-e-tooling-contenuto |
+| R2 (Ready for AI / MCP) | UC 0061–0066 | 12-ready-for-ai-mcp |
+| R3 (modello utenti B2B/B2C) | UC 0072–0074 | 14-modello-utenti-multiapp |
+| R4 (gestione abbonamento self-service) | UC 0067 | 13-abbonamenti-self-service |
+| R5 (pausa subscription) | UC 0068 | 13-abbonamenti-self-service |
+| R6 (ticketing in-house) | UC 0075 | 15-supporto-e-piattaforma |
+| R7 (disabilita applicazione) | UC 0076 | 15-supporto-e-piattaforma |
+| R8 (search globale) | UC 0088 | 19-debito-tecnico |
+| R9 (runbook/registro/template breach) | già ✅ change 0063 (UC 0049) — non ri-formalizzato | — |
+| R10 (`security.txt` + casella `security@`) | UC 0083 (parte: casella `security@`) | 16-messa-in-cloud-golive |
+| R11 (provider entitlement reale) | UC 0077 | 15-supporto-e-piattaforma |
+| R12 (uscita SES sandbox) | UC 0078 | 16-messa-in-cloud-golive |
+| R13 (rimbalzi/reclami SES) | UC 0079 | 16-messa-in-cloud-golive |
+| R14 (prima pipeline live + config repo) | UC 0080 | 16-messa-in-cloud-golive |
+| R15 (smoke reali cloud) | UC 0081 | 16-messa-in-cloud-golive |
+| R16 (script attivazione ambienti) | UC 0082 | 16-messa-in-cloud-golive |
+| R17 (unificazione renderer email) | UC 0085 | 17-skill-e-tooling-contenuto |
+| R18 (drift regione) | UC 0083 (parte: drift regione) | 16-messa-in-cloud-golive |
+| R19 (`legacy-peer-deps`) | UC 0089 | 19-debito-tecnico |
+| R20 (brand kit + logo) | UC 0086–0087 | 18-brand-e-design-system |
+| R21 (trial una-tantum) | UC 0069 | 13-abbonamenti-self-service |
+
+Due leve di business pagamenti prese da [docs/_BACKLOG.md](../_BACKLOG.md) §Pagamenti (non presenti come riga di residuo):
+**bundling** (K50) → UC 0070 e **riconciliazione netto/revenue** (K51) → UC 0071, entrambe in 13-abbonamenti-self-service.
