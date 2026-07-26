@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — l'agente risponde alle domande di approfondimento seguendo l'opzione raccomandata e registra ogni scelta qui; i tre gate (rilettura/approvazione dei requisiti, consenso al commit, consenso al merge) restano dello sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0042 (Blog/risorse — motore SEO/GEO pillar+cluster del sito vetrina): il testo dell'invocazione lo indica esplicitamente e docs/usecases/09-marketing-site/0042-blog-risorse.md ne descrive lo scope. Da qui la forma del branch change/0061-use-case-0042-blog-risorse.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0042 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ampiezza del lavoro: si costruisce il MOTORE completo del blog (modello dati tipizzato con parità 5 lingue a compile-time, rotte indice/pilastro/articolo, JSON-LD Article + breadcrumb, hreflang, sitemap, llms.txt, controllo post-build, voce 'Blog' in top nav) più un SEME minimo di contenuti reali. Riempire un catalogo ampio è lavoro incrementale che il blog fa 'crescere nel tempo' (UC 0042, flusso principale punto 1) e violerebbe il principio autopilot di non anticipare il lavoro successivo: si tracciano come rimandi nello UC gli articoli futuri."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il seme è UN pilastro tematico ('Fatturazione per piccole imprese in UE', allineato all'app faro fatture e alla postura UE/GDPR) con DUE articoli cluster question-based (fattura elettronica a norma; miglior software di fatturazione GDPR per PMI), tutti nelle 5 lingue, con internal linking alla landing dell'app faro. Un solo pilastro dimostra già pillar→cluster e internal linking senza gonfiare il seme; altri temi/pilastri sono rimandati nello UC 0042."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Modello dei contenuti coerente con marketing (UC 0037) e landing (UC 0038): contenuti STRUTTURATI e tipizzati con Record<Locale, …> per la parità 5 lingue a compile-time, NON markdown liberi. Slug LOCALIZZATI per lingua (come brand e landing, #14 31), sotto il prefisso riservato /<lang>/blog/ (già in STATIC_RESERVED_SLUGS di lib/landings.ts).",
+    "files": [
+      { "file": "site/src/content/blog/types.ts", "description": "Tipi Pillar/Article/PostContent con Record<Locale, …> per la parità a compile-time." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) L'internal linking degli articoli verso le landing app usa il registro LANDINGS (slug per-lingua): mai URL cablati. Un articolo dichiara l'appId di destinazione e la rotta risolve lo slug della lingua corrente, così il link resta corretto in tutte e 5 le lingue e non si rompe se lo slug cambia.",
+    "files": [
+      { "file": "site/src/lib/blog.ts", "description": "Risoluzione del link interno alla landing per appId + lingua a partire da publishedLandings()." }
+    ]
+  }
+]
