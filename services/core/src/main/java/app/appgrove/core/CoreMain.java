@@ -2,6 +2,7 @@ package app.appgrove.core;
 
 import app.appgrove.core.catalog.PricingSyncService;
 import app.appgrove.core.gdpr.AppOffboarding;
+import app.appgrove.core.legal.LegalVersionSyncService;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -15,6 +16,9 @@ import org.jboss.logging.Logger;
  *   <li>{@code sync-pricing} — sync pricing-as-code una tantum e termina; la pipeline (UC 0005) la invoca
  *       <b>dopo il Flyway migrate</b> (deploy test → sync sandbox, tag→prod → sync production, #09 H37) e
  *       il flusso {@code dev seed} la esegue in locale prima di caricare le subscription del seed;</li>
+ *   <li>{@code sync-legal} — sync delle versioni legali una tantum e termina (UC 0056): legge i frontmatter di
+ *       {@code content/legal/} e riconcilia {@code platform.legal_version}. La pipeline la invoca <b>dopo il
+ *       migrate</b> al deploy dei legali; in locale/test gira allo startup ({@code appgrove.legal.sync-on-startup});</li>
  *   <li>{@code migrate} — applica le migrazioni Flyway (schema {@code platform}) e termina; è il task ECS
  *       one-shot in VPC della pipeline (UC 0005, #07 14/15: {@code build → test → migrate → deploy}),
  *       connessione diretta Agroal (il Proxy è solo per le Lambda, #05 dec.3).</li>
@@ -30,11 +34,15 @@ public class CoreMain implements QuarkusApplication {
     private static final Logger LOG = Logger.getLogger(CoreMain.class);
 
     static final String SYNC_PRICING = "sync-pricing";
+    static final String SYNC_LEGAL = "sync-legal";
     static final String MIGRATE = "migrate";
     static final String OFFBOARD_APP = "offboard-app";
 
     @Inject
     PricingSyncService pricingSync;
+
+    @Inject
+    LegalVersionSyncService legalSync;
 
     @Inject
     Flyway flyway;
@@ -49,6 +57,11 @@ public class CoreMain implements QuarkusApplication {
             LOG.infof(
                     "sync-pricing completata: apps=%d tiers=%d prices=%d archived=%d",
                     report.apps(), report.tiers(), report.prices(), report.archived());
+            return 0;
+        }
+        if (args.length > 0 && SYNC_LEGAL.equals(args[0])) {
+            LegalVersionSyncService.Report report = legalSync.sync();
+            LOG.infof("sync-legal completata: componenti=%d", report.components());
             return 0;
         }
         if (args.length > 0 && MIGRATE.equals(args[0])) {

@@ -41,6 +41,8 @@ class PlatformGdprContractTest {
         data.ticketMessage(TENANT_A, ticketId, "user", "Testo del messaggio");
         // Newsletter (UC 0039): iscritto con l'email dell'utente del tenant → coperto per email.
         data.newsletterSubscriber("gdpr-a@example.test", "confirmed");
+        // Accettazione legale (UC 0056): prova che l'export copre il log accettazioni.
+        data.legalAcceptance(TENANT_A, "sub-gdpr-a", "terms", "1.0.0", 1, "accept");
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());

@@ -51,5 +51,61 @@
     "files": [
       { "file": "changes/0056-use-case-0056-riaccettazione-legali-runtime/requirements.md", "description": "Sezione 'Punti per la tua attenzione'." }
     ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Routing degli endpoint: status/accettazione stanno sotto @Path(\"/api/platform/v1/me/legal\") in LegalResource, il documento sotto @Path(\"/api/platform/v1/legal\") in LegalDocumentResource — DUE classi. Motivo: una singola classe @Path(\"/api/platform/v1\") con sotto-path /me/legal-status collideva con MeResource (@Path \"/api/platform/v1/me\") che intercettava il prefisso e restituiva 404 (emerso in test). Un root più specifico (/me/legal) vince nel matching. Percorsi finali: /me/legal/status, /me/legal/acceptance, /legal/{component}.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/legal/LegalResource.java", "description": "/me/legal/status + /me/legal/acceptance." },
+      { "file": "services/core/src/main/java/app/appgrove/core/legal/LegalDocumentResource.java", "description": "/legal/{component}." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) commit-hash opzionale dei legali: @ConfigProperty Optional<String> appgrove.legal.commit-hash (non defaultValue=\"\", che falliva la validazione runtime di config al boot). In prod il deploy può impostarlo; in locale/test è assente e il log accettazioni lo salva null.",
+    "files": []
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Accettazione iniziale al signup: NON si aggiunge una checkbox dedicata nel wizard di signup; l'accettazione iniziale è catturata dallo stesso gate al primo login (un utente nuovo non ha accettazioni → il gate mostra i componenti vincolanti pendenti → li accetta, registrando il log). Un unico meccanismo, meno rischio sul flusso auth. Scostamento consapevole dal requisito 'signup registra l'accettazione': la prova è comunque registrata (al primo ingresso). L'aggiunta di una checkbox esplicita al signup è tracciata come rimando in UC 0056.",
+    "files": [
+      { "file": "docs/usecases/04-platform-core/0056-riaccettazione-legali-runtime.md", "description": "Punto aperto: checkbox esplicita di accettazione al signup (oggi catturata dal gate al primo login)." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "Gate privacy/RoPA (UC 0031): 17 segnali, tutti classificati. Dato personale: SOLO legal_acceptance.user_id (identificativo), annotato @PersonalData con voce entity-backed nel manifesto platform.yaml e RoPA rigenerata; gli altri campi di LegalAcceptance (componente/versione/major/act_type/accepted_at/commit_hash) e tutta legal_version sono metadati dell'atto/prodotto, non personali. Base giuridica: contratto (art. 6.1.b) + accountability (art. 5.2). Retention: vita account + prescrizione (da confermare legale). Classificazione del cambio: MINOR (trattamento di accountability accessorio, non nuovo uso dei dati) → notifica, non ri-accettazione della Privacy. react-markdown NON è un sub-processor (rendering lato browser, nessun dato a terzi). Registrato in docs/_REVISIONE-LEGALE.md per validazione legale.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Voce legal_acceptances.user_id (entity-backed)." },
+      { "file": "docs/compliance/ropa.it.md", "description": "RoPA rigenerata (assemble)." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Gate frontend integrato in ShellLayout avvolgendo l'intero corpo della shell (non solo l'Outlet): la schermata bloccante full-screen sostituisce tutto quando ci sono componenti pendenti. Fail-open su loading/errore (non blocca per errori transitori). Route esenti /privacy e /support (diritti GDPR sempre accessibili, DoD 4). Notifica MINOR = banner dismissibile (stato locale). Rendering markdown con react-markdown.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/legal/LegalGate.tsx", "description": "Gate + esenzioni + banner notice." },
+      { "file": "frontend/apps/backoffice/src/shell/ShellLayout.tsx", "description": "Integrazione del gate." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) sync-legal cablata in CI: step oneshot 'platform sync-legal' dopo il migrate in deploy-test.yml e release-prod.yml (nessun secret richiesto, idempotente). In locale/test la sync gira allo startup (appgrove.legal.sync-on-startup=true in %dev e nel profilo test).",
+    "files": [
+      { "file": ".github/workflows/deploy-test.yml", "description": "Step sync-legal dopo il migrate." },
+      { "file": ".github/workflows/release-prod.yml", "description": "Step sync-legal dopo il migrate." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "Aggiornata l'asserzione di GdprExportApiTest (step dell'export platform da 5 a 6): l'aggiunta della raccolta 'accettazioni legali' all'export ha aumentato di uno il numero di step dichiarati. La change è sviluppata in un git worktree: i node_modules (frontend, tools/compliance) sono stati installati nel worktree (i worktree non condividono i file ignorati).",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/gdpr/GdprExportApiTest.java", "description": "steps.size() 5 → 6." }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "Gate percorsi-sorgente scaffolding (source-paths-scan): segnala backoffice/package.json e i due workflow di deploy, ma le modifiche sono in REGIONI NON TEMPLATIZZATE, non drift del modello per-app → nessun template da aggiornare, nessuna deviazione in docs/_PARITA-SCAFFOLD.md. Motivi: (a) react-markdown è una dipendenza della shell per il rendering dei legali, non serve al modello frontend-module per-app (un'app nuova non rende markdown); il segnalato 'script gen:<app>' non è stato toccato. (b) lo step `sync-legal` nei workflow è platform-level (come `sync-pricing`), non una voce della matrice di build per-servizio che il generatore inietta. Scelta consapevole, non implicita.",
+    "files": []
   }
 ]

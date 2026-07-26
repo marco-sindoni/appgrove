@@ -212,6 +212,11 @@ jobs:
           while read -r app; do
             [ -n "$app" ] && ./infra/scripts/oneshot test "$app" "$IMAGE_TAG" migrate
           done < /tmp/migrate-post
+      - name: sync-legal (versioni documenti legali → platform.legal_version, UC 0056)
+        run: |
+          # Riconcilia platform.legal_version dai frontmatter di content/legal (bundlati nell'immagine
+          # core). Dopo il migrate; nessun secret richiesto. Idempotente.
+          ./infra/scripts/oneshot test platform "$IMAGE_TAG" sync-legal
       - name: sync-pricing verso Paddle sandbox (#09 H37) — se i secret esistono
         run: |
           # Il secret per-env è creato con l'account Paddle (UC 0001/0025): finché

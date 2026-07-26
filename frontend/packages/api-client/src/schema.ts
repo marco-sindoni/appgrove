@@ -1635,6 +1635,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/legal/{component}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Document */
+        get: {
+            parameters: {
+                query?: {
+                    lang?: string;
+                };
+                header?: never;
+                path: {
+                    component: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LegalDocView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/entitlements": {
         parameters: {
             query?: never;
@@ -1659,6 +1713,117 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["MeEntitlementsView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/legal/acceptance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AcceptRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LegalStatusView"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/legal/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LegalStatusView"];
                     };
                 };
                 /** @description Not Authorized */
@@ -2736,6 +2901,9 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptRequest: {
+            components: string[];
+        };
         AccountDetailView: {
             id?: components["schemas"]["UUID"];
             name?: string;
@@ -2833,6 +3001,12 @@ export interface components {
         CheckoutTokenView: {
             checkoutToken?: string;
         };
+        ComponentStatusView: {
+            component?: string;
+            version?: string;
+            effectiveDate?: string;
+            act?: string;
+        };
         CreateInvitation: {
             email: string;
             role: string;
@@ -2904,6 +3078,17 @@ export interface components {
             requestedAt?: components["schemas"]["Instant"];
             completedAt?: components["schemas"]["Instant"];
             error?: string;
+        };
+        LegalDocView: {
+            component?: string;
+            lang?: string;
+            version?: string;
+            effectiveDate?: string;
+            markdown?: string;
+        };
+        LegalStatusView: {
+            pending?: components["schemas"]["ComponentStatusView"][];
+            notices?: components["schemas"]["ComponentStatusView"][];
         };
         MeEntitlementsView: {
             entitlements?: components["schemas"]["EntitlementView"][];

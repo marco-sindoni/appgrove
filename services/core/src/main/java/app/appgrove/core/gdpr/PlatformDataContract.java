@@ -6,6 +6,7 @@ import app.appgrove.commons.gdpr.DataManifests;
 import app.appgrove.commons.gdpr.ExportResult;
 import app.appgrove.commons.gdpr.GdprScope;
 import app.appgrove.commons.gdpr.PurgeResult;
+import app.appgrove.core.legal.LegalAcceptance;
 import app.appgrove.core.newsletter.NewsletterSubscriber;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.Invitation;
@@ -53,7 +54,7 @@ public class PlatformDataContract implements AppDataContract {
         Map<String, List<Map<String, Object>>> entities = new LinkedHashMap<>();
         List<String> steps = List.of(
                 "Raccolta account", "Raccolta utenti", "Raccolta inviti", "Raccolta ticket di supporto",
-                "Raccolta iscrizioni newsletter");
+                "Raccolta iscrizioni newsletter", "Raccolta accettazioni legali");
 
         entities.put("accounts", query(
                 "select id, name, status, paddle_customer_id, created_at"
@@ -108,6 +109,14 @@ public class PlatformDataContract implements AppDataContract {
                 scope.tenantId(),
                 "id", "subscriber_id", "event_type", "consent_text_version", "channel", "occurred_at"));
 
+        // Accettazioni legali (UC 0056): prova di quali documenti l'utente ha accettato/preso atto.
+        // Tenant-scoped: fa parte dei dati personali dell'utente (art. 15).
+        entities.put("legal_acceptances", query(
+                "select id, user_id, component, version, major, act_type, accepted_at"
+                        + " from platform.legal_acceptance where tenant_id = ? order by accepted_at",
+                scope.tenantId(),
+                "id", "user_id", "component", "version", "major", "act_type", "accepted_at"));
+
         return new ExportResult(APP_ID, steps, entities);
     }
 
@@ -137,6 +146,8 @@ public class PlatformDataContract implements AppDataContract {
             deleted.put("newsletter_subscriber",
                     delete(c, "delete from platform.newsletter_subscriber where lower(email) in ("
                             + " select lower(email) from platform.users where tenant_id = ?)", scope.tenantId()));
+            deleted.put("legal_acceptance",
+                    delete(c, "delete from platform.legal_acceptance where tenant_id = ?", scope.tenantId()));
             deleted.put("invitations",
                     delete(c, "delete from platform.invitations where tenant_id = ?", scope.tenantId()));
             deleted.put("subscription",
@@ -161,6 +172,7 @@ public class PlatformDataContract implements AppDataContract {
         DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
         DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);
         DataManifests.collectPersonalData(NewsletterSubscriber.class, "newsletter_subscribers", entries);
+        DataManifests.collectPersonalData(LegalAcceptance.class, "legal_acceptances", entries);
         return new DataManifest(APP_ID, entries);
     }
 

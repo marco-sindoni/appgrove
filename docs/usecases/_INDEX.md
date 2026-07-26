@@ -90,7 +90,7 @@ AWS finché il prodotto non gira offline.
 | 50 | [0039](09-marketing-site/0039-newsletter-consenso-plausible.md) | Newsletter + consent log + Plausible | Marketing Site | 0036, 0013 | ✅ |
 | 51 | [0053](11-apps/0053-app1-landing.md) | App #1 landing | Apps | 0038, 0052, 0057 | ✅ |
 | 52 | [0060](06-frontend/0060-localizzazione-ui-app-multilingua.md) | Localizzazione UI app 5 lingue (sblocca screenshot landing per-lingua) | Frontend | 0020, 0052, 0037 · (0053) | ✅ |
-| 53 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | 🟡 |
+| 53 | [0056](04-platform-core/0056-riaccettazione-legali-runtime.md) | Ri-accettazione ToU/PP a runtime | Platform Core | 0002, 0013, 0020 | ✅ |
 | 54 | [0001](01-business-legal/0001-setup-business-legale.md) | Setup business/legale + account Paddle | Business & Legal | 0002, 0036 | ⬜ |
 | 55 | [0007](02-devops-infra/0007-osservabilita-irrobustimento.md) | Observability hardening | DevOps & Infra | 0006 | ⬜ |
 | 56 | [0035](08-compliance-gdpr/0035-job-conservazione-purga.md) | Job retention/purge | Compliance & GDPR | 0032, 0006 | ⬜ |

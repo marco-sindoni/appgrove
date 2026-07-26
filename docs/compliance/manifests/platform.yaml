@@ -266,6 +266,28 @@ entries:
       it: "24 mesi dalla chiusura del ticket, poi eliminazione automatica (#13 E)"
       en: "24 months from ticket closure, then automatic deletion (#13 E)"
 
+  - key: legal_acceptances.user_id
+    entity: app.appgrove.core.legal.LegalAcceptance
+    field: userId
+    location:
+      it: Tabella `platform.legal_acceptance` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.legal_acceptance` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Utenti registrati che accettano o prendono atto dei documenti legali
+      en: Registered users accepting or acknowledging the legal documents
+    data_category:
+      it: Identificativo online (subject Cognito) collegato alla prova di accettazione
+      en: Online identifier (Cognito subject) linked to the acceptance record
+    purpose:
+      it: "Prova dell'accettazione/presa d'atto dei documenti legali (rendicontazione, art. 5.2 GDPR; UC 0056)"
+      en: "Proof of acceptance/acknowledgement of the legal documents (accountability, art. 5(2) GDPR; UC 0056)"
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR) e obbligo di rendicontazione (art. 5.2 GDPR)
+      en: Contract (art. 6(1)(b) GDPR) and accountability obligation (art. 5(2) GDPR)
+    retention:
+      it: "Per la vita dell'account e il periodo di prescrizione applicabile (prova del consenso contrattuale, #13 E) — da confermare in revisione legale"
+      en: "For the account lifetime and the applicable limitation period (proof of contractual consent, #13 E) — to be confirmed in legal review"
+
   - key: logs.structured
     location:
       it: CloudWatch Logs (eu-west-1/eu-central-1); audit su S3/Glacier (#08 I)

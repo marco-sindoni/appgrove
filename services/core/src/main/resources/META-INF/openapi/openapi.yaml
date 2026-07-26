@@ -2,6 +2,16 @@
 openapi: 3.1.0
 components:
   schemas:
+    AcceptRequest:
+      type: object
+      required:
+      - components
+      properties:
+        components:
+          type: array
+          items:
+            type: string
+          minItems: 1
     AccountDetailView:
       type: object
       properties:
@@ -197,6 +207,17 @@ components:
       properties:
         checkoutToken:
           type: string
+    ComponentStatusView:
+      type: object
+      properties:
+        component:
+          type: string
+        version:
+          type: string
+        effectiveDate:
+          type: string
+        act:
+          type: string
     CreateInvitation:
       type: object
       required:
@@ -341,6 +362,30 @@ components:
           $ref: "#/components/schemas/Instant"
         error:
           type: string
+    LegalDocView:
+      type: object
+      properties:
+        component:
+          type: string
+        lang:
+          type: string
+        version:
+          type: string
+        effectiveDate:
+          type: string
+        markdown:
+          type: string
+    LegalStatusView:
+      type: object
+      properties:
+        pending:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComponentStatusView"
+        notices:
+          type: array
+          items:
+            $ref: "#/components/schemas/ComponentStatusView"
     MeEntitlementsView:
       type: object
       properties:
@@ -1628,6 +1673,34 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+  /api/platform/v1/legal/{component}:
+    get:
+      parameters:
+      - name: component
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: lang
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalDocView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Document
+      tags:
+      - Legal Document Resource
+      security:
+      - SecurityScheme: []
   /api/platform/v1/me/entitlements:
     get:
       responses:
@@ -1644,6 +1717,50 @@ paths:
       summary: Entitlements
       tags:
       - Me Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/legal/acceptance:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalStatusView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Accept
+      tags:
+      - Legal Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/legal/status:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LegalStatusView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Status
+      tags:
+      - Legal Resource
       security:
       - SecurityScheme: []
   /api/platform/v1/me/portal-session:
