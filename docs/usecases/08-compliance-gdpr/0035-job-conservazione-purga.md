@@ -63,6 +63,23 @@ Manifest: applica le retention dichiarate (accountability art. 5.1.e). `@Persona
 
 ## Punti aperti / decisioni differite
 
+- **Aggiornamento (change `0060-use-case-0035-…`)**: consegnati i lavori applicativi residui e maturi di
+  questo use case, tutti in `services/core` sul pattern sweeper `@Scheduled`: (1) **auto-cancellazione
+  account inattivi 24 mesi** — nuova colonna `last_active_at` (timbrata dall'attività autenticata con
+  throttle in memoria) + `inactivity_warned_at`, sweeper a due fasi (avviso email ai proprietari → 30gg
+  senza attività → offboarding via `TenantOffboarding.offboard`), con l'account che resta usabile durante
+  l'avviso e il **recupero** se l'attività riprende; (2) **scadenza a 12 mesi** delle tabelle di prova
+  `platform.gdpr_purge_audit` e `platform.gdpr_restriction_audit` (chiude il punto (b) del rimando UC 0034
+  qui sotto). Classificazione privacy: MINOR (marcatori tecnici di stato, nessun manifesto). **Restano
+  aperti** a questo use case: (a) il **trigger cloud** EventBridge/cron degli sweeper e il **publisher
+  EventBridge `tenant.offboarded`** dal core — a cost-min (ECS `desired_count=1`) lo scheduler nel container
+  è corretto e non-duplicato, il trigger esterno serve solo con più task (alta disponibilità **E3**,
+  tracciato in [docs/_EVOLUZIONI-DEVOPS.md](../../_EVOLUZIONI-DEVOPS.md)) e non è verificabile finché il
+  cloud non è attivo; (b) la **retention delle copie per-app** di `gdpr_purge_audit` (schemi `app_<id>`),
+  che richiede di iterare gli schemi delle app; (c) la **localizzazione per-lingua** dell'email di avviso
+  (oggi bilingue IT/EN) — materia di localizzazione email (UC 0018/0060).
+
+
 - **L'eliminazione account con grace 14 giorni usa l'orchestrazione account-level della change `0028`**
   _(tracciato dalla change `0028-use-case-0032-…`)_. UC 0032 implementa la **macchina interna** della
   cancellazione account (funzione di orchestrazione: purge dei dati di piattaforma + pubblicazione

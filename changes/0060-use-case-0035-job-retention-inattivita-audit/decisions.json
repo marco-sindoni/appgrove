@@ -57,5 +57,29 @@
   {
     "id": 11,
     "decision": "(autopilot) Classificazione privacy attesa: MINOR, piattaforma core. Le nuove colonne last_active_at/inactivity_warned_at sono marcatori tecnici di stato (precedente: status, deletion_requested_at, suspended_reason → nessuna voce di manifesto/RoPA); l'avviso riusa email utente già trattata e SES già in lista dei responsabili; nessuna nuova finalità (attua la minimizzazione/retention già decisa, #13 E26). Da confermare con lo scanner privacy (UC 0031) allo step-03."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) last_active_at è NOT NULL DEFAULT now(): il DEFAULT copre sia il backfill degli account esistenti sia ogni nuova riga (incluse le fixture di test), senza toccare i percorsi di insert. Nell'entità Account le due colonne sono mappate in SOLA LETTURA (insertable=false, updatable=false): sono scritte esclusivamente via JDBC (filtro di attività e sweeper), quindi così l'ORM non le tocca mai all'insert (evitando di sovrascrivere con NULL il DEFAULT del DB) né all'update, e l'entità resta comunque uno specchio fedele della tabella.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/Account.java", "description": "Campi lastActiveAt/inactivityWarnedAt mappati read-only con soli getter." },
+      { "file": "services/core/src/main/resources/db/migration/V12__account_activity_retention.sql", "description": "Colonne + indice parziale su last_active_at per lo sweeper." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Il timbro di attività è un ContainerResponseFilter (gira sul percorso di risposta, non aggiunge latenza prima dell'elaborazione) che legge il tenant dal claim tenant_id del JWT verificato e delega al tracker; tutto best-effort dentro try/catch così da non alterare mai l'esito della richiesta. La logica di throttle (shouldStamp) è una funzione pura sulla cache in memoria, isolata come seam testabile senza database.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/ActivityStampFilter.java", "description": "Filtro di risposta best-effort, tenant dal JWT." },
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AccountActivityTracker.java", "description": "Throttle in memoria (shouldStamp puro) + update JDBC di last_active_at." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Lo sweeper di retention audit elimina per colonna executed_at (presente e con la stessa semantica in entrambe le tabelle gdpr_purge_audit e gdpr_restriction_audit), limitato allo schema platform. La finestra di avviso inattività è gestita interamente nello sweeper (fase 2 legge last_active_at vs inactivity_warned_at per distinguere cancellazione da recupero); il filtro di attività resta semplice e timbra solo last_active_at."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Gate privacy UC 0031 eseguito: 4 segnali (le colonne last_active_at/inactivity_warned_at e i due campi entità). Classificazione CONFERMATA: sono marcatori TECNICI di stato — nessun @PersonalData, nessuna voce di manifesto/RoPA — esattamente come status, deletion_requested_at (change 0029) e suspended_reason (change 0030), che in Account.java non sono annotati. Finalità: attuare la minimizzazione/retention già decisa (auto-cancellazione inattivi 24 mesi, #13 E26); nessuna nuova finalità, nessuna nuova base giuridica, nessun nuovo responsabile esterno (l'avviso riusa l'email utente già a manifesto e SES già in lista #13 H45). Esito: MINOR, piattaforma core. Il check CI @PersonalData↔manifesto (mvn test) resta verde perché non si annota nulla e il manifesto non cambia."
   }
 ]
