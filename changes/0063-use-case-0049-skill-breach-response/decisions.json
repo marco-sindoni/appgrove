@@ -1,0 +1,63 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi a commit e merge restano allo sviluppatore, così come la rilettura e approvazione dei requisiti."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0049 (skill breach-response + runbook/registro/security.txt): il testo dell'invocazione lo nomina esplicitamente e corrisponde allo scope di docs/usecases/10-skills-tooling/0049-skill-breach-response.md. Da qui la forma del branch change/0063-use-case-0049-skill-breach-response.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Riga 0049 portata a 🟡 (in corso) all'apertura della change; sarà portata a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Aree in scope: solo documentazione, skill e configurazione (docs/compliance/*, .claude/skills/breach-response/*, sito security.txt già esistente). Nessuna area di codice eseguibile (infra/frontend/services) è toccata: la change è documentale, quindi niente test di prodotto — gira comunque il gate privacy-scan (UC 0031) e la suite compliance (UC 0030) perché si tocca docs/compliance. run-tests.sh non cambia (nessun modulo aggiunto/rimosso, nessun comando di test modificato)."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Struttura dei deliverable: (a) runbook IR in docs/compliance/breach-runbook.md (detect→assess→contain→notify→document + timeline 72h, come da #13 J56); (b) registro breach interno in docs/compliance/breach-register.md (art. 33.5, interno come la RoPA); (c) skill co-pilota in .claude/skills/breach-response/ (SKILL.md + reference/ con albero soglie, template registro, template notifiche). Scelto perché rispecchia i percorsi esatti indicati dallo use case 0049 e dalla decisione #13 J, e separa la parte 'sempre-vera' (runbook/registro nei docs) dalla parte 'attivata all'incidente' (skill).",
+    "files": [
+      { "file": "docs/compliance/breach-runbook.md", "description": "Nuovo: runbook di Incident Response interno con timeline 72h e albero delle soglie." },
+      { "file": "docs/compliance/breach-register.md", "description": "Nuovo: registro breach interno (art. 33.5), schema + tabella (nessun incidente registrato)." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La skill breach-response è puro co-pilota a intervista, senza tool deterministico (come campaign-guide): la valutazione del rischio è giudizio umano assistito da un albero decisionale, non un calcolo. Niente codice eseguibile da testare; i 'test' dello use case (§9) sono verifiche sui deliverable (albero → decisione corretta sui casi tipo, registro/draft completi IT/EN, security.txt pubblicato).",
+    "files": [
+      { "file": ".claude/skills/breach-response/SKILL.md", "description": "Nuovo: flusso a intervista detect→assess→contain→notify→document, gate di escalation, nessun tool." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Nessun nuovo trattamento nel manifesto dati per 'gestione incidenti/sicurezza': la finalità è già dichiarata nel trattamento logs.structured della piattaforma (Sicurezza/stabilità/diagnostica, legittimo interesse art. 6.1.f) e nella sezione narrativa 'Misure di sicurezza'. Il registro breach è metadato interno (come la RoPA), non un nuovo canale di raccolta di dati personali. Perciò 'Tocca dati personali? = No (nessun nuovo trattamento/classificazione MAJOR/MINOR)'. Non è una classificazione materialmente ambigua (niente art. 9, niente nuova base giuridica, niente nuovo responsabile esterno): base già consolidata in #13 J → decisa in autopilot, non escalata."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il blocco narrativo 'security' del manifesto piattaforma (platform.yaml, IT+EN) viene esteso con un riferimento al processo di Incident Response (runbook + registro breach, notifica 72h art. 33/34) e la RoPA viene ri-assemblata (npm run assemble). La RoPA è generata dai manifesti: modificare il manifesto e rigenerare mantiene verde il check di parità/freshness (UC 0030). Rende il processo breach scopribile dagli artefatti di compliance senza introdurre nuovi trattamenti.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Blocco security esteso con il riferimento al processo di Incident Response (runbook/registro)." },
+      { "file": "docs/compliance/ropa.it.md", "description": "Ri-generato da assemble (riflette il nuovo testo del blocco security)." },
+      { "file": "docs/compliance/ropa.en.md", "description": "Ri-generato da assemble (parità IT/EN)." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) I template di notifica (Garante art. 33, interessati art. 34, controller B2B per il ruolo responsabile) sono prodotti come bozze solide e complete in IT ed EN, marcate esplicitamente 'BOZZA — validazione legale L12': la validità legale finale non è dell'agente. Coerente con il gate dello use case (§8: la skill assiste fino a bozza solida; validazione = legale). Il punto L12 resta aperto in docs/_REVISIONE-LEGALE.md, non lo si chiude.",
+    "files": [
+      { "file": ".claude/skills/breach-response/reference/template-notifiche.md", "description": "Nuovo: bozze notifiche IT/EN per i tre destinatari, marcate in attesa di validazione legale (L12)." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) security.txt e security@appgrove.app: security.txt esiste già sul sito (site/public/.well-known/security.txt, UC 0037) ed è conforme RFC 9116 — non si ricrea. Il provisioning della casella security@ è un'azione operativa del founder (nessuna infra da toccare qui): entra come voce di prerequisito operativo nel runbook. Il deliverable §3 dello use case è quindi soddisfatto (security.txt pubblicato) con la mailbox tracciata come azione founder.",
+    "files": [
+      { "file": "site/public/.well-known/security.txt", "description": "Già presente e conforme (UC 0037): verificato, nessuna modifica necessaria." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Fuori scope e già tracciato: il link al registro breach dalla console admin 'Diritti GDPR' (UC 0034) resta di proprietà della change 0030/UC 0034 — già annotato nei 'Punti aperti' dello use case 0049. Non lo si tocca qui. Alla chiusura si aggiornano docs/_BACKLOG.md (sezione 'Data breach' e voce skill breach-response → fatto) e docs/usecases/_INDEX.md (0049 → ✅)."
+  }
+]
