@@ -29,3 +29,22 @@ export function useVisibleModules(): ModuleManifest[] {
 export function findModule(appId: string): ModuleManifest | undefined {
   return MODULES.find((m) => m.id === appId)
 }
+
+/** Istanza i18n vista come registratore di bundle (evita di dipendere dal tipo di i18next qui). */
+interface ResourceRegistrar {
+  addResourceBundle(lng: string, ns: string, resources: object, deep?: boolean, overwrite?: boolean): unknown
+}
+
+/**
+ * Registra nell'istanza i18n i bundle di traduzione per-modulo (UC 0060), sotto lo spazio-nomi = `id`
+ * del modulo, così che la sidebar mostri le etichette localizzate anche prima di aprire il modulo.
+ * Va chiamata subito dopo aver creato l'istanza (bootstrap dell'app e utility di test).
+ */
+export function registerModuleResources(i18n: ResourceRegistrar, modules: ModuleManifest[] = MODULES): void {
+  for (const mod of modules) {
+    if (!mod.resources) continue
+    for (const [lng, bundle] of Object.entries(mod.resources)) {
+      if (bundle) i18n.addResourceBundle(lng, mod.id, bundle, true, true)
+    }
+  }
+}

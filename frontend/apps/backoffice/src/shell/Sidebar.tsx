@@ -80,6 +80,9 @@ function initialsOf(name: string | undefined, email: string | undefined): string
  */
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useTranslation()
+  // I moduli app passano chiavi i18n dinamiche (spazio-nomi del modulo, UC 0060); il tipo di `t` è
+  // ristretto alle chiavi statiche note, quindi le voci di modulo si risolvono con una vista `string`.
+  const tKey = t as unknown as (key: string) => string
   const modules = useVisibleModules()
   const { pathname } = useLocation()
   const logout = useLogout()
@@ -141,7 +144,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 >
                   {mod.icon && <Icon name={mod.icon} size={15} filled />}
                 </span>
-                <span className="truncate">{mod.name}</span>
+                <span className="truncate">{tKey(mod.name)}</span>
                 <Icon
                   name="chevron_right"
                   size={18}
@@ -162,7 +165,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                     >
                       {section.icon && <Icon name={section.icon} size={17} />}
-                      {section.label}
+                      {tKey(section.label)}
                     </NavLink>
                   ))}
                 </div>

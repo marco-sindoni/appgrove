@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; restano allo sviluppatore i tre gate (rilettura/approvazione dei requisiti, consenso al commit, consenso al merge)."
+  },
+  {
+    "id": 2,
+    "decision": "La change implementa lo use case 0060 (docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md): portare la UI delle app (shell backoffice + admin + moduli app) dalle attuali 2 lingue (it/en) alle 5 del sito (en/it/fr/es/de) e convertire il modulo fatture da strings.ts cablato all'i18n. Da qui la forma del branch NNNN-use-case-0060-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0060 → 🟡 (in corso) all'apertura della change; → ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ambito moduli: in questa change si converte all'i18n il solo modulo `fatture`; `crm` e `demo` restano su strings.ts. Motivo: UC 0060 ammette esplicitamente la migrazione incrementale per modulo (flusso alternativo: 'modulo non ancora convertito → resta in italiano finché non migrato'), e `fatture` è sia il motore della change (screenshot landing) sia la sorgente di verità dello scaffolding. La conversione di `crm`/`demo` è tracciata come punto aperto in UC 0060.",
+    "files": [
+      { "file": "docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md", "description": "Sezione 'Punti aperti / decisioni differite': conversione i18n di crm e demo rimandata (stesso pattern di fatture)." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Le stringhe dei moduli app vivono in pacchetti di traduzione PER-MODULO (`frontend/apps/backoffice/src/modules/<id>/i18n/{en,it,fr,es,de}.ts`), non nel catalogo condiviso della shell. La shell li registra nell'istanza i18next come spazio-nomi con nome = id del modulo, leggendo i bundle dal manifest del modulo. Motivo: tiene i moduli disaccoppiati dalla shell (spirito marketplace, preserva la ragione dello strings.ts originale) e rende banale la parità di scaffolding — sono file copiati con sostituzione dei segnaposto, senza toccare la logica del generatore, così una nuova app nasce già localizzata e avviabile (invariante 'app nuova gira subito'). L'alternativa (chiavi nel catalogo condiviso) avrebbe imposto al generatore di iniettare sezioni per-app nei 5 cataloghi: più fragile.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/modules/fatture/i18n/", "description": "Nuovi bundle di traduzione per-modulo nelle 5 lingue; sostituiscono strings.ts." },
+      { "file": "frontend/apps/backoffice/src/registry/types.ts", "description": "ModuleManifest espone i bundle di traduzione per-lingua che la shell registra." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Le label di navigazione (nome modulo, label sezione) diventano chiavi i18n risolte dalla shell nel renderer Sidebar con t() (reattive al cambio lingua). I moduli legacy che passano ancora stringhe già localizzate restano compatibili perché i18next restituisce la chiave stessa quando non la trova. Cambia il contratto ModuleManifest (il commento 'label già localizzata dal modulo' va aggiornato).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx", "description": "Rende mod.name e section.label attraverso t()." },
+      { "file": "frontend/apps/backoffice/src/registry/types.ts", "description": "name/label diventano chiavi i18n (spazio-nomi del modulo)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) La lingua attiva all'avvio deriva da una fonte controllabile dalla cattura screenshot: ordine localStorage(preferenza) → navigator.language (prime 2 lettere) → 'en', vincolata alle 5 lingue supportate; la scelta manuale nel selettore viene persistita in localStorage. Motivo: è ciò che rende utili gli screenshot per-lingua (Playwright imposta locale/Accept-Language sul contesto del browser → navigator.language) e allo stesso tempo migliora l'esperienza reale dell'utente, che apre l'app nella propria lingua.",
+    "files": [
+      { "file": "frontend/packages/i18n/src/index.ts", "description": "Helper detectLanguage() e persistenza della scelta; createI18n() usa la lingua rilevata." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il selettore lingua in topbar passa da SegmentedControl (documentato per 'poche opzioni', 2 segmenti) a un menu a tendina compatto costruito col pattern disclosure <details>/<summary> già usato per il menu utente nella Sidebar, senza introdurre nuove dipendenze (nel design-system non esiste una primitiva Select/Dropdown; cost-min). Vale per backoffice e admin.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/Topbar.tsx", "description": "Menu a tendina lingua a 5 voci al posto del SegmentedControl." },
+      { "file": "frontend/apps/admin/src/shell/Topbar.tsx", "description": "Stesso menu a tendina lingua." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) formatAmount del modulo fatture diventa consapevole della lingua attiva: il locale di Intl.NumberFormat deriva dalla lingua UI (it→it-IT, en→en-GB, fr→fr-FR, es→es-ES, de→de-DE) invece di essere cablato 'it-IT'; la valuta resta EUR. statusLabel usa le chiavi i18n del modulo.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/modules/fatture/", "description": "formatAmount locale-aware; statusLabel via t()." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Parità di scaffolding: il template `tools/new-application/templates/frontend-module/` viene convertito all'i18n in parallelo a fatture (via pulita del presidio a tre strati: aggiornare il template invece di lasciarlo indietro), così che una nuova app nasca già localizzata e il collaudo di parità (che confronta l'insieme dei file del modulo fatture ↔ template) resti verde. Se un residuo non risultasse ripianabile in questa change, verrà registrato come deviazione consapevole in docs/_PARITA-SCAFFOLD.md con il percorso di riallineamento.",
+    "files": [
+      { "file": "tools/new-application/templates/frontend-module/", "description": "Template convertito a i18n (bundle i18n per-modulo, manifest/screens/components senza strings.ts)." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot, rivista su richiesta dello sviluppatore) La ri-cattura dei 5 screenshot per-lingua della landing `fatture` (DoD punto 3 di UC 0060) rientra IN QUESTA change, non è rimandata. Motivo: è il risultato osservabile che ha originato lo use case (oggi lo screenshot della pagina fattura è in italiano per tutte le lingue del sito) e non richiede il merge — il tool tools/finalize-landing serve il modulo frontend in locale con dati finti e cattura un'immagine per lingua impostando il locale del browser, quindi basta la UI localizzata prodotta qui; eseguirla dentro la change è anche la prova che il rilevamento lingua funziona (il locale del contesto browser deve pilotare la lingua della UI). Si rigenera solo lo step screenshot (site/public/landings/fatture/hero.<locale>.png, sorgente del sito), non l'intera finalizzazione: la landing è già pubblicata, la build del sito la ripubblica al merge (CI, UC 0036).",
+    "files": [
+      { "file": "site/public/landings/fatture/hero.en.png", "description": "Screenshot rigenerato con UI localizzata (idem hero.it/fr/es/de.png)." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Meccanismo di consumo delle stringhe di modulo: le schermate NON usano `t()` di i18next ma un hook tipizzato `useFattureMessages()` che restituisce l'oggetto di stringhe della lingua attiva (reattivo, l'hook si ri-renderizza sull'evento languageChanged), con fallback su EN. Questo evita l'attrito di tipizzazione degli spazi-nomi non dichiarati in i18next (il tipo di `t` è ristretto alle chiavi statiche della shell) e tiene le stringhe del modulo pienamente tipizzate (`FattureMessages`). I bundle vengono comunque registrati in i18next (registerModuleResources) perché servono alla shell per risolvere le ETICHETTE DI NAVIGAZIONE dinamiche.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/modules/fatture/i18n/index.ts", "description": "useFattureMessages(): stringhe della lingua attiva, reattive; fattureResources per la registrazione." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Le etichette di navigazione dei moduli (nome modulo, label sezione) sono chiavi i18n con spazio-nomi (es. `fatture:appName`) risolte dalla shell con `t()` in Sidebar E Breadcrumb. Poiché il tipo di `t` è ristretto alle chiavi statiche, la risoluzione delle chiavi dinamiche dei moduli passa per una vista `t as unknown as (key: string) => string`. La Breadcrumb è stata corretta insieme alla Sidebar: senza, mostrava la chiave grezza `fatture:appName` (emerso alla verifica visiva del primo screenshot).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx", "description": "tKey(mod.name) e tKey(section.label)." },
+      { "file": "frontend/apps/backoffice/src/shell/Breadcrumb.tsx", "description": "Risoluzione del nome modulo via tKey (correzione: prima chiave grezza)." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) La lingua di default dell'app è ora derivata dal browser: nei test unitari le utility passano `en` esplicito (comportamento invariato per i test esistenti), i test del modulo `fatture` rendono in `it` (dominio italiano) più un test in `fr` per la localizzazione; negli end-to-end il locale predefinito di Playwright (`en-US`) porta l'intera app in inglese, quindi le asserzioni del modulo in `fatture.spec.ts` sono state allineate all'inglese (Invoices/New invoice/Customer name/Create invoice), coerenti con l'assunzione 'default UI language = EN' già presente nella suite e2e. Nessuno snapshot visivo end-to-end esiste, quindi la regola sul baseline non si applica.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/test/utils.tsx", "description": "Opzione `language` + registrazione bundle moduli come nel bootstrap reale." },
+      { "file": "frontend/apps/backoffice/e2e/fatture.spec.ts", "description": "Asserzioni del modulo allineate all'inglese (default e2e = EN)." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Gate percorsi-sorgente scaffolding (source-paths-scan): scelta VIA 1 — modelli aggiornati in parallelo. Il template `tools/new-application/templates/frontend-module/` è stato convertito all'i18n come `fatture` (rimosso strings.ts, aggiunta cartella i18n/ con bundle+index+format, manifest/screens/componenti convertiti) e la parità (parity-check) è verde. La modifica a `registry.ts` (funzione generica `registerModuleResources`) è infrastruttura condivisa, NON drift specifico dell'app: il generatore patcha `registry.ts` sull'array MODULES/gli import (marcatori intatti) e una nuova app aggiunta a MODULES viene registrata automaticamente da main.tsx — nessun modello per-app da aggiornare, nessuna deviazione consapevole da registrare in docs/_PARITA-SCAFFOLD.md.",
+    "files": [
+      { "file": "tools/new-application/templates/frontend-module/i18n/", "description": "Template convertito a i18n (5 lingue + index + format), strings.ts rimosso." },
+      { "file": "frontend/apps/backoffice/src/registry/registry.ts", "description": "registerModuleResources: infra condivisa, registrazione automatica dei moduli in MODULES." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) formatAmount e la formattazione data del modulo derivano il locale dalla lingua UI attiva (i18n.language → it-IT/en-GB/fr-FR/es-ES/de-DE), invece di 'it-IT' cablato. Verifica visiva dei 5 screenshot rigenerati: en/fr/de mostrano UI, breadcrumb, sidebar e formattazione numeri/date coerenti alla lingua (es. fr '1 220,00 €', de '1.220,00 €' e date '12.1.2026'). Il modulo demo (legacy, non convertito) resta in inglese non tradotto negli screenshot: cosmetico, tracciato in UC 0060.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/modules/fatture/i18n/format.ts", "description": "localeTag + formatAmount/formatDate consapevoli della lingua." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "Gate privacy/RoPA (UC 0031): scanner deterministico eseguito, NESSUN segnale (la change è solo risorse di traduzione e configurazione lingua, nessun dato personale, nessuna nuova query/dipendenza/host). Nessuna classificazione MAJOR/MINOR dovuta.",
+    "files": []
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Selettore lingua: nel pacchetto i18n aggiunto LANGUAGE_LABELS (endonimi) come dato condiviso dei due topbar; il menu a tendina è implementato col pattern disclosure <details>/<summary> inline in ciascun topbar (backoffice, admin) perché nel design-system non esiste una primitiva Select/Dropdown e crearne una (o aggiungere una dipendenza Radix) sarebbe stato oltre lo scope (cost-min). Il pacchetto i18n è stato ricompilato (dist) perché le app lo risolvono dall'output compilato.",
+    "files": [
+      { "file": "frontend/packages/i18n/src/index.ts", "description": "LANGUAGES a 5, detectLanguage/persistLanguage/LANGUAGE_LABELS; dist ricompilato." }
+    ]
+  }
+]

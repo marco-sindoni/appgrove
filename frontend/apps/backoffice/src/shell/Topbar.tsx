@@ -1,14 +1,66 @@
+import { useRef } from 'react'
 import {
   Icon,
-  SegmentedControl,
   cn,
   useTheme,
   ACCENTS,
   ACCENT_COLORS,
   type Accent,
 } from '@appgrove/design-system'
-import { useTranslation, LANGUAGES, type Language } from '@appgrove/i18n'
+import {
+  useTranslation,
+  LANGUAGES,
+  LANGUAGE_LABELS,
+  persistLanguage,
+  type Language,
+} from '@appgrove/i18n'
 import { Breadcrumb } from './Breadcrumb'
+
+/**
+ * Selettore lingua a tendina (UC 0060): con 5 lingue un controllo segmentato è troppo stretto.
+ * Riusa il pattern disclosure `<details>` (come il menu utente) — nessuna nuova dipendenza. La scelta
+ * viene persistita così da ritrovarla al ricaricamento.
+ */
+function LanguageMenu() {
+  const { t, i18n } = useTranslation()
+  const ref = useRef<HTMLDetailsElement>(null)
+  const current = (i18n.language?.slice(0, 2) as Language) ?? 'en'
+
+  const select = (language: Language) => {
+    persistLanguage(language)
+    void i18n.changeLanguage(language)
+    ref.current?.removeAttribute('open')
+  }
+
+  return (
+    <details ref={ref} className="relative">
+      <summary
+        aria-label={t('topbar.language')}
+        className="flex h-[38px] cursor-pointer list-none items-center gap-1 rounded-[10px] border border-line px-2.5 text-[13px] font-semibold text-fg-muted transition-colors hover:bg-surface-3"
+      >
+        {current.toUpperCase()}
+        <Icon name="expand_more" size={16} />
+      </summary>
+      <div className="absolute right-0 top-full z-30 mt-1.5 w-40 rounded-md border border-line bg-surface p-1 shadow-lg">
+        {LANGUAGES.map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => select(l)}
+            aria-current={l === current}
+            className={cn(
+              'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-[13px] font-semibold transition-colors hover:bg-surface-3',
+              l === current ? 'text-accent' : 'text-fg',
+            )}
+          >
+            {LANGUAGE_LABELS[l]}
+            {l === current && <Icon name="check" size={16} />}
+          </button>
+        ))}
+      </div>
+    </details>
+  )
+}
 
 /* Pulsante-icona 38px del mockup (tema, notifiche): bordo sottile, raggio 10px, hover su surface-3. */
 function IconButton({
@@ -37,10 +89,8 @@ function IconButton({
 
 /** Topbar (mockup): 64px, sfondo traslucido sfocato, breadcrumb a sinistra; a destra pallini accent, lingua, tema, notifiche (#03 IA). */
 export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { theme, accent, setAccent, toggleTheme } = useTheme()
-
-  const language = (i18n.language?.slice(0, 2) as Language) ?? 'en'
 
   return (
     <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-4 border-b border-line bg-surface/80 px-[26px] backdrop-blur-md">
@@ -80,12 +130,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
           ))}
         </div>
 
-        <SegmentedControl
-          aria-label={t('topbar.language')}
-          value={language}
-          options={LANGUAGES.map((l) => ({ value: l, label: l.toUpperCase() }))}
-          onValueChange={(v) => void i18n.changeLanguage(v)}
-        />
+        <LanguageMenu />
 
         <IconButton
           label={t('topbar.toggleTheme')}

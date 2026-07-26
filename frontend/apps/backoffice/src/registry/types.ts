@@ -5,7 +5,11 @@ import type { Language } from '@appgrove/i18n'
 /** Voce di menu (sezione) di un modulo app nella sidebar. */
 export interface ModuleSection {
   id: string
-  /** Label già localizzata dal modulo (le stringhe app sono per-modulo, #03 dec.6). */
+  /**
+   * Etichetta della voce: chiave i18n risolta dalla shell con `t()` (UC 0060) — tipicamente con lo
+   * spazio-nomi del modulo, es. `fatture:sectionInvoices`. I moduli non ancora migrati all'i18n
+   * possono passare una stringa già localizzata: `t()` la restituisce invariata (fallback sulla chiave).
+   */
   label: string
   /** Route relativa alla base del modulo → montata sotto `/app/<id>`. */
   route: string
@@ -19,12 +23,21 @@ export interface ModuleSection {
 export interface ModuleManifest {
   /** `app_id`: chiave di entitlement e del registry. */
   id: string
-  /** Nome display (`app_name`). */
+  /**
+   * Nome display: chiave i18n risolta dalla shell con `t()` (UC 0060), es. `fatture:appName`.
+   * Vale la stessa retro-compatibilità di `ModuleSection.label` per i moduli non ancora migrati.
+   */
   name: string
   icon?: string
   /** Token colore-categoria del design-system (es. `cat-violet`). */
   accentToken?: string
   sections: ModuleSection[]
+  /**
+   * Bundle di traduzione per-modulo (UC 0060): per ogni lingua l'oggetto di stringhe che la shell
+   * registra nell'istanza i18n sotto lo spazio-nomi = `id` del modulo. Assente per i moduli non
+   * ancora migrati all'i18n (restano con stringhe italiane cablate).
+   */
+  resources?: Partial<Record<Language, Record<string, unknown>>>
   component: LazyExoticComponent<ComponentType>
 }
 

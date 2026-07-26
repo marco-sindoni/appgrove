@@ -62,3 +62,17 @@ N/A (UI/i18n). Nessuna query tenant-scoped introdotta.
   2. Modulo `fatture` (e gli altri moduli app) resi via i18n, nessuna stringa cablata residua.
   3. `/finalize-landing fatture` ri-eseguita: 5 screenshot con UI coerente alla lingua; landing ripubblicata.
   4. Test verdi (parità i18n + render moduli); `run-tests.sh` aggiornato se serve.
+
+## Punti aperti / decisioni differite
+
+- **Conversione i18n dei moduli `crm` e `demo`** — *differita* (change `0055-use-case-0060-…`). La change 0055 ha convertito
+  all'i18n il solo modulo `fatture` (il motore della change e la sorgente di verità dello scaffolding); `crm` e `demo`
+  restano su `strings.ts` in italiano. La migrazione è prevista incrementale per modulo (flusso alternativo di questo UC) e
+  il pattern è ormai fissato (bundle per-modulo `modules/<id>/i18n/{en,it,fr,es,de}.ts` + `resources` nel manifest, come
+  `fatture`). *Owner*: questo UC (0060). *Effetto visibile*: negli screenshot landing il modulo `demo` compare ancora in
+  inglese non tradotto — cosmetico, non blocca (il modulo reale `fatture` è pienamente localizzato).
+- **Quota label del template a 5 lingue** — nel modello di scaffolding (`tools/new-application/templates/frontend-module/i18n/`)
+  le etichette di quota usano i segnaposto `@@QUOTA_LABEL@@`/`@@QUOTA_REACHED@@`, che il generatore sostituisce con un unico
+  valore (dal listino): un'app appena generata mostra quindi la stessa etichetta di quota in tutte le lingue finché lo
+  sviluppatore non la localizza riscrivendo le stringhe del modulo (le stringhe scaffold sono per definizione da riscrivere).
+  *Owner*: UC 0046 (skill `new-application`).

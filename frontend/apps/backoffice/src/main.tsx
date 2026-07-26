@@ -1,9 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { installErrorReporter } from '@appgrove/error-reporter'
-import { createI18n } from '@appgrove/i18n'
+import { createI18n, detectLanguage } from '@appgrove/i18n'
 import { App } from './App'
 import { useAuthStore } from './auth/authStore'
+import { registerModuleResources } from './registry/registry'
 import { loadConfig } from './config'
 import './styles.css'
 
@@ -26,7 +27,10 @@ async function bootstrap() {
         return claims ? { userId: claims.userId, tenantId: claims.tenantId } : {}
       },
     })
-    const i18n = createI18n()
+    // Lingua iniziale dalla preferenza/browser (UC 0060); i bundle dei moduli app sono registrati
+    // subito, così la sidebar mostra le etichette localizzate prima ancora di aprire un modulo.
+    const i18n = createI18n(detectLanguage())
+    registerModuleResources(i18n)
     createRoot(rootEl).render(
       <StrictMode>
         <App config={config} i18n={i18n} />

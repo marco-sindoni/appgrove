@@ -10,24 +10,27 @@ import {
   TableHeadCell,
   TableRow,
 } from '@appgrove/design-system'
+import { useTranslation } from '@appgrove/i18n'
 import { QueryState } from '../../../shell/QueryState'
 import { useInvoices } from '../api/hooks'
 import { QuotaBanner } from '../components/QuotaBanner'
 import { CustomerAvatar } from '../components/CustomerAvatar'
 import { StatusBadge } from '../components/StatusBadge'
-import { formatAmount, t } from '../strings'
+import { formatAmount, formatDate, useFattureMessages } from '../i18n'
 
 /** Schermata lista fatture (mockup Invoices): header con riquadro icona app, banner quota, tabella card. */
 export function InvoiceListScreen() {
   const navigate = useNavigate()
   const invoices = useInvoices()
   const rows = invoices.data?.content ?? []
+  const m = useFattureMessages()
+  const { i18n } = useTranslation()
 
   return (
     <div className="space-y-[22px]">
       <PageHeader
-        title={t.title}
-        subtitle={t.subtitle}
+        title={m.title}
+        subtitle={m.subtitle}
         icon="receipt_long"
         iconClassName="bg-cat-blue/15 text-cat-blue"
         actions={
@@ -36,7 +39,7 @@ export function InvoiceListScreen() {
             onClick={() => navigate('new')}
           >
             <Icon name="add" size={19} />
-            {t.newInvoice}
+            {m.newInvoice}
           </Button>
         }
       />
@@ -51,18 +54,18 @@ export function InvoiceListScreen() {
         {rows.length === 0 ? (
           <div className="rounded-lg border border-line bg-surface px-6 py-12 text-center shadow-sm">
             <Icon name="receipt_long" size={42} className="text-fg-faint" />
-            <p className="mt-3 text-[15px] font-bold text-fg">{t.empty}</p>
+            <p className="mt-3 text-[15px] font-bold text-fg">{m.empty}</p>
           </div>
         ) : (
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeadCell>{t.colNumber}</TableHeadCell>
-                <TableHeadCell>{t.colCustomer}</TableHeadCell>
-                <TableHeadCell>{t.colIssueDate}</TableHeadCell>
-                <TableHeadCell>{t.colStatus}</TableHeadCell>
-                <TableHeadCell className="text-right">{t.colTotal}</TableHeadCell>
-                <TableHeadCell className="text-right">{t.colActions}</TableHeadCell>
+                <TableHeadCell>{m.colNumber}</TableHeadCell>
+                <TableHeadCell>{m.colCustomer}</TableHeadCell>
+                <TableHeadCell>{m.colIssueDate}</TableHeadCell>
+                <TableHeadCell>{m.colStatus}</TableHeadCell>
+                <TableHeadCell className="text-right">{m.colTotal}</TableHeadCell>
+                <TableHeadCell className="text-right">{m.colActions}</TableHeadCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -78,13 +81,13 @@ export function InvoiceListScreen() {
                     </span>
                   </TableCell>
                   <TableCell className="text-fg-muted">
-                    {inv.issueDate ? new Date(inv.issueDate).toLocaleDateString('it-IT') : '—'}
+                    {formatDate(inv.issueDate, i18n.language)}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={inv.status} />
                   </TableCell>
                   <TableCell className="text-right font-mono font-bold">
-                    {formatAmount(inv.totalAmount, inv.currency)}
+                    {formatAmount(inv.totalAmount, inv.currency, i18n.language)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -95,7 +98,7 @@ export function InvoiceListScreen() {
                         navigate(String(inv.id))
                       }}
                     >
-                      {t.detailTitle}
+                      {m.detailTitle}
                     </Button>
                   </TableCell>
                 </TableRow>
