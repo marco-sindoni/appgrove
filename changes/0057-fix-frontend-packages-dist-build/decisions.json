@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i consensi a commit e merge restano allo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Change ad-hoc (non originata da uno use case): è un bugfix dell'orchestrazione di build del frontend. Nessuno use case in docs/usecases/ copre la freschezza del `dist` dei pacchetti-libreria del workspace; quindi forma di branch normale NNNN-brief-description (0057-fix-frontend-packages-dist-build) e nessun aggiornamento di docs/usecases/_INDEX.md."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Causa radice accertata: i pacchetti-libreria del frontend (@appgrove/i18n, @appgrove/design-system, @appgrove/api-client, @appgrove/error-reporter, @appgrove/paddle-stub) sono consumati SOLO dal loro `dist/` costruito (package.json exports → ./dist/index.js), ma `dist/` è gitignorato e nulla lo ricostruisce prima dei consumatori (vitest unit + `vite build` dell'app per gli e2e): nessun prepare/postinstall, nessuno step di build in run-tests.sh né nel job frontend di .github/workflows/verify-pr.yml. Ha funzionato finora solo perché il `dist` esistente combaciava coi sorgenti; le change 0055/0060 (5 lingue) e 0056 (chiavi legal.*) hanno modificato i sorgenti i18n rendendo il `dist` stantìo → il gate legale rende le chiavi grezze e gli e2e/unit falliscono. Il sintomo iniziale su react-markdown era invece solo node_modules locale disallineato (già in package-lock), risolto da npm install: NON è un difetto del repo."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Meccanismo di correzione durevole scelto: A+B. (A) Aggiungere uno script `prepare` a ciascun pacchetto-libreria del frontend (`\"prepare\": \"npm run build\"`), così npm ricostruisce il `dist` automaticamente a ogni `npm ci`/`npm install`: è il punto idiomatico dove un pacchetto si costruisce prima di essere consumato, copre la CI (senza modificare verify-pr.yml) e lo scenario di pull+install che ha causato il rosso. (B) Far costruire i pacchetti a `run-tests.sh` (area frontend) prima di `npm test`/`npm run e2e`, così l'entrypoint canonico è autoconsistente anche quando si modifica un sorgente-pacchetto senza reinstallare. Scartata l'opzione C (consumare i pacchetti dai sorgenti via condizioni exports/alias) perché sproporzionata per un bugfix: cambierebbe la semantica del bundle di produzione e toccherebbe più superfici.",
+    "files": [
+      {
+        "file": "frontend/packages/i18n/package.json",
+        "description": "Aggiunto script `prepare` che invoca il build (idem per design-system, api-client, error-reporter, paddle-stub)."
+      },
+      {
+        "file": "run-tests.sh",
+        "description": "La funzione dell'area frontend costruisce i pacchetti-libreria del workspace prima di eseguire vitest e gli e2e Playwright."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La build dei pacchetti in run-tests.sh scopre i pacchetti in modo dinamico (itera frontend/packages/*/ e costruisce quelli che dichiarano uno script `build`), coerente con l'ethos di auto-scoperta del repo (dev/lib/services.sh): un pacchetto nuovo viene incluso da solo senza modificare lo script."
+  }
+]
