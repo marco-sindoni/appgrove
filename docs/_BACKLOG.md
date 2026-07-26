@@ -187,11 +187,11 @@ flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affr
   best-effort**. **MVP minimale, NO allegati**: tipo/priorità/stato, thread messaggi utente↔admin, notifiche email SES,
   trigger auto (form in-app, `privacy@`/`support@` via SES→Lambda, eventi export FAILED / escalation art. 9). Use case dedicato.
 
-## Data breach — runbook, registro, security.txt (#13 J)
-- **Runbook IR interno** (`docs/compliance/breach-runbook.md`) + **registro breach interno** (art. 33.5) — da redigere.
-- **`security.txt`** + `security@appgrove.app` per responsible disclosure (al lancio vetrina).
-- **Template notifiche** (Garante/interessati/controller) → deliverable pre-go-live (L12).
-- Skill **`breach-response`** → memoria `skills-backlog`.
+## Data breach — runbook, registro, security.txt (#13 J) — ✅ fatto (change 0063, UC 0049)
+- ✅ **Runbook IR interno** (`docs/compliance/breach-runbook.md`) + **registro breach interno** (`docs/compliance/breach-register.md`, art. 33.5).
+- ✅ **`security.txt`** (già pubblicato UC 0037) + `security@appgrove.app` per responsible disclosure. Resta **azione operativa del founder**: provisioning/monitoraggio della casella `security@` (nessuna infra).
+- **Template notifiche** (Garante/interessati/controller) → **bozze** pronte (`.claude/skills/breach-response/reference/template-notifiche.md`); validazione **legale** resta L12 (pre-go-live).
+- ✅ Skill **`breach-response`** creata (`.claude/skills/breach-response/`).
 
 ## Sito vetrina (marketing) — richiesto 2026-06-20
 Nuovo artefatto, distinto dalle 2 SPA (#03 backoffice+admin). **Statico**, **multilingua EN/IT/FR/ES/DE**, **contenuti
@@ -414,10 +414,10 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   (Traffico/Lead Form native), **convenzioni UTM** per attribuzione **Plausible** cookieless, **copy/creatività AI
   on-brand** (tono F1, dec. 35), **checklist di conformità** a ogni step. L'utente non è esperto di advertising.
   **Evoluzione futura**: assistente **Playwright non-headless** che pilota la UI di creazione campagna. Memoria `skills-backlog`.
-- **`breach-response`** (richiesto 2026-06-20, #13 J) — co-pilota **data breach**: guida la valutazione del rischio
-  (albero soglie), decide notifica/non-notifica (Garante art. 33 / interessati art. 34 / esenzione cifratura art. 34.3),
-  redige la voce del **registro breach** (art. 33.5) e i **draft notifiche** (Garante/interessati/controller B2B) IT/EN.
-  Memoria `skills-backlog`. (Vedi anche sezione "Data breach" sopra.)
+- ✅ **`breach-response`** (richiesto 2026-06-20, #13 J — **fatto** change 0063, UC 0049) — co-pilota **data breach**:
+  guida la valutazione del rischio (albero soglie), decide notifica/non-notifica (Garante art. 33 / interessati art. 34 /
+  esenzione cifratura art. 34.3), redige la voce del **registro breach** (art. 33.5) e i **draft notifiche**
+  (Garante/interessati/controller B2B) IT/EN. Creata in `.claude/skills/breach-response/`.
 - **`drop-application`** (richiesto 2026-06-20) — **inverso** di `new-application`: **decommissioning DevOps completo e
   irreversibile** di un'app. Cancella **tutte** le risorse AWS create per quell'app (ECS service/task, ECR repo, route API,
   schema `app_<id>` + ruolo DB, coda SQS, SSM/Secrets, log group, dashboard/allarmi, ecc.) via `service-remove` /
