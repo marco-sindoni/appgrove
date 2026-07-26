@@ -64,9 +64,9 @@
   },
   {
     "id": 10,
-    "decision": "(autopilot) La ri-esecuzione di /finalize-landing fatture (ricattura dei 5 screenshot per-lingua + ripubblicazione della landing, DoD punto 3 di UC 0060) è rimandata a un'invocazione della skill dedicata DOPO il merge: è un flusso separato che produce asset binari e non passa dal gate test/snapshot di new-change, e richiede l'app già mergiata che serve la UI localizzata. Questa change consegna la capacità (UI a 5 lingue + rilevamento lingua dal browser) e la verifica localmente; la ricattura è il sotto-passo di chiusura, tracciato in UC 0060.",
+    "decision": "(autopilot, rivista su richiesta dello sviluppatore) La ri-cattura dei 5 screenshot per-lingua della landing `fatture` (DoD punto 3 di UC 0060) rientra IN QUESTA change, non è rimandata. Motivo: è il risultato osservabile che ha originato lo use case (oggi lo screenshot della pagina fattura è in italiano per tutte le lingue del sito) e non richiede il merge — il tool tools/finalize-landing serve il modulo frontend in locale con dati finti e cattura un'immagine per lingua impostando il locale del browser, quindi basta la UI localizzata prodotta qui; eseguirla dentro la change è anche la prova che il rilevamento lingua funziona (il locale del contesto browser deve pilotare la lingua della UI). Si rigenera solo lo step screenshot (site/public/landings/fatture/hero.<locale>.png, sorgente del sito), non l'intera finalizzazione: la landing è già pubblicata, la build del sito la ripubblica al merge (CI, UC 0036).",
     "files": [
-      { "file": "docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md", "description": "Punto aperto: eseguire /finalize-landing fatture dopo il merge per gli screenshot per-lingua." }
+      { "file": "site/public/landings/fatture/hero.en.png", "description": "Screenshot rigenerato con UI localizzata (idem hero.it/fr/es/de.png)." }
     ]
   }
 ]

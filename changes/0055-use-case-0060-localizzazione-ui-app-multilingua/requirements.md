@@ -1,7 +1,7 @@
 # Change 0055: Localizzazione UI delle app alle 5 lingue del sito (shell i18n + modulo fatture)
 
 **Branch**: `change/0055-use-case-0060-localizzazione-ui-app-multilingua`
-**Aree**: `frontend/` (pacchetto `@appgrove/i18n`, shell `backoffice` + `admin`, modulo `fatture`) · `tools/new-application` (parità dei modelli di scaffolding)
+**Aree**: `frontend/` (pacchetto `@appgrove/i18n`, shell `backoffice` + `admin`, modulo `fatture`) · `tools/new-application` (parità dei modelli di scaffolding) · `site/` (screenshot per-lingua della landing `fatture`, rigenerati)
 **Data**: 2026-07-26
 **Autore**: Platform Engineering (modalità autopilot)
 **Use case sorgente**: [`docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md`](../../docs/usecases/06-frontend/0060-localizzazione-ui-app-multilingua.md)
@@ -39,12 +39,14 @@ Tutto in area **frontend**, più l'aggiornamento in parallelo dei modelli di sca
 4. **Parità dei modelli di scaffolding** (`tools/new-application/templates/frontend-module/`)
    - Convertire il template del modulo frontend allo stesso pattern i18n (rimozione di `strings.ts`, bundle `i18n/*` con segnaposto, manifest/schermate/componenti via `useTranslation`), così che una nuova app nasca già localizzata e il collaudo di parità (`tools/scaffold-parity`, che confronta l'insieme dei file del modulo `fatture` reale con il template) resti verde. Gestire i segnaposto oggi contenuti in `strings.ts` (etichette quota) nel nuovo assetto.
 
-5. **`run-tests.sh`**: aggiornare solo se il comando di test di un'area cambia (atteso: nessuna modifica strutturale; le aree `frontend` e `tooling` coprono già i test toccati).
+5. **Ri-cattura degli screenshot per-lingua della landing `fatture`** (`site/public/landings/fatture/hero.{en,it,fr,es,de}.png`)
+   - Una volta localizzata la UI, rigenerare i 5 screenshot con il tool `tools/finalize-landing` (che serve il modulo frontend in locale con dati finti e cattura una immagine per lingua impostando il locale del browser), così che l'immagine mostrata nella landing rifletta la UI **nella lingua corrispondente** invece dell'italiano ovunque. Si rigenera solo lo step screenshot (la landing è già pubblicata; la build del sito la ripubblica al merge, CI/UC 0036), non l'intera finalizzazione.
+
+6. **`run-tests.sh`**: aggiornare solo se il comando di test di un'area cambia (atteso: nessuna modifica strutturale; le aree `frontend`, `tooling` e `site` coprono già i test toccati).
 
 ## Fuori scope
 
 - **Conversione dei moduli `crm` e `demo`** all'i18n: restano su `strings.ts` (in italiano) finché non migrati. UC 0060 ammette la migrazione incrementale per modulo. → tracciato in "Punti aperti / decisioni differite" di UC 0060.
-- **Ri-esecuzione di `/finalize-landing fatture`** (ricattura dei 5 screenshot per-lingua e ripubblicazione della landing, DoD 3 di UC 0060): è un flusso della skill dedicata, con asset binari e senza il gate test/snapshot di new-change, ed è eseguibile solo **dopo** il merge (richiede l'app che serve la UI localizzata). Questa change consegna e verifica la capacità; la ricattura è il sotto-passo di chiusura post-merge. → tracciato in UC 0060.
 - **Localizzazione dei contenuti della landing** (già a 5 lingue, UC 0038/0053) e delle **email di autenticazione** (UC 0018): esclusi da UC 0060.
 - **Backend / servizi / infra**: nessuna modifica. Nessuna nuova query, nessun dato personale, nessun cambio d'infrastruttura.
 
@@ -55,7 +57,8 @@ Tutto in area **frontend**, più l'aggiornamento in parallelo dei modelli di sca
 - [ ] La lingua attiva all'avvio deriva da `localStorage → navigator.language → en`; il selettore in topbar (5 lingue) cambia lingua e la scelta **persiste** al ricaricamento; il cambio lingua aggiorna anche le label di navigazione della sidebar.
 - [ ] Il modulo `fatture` non contiene più `strings.ts`: le stringhe vivono nei bundle per-modulo `i18n/{en,it,fr,es,de}.ts` e gli importi sono formattati secondo la lingua attiva.
 - [ ] Il template `tools/new-application/templates/frontend-module/` è convertito allo stesso pattern e il collaudo di parità dello scaffolding è **verde** (oppure ogni residuo è registrato come deviazione consapevole in `docs/_PARITA-SCAFFOLD.md` con il percorso di riallineamento).
-- [ ] Le suite delle aree toccate sono verdi via `run-tests.sh` (almeno `frontend` e `tooling`).
+- [ ] I 5 screenshot `site/public/landings/fatture/hero.{en,it,fr,es,de}.png` sono rigenerati e ciascuno mostra la UI del modulo `fatture` **nella lingua corrispondente** (non più italiano ovunque).
+- [ ] Le suite delle aree toccate sono verdi via `run-tests.sh` (almeno `frontend`, `tooling` e `site`).
 
 ## Invarianti appgrove toccati
 
@@ -71,6 +74,7 @@ Tutto in area **frontend**, più l'aggiornamento in parallelo dei modelli di sca
 - **Resa del modulo nelle 5 lingue**: i test del modulo `fatture` verificano che le schermate rendano stringhe localizzate (nessuna chiave grezza) in più di una lingua, e che l'importo sia formattato secondo la lingua attiva.
 - **Resa delle label di navigazione**: il test della sidebar verifica che nome modulo e label di sezione seguano il cambio lingua.
 - **Regressione scaffolding**: il collaudo di parità (`tools/scaffold-parity`) resta verde dopo la conversione del template.
+- **Screenshot per-lingua**: dopo la ri-cattura, verifica visiva che ciascuno dei 5 `hero.<locale>.png` mostri la UI nella lingua attesa (coerenza di lingua), come previsto dal requisito di test di UC 0060 §9.
 
 ## Valutazione di impatto
 
