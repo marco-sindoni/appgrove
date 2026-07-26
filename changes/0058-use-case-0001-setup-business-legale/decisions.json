@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: classica (autopilot OFF), richiesta dallo sviluppatore all'invocazione. Le domande di approfondimento hanno risposta dallo sviluppatore; i consensi a commit e merge restano suoi."
+  },
+  {
+    "id": 2,
+    "decision": "La change implementa lo use case 0001 (setup business/legale + account Paddle): forma del branch 0058-use-case-0001-setup-business-legale. NNNN=0058 è il contatore progressivo di changes/ (indipendente da YYYY=0001).",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Lo use case 0001 passa da ⬜ a 🟡 all'apertura della change." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "Lo UC 0001 è per natura extra-codice (azioni operative del mondo reale). Questa change lo AVVIA ma NON lo completa: il commercialista/legale saranno interpellati più avanti e la Domain Review di Paddle è bloccata a monte perché richiede il sito pubblicato con Privacy Policy e Termini, per cui lo sviluppatore non è ancora pronto. Nessun codice, nessuna azione reale eseguita."
+  },
+  {
+    "id": 4,
+    "decision": "Deviazione consapevole dal normale step-04: lo UC 0001 in _INDEX.md resta 🟡 (in corso) ANCHE dopo il merge, invece di passare a ✅. Motivo: il lavoro operativo del mondo reale non è compiuto: portarlo a ✅ dichiarerebbe 'fatto' un setup che non è avvenuto. Un futuro agente non deve 'correggerlo' a ✅ finché il setup reale non è concluso.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Riga UC 0001 lasciata a 🟡 dopo il merge (non ✅)." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "content/legal/entity.yaml NON viene compilato: i dati reali del titolare (ragione sociale, forma, sede, P.IVA) non esistono ancora e l'agente non li inventa (dati legali/fiscali reali, punto di escalation). La compilazione resta owner UC 0001, alla monetizzazione; i segnaposto DA COMPILARE restano e il check compliance li segnala come avviso non bloccante.",
+    "files": [
+      { "file": "content/legal/entity.yaml", "description": "Lasciato con i segnaposto DA COMPILARE (non toccato)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "Tracciato nei 'Punti aperti' dello UC 0001 il prerequisito bloccante: il sito deve essere pubblicato con Privacy Policy e Termini (live in HTTPS) prima di qualunque uso del vero Paddle, sandbox inclusa. È il gate di sequenza #14 già noto; qui se ne registra l'esplicito rinvio deciso in questa change.",
+    "files": [
+      { "file": "docs/usecases/01-business-legal/0001-setup-business-legale.md", "description": "Sezione 'Punti aperti / decisioni differite': nota sull'avvio-senza-chiusura (change 0058) e sul blocco sito+legali → Paddle." }
+    ]
+  }
+]

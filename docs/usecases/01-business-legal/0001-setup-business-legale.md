@@ -66,6 +66,17 @@ entità legale corretta nei documenti; checklist commercialista evasa (F1–F9).
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0058-use-case-0001-…` (avvio dello UC, non completamento)._
+
+- **Lo UC 0001 è stato AVVIATO (🟡) ma non completato**, e in `docs/usecases/_INDEX.md` **resta 🟡 anche
+  dopo il merge** della change 0058 (deviazione consapevole dal normale passaggio a ✅). *Perché*: il setup è
+  interamente **operativo/extra-codice** e non è ancora avvenuto — commercialista e legale saranno interpellati
+  più avanti; la **Domain Review di Paddle è bloccata a monte** perché richiede il **sito pubblicato con Privacy
+  Policy e Termini** (live in HTTPS), passo per cui lo sviluppatore non è ancora pronto. *Da fare per chiudere a
+  ✅*: pubblicare il sito con i legali → superare Domain Review/Business/Identity di Paddle → aprire P.IVA alla
+  monetizzazione → compilare `content/legal/entity.yaml` con i dati reali. *Owner*: UC 0001. Un futuro agente
+  **non deve** correggere lo stato a ✅ finché queste azioni reali non sono concluse.
+
 _Tracciato dalla change `0025-use-case-0029-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
 - **L'account Paddle Sandbox sblocca i test L3 (UC 0029).** La suite smoke L3 esiste già nel repo
