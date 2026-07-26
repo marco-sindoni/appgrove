@@ -53,3 +53,18 @@ Manifest: N/A.
   2. Sopravvive a outage eu-west-1; costo ~$0 full-IaC.
   3. Tuning Budgets ($100→$80 opzionale) + allarmi anti-rumore.
   4. Verifica down→notifica; niente canary in test.
+
+## Punti aperti / decisioni differite
+
+_Tracciato dalla change `0059-use-case-0007-…` (implementazione del canary)._
+
+- **Bersaglio del ping (Opzione A) vs. stato end-to-end.** Il canary implementato pinga la SPA pubblica
+  `app.appgrove.app`. Un segnale di **degrado del solo backend** dal punto di vista esterno richiederebbe un
+  endpoint di **stato pubblico end-to-end**, tracciato come punto aperto di **UC 0006/0003** (vedi
+  [0006 §Punti aperti](0006-osservabilita-base.md)). Non forzato qui: nuova superficie di sicurezza fuori scope.
+- **Ritocco Budget/anti-rumore a regime.** La soglia mensile resta a **$100** (non abbassata a $80) e gli
+  allarmi condivisi restano quelli anti-rumore attuali: prima del go-live non c'è spesa né traffico reale per
+  tararli. Con dati reali di prod, valutare l'abbassamento $100→$80 e l'affinamento delle soglie. *Owner*: UC 0007.
+- **Attivazione al go-live.** Il canary è dietro `uptime_canary_enabled` (default `false`) in `envs/prod`:
+  al go-live, con `app.appgrove.app` live, portare la variabile a `true` e confermare la subscription email SNS
+  (in eu-central-1). Fino ad allora `up prod` non crea il canary (evita falsi allarmi).

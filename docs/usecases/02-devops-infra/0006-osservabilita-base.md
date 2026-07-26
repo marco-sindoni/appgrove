@@ -71,6 +71,18 @@ mesi (#08 29, #13 E). I log operativi **non** si archiviano a lungo (minimizzazi
 
 ## Punti aperti / decisioni differite
 
+_Tracciato dalla change `0059-use-case-0007-…` (canary di uptime)._
+
+- **Endpoint di STATO pubblico end-to-end per un canary più profondo.** Il canary di uptime (UC 0007)
+  pinga la SPA pubblica `app.appgrove.app` (raggiungibilità dall'esterno). Manca un endpoint di **stato**
+  pubblico e leggero che verifichi la catena `edge → ECS → DB` in eu-west-1 e risponda `200`/`503`, per
+  cogliere un **degrado del solo backend** dal punto di vista esterno. Oggi quel degrado è coperto dagli
+  allarmi **in-regione** (ECS/5xx/latenza/Aurora). *Vincolo*: NON esporre gli health interni di Quarkus
+  (`/q/health/*` deve restare non pubblico, invariante di sicurezza [docs/_BACKLOG.md](../../_BACKLOG.md)):
+  servirebbe una rotta dedicata `GET /status` con un check DB superficiale. *Perché differito*: è nuova
+  superficie pubblica (backend + infra), decisione di sicurezza fuori dallo scope "hardening" di UC 0007.
+  *Owner*: UC 0006/0003.
+
 _Tracciato dalla change `0033-use-case-0004-…` (regola CLAUDE.md "Tracciamento delle decisioni differite")._
 
 - **Widget e allarmi base per-servizio sul log group del modulo `microsaas_app`.** ✅ **Implementato
