@@ -1,8 +1,11 @@
 import { Badge } from '@appgrove/design-system'
-import { statusLabel } from '../strings'
+import { useFattureMessages } from '../i18n'
+
+const STATUS_KEYS = ['issued', 'paid', 'voided'] as const
 
 /** Badge dello stato fattura con tono coerente (bozza/emessa/pagata/annullata). */
 export function StatusBadge({ status }: { status?: string }) {
+  const m = useFattureMessages()
   // Mappa colori del mockup: pagata=verde, emessa/in attesa=ambra, annullata=rosso, bozza=neutro.
   const tone =
     status === 'paid'
@@ -12,5 +15,8 @@ export function StatusBadge({ status }: { status?: string }) {
         : status === 'issued'
           ? 'warning'
           : 'neutral'
-  return <Badge tone={tone}>{statusLabel(status)}</Badge>
+  const key = (STATUS_KEYS as readonly string[]).includes(status ?? '')
+    ? (status as (typeof STATUS_KEYS)[number])
+    : 'draft'
+  return <Badge tone={tone}>{m.status[key]}</Badge>
 }

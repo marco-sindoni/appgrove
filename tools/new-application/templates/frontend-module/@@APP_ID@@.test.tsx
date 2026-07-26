@@ -62,7 +62,7 @@ beforeEach(() => {
 
 describe('Modulo @@APP_ID@@', () => {
   it('mostra l\'elenco dei record e il banner quota (consumo/limite)', async () => {
-    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'] })
+    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'], language: 'it' })
     expect(await screen.findByText('Mario Rossi')).toBeInTheDocument()
     expect(screen.getByText('Acme SRL')).toBeInTheDocument()
     expect(screen.getByText(`2 / @@FREE_CAP@@`)).toBeInTheDocument()
@@ -70,13 +70,13 @@ describe('Modulo @@APP_ID@@', () => {
 
   it('stato vuoto quando non ci sono record', async () => {
     items = []
-    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'] })
+    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'], language: 'it' })
     expect(await screen.findByText(/Nessun record/i)).toBeInTheDocument()
   })
 
   it('crea un record: compare nell\'elenco al ritorno', async () => {
     const user = userEvent.setup()
-    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'] })
+    renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'], language: 'it' })
     await screen.findByText('Mario Rossi')
 
     await user.click(screen.getByRole('button', { name: 'Nuovo record' }))
@@ -89,7 +89,7 @@ describe('Modulo @@APP_ID@@', () => {
   it('a quota raggiunta la creazione mostra errore 429 + invito all\'upgrade', async () => {
     quota = { metric: '@@METRIC@@', used: @@FREE_CAP@@, limit: @@FREE_CAP@@, remaining: 0 }
     const user = userEvent.setup()
-    renderApp({ route: '/app/@@APP_ID@@/new', entitled: ['@@APP_ID@@'] })
+    renderApp({ route: '/app/@@APP_ID@@/new', entitled: ['@@APP_ID@@'], language: 'it' })
 
     await user.type(await screen.findByLabelText('Nome contatto'), 'Oltre Limite')
     await user.click(screen.getByRole('button', { name: 'Crea record' }))
@@ -106,7 +106,7 @@ describe('Modulo @@APP_ID@@', () => {
   })
 
   it('nessuna violazione di accessibilità sull\'elenco', async () => {
-    const { container } = renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'] })
+    const { container } = renderApp({ route: '/app/@@APP_ID@@', entitled: ['@@APP_ID@@'], language: 'it' })
     await screen.findByText('Mario Rossi')
     expect(await axe(container)).toHaveNoViolations()
   })

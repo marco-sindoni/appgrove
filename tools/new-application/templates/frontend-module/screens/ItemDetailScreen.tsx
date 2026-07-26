@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, CardContent, CardHeader, Icon } from '@appgrove/design-system'
+import { useTranslation } from '@appgrove/i18n'
 import { QueryState } from '../../../shell/QueryState'
 import { ConfirmDialog } from '../../../pages/members/ConfirmDialog'
 import { useDeleteItem, useItemDetail, useUpdateItem } from '../api/hooks'
 import { StatusBadge } from '../components/StatusBadge'
-import { formatAmount, statusLabel, t } from '../strings'
+import { formatAmount, formatDate, use@@APP_CLASS@@Messages } from '../i18n'
 
 const STATUSES = ['draft', 'active', 'done', 'archived'] as const
 
@@ -16,6 +17,8 @@ export function ItemDetailScreen() {
   const detail = useItemDetail(id)
   const update = useUpdateItem()
   const remove = useDeleteItem()
+  const m = use@@APP_CLASS@@Messages()
+  const { i18n } = useTranslation()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +31,7 @@ export function ItemDetailScreen() {
     try {
       await update.mutateAsync({ id, body: { status } })
     } catch {
-      setError(t.errorGeneric)
+      setError(m.errorGeneric)
     }
   }
 
@@ -39,7 +42,7 @@ export function ItemDetailScreen() {
       await remove.mutateAsync(id)
       navigate('..', { relative: 'path' })
     } catch {
-      setError(t.errorGeneric)
+      setError(m.errorGeneric)
       setConfirmDelete(false)
     }
   }
@@ -48,7 +51,7 @@ export function ItemDetailScreen() {
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={() => navigate('..', { relative: 'path' })}>
         <Icon name="arrow_back" size={18} />
-        {t.backToList}
+        {m.backToList}
       </Button>
 
       {error && (
@@ -68,7 +71,7 @@ export function ItemDetailScreen() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-fg">
-                    {t.detailTitle} <span className="font-mono">{item.code}</span>
+                    {m.detailTitle} <span className="font-mono">{item.code}</span>
                   </h1>
                   <p className="mt-1 text-[13px] text-fg-muted">{item.contactName}</p>
                 </div>
@@ -78,19 +81,17 @@ export function ItemDetailScreen() {
             <CardContent className="space-y-6">
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <dt className="text-fg-muted">{t.colContact}</dt>
+                  <dt className="text-fg-muted">{m.colContact}</dt>
                   <dd className="text-fg">{item.contactName}</dd>
                 </div>
                 <div>
-                  <dt className="text-fg-muted">{t.colRecordedOn}</dt>
-                  <dd className="text-fg">
-                    {item.recordedOn ? new Date(item.recordedOn).toLocaleDateString('it-IT') : '—'}
-                  </dd>
+                  <dt className="text-fg-muted">{m.colRecordedOn}</dt>
+                  <dd className="text-fg">{formatDate(item.recordedOn, i18n.language)}</dd>
                 </div>
                 <div>
-                  <dt className="text-fg-muted">{t.colTotal}</dt>
+                  <dt className="text-fg-muted">{m.colTotal}</dt>
                   <dd className="font-mono font-bold text-fg">
-                    {formatAmount(item.totalAmount, item.currency)}
+                    {formatAmount(item.totalAmount, item.currency, i18n.language)}
                   </dd>
                 </div>
               </dl>
@@ -99,10 +100,10 @@ export function ItemDetailScreen() {
                 <table className="w-full text-left">
                   <thead>
                     <tr>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineDescription}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineQuantity}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineUnitAmount}</th>
-                      <th scope="col" className="border-b border-line py-2.5 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.colTotal}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineDescription}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineQuantity}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineUnitAmount}</th>
+                      <th scope="col" className="border-b border-line py-2.5 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.colTotal}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -110,8 +111,8 @@ export function ItemDetailScreen() {
                       <tr key={line.id} className="border-b border-line last:border-b-0">
                         <td className="py-3 pr-4 text-[13px] text-fg">{line.description}</td>
                         <td className="py-3 pr-4 font-mono text-[13px] text-fg-muted">{line.quantity}</td>
-                        <td className="py-3 pr-4 text-right font-mono text-[13px] text-fg-muted">{formatAmount(line.unitAmount, item.currency)}</td>
-                        <td className="py-3 text-right font-mono text-[13px] font-bold text-fg">{formatAmount(line.lineAmount, item.currency)}</td>
+                        <td className="py-3 pr-4 text-right font-mono text-[13px] text-fg-muted">{formatAmount(line.unitAmount, item.currency, i18n.language)}</td>
+                        <td className="py-3 text-right font-mono text-[13px] font-bold text-fg">{formatAmount(line.lineAmount, item.currency, i18n.language)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -121,7 +122,7 @@ export function ItemDetailScreen() {
               <div className="flex flex-wrap items-end gap-3 border-t border-line pt-4">
                 <div>
                   <label htmlFor="status" className="mb-1 block text-sm font-medium text-fg">
-                    {t.changeStatus}
+                    {m.changeStatus}
                   </label>
                   <select
                     id="status"
@@ -132,13 +133,13 @@ export function ItemDetailScreen() {
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>
-                        {statusLabel(s)}
+                        {m.status[s]}
                       </option>
                     ))}
                   </select>
                 </div>
                 <Button variant="danger" disabled={busy} onClick={() => setConfirmDelete(true)}>
-                  {t.delete}
+                  {m.delete}
                 </Button>
               </div>
             </CardContent>
@@ -148,9 +149,9 @@ export function ItemDetailScreen() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title={t.confirmDeleteTitle}
-          body={t.confirmDeleteBody}
-          confirmLabel={t.delete}
+          title={m.confirmDeleteTitle}
+          body={m.confirmDeleteBody}
+          confirmLabel={m.delete}
           busy={busy}
           onConfirm={() => void onDelete()}
           onCancel={() => setConfirmDelete(false)}

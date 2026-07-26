@@ -2,13 +2,15 @@ import type { ReactElement, ReactNode } from 'react'
 import { render, type RenderResult } from '@testing-library/react'
 import { MemoryRouter, RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { ThemeProvider } from '@appgrove/design-system'
-import { I18nextProvider, createI18n } from '@appgrove/i18n'
+import { I18nextProvider, createI18n, type Language } from '@appgrove/i18n'
 import type { ApiClient } from '@appgrove/api-client'
 import { ConfigProvider, type RuntimeConfig } from '../config'
 import { ApiClientProvider } from '../api/apiClient'
 import { makeQueryClient } from '../api/queryClient'
 import { StubEntitlementsProvider } from '../registry/entitlements'
+import { registerModuleResources } from '../registry/registry'
 import { routes } from '../routing/routes'
 
 export const testConfig: RuntimeConfig = {
@@ -39,17 +41,27 @@ interface ProviderOptions {
   entitled?: string[]
   apiClient?: ApiClient
   route?: string
+  /** Lingua UI del render (default `en`, come il bootstrap senza preferenze). */
+  language?: Language
 }
 
 function Providers({
   children,
   entitled = [],
   apiClient,
+  language,
 }: ProviderOptions & { children: ReactNode }) {
+  // Istanza i18n con i bundle dei moduli registrati (come il bootstrap reale), così la sidebar
+  // risolve le etichette localizzate dei moduli.
+  const i18n = useMemo(() => {
+    const instance = createI18n(language)
+    registerModuleResources(instance)
+    return instance
+  }, [language])
   return (
     <ConfigProvider value={testConfig}>
       <ThemeProvider>
-        <I18nextProvider i18n={createI18n()}>
+        <I18nextProvider i18n={i18n}>
           <QueryClientProvider client={makeQueryClient()}>
             <ApiClientProvider client={apiClient}>
               <StubEntitlementsProvider entitled={entitled}>{children}</StubEntitlementsProvider>

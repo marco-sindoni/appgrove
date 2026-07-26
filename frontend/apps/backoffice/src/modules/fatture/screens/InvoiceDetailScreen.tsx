@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, CardContent, CardHeader, Icon } from '@appgrove/design-system'
+import { useTranslation } from '@appgrove/i18n'
 import { QueryState } from '../../../shell/QueryState'
 import { ConfirmDialog } from '../../../pages/members/ConfirmDialog'
 import { useDeleteInvoice, useInvoiceDetail, useUpdateInvoice } from '../api/hooks'
 import { StatusBadge } from '../components/StatusBadge'
-import { formatAmount, statusLabel, t } from '../strings'
+import { formatAmount, formatDate, useFattureMessages } from '../i18n'
 
 const STATUSES = ['draft', 'issued', 'paid', 'voided'] as const
 
@@ -16,6 +17,8 @@ export function InvoiceDetailScreen() {
   const detail = useInvoiceDetail(id)
   const update = useUpdateInvoice()
   const remove = useDeleteInvoice()
+  const m = useFattureMessages()
+  const { i18n } = useTranslation()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,7 +31,7 @@ export function InvoiceDetailScreen() {
     try {
       await update.mutateAsync({ id, body: { status } })
     } catch {
-      setError(t.errorGeneric)
+      setError(m.errorGeneric)
     }
   }
 
@@ -39,7 +42,7 @@ export function InvoiceDetailScreen() {
       await remove.mutateAsync(id)
       navigate('..', { relative: 'path' })
     } catch {
-      setError(t.errorGeneric)
+      setError(m.errorGeneric)
       setConfirmDelete(false)
     }
   }
@@ -48,7 +51,7 @@ export function InvoiceDetailScreen() {
     <div className="space-y-6">
       <Button variant="ghost" size="sm" onClick={() => navigate('..', { relative: 'path' })}>
         <Icon name="arrow_back" size={18} />
-        {t.backToList}
+        {m.backToList}
       </Button>
 
       {error && (
@@ -68,7 +71,7 @@ export function InvoiceDetailScreen() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h1 className="text-[22px] font-extrabold tracking-[-0.02em] text-fg">
-                    {t.detailTitle} <span className="font-mono">{invoice.number}</span>
+                    {m.detailTitle} <span className="font-mono">{invoice.number}</span>
                   </h1>
                   <p className="mt-1 text-[13px] text-fg-muted">{invoice.customerName}</p>
                 </div>
@@ -78,20 +81,16 @@ export function InvoiceDetailScreen() {
             <CardContent className="space-y-6">
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <dt className="text-fg-muted">{t.colCustomer}</dt>
+                  <dt className="text-fg-muted">{m.colCustomer}</dt>
                   <dd className="text-fg">{invoice.customerName}</dd>
                 </div>
                 <div>
-                  <dt className="text-fg-muted">{t.colIssueDate}</dt>
-                  <dd className="text-fg">
-                    {invoice.issueDate
-                      ? new Date(invoice.issueDate).toLocaleDateString('it-IT')
-                      : '—'}
-                  </dd>
+                  <dt className="text-fg-muted">{m.colIssueDate}</dt>
+                  <dd className="text-fg">{formatDate(invoice.issueDate, i18n.language)}</dd>
                 </div>
                 <div>
-                  <dt className="text-fg-muted">{t.colTotal}</dt>
-                  <dd className="font-mono font-bold text-fg">{formatAmount(invoice.totalAmount, invoice.currency)}</dd>
+                  <dt className="text-fg-muted">{m.colTotal}</dt>
+                  <dd className="font-mono font-bold text-fg">{formatAmount(invoice.totalAmount, invoice.currency, i18n.language)}</dd>
                 </div>
               </dl>
 
@@ -99,10 +98,10 @@ export function InvoiceDetailScreen() {
                 <table className="w-full text-left">
                   <thead>
                     <tr>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineDescription}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineQuantity}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.fieldLineUnitAmount}</th>
-                      <th scope="col" className="border-b border-line py-2.5 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t.colTotal}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineDescription}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineQuantity}</th>
+                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.fieldLineUnitAmount}</th>
+                      <th scope="col" className="border-b border-line py-2.5 text-right text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{m.colTotal}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -110,8 +109,8 @@ export function InvoiceDetailScreen() {
                       <tr key={line.id} className="border-b border-line last:border-b-0">
                         <td className="py-3 pr-4 text-[13px] text-fg">{line.description}</td>
                         <td className="py-3 pr-4 font-mono text-[13px] text-fg-muted">{line.quantity}</td>
-                        <td className="py-3 pr-4 text-right font-mono text-[13px] text-fg-muted">{formatAmount(line.unitAmount, invoice.currency)}</td>
-                        <td className="py-3 text-right font-mono text-[13px] font-bold text-fg">{formatAmount(line.lineAmount, invoice.currency)}</td>
+                        <td className="py-3 pr-4 text-right font-mono text-[13px] text-fg-muted">{formatAmount(line.unitAmount, invoice.currency, i18n.language)}</td>
+                        <td className="py-3 text-right font-mono text-[13px] font-bold text-fg">{formatAmount(line.lineAmount, invoice.currency, i18n.language)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -121,7 +120,7 @@ export function InvoiceDetailScreen() {
               <div className="flex flex-wrap items-end gap-3 border-t border-line pt-4">
                 <div>
                   <label htmlFor="status" className="mb-1 block text-sm font-medium text-fg">
-                    {t.changeStatus}
+                    {m.changeStatus}
                   </label>
                   <select
                     id="status"
@@ -132,7 +131,7 @@ export function InvoiceDetailScreen() {
                   >
                     {STATUSES.map((s) => (
                       <option key={s} value={s}>
-                        {statusLabel(s)}
+                        {m.status[s]}
                       </option>
                     ))}
                   </select>
@@ -142,7 +141,7 @@ export function InvoiceDetailScreen() {
                   disabled={busy}
                   onClick={() => setConfirmDelete(true)}
                 >
-                  {t.delete}
+                  {m.delete}
                 </Button>
               </div>
             </CardContent>
@@ -152,9 +151,9 @@ export function InvoiceDetailScreen() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title={t.confirmDeleteTitle}
-          body={t.confirmDeleteBody}
-          confirmLabel={t.delete}
+          title={m.confirmDeleteTitle}
+          body={m.confirmDeleteBody}
+          confirmLabel={m.delete}
           busy={busy}
           onConfirm={() => void onDelete()}
           onCancel={() => setConfirmDelete(false)}

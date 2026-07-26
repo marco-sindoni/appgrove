@@ -1,16 +1,22 @@
 import { lazy } from 'react'
 import type { ModuleManifest } from '../../registry/types'
-import { t } from './strings'
+import { FATTURE_NS, fattureResources } from './i18n'
 
 /**
  * Manifest co-locato del modulo **fatture** (app #1, UC 0052): id = chiave di entitlement/registry,
  * sezioni sidebar, e il componente React **lazy** montato dalla shell via contratto Context.
+ *
+ * `name`/`label` sono chiavi i18n (spazio-nomi = id del modulo) risolte dalla shell con `t()` (UC 0060);
+ * `resources` sono i bundle di traduzione che la shell registra nell'istanza i18n.
  */
 export const fattureManifest: ModuleManifest = {
   id: 'fatture',
-  name: t.appName,
+  name: `${FATTURE_NS}:appName`,
   icon: 'receipt_long',
   accentToken: 'cat-blue',
-  sections: [{ id: 'invoices', label: t.sectionInvoices, route: '', icon: 'receipt_long' }],
+  sections: [
+    { id: 'invoices', label: `${FATTURE_NS}:sectionInvoices`, route: '', icon: 'receipt_long' },
+  ],
+  resources: fattureResources,
   component: lazy(() => import('./FattureModule')),
 }

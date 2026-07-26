@@ -56,7 +56,7 @@ beforeEach(() => {
 
 describe('Modulo fatture (UC 0052)', () => {
   it('mostra la lista delle fatture e il banner quota (consumo/limite)', async () => {
-    renderApp({ route: '/app/fatture', entitled: ['fatture'] })
+    renderApp({ route: '/app/fatture', entitled: ['fatture'], language: 'it' })
     expect(await screen.findByText('Mario Rossi')).toBeInTheDocument()
     expect(screen.getByText('Acme SRL')).toBeInTheDocument()
     // banner quota consumo/limite
@@ -65,13 +65,13 @@ describe('Modulo fatture (UC 0052)', () => {
 
   it('stato empty quando non ci sono fatture', async () => {
     invoices = []
-    renderApp({ route: '/app/fatture', entitled: ['fatture'] })
+    renderApp({ route: '/app/fatture', entitled: ['fatture'], language: 'it' })
     expect(await screen.findByText(/Nessuna fattura/i)).toBeInTheDocument()
   })
 
   it('crea una fattura: compare nella lista al ritorno', async () => {
     const user = userEvent.setup()
-    renderApp({ route: '/app/fatture', entitled: ['fatture'] })
+    renderApp({ route: '/app/fatture', entitled: ['fatture'], language: 'it' })
     await screen.findByText('Mario Rossi')
 
     await user.click(screen.getByRole('button', { name: 'Nuova fattura' }))
@@ -84,7 +84,7 @@ describe('Modulo fatture (UC 0052)', () => {
   it('a quota raggiunta la creazione mostra errore 429 + CTA upgrade', async () => {
     quota = { metric: 'fatture', used: 10, limit: 10, remaining: 0 }
     const user = userEvent.setup()
-    renderApp({ route: '/app/fatture/new', entitled: ['fatture'] })
+    renderApp({ route: '/app/fatture/new', entitled: ['fatture'], language: 'it' })
 
     await user.type(await screen.findByLabelText('Nome cliente'), 'Oltre Limite')
     await user.click(screen.getByRole('button', { name: 'Crea fattura' }))
@@ -99,8 +99,18 @@ describe('Modulo fatture (UC 0052)', () => {
   })
 
   it('nessuna violazione di accessibilità sulla lista', async () => {
-    const { container } = renderApp({ route: '/app/fatture', entitled: ['fatture'] })
+    const { container } = renderApp({ route: '/app/fatture', entitled: ['fatture'], language: 'it' })
     await screen.findByText('Mario Rossi')
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('rende la UI localizzata (francese) e formatta l’importo secondo la lingua', async () => {
+    renderApp({ route: '/app/fatture', entitled: ['fatture'], language: 'fr' })
+    await screen.findByText('Mario Rossi')
+    // Etichette tradotte (nessuna chiave grezza né italiano cablato)
+    expect(screen.getByRole('button', { name: 'Nouvelle facture' })).toBeInTheDocument()
+    expect(screen.queryByText('Nuova fattura')).not.toBeInTheDocument()
+    // Importo formattato in locale francese: decimale con la virgola (120,00 €)
+    expect(screen.getByText(/120,00/)).toBeInTheDocument()
   })
 })

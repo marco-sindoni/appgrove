@@ -68,14 +68,16 @@ test('core-loop fatture: lista + banner quota → crea → compare in lista', as
   await mockAuthed(page, 'local') // env local → fatture entitled
 
   await page.goto('/app/fatture')
-  await expect(page.getByRole('heading', { name: 'Fatture', level: 1 })).toBeVisible()
+  // Modulo localizzato (UC 0060): con il locale predefinito del browser (en-US) la UI è in inglese,
+  // coerente con il resto degli e2e (default UI language = EN).
+  await expect(page.getByRole('heading', { name: 'Invoices', level: 1 })).toBeVisible()
   await expect(page.getByRole('cell', { name: 'Mario Rossi' })).toBeVisible()
   // banner quota consumo/limite
   await expect(page.getByText('1 / 10')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Nuova fattura' }).click()
-  await page.getByLabel('Nome cliente').fill('Cliente E2E')
-  await page.getByRole('button', { name: 'Crea fattura' }).click()
+  await page.getByRole('button', { name: 'New invoice' }).click()
+  await page.getByLabel('Customer name').fill('Cliente E2E')
+  await page.getByRole('button', { name: 'Create invoice' }).click()
 
   await expect(page.getByRole('cell', { name: 'Cliente E2E' })).toBeVisible()
 })

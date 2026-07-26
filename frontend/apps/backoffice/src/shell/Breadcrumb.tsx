@@ -7,6 +7,9 @@ import { findModule } from '../registry/registry'
 /** Breadcrumb (mockup: radice attenuata, separatore chevron, foglia in grassetto). Label localizzate, nome modulo per le app. */
 export function Breadcrumb() {
   const { t } = useTranslation()
+  // Il nome del modulo è una chiave i18n dinamica (spazio-nomi del modulo, UC 0060): il tipo di `t`
+  // è ristretto alle chiavi statiche, quindi si risolve con una vista `string`.
+  const tKey = t as unknown as (key: string) => string
   const { pathname } = useLocation()
   const rawSegments = pathname.split('/').filter(Boolean)
 
@@ -16,11 +19,14 @@ export function Breadcrumb() {
     settings: t('nav.settings'),
   }
   // Il segmento tecnico `app` (prefisso dei moduli) non è una voce di navigazione: non compare nel
-  // breadcrumb; il segmento successivo viene risolto nel nome del modulo.
+  // breadcrumb; il segmento successivo viene risolto nel nome (localizzato) del modulo.
   const segments = rawSegments
     .map((segment, i) => {
       if (segment === 'app' && rawSegments[i + 1]) return null
-      if (rawSegments[i - 1] === 'app') return findModule(segment)?.name ?? segment
+      if (rawSegments[i - 1] === 'app') {
+        const mod = findModule(segment)
+        return mod ? tKey(mod.name) : segment
+      }
       return known[segment] ?? segment
     })
     .filter((s): s is string => s !== null)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,30 +9,35 @@ import { useShellContext } from '../../../registry/ShellContext'
 import { Field } from '../../../pages/auth/Field'
 import { useCreateItem } from '../api/hooks'
 import type { CreateItem } from '../api/client'
-import { t } from '../strings'
+import { use@@APP_CLASS@@Messages, type @@APP_CLASS@@Messages } from '../i18n'
 
-const schema = z.object({
-  contactName: z.string().min(1, t.required),
-  contactEmail: z.string().email().optional().or(z.literal('')),
-  lines: z.array(
-    z.object({
-      description: z.string().min(1, t.required),
-      quantity: z.coerce.number().min(0),
-      unitAmount: z.coerce.number().min(0),
-    }),
-  ),
-})
+// Schema come factory: il messaggio "campo obbligatorio" è localizzato (UC 0060). La forma dei
+// dati non dipende dalla lingua, quindi il tipo del form si deriva una volta sola.
+const makeSchema = (m: @@APP_CLASS@@Messages) =>
+  z.object({
+    contactName: z.string().min(1, m.required),
+    contactEmail: z.string().email().optional().or(z.literal('')),
+    lines: z.array(
+      z.object({
+        description: z.string().min(1, m.required),
+        quantity: z.coerce.number().min(0),
+        unitAmount: z.coerce.number().min(0),
+      }),
+    ),
+  })
 
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof makeSchema>>
 
 /** Editor di creazione: contatto + righe; gestisce il 429 (quota) con invito all'upgrade. */
 export function ItemCreateScreen() {
   const navigate = useNavigate()
   const shell = useShellContext()
   const create = useCreateItem()
+  const m = use@@APP_CLASS@@Messages()
   const [error, setError] = useState<string | null>(null)
   const [quotaReached, setQuotaReached] = useState(false)
 
+  const schema = useMemo(() => makeSchema(m), [m])
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { contactName: '', contactEmail: '', lines: [] },
@@ -58,23 +63,23 @@ export function ItemCreateScreen() {
       // Il 429 non è un errore generico: è il tetto di piano, e va detto per quello che è.
       if (err instanceof ApiError && err.status === 429) {
         setQuotaReached(true)
-        setError(t.errorQuota)
+        setError(m.errorQuota)
       } else {
-        setError(t.errorGeneric)
+        setError(m.errorGeneric)
       }
     }
   })
 
   return (
     <div className="space-y-[22px]">
-      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t.editorTitle}</h1>
+      <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{m.editorTitle}</h1>
 
       {error && (
         <div role="alert" className="space-y-2 rounded-md border border-line bg-surface-2 p-3 text-sm">
           <p className="text-danger">{error}</p>
           {quotaReached && (
             <Button size="sm" onClick={() => shell.nav.navigate('/billing')}>
-              {t.quotaUpgrade}
+              {m.quotaUpgrade}
             </Button>
           )}
         </div>
@@ -84,20 +89,20 @@ export function ItemCreateScreen() {
         <Card>
           <CardHeader>
             <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
-              {t.contactSection}
+              {m.contactSection}
             </h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <Field
               id="contactName"
-              label={t.fieldContactName}
+              label={m.fieldContactName}
               error={form.formState.errors.contactName?.message}
               {...form.register('contactName')}
             />
             <Field
               id="contactEmail"
               type="email"
-              label={t.fieldContactEmail}
+              label={m.fieldContactEmail}
               error={form.formState.errors.contactEmail?.message}
               {...form.register('contactEmail')}
             />
@@ -106,7 +111,7 @@ export function ItemCreateScreen() {
 
         <Card>
           <CardHeader>
-            <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">{t.linesTitle}</h2>
+            <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">{m.linesTitle}</h2>
           </CardHeader>
           <CardContent className="space-y-4">
             {lines.fields.map((field, i) => (
@@ -114,7 +119,7 @@ export function ItemCreateScreen() {
                 <div className="min-w-[14rem] flex-1">
                   <Field
                     id={`line-desc-${i}`}
-                    label={t.fieldLineDescription}
+                    label={m.fieldLineDescription}
                     error={form.formState.errors.lines?.[i]?.description?.message}
                     {...form.register(`lines.${i}.description`)}
                   />
@@ -124,7 +129,7 @@ export function ItemCreateScreen() {
                     id={`line-qty-${i}`}
                     type="number"
                     step="any"
-                    label={t.fieldLineQuantity}
+                    label={m.fieldLineQuantity}
                     {...form.register(`lines.${i}.quantity`)}
                   />
                 </div>
@@ -133,7 +138,7 @@ export function ItemCreateScreen() {
                     id={`line-amt-${i}`}
                     type="number"
                     step="any"
-                    label={t.fieldLineUnitAmount}
+                    label={m.fieldLineUnitAmount}
                     {...form.register(`lines.${i}.unitAmount`)}
                   />
                 </div>
@@ -144,7 +149,7 @@ export function ItemCreateScreen() {
                   className="mt-6"
                   onClick={() => lines.remove(i)}
                 >
-                  {t.removeLine}
+                  {m.removeLine}
                 </Button>
               </div>
             ))}
@@ -154,17 +159,17 @@ export function ItemCreateScreen() {
               size="sm"
               onClick={() => lines.append({ description: '', quantity: 1, unitAmount: 0 })}
             >
-              {t.addLine}
+              {m.addLine}
             </Button>
           </CardContent>
         </Card>
 
         <div className="flex gap-3">
           <Button type="submit" disabled={create.isPending}>
-            {t.save}
+            {m.save}
           </Button>
           <Button type="button" variant="ghost" onClick={() => navigate('..', { relative: 'path' })}>
-            {t.cancel}
+            {m.cancel}
           </Button>
         </div>
       </form>

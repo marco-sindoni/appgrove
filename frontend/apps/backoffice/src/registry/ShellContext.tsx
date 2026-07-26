@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@appgrove/design-system'
-import { useTranslation } from '@appgrove/i18n'
+import { useTranslation, persistLanguage } from '@appgrove/i18n'
 import { getAccessToken, useAuthStore } from '../auth/authStore'
 import type { ShellContextValue } from './types'
 
@@ -24,7 +24,10 @@ export function ShellProvider({ children }: { children: ReactNode }) {
       nav: {
         navigate: (to) => navigate(to),
         setAccent,
-        setLanguage: (language) => void i18n.changeLanguage(language),
+        setLanguage: (language) => {
+          persistLanguage(language)
+          void i18n.changeLanguage(language)
+        },
       },
     }),
     [claims, theme, accent, setAccent, navigate, i18n],

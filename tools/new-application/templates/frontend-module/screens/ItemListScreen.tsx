@@ -10,24 +10,27 @@ import {
   TableHeadCell,
   TableRow,
 } from '@appgrove/design-system'
+import { useTranslation } from '@appgrove/i18n'
 import { QueryState } from '../../../shell/QueryState'
 import { useItems } from '../api/hooks'
 import { QuotaBanner } from '../components/QuotaBanner'
 import { ContactAvatar } from '../components/ContactAvatar'
 import { StatusBadge } from '../components/StatusBadge'
-import { formatAmount, t } from '../strings'
+import { formatAmount, formatDate, use@@APP_CLASS@@Messages } from '../i18n'
 
 /** Schermata elenco: header con riquadro icona app, banner quota, tabella. */
 export function ItemListScreen() {
   const navigate = useNavigate()
   const items = useItems()
   const rows = items.data?.content ?? []
+  const m = use@@APP_CLASS@@Messages()
+  const { i18n } = useTranslation()
 
   return (
     <div className="space-y-[22px]">
       <PageHeader
-        title={t.title}
-        subtitle={t.subtitle}
+        title={m.title}
+        subtitle={m.subtitle}
         icon="@@ICON@@"
         iconClassName="bg-@@ACCENT@@/15 text-@@ACCENT@@"
         actions={
@@ -36,7 +39,7 @@ export function ItemListScreen() {
             onClick={() => navigate('new')}
           >
             <Icon name="add" size={19} />
-            {t.newItem}
+            {m.newItem}
           </Button>
         }
       />
@@ -51,18 +54,18 @@ export function ItemListScreen() {
         {rows.length === 0 ? (
           <div className="rounded-lg border border-line bg-surface px-6 py-12 text-center shadow-sm">
             <Icon name="@@ICON@@" size={42} className="text-fg-faint" />
-            <p className="mt-3 text-[15px] font-bold text-fg">{t.empty}</p>
+            <p className="mt-3 text-[15px] font-bold text-fg">{m.empty}</p>
           </div>
         ) : (
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeadCell>{t.colCode}</TableHeadCell>
-                <TableHeadCell>{t.colContact}</TableHeadCell>
-                <TableHeadCell>{t.colRecordedOn}</TableHeadCell>
-                <TableHeadCell>{t.colStatus}</TableHeadCell>
-                <TableHeadCell className="text-right">{t.colTotal}</TableHeadCell>
-                <TableHeadCell className="text-right">{t.colActions}</TableHeadCell>
+                <TableHeadCell>{m.colCode}</TableHeadCell>
+                <TableHeadCell>{m.colContact}</TableHeadCell>
+                <TableHeadCell>{m.colRecordedOn}</TableHeadCell>
+                <TableHeadCell>{m.colStatus}</TableHeadCell>
+                <TableHeadCell className="text-right">{m.colTotal}</TableHeadCell>
+                <TableHeadCell className="text-right">{m.colActions}</TableHeadCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -76,13 +79,13 @@ export function ItemListScreen() {
                     </span>
                   </TableCell>
                   <TableCell className="text-fg-muted">
-                    {item.recordedOn ? new Date(item.recordedOn).toLocaleDateString('it-IT') : '—'}
+                    {formatDate(item.recordedOn, i18n.language)}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={item.status} />
                   </TableCell>
                   <TableCell className="text-right font-mono font-bold">
-                    {formatAmount(item.totalAmount, item.currency)}
+                    {formatAmount(item.totalAmount, item.currency, i18n.language)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -93,7 +96,7 @@ export function ItemListScreen() {
                         navigate(String(item.id))
                       }}
                     >
-                      {t.detailTitle}
+                      {m.detailTitle}
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -1,9 +1,7 @@
-/**
- * Stringhe del modulo **fatture** (per-modulo, #03 dec.6): autocontenute per non accoppiare il modulo
- * all'i18n della shell. In italiano (lingua di prodotto). La standardizzazione EN/IT dei moduli app è
- * una decisione differita (vedi _BACKLOG.md).
- */
-export const t = {
+import type { FattureMessages } from './en'
+
+// Stringhe del modulo **fatture** in italiano (UC 0060).
+export const it: FattureMessages = {
   appName: 'Fatture',
   sectionInvoices: 'Fatture',
   title: 'Fatture',
@@ -20,13 +18,15 @@ export const t = {
   colTotal: 'Totale',
   colActions: 'Azioni',
 
-  empty: 'Nessuna fattura: creane una con "Nuova fattura".',
+  empty: 'Nessuna fattura: creane una con “Nuova fattura”.',
 
   // Stati fattura
-  statusDraft: 'Bozza',
-  statusIssued: 'Emessa',
-  statusPaid: 'Pagata',
-  statusVoided: 'Annullata',
+  status: {
+    draft: 'Bozza',
+    issued: 'Emessa',
+    paid: 'Pagata',
+    voided: 'Annullata',
+  },
 
   // Editor
   editorTitle: 'Nuova fattura',
@@ -47,11 +47,10 @@ export const t = {
   changeStatus: 'Cambia stato',
   delete: 'Elimina',
   confirmDeleteTitle: 'Eliminare la fattura?',
-  confirmDeleteBody: 'L\'operazione non è reversibile dalla UI.',
+  confirmDeleteBody: 'L’operazione non è reversibile dalla UI.',
 
   // Quota
   quotaLabel: 'Fatture questo mese',
-  quotaUnlimited: 'Fatture questo mese: {used} (nessun limite)',
   quotaReached: 'Hai raggiunto il limite mensile del tuo piano.',
   quotaUpgrade: 'Passa a un piano superiore',
 
@@ -59,28 +58,4 @@ export const t = {
   errorGeneric: 'Si è verificato un errore. Riprova.',
   errorQuota: 'Limite mensile raggiunto: fai upgrade per creare altre fatture.',
   required: 'Campo obbligatorio',
-}
-
-/** Etichetta localizzata per lo stato di una fattura. */
-export function statusLabel(status?: string): string {
-  switch (status) {
-    case 'issued':
-      return t.statusIssued
-    case 'paid':
-      return t.statusPaid
-    case 'voided':
-      return t.statusVoided
-    default:
-      return t.statusDraft
-  }
-}
-
-/** Formatta un importo come valuta (default EUR), con fallback robusto. */
-export function formatAmount(amount?: number, currency = 'EUR'): string {
-  if (amount == null) return '—'
-  try {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency }).format(amount)
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`
-  }
 }

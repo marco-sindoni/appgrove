@@ -17,6 +17,16 @@ describe('Sidebar', () => {
     expect(screen.queryByText('Demo app')).not.toBeInTheDocument()
   })
 
+  it('mostra le etichette di navigazione del modulo nella lingua attiva', () => {
+    // Modulo migrato all'i18n (fatture): nome e sezione seguono la lingua (UC 0060).
+    const it = renderWithProviders(<Sidebar />, { entitled: ['fatture'], language: 'it' })
+    expect(screen.getAllByText('Fatture').length).toBeGreaterThan(0)
+    it.unmount()
+    renderWithProviders(<Sidebar />, { entitled: ['fatture'], language: 'fr' })
+    expect(screen.getAllByText('Factures').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Fatture')).not.toBeInTheDocument()
+  })
+
   it('non ha violazioni a11y', async () => {
     const { container } = renderWithProviders(<Sidebar />, { entitled: ['demo'] })
     expect(await axe(container)).toHaveNoViolations()

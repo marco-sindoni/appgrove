@@ -1,7 +1,7 @@
 import { Badge, Button } from '@appgrove/design-system'
 import { useShellContext } from '../../../registry/ShellContext'
 import { use@@APP_CLASS@@Quota } from '../api/hooks'
-import { t } from '../strings'
+import { use@@APP_CLASS@@Messages } from '../i18n'
 
 /**
  * Banner quota della metrica `@@METRIC@@`: mostra consumo/limite e, a tetto raggiunto, un invito
@@ -12,6 +12,7 @@ import { t } from '../strings'
 export function QuotaBanner() {
   const shell = useShellContext()
   const quota = use@@APP_CLASS@@Quota()
+  const m = use@@APP_CLASS@@Messages()
 
   if (quota.isLoading || quota.isError || !quota.data) return null
 
@@ -26,7 +27,7 @@ export function QuotaBanner() {
     >
       <div className="flex items-center gap-2.5 text-[13px] text-fg">
         <span aria-hidden className="h-2 w-2 rounded-pill bg-@@ACCENT@@" />
-        <span className="font-semibold text-fg-muted">{t.quotaLabel}:</span>
+        <span className="font-semibold text-fg-muted">{m.quotaLabel}:</span>
         {unlimited ? (
           <Badge tone="neutral">{used}</Badge>
         ) : (
@@ -34,11 +35,11 @@ export function QuotaBanner() {
             {used} / {limit}
           </Badge>
         )}
-        {reached && <span className="text-danger">{t.quotaReached}</span>}
+        {reached && <span className="text-danger">{m.quotaReached}</span>}
       </div>
       {reached && (
         <Button size="sm" onClick={() => shell.nav.navigate('/billing')}>
-          {t.quotaUpgrade}
+          {m.quotaUpgrade}
         </Button>
       )}
     </div>
