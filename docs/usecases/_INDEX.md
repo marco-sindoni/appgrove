@@ -182,6 +182,7 @@ nella tabella di esecuzione.
 | R18 | **Drift regione** `eu-south-1` (default servizi) vs `eu-west-1` (infra #06 6): correggere/iniettare per-ambiente in cloud | DevOps & Infra | `_BACKLOG` §Script/tooling | 🟡 ☁ | ⬜ |
 | R19 | **`legacy-peer-deps` frontend**: rimuovere quando l'ecosistema aggiorna i peer opzionali a TypeScript 6 | DevX / Tooling | `_BACKLOG` §Backoffice shell | ⚪ | ⬜ |
 | R20 | **Brand kit / token condiviso** nel monorepo (colori, type scale, radii, logo, illustrazioni) come fonte unica per SPA + vetrina + landing; **artwork logo finale** | Frontend / Design | `_BACKLOG` §Brand kit · #14 F | 🟡 | ⬜ |
+| R21 | **Trial una-tantum per tenant×app** — la prova di 14 giorni una sola volta nella storia del tenant per app (oggi NON implementata: alla disdetta la riga si riusa e la prova è riconcessa; badge UI legato solo al tier). Serve: storico "prova consumata" immune a soft-delete + gate backend che azzera il trial ai ritorni + stato per-tenant in UI. Decisione di prodotto da chiudere in UC dedicato | Payments / Frontend | `_BACKLOG` §Pagamenti · verificato 2026-07-26 | 🟡 | ⬜ |
 
 **Note sulla tabella dei residui:**
 - L'ordine (R1…) è solo un identificativo di riga, **non** un ordine di esecuzione: i residui non hanno il vincolo

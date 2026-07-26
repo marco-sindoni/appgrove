@@ -257,6 +257,40 @@ del vero Paddle, sandbox incluso — lo **stub locale** (sotto) è l'unica via n
 - **Riconciliazione netto/revenue** (#09 K51): Paddle paga al netto delle fee su schedule di payout; osservabilità del
   netto incassato (non un blocco). Nota ops.
 
+### Trial una-tantum per tenant×app — GAP verificato (richiesto 2026-07-26)
+**Regola attesa (owner):** la prova gratuita di 14 giorni è effettuabile **una sola volta nella storia del
+tenant, per ciascuna applicazione**. Esempio: attivo l'app, faccio la prova, al giorno 10 disdico; torno
+sulla stessa app dopo 6 mesi → **niente più prova**, posso solo sottoscrivere pagando, e l'**interfaccia
+rende evidente** che la prova è già stata usata.
+
+**Stato attuale del codice — NON è così (verificato):**
+- La durata è solo un attributo del tier (`app_tier.trial_days`, `pricing/*.yaml: trialDays`); nel modello
+  reale la prova la concede **Paddle** sul price, nello stub è hardcoded (+14 giorni in
+  `StubScenarioEmitter`). La `subscription` registra solo `trial_end`, **nessuno storico** "prova consumata".
+- Alla disdetta la riga diventa `canceled` ma **non** viene messo `deleted_at`; al ritorno il nuovo
+  `subscription.created(trialing)` **riusa la stessa riga** (upsert `ON CONFLICT (tenant_id, app_id) WHERE
+  deleted_at IS NULL`) con un **nuovo `trial_end`** → **prova riconcessa**. Nessun controllo lo impedisce.
+- **Interfaccia**: il badge "14 giorni di prova gratis" (`Billing.tsx`) dipende **solo** da
+  `tier.trialDays > 0`, uguale per tutti i tenant → al ritorno **rimostra** la prova.
+- **Documenti**: `#09` prevede come anti-abuso solo la **carta upfront** (dec. #27), barriera più debole; la
+  non-ri-eleggibilità **non è mai stata decisa**.
+
+**Cosa servirebbe per implementarla:**
+1. **Storico "prova consumata" per `(tenant_id, app_id)`**, immune a soft-delete/riuso riga (tabella o
+   colonna dedicata scritta quando `trial_end` viene impostato la prima volta; non azzerabile dalla disdetta).
+2. **Gate backend**: in `CheckoutResource.start` e/o nel mapping webhook, per un `(tenant, app)` che ha già
+   consumato la prova → **azzerare la prova** (trattare come sottoscrizione pagante immediata, `trial_end`
+   nullo) anche se il price Paddle prevede il trial.
+3. **Interfaccia**: sopprimere il badge/prova e rendere evidente "prova già usata" in base a uno **stato
+   per-tenant** (oggi il catalogo `/tiers` è identico per tutti → serve un dato per-tenant, es. campo
+   `trialEligible` nell'entitlement/subscription read model).
+
+**Punti aperti (decisione di prodotto, da confermare):** la prova si considera "consumata" appena
+**iniziata** (anche se disdetta al giorno 3)? Vale per app con `trialDays: 0` (nessuna prova → nulla da
+bloccare)? Interazione con Paddle reale (il trial è impostato sul price lato Paddle: va neutralizzato lato
+nostro, non su Paddle). → Da chiudere in un UC dedicato (probabile scorporo/estensione di **UC 0026 ciclo
+vita** + **UC 0024 checkout** + il self-service R4).
+
 ### Use case (già tracciati sopra)
 "Acquisto / checkout", "Gestione abbonamento self-service", "Pausa subscription" (bassissima priorità).
 
