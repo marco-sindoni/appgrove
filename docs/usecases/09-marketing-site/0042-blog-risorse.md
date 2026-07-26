@@ -55,7 +55,27 @@ Contenuti pubblici, nessun dato personale. Misura via Plausible (cookieless) + r
 
 ## Punti aperti / decisioni differite
 
-- **Voce "Blog" nella top nav del sito** _(tracciato dalla change `0047-use-case-0037-…`)_: la nav della vetrina è nata
-  **senza** la voce "Blog" (#14 27 la prevede) perché il blog non esiste ancora e un link a una pagina inesistente
-  romperebbe il check "link interni non rotti". Quando questo use case atterra, aggiungere la voce "Blog" alla top nav
-  (`site/src/layouts/BaseLayout.astro` / modello marketing) nelle 5 lingue.
+- ✅ **Voce "Blog" nella top nav del sito** — **RISOLTO dalla change `0061-use-case-0042-…`** (2026-07-26): aggiunta la
+  voce `nav.blog` al modello marketing nelle 5 lingue e il link `/<lang>/blog/` in `site/src/layouts/BaseLayout.astro`.
+  Il link non è più rotto perché l'indice blog ora esiste (il check "link interni non rotti" resta verde).
+
+- **Crescita dei contenuti (altri pilastri e articoli cluster oltre il seme)** _(tracciato dalla change
+  `0061-use-case-0042-…`)_: la change 0061 costruisce il **motore** del blog e un **seme minimo** — 1 pilastro
+  ("Fatturazione per piccole imprese in UE") + 2 articoli cluster question-based, nelle 5 lingue. Il blog è progettato
+  per **crescere nel tempo** (flusso principale §1): nuovi pilastri per altri temi e nuovi articoli cluster si aggiungono
+  in seguito. Lo strumento previsto è la futura skill **`new-blog-post`** (registrata in
+  [docs/_BACKLOG.md](../../_BACKLOG.md) §Skill da creare + memoria `skills-backlog`): generatore deterministico per lo
+  scaffold dei 5 file-lingua + registro + agganci pilastro↔cluster, co-pilota per la copy on-brand. Il registro
+  (`site/src/content/blog/`) è disegnato apposta perché aggiungere un articolo sia "una cartella + una entry nell'array".
+
+- **Stato `draft`/`published` per i post del blog** _(tracciato dalla change `0061-use-case-0042-…`)_: le landing hanno un
+  gate `draft`→`published` (UC 0038, #14 52); i post del blog **no** — nella change 0061 ogni post nel registro è
+  pubblicato (scelta "più semplice e corretta": il seme è approvato dallo sviluppatore al merge, dec. #14 35). Se la skill
+  `new-blog-post` avrà bisogno di **preparare una bozza** prima di pubblicarla (revisione a più passaggi), introdurre allo
+  `BlogPost` un campo `status` con lo stesso gate strutturale delle landing (solo `published` in `getStaticPaths`). Non
+  fatto ora perché non serve al seme e non va anticipato.
+
+- **Autore dello Schema.org `Article`** _(tracciato dalla change `0061-use-case-0042-…`)_: l'`Article` usa
+  l'**Organizzazione** appgrove come `author`/`publisher` (contenuti AI-generati on-brand, dec. #14 35), non una persona
+  fisica. Coerente con la postura attuale; se in futuro si vorrà una firma d'autore editoriale, estendere il costruttore
+  `articleJsonLd` con un `author` di tipo `Person`.

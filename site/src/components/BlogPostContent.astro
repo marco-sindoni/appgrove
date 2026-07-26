@@ -1,0 +1,88 @@
+---
+// Corpo di una pagina blog (UC 0042): domanda-guida (H1), introduzione, sezioni,
+// FAQ question-based e call to action verso la landing collegata (internal linking).
+// Un PILASTRO mostra in coda la lista dei suoi articoli cluster; un ARTICOLO mostra in
+// testa il richiamo al pilastro di cui fa parte. Contenuto semantico e senza JavaScript,
+// leggibile da persone e crawler AI; riusa FaqSection e i token del design system.
+import type { BlogPost } from '../content/blog/types.ts'
+import type { Locale } from '../lib/i18n.ts'
+import { clusterArticles, pillarOf, blogHref, landingHref } from '../lib/blog.ts'
+import { BLOG_UI } from '../content/blog/ui.ts'
+import FaqSection from './FaqSection.astro'
+
+interface Props {
+  post: BlogPost
+  lang: Locale
+}
+
+const { post, lang } = Astro.props
+const c = post.content[lang]
+const ui = BLOG_UI[lang]
+const cta = landingHref(post.appId, lang)
+
+// Relazioni pilastro↔cluster per la navigazione interna della serie.
+const parent = post.kind === 'article' ? pillarOf(post) : undefined
+const children = post.kind === 'pillar' ? clusterArticles(post) : []
+---
+
+<article class="mx-auto max-w-3xl py-6" data-blog-post={post.key} data-blog-kind={post.kind}>
+  {
+    parent && (
+      <p class="mb-3 text-sm text-fg-muted">
+        {ui.partOf}{' '}
+        <a href={blogHref(parent, lang)} class="font-medium text-accent hover:underline">
+          {parent.content[lang].title}
+        </a>
+      </p>
+    )
+  }
+
+  <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">{c.question}</h1>
+
+  <div class="mt-6 flex flex-col gap-4 text-lg text-fg-muted">
+    {c.intro.map((p) => <p>{p}</p>)}
+  </div>
+
+  {
+    c.sections.map((section) => (
+      <section class="mt-10">
+        <h2 class="text-2xl font-bold tracking-tight">{section.heading}</h2>
+        <div class="mt-4 flex flex-col gap-4 text-fg-muted">
+          {section.paragraphs.map((p) => (
+            <p>{p}</p>
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  {/* Call to action verso la landing collegata (internal linking risolto per lingua). */}
+  <div class="mt-10 rounded-lg border border-line bg-surface-2 p-5">
+    <a href={cta} class="font-semibold text-accent hover:underline">{c.ctaText} →</a>
+  </div>
+
+  {/* Pilastro: lista degli articoli cluster della serie. */}
+  {
+    children.length > 0 && (
+      <section class="mt-12 border-t border-line pt-8">
+        <h2 class="text-xl font-bold tracking-tight">{ui.seriesHeading}</h2>
+        <ul class="mt-4 grid gap-4">
+          {children.map((child) => (
+            <li>
+              <a
+                href={blogHref(child, lang)}
+                class="block rounded-lg border border-line bg-surface p-4 transition hover:border-accent hover:bg-surface-2"
+              >
+                <p class="font-semibold">{child.content[lang].question}</p>
+                <p class="mt-1 text-sm text-fg-muted">{child.content[lang].description}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {/* FAQ question-based della pagina (resa + FAQPage JSON-LD, emesso dalla rotta). */}
+  <FaqSection faq={c.faq} />
+</article>

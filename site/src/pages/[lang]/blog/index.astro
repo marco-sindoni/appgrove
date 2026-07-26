@@ -1,0 +1,72 @@
+---
+// Indice del blog/risorse (UC 0042): /<lang>/blog/. Elenca i pilastri per tema, ciascuno
+// con i suoi articoli cluster (modello pillar+cluster con internal linking). Stesso
+// segmento `/blog/` in tutte le lingue (hreflang uniformi); breadcrumb Home → Blog.
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { LOCALES, type Locale } from '../../../lib/i18n.ts'
+import { pillars, clusterArticles, postsByDateDesc, blogHref, blogIndexHreflangPaths } from '../../../lib/blog.ts'
+import { BLOG_UI } from '../../../content/blog/ui.ts'
+import { MARKETING } from '../../../content/marketing/index.ts'
+import { breadcrumbJsonLd } from '../../../lib/seo.ts'
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }))
+}
+
+const lang = Astro.params.lang as Locale
+const ui = BLOG_UI[lang]
+const t = MARKETING[lang]
+
+// Pilastri in ordine di pubblicazione (data decrescente), ciascuno con i suoi cluster.
+const orderedPillars = postsByDateDesc(pillars())
+const url = new URL(`/${lang}/blog/`, Astro.site).toString()
+
+const jsonLd = [
+  breadcrumbJsonLd([
+    { name: t.nav.app, url: new URL(`/${lang}/`, Astro.site).toString() },
+    { name: ui.breadcrumb, url },
+  ]),
+]
+---
+
+<BaseLayout
+  lang={lang}
+  title={ui.indexTitle}
+  description={ui.indexIntro}
+  pathWithinLocale="/blog/"
+  hreflangPaths={blogIndexHreflangPaths()}
+  jsonLd={jsonLd}
+>
+  <section class="py-6">
+    <h1 class="text-3xl font-extrabold tracking-tight sm:text-4xl">{ui.indexTitle}</h1>
+    <p class="mt-4 max-w-2xl text-lg text-fg-muted">{ui.indexIntro}</p>
+  </section>
+
+  <div class="grid gap-10">
+    {
+      orderedPillars.map((pillar) => (
+        <section class="border-t border-line pt-8">
+          <a href={blogHref(pillar, lang)} class="group block">
+            <h2 class="text-2xl font-bold tracking-tight group-hover:text-accent">
+              {pillar.content[lang].title}
+            </h2>
+            <p class="mt-2 max-w-2xl text-fg-muted">{pillar.content[lang].description}</p>
+          </a>
+          <ul class="mt-6 grid gap-4 sm:grid-cols-2">
+            {clusterArticles(pillar).map((article) => (
+              <li>
+                <a
+                  href={blogHref(article, lang)}
+                  class="block h-full rounded-lg border border-line bg-surface p-5 transition hover:border-accent hover:bg-surface-2"
+                >
+                  <h3 class="font-semibold">{article.content[lang].question}</h3>
+                  <p class="mt-2 text-sm text-fg-muted">{article.content[lang].description}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>

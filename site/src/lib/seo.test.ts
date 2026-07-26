@@ -6,6 +6,7 @@ import {
   softwareApplicationJsonLd,
   faqPageJsonLd,
   landingJsonLd,
+  articleJsonLd,
   serializeJsonLd,
   BRAND_NAME,
 } from './seo.ts'
@@ -87,5 +88,24 @@ describe('costruttori JSON-LD (UC 0040)', () => {
       expect(s).not.toContain('<')
       expect(() => JSON.parse(s)).not.toThrow()
     }
+  })
+
+  // Article: nodo dei contenuti blog (UC 0042).
+  it('articleJsonLd porta i campi portanti e resta serializzabile e sicuro', () => {
+    const node = articleJsonLd({
+      headline: 'How do I create a compliant invoice?',
+      description: 'A short answer.',
+      url: 'https://appgrove.app/en/blog/compliant-electronic-invoice/',
+      inLanguage: 'en',
+      datePublished: '2026-07-26',
+    })
+    expect(node['@type']).toBe('Article')
+    expect(node.headline).toBe('How do I create a compliant invoice?')
+    expect(node.inLanguage).toBe('en')
+    expect(node.datePublished).toBe('2026-07-26')
+    expect((node.publisher as Record<string, unknown>).name).toBe(BRAND_NAME)
+    const s = serializeJsonLd(node)
+    expect(s).not.toContain('<')
+    expect(() => JSON.parse(s)).not.toThrow()
   })
 })

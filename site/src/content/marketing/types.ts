@@ -17,6 +17,8 @@ export interface NavContent {
   app: string
   why: string
   pricing: string
+  /** Voce "Blog" della top nav (UC 0042): indice del blog/risorse a /<lang>/blog/. */
+  blog: string
   login: string
   signup: string
 }

@@ -20,6 +20,9 @@
 //  12. llms.txt radice + per-lingua presenti e ben formati (titolo markdown + link);
 //  13. consenso ai crawler AI in robots.txt quando indicizzabile (+ riga Sitemap);
 //  14. FAQPage JSON-LD su home e pagine brand ("perché"/"prezzi") di ogni lingua.
+// Blog/risorse (UC 0042):
+//  15. indice blog per lingua + ogni post (marcato data-blog-post): parità 5 lingue +
+//      dati strutturati Article e FAQPage.
 // Exit code ≠ 0 su qualsiasi violazione.
 
 import fs from 'node:fs'
@@ -208,6 +211,38 @@ for (const [appId, byLang] of landingByApp) {
       if (!types.includes(expected)) {
         fail(`landing "${appId}" [${lang}]: manca il JSON-LD "${expected}" in ${url}`)
       }
+    }
+  }
+}
+
+// 15. Blog/risorse (UC 0042): indice per lingua + post riconosciuti dal marcatore
+//     data-blog-post. Per ogni post: parità 5 lingue e dati strutturati Schema.org
+//     Article + FAQPage (question-based, GEO UC 0041). Difesa a valle del gate strutturale
+//     (parità garantita a compile-time dal tipo Record<Locale, …>): qui si controlla l'HTML.
+for (const lang of LOCALES) {
+  const idx = path.join(DIST, lang, 'blog', 'index.html')
+  if (!fs.existsSync(idx)) fail(`blog: manca l'indice /${lang}/blog/ (${relFromDist(idx)})`)
+}
+
+const blogByKey = new Map() // postKey → Map(lang → { url, html })
+for (const file of localizedPages) {
+  const html = fs.readFileSync(file, 'utf8')
+  const m = html.match(/data-blog-post="([^"]+)"/)
+  if (!m) continue
+  const key = m[1]
+  const url = urlOf(file)
+  const lang = url.split('/')[1]
+  if (!blogByKey.has(key)) blogByKey.set(key, new Map())
+  blogByKey.get(key).set(lang, { url, html })
+}
+for (const [key, byLang] of blogByKey) {
+  for (const lang of LOCALES) {
+    if (!byLang.has(lang)) fail(`blog "${key}": manca la lingua "${lang}"`)
+  }
+  for (const [lang, { url, html }] of byLang) {
+    const { types } = jsonLdTypes(html)
+    for (const expected of ['Article', 'FAQPage']) {
+      if (!types.includes(expected)) fail(`blog "${key}" [${lang}]: manca il JSON-LD "${expected}" in ${url}`)
     }
   }
 }
