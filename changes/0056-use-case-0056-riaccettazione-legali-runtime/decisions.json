@@ -1,0 +1,55 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; restano allo sviluppatore i tre gate (rilettura/approvazione dei requisiti, consenso al commit, consenso al merge). La change è sviluppata in un git worktree dedicato (/Users/msindoni/Projects/appgrove-wt-0056) per isolare il lavoro dalla working dir principale."
+  },
+  {
+    "id": 2,
+    "decision": "La change implementa lo use case 0056 (docs/usecases/04-platform-core/0056-riaccettazione-legali-runtime.md): meccanismo runtime di accettazione/ri-accettazione dei documenti legali (ToU/Privacy/Refund + componenti per-app), derivato al login/refresh, con schermata bloccante nello shell. Dipendenze 0002/0013/0020 tutte implementate (verificato in _INDEX). Da qui la forma del branch NNNN-use-case-0056-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0056 → 🟡 (in corso) all'apertura della change; → ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Versioni legali correnti: tabella platform.legal_version (component/major/version/effective_date), dato NON personale, platform-level, popolata da un nuovo comando `sync-legal` in CoreMain (come migrate/sync-pricing) più uno startup-sync locale (analogo a PricingSyncStartup). I file content/legal/*.md vengono bundlati nella classpath del core via maven-resources-plugin (come le email-templates). Motivo: disaccoppia il core da content/legal a runtime e riusa il pattern command-mode già in CI (oneshot ECS), senza dipendere dal deploy del sito (che oggi non esiste).",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/CoreMain.java", "description": "Nuovo comando sync-legal." },
+      { "file": "services/core/pom.xml", "description": "Copia di ../../content/legal nella classpath del core." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La major per la ri-accettazione = prima cifra del semver `version` del frontmatter (regola del content/legal/README: major=ri-accettazione, minor=notifica, patch=refuso). La lingua IT è facente fede per la versione. Nessun campo `major` separato nei documenti: si deriva da version.split('.')[0].",
+    "files": []
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Componenti vincolanti (che innescano il gate): terms (accettazione esplicita), privacy e cookie (presa d'atto). refund è dentro i Termini (non componente bloccante separato). subprocessors NON blocca (→ preavviso/notifica, differito). Componenti per-app: non applicabili ora (non esistono documenti legali per-app) → differiti. Coerente con la semantica per-documento della specifica (#14 riga 143).",
+    "files": []
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Rendering in-app dei testi legali: il core espone GET /api/platform/v1/legal/{component}?lang e restituisce il MARKDOWN coi token {{titolare.*}} già risolti da content/legal/entity.yaml (stessa logica di site/src/lib/legal.ts, replicata in Java con una regex semplice); il frontend rende il markdown→HTML con una dipendenza minimale (react-markdown). Alternativa scartata: rendere HTML lato core (nuova dipendenza markdown Java) — si preferisce tenere la sanitizzazione lato client. Questo chiude il punto aperto 'sostituzione token nel rendering in-app' di UC 0056.",
+    "files": []
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Punto d'innesto della schermata bloccante: un LegalAcceptanceGate dentro/subito dopo SessionGate in App.tsx (prima del router/entitlements). A sessione authenticated chiama GET /me/legal-status; se ci sono componenti pendenti rende una schermata full-screen (pattern FullPageMessage) invece dei children, bloccando login e refresh. I diritti GDPR restano raggiungibili col blocco pendente (esenzione #09 F31).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/auth/SessionGate.tsx", "description": "Innesto del gate legale post-sessione." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Notifica dei cambi MINOR: inclusa come avviso in-app leggero (non bloccante) derivato da legal-status. Il preavviso email 30gg per nuovi sub-processor + finestra di opposizione è DIFFERITO (richiede il canale email/notifiche, territorio UC 0039) e tracciato in UC 0056 'Punti aperti'. Motivo: non anticipare il canale notifiche esterno, che è un lavoro a sé.",
+    "files": []
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot, ESCALATA in rilettura) Punti a rilievo legale decisi con l'opzione raccomandata ma da validare (docs/_REVISIONE-LEGALE.md): (a) blocco anche sulla presa d'atto di Privacy·Cookie su major, come da specifica, distinguendo 'Accetto' (Termini) da 'Ho preso atto' (Privacy·Cookie); (b) base giuridica del log = contratto (art. 6.1.b) + accountability (art. 5.2); (c) retention del log = vita dell'account + prescrizione applicabile (oltre il grace 14gg, perché è la prova dell'accettazione); (d) classificazione MINOR del nuovo trattamento. Questi restano soggetti all'approvazione dei requisiti da parte dello sviluppatore e a revisione legale.",
+    "files": [
+      { "file": "changes/0056-use-case-0056-riaccettazione-legali-runtime/requirements.md", "description": "Sezione 'Punti per la tua attenzione'." }
+    ]
+  }
+]
