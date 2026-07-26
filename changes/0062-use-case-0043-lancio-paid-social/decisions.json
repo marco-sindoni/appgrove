@@ -1,0 +1,66 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura/approvazione requisiti, consenso al commit, consenso al merge) restano allo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0043 (Lancio paid/social), area 09-marketing-site: il testo dell'invocazione lo nomina esplicitamente. Forma del branch NNNN-use-case-0043-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0043 → 🟡 all'apertura della change, → ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Inquadramento dello scope: UC 0043 è operativo/non-software. L'esecuzione del lancio (creare account brand LinkedIn/X, submit Product Hunt, iscrivere directory, avviare campagne paid Google/Meta con budget reale) è azione del founder verso l'esterno, con effetti irreversibili e impegni di spesa → NON eseguita dall'autopilot (regola di escalation: denaro, effetti verso l'esterno, direzione di prodotto). La change consegna gli artefatti in-repo che supportano e codificano il lancio, e traccia le azioni founder come escalation."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) I link social del footer si cablano con l'idioma appgrove 'cablato ma spento': data-driven, vuoto ora perché gli account brand non esistono ancora (azione founder escalata); il footer rende la sezione social solo se non è vuota. Alternativa scartata: hardcodare link ora → metterebbe URL finti o richiederebbe di creare account (azione esterna). Chiude il punto differito posseduto da UC 0043 e tracciato dalla change 0047. NB: la collocazione della sorgente è rivista dalla decisione 9 (file YAML di configurazione invece di links.ts).",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Footer: <nav> social resa solo se SOCIAL_LINKS non è vuoto." },
+      { "file": "site/src/content/marketing/types.ts", "description": "FooterContent guadagna socialHeading: string." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) socialHeading tradotto nelle 5 lingue (it 'Seguici', en 'Follow us', fr 'Suivez-nous', es 'Síguenos', de 'Folge uns'): la parità 5 lingue dei contenuti marketing è regola dura, verificata dal postbuild-check.",
+    "files": [
+      { "file": "site/src/content/marketing/it.ts", "description": "footer.socialHeading nelle 5 lingue (it/en/fr/es/de)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il test del footer social è sul CONTRATTO DATI: parseSocialLinks legge una lista valida e LANCIA su voce malformata (label vuota o href non https assoluto); il file consegnato dà lista vuota. Coerente col pattern lib-test del sito; evita di rendere il layout via Container API. Arma il contratto per il riempimento futuro. Collocato in social.test.ts (cfr. decisione 9).",
+    "files": [
+      { "file": "site/src/lib/social.test.ts", "description": "Nuovo test del contratto SOCIAL_LINKS / parseSocialLinks." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il runbook di lancio è un documento vivo docs/_LANCIO.md sul modello degli altri registri con prefisso '_' (Costi AWS, Evoluzioni DevOps, Revisione legale), con puntatore in CLAUDE.md. Codifica lancio a due livelli, canali/directory, social organico brand, paid, postura cookieless difesa, convenzioni UTM (rimando a campaign-guide) e la checklist delle azioni founder. Alternativa scartata: allegato nella cartella dello use case → il lancio è trasversale (sito, newsletter, Plausible, campaign-guide) e va tenuto vivo.",
+    "files": [
+      { "file": "docs/_LANCIO.md", "description": "Nuovo runbook/registro vivo del lancio." },
+      { "file": "CLAUDE.md", "description": "Puntatore al runbook accanto agli altri registri vivi." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) ESCALATION al founder, non eseguita dall'autopilot: creazione account brand (LinkedIn/X), submit Product Hunt, iscrizione directory, avvio campagne paid Google/Meta e relativi budget. Motivo: denaro ed effetti verso l'esterno/irreversibili. Tracciata come checklist operativa nel runbook docs/_LANCIO.md (sezione 'Azioni founder')."
+  },
+  {
+    "id": 9,
+    "decision": "Scelta dello sviluppatore (in autopilot): centralizzare i link social in un FILE YAML di configurazione del sito (content/marketing/social.yaml), non in links.ts. Se non compilato → non compare; se compilato → letto e mostrato direttamente. Segue il pattern di content/legal/entity.yaml (js-yaml + fs). Supersede la collocazione delle decisioni 4/6.",
+    "files": [
+      { "file": "content/marketing/social.yaml", "description": "Fonte unica dei link social brand; consegnata vuota/commentata." },
+      { "file": "site/src/lib/social.ts", "description": "Loader+validazione dello YAML; esporta SOCIAL_LINKS e la funzione pura parseSocialLinks." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "Chiuso il punto differito 'link social nel footer' posseduto da UC 0043 (aperto dalla change 0047): la sezione 'Punti aperti' dell'UC è aggiornata a chiusa con rimando all'implementazione. La creazione degli account brand e il riempimento del file restano azioni founder (decisione 8), tracciate in docs/_LANCIO.md.",
+    "files": [
+      { "file": "docs/usecases/09-marketing-site/0043-lancio-paid-social.md", "description": "Punto differito marcato chiuso, con i percorsi dell'implementazione." }
+    ]
+  }
+]

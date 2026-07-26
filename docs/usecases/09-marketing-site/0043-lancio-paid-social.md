@@ -58,7 +58,9 @@ l'attribuzione Plausible funzioni (UTM/goal) e che i lead entrino nel flusso new
 
 ## Punti aperti / decisioni differite
 
-- **Link social nel footer del sito** _(tracciato dalla change `0047-use-case-0037-…`)_: il footer della vetrina è nato
-  senza link social perché gli **account brand non esistono ancora**. I canali sono già decisi (#14 J46: LinkedIn primario,
-  X opzionale). Quando questo use case verrà implementato — che possiede la creazione degli account brand — aggiungere i
-  link nel footer del sito (`site/src/layouts/BaseLayout.astro` / modello marketing).
+- ~~**Link social nel footer del sito** _(tracciato dalla change `0047-use-case-0037-…`)_: il footer della vetrina è nato
+  senza link social perché gli **account brand non esistono ancora**.~~ **Chiuso dalla change `0062-use-case-0043-…`**: il
+  footer ([site/src/layouts/BaseLayout.astro](../../../site/src/layouts/BaseLayout.astro)) legge i link da
+  [content/marketing/social.yaml](../../../content/marketing/social.yaml) via [site/src/lib/social.ts](../../../site/src/lib/social.ts)
+  e li mostra da solo quando compilati; finché il file è vuoto (account brand non ancora creati) non compare nulla. La
+  **creazione degli account** e il riempimento del file restano azioni founder, tracciate in [docs/_LANCIO.md](../../../docs/_LANCIO.md).
