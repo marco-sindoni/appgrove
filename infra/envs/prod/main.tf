@@ -48,6 +48,20 @@ provider "aws" {
   }
 }
 
+# Vantage point del canary di uptime (UC 0007, #08 G22): eu-central-1 (Francoforte),
+# separato da eu-west-1 così l'avviso sopravvive a un outage regionale di eu-west-1.
+provider "aws" {
+  alias  = "eu_central_1"
+  region = "eu-central-1"
+  default_tags {
+    tags = {
+      project    = "appgrove"
+      env        = "prod"
+      managed_by = "terraform"
+    }
+  }
+}
+
 variable "region" {
   description = "Regione AWS dell'ambiente (#06 6: eu-west-1)."
   type        = string
@@ -220,6 +234,34 @@ module "observability" {
   error_ingest_log_group_name = module.platform_shared.error_ingest_log_group_name
   auth_lambda_name            = module.platform_shared.auth_lambda_name
   pre_token_gen_lambda_name   = module.platform_shared.pre_token_gen_lambda_name
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Canary di uptime cross-region (UC 0007, #08 G22): EventBridge → Lambda ping su
+# app.appgrove.app → metrica → SNS, tutto in eu-central-1 (sopravvive a un outage
+# di eu-west-1). SOLO prod e SOLO dal go-live: prima che il sito sia live il ping
+# darebbe 0 e allarmi a raffica, quindi è protetto da `uptime_canary_enabled`
+# (default false). Al go-live: portare la variabile a true. Costo ~$0 (full-IaC).
+# ─────────────────────────────────────────────────────────────────────────────
+
+variable "uptime_canary_enabled" {
+  description = "Accende il canary di uptime in eu-central-1 (UC 0007). Default false: si attiva al go-live, quando app.appgrove.app è live."
+  type        = bool
+  default     = false
+}
+
+module "uptime_canary" {
+  source = "../../modules/uptime_canary"
+  count  = var.uptime_canary_enabled ? 1 : 0
+
+  providers = {
+    aws = aws.eu_central_1
+  }
+
+  env          = "prod"
+  target_url   = "https://app.appgrove.app/"
+  target_label = "app"
+  alert_email  = var.alert_email
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

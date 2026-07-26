@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot (ON), richiesta dallo sviluppatore all'invocazione. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura requisiti, commit, merge) restano allo sviluppatore. L'autopilot si ferma e chiede sulle scelte che non sono sue (prodotto, sicurezza, superfici pubbliche)."
+  },
+  {
+    "id": 2,
+    "decision": "La change implementa lo use case 0007 (Observability hardening: canary uptime cross-region in eu-central-1 + tuning Budgets/allarmi). Branch 0059-use-case-0007-observability-hardening. Area toccata: infra/ (Terraform). NNNN=0059 contatore changes/, YYYY=0007.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0007 ⬜ → 🟡 all'apertura della change." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "ESCALATION risolta dallo sviluppatore (non decisione autopilot): il bersaglio del canary è l'Opzione A — GET https://app.appgrove.app/ (SPA pubblica su CloudFront), 200 atteso. Motivo dell'escalation: lo UC assume un 'health endpoint pubblico leggero (UC 0006/0003)' che NON esiste e per invariante di sicurezza (docs/_BACKLOG.md:510) NON deve esistere (/q/health/* resta non esposto). Scartate: B (dominio API in eu-west-1: nessuna rotta dà un 200 pulito) e C (nuovo endpoint di stato pubblico: nuova superficie di sicurezza, fuori scope, proprietà di UC 0006/0003)."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il canary è un NUOVO modulo Terraform infra/modules/uptime_canary, istanziato SOLO in envs/prod con un provider aliasato aws.eu_central_1 (Francoforte), separato da eu-west-1. Niente in test (romperebbe lo scale-to-0; il sito test non è un bersaglio di uptime commerciale). Raccomandato perché il modulo isola il canary, riusa i pattern esistenti (archive_file + Lambda Python, EventBridge, SNS) e resta cost-min (~$0, dentro il piano gratuito)."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Attivazione a fasi: il modulo è protetto dalla variabile uptime_canary_enabled (bool, default false) in envs/prod via count. Motivo: lo UC prescrive 'solo prod, dal go-live'; prima che il sito sia live app.appgrove.app non risponde 200, quindi un canary attivo genererebbe solo falsi allarmi. Al go-live basta portare la variabile a true. Coerente col pattern di attivazione a fasi già in uso (es. auth_lambda_s3_key vuoto = Lambda non creata).",
+    "files": [
+      { "file": "infra/envs/prod/main.tf", "description": "Provider alias aws.eu_central_1, variabile uptime_canary_enabled (default false), blocco module.uptime_canary con count di gating." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Struttura del canary: EventBridge schedulato rate(1 minute) → Lambda Python (urllib, nessuna dipendenza) che GET il bersaglio → metrica custom CloudWatch namespace appgrove/uptime, metrica Healthy = 1 (2xx/3xx) / 0 (altro o errore) con dimensione Target → allarme metrico LessThanThreshold su Minimum per 3 periodi da 60s, treat_missing_data=breaching (canary muto = trattato come down) → topic SNS dedicato appgrove-prod-uptime-alarms IN eu-central-1 + subscription email. Il topic SNS deve stare in eu-central-1 perché un allarme CloudWatch può notificare solo un topic della stessa regione: è esattamente ciò che rende l'avviso resiliente a un outage di eu-west-1.",
+    "files": [
+      { "file": "infra/modules/uptime_canary/main.tf", "description": "EventBridge rule + Lambda ping + metrica/allarme + SNS eu-central-1." },
+      { "file": "infra/modules/uptime_canary/lambda/uptime_ping.py", "description": "Ping HTTP con urllib e pubblicazione della metrica Healthy 1/0." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Tuning Budgets: la soglia mensile resta a $100 (NON abbassata a $80). Motivo: prod non è ancora live, non c'è spesa reale che giustifichi la soglia più bassa e abbassarla ora rischierebbe solo falsi allarmi al go-live. Gli allarmi condivisi esistenti sono già anti-rumore (durata, notBreaching) e non c'è dato reale per ritararli. L'abbassamento $100→$80 e l'affinamento anti-rumore restano ritocchi opzionali a regime, tracciati nei 'Punti aperti' di UC 0007."
+  },
+  {
+    "id": 8,
+    "decision": "Decisione differita tracciata (regola CLAUDE.md): manca un vero endpoint di STATO pubblico end-to-end (edge→ECS→DB, Opzione C) che darebbe un segnale di degrado backend in eu-west-1; il canary A coglie i down totali dal punto di vista esterno, mentre il degrado backend resta coperto dagli allarmi in-regione già esistenti (ECS/5xx/latenza/Aurora, UC 0006). L'endpoint di stato pubblico è di proprietà di UC 0006/0003, tracciato nei loro 'Punti aperti'.",
+    "files": [
+      { "file": "docs/usecases/02-devops-infra/0006-osservabilita-base.md", "description": "Punto aperto: endpoint di stato pubblico end-to-end per un canary più profondo (proprietà UC 0006/0003)." }
+    ]
+  }
+]

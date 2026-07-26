@@ -161,14 +161,15 @@ run_infra() {
   fi
 
   # Test unitari delle Lambda Python (db-bootstrap UC 0004, pre-token-gen UC 0016,
-  # custom-message UC 0018): logica pura con DB/Data API mockati, nessun cloud, solo
+  # custom-message UC 0018, uptime-canary UC 0007): logica pura con DB/Data API mockati, nessun cloud, solo
   # stdlib (unittest). Il custom-message rende i template della sorgente condivisa
   # `shared/email-templates`, quindi copre anche il contenuto che spediremo davvero.
   if command -v python3 >/dev/null 2>&1; then
     if ( cd "$ROOT/infra/modules/platform_shared/lambda" \
           && python3 -m unittest test_db_bootstrap \
           && ( cd pre_token_gen && python3 -m unittest test_handler ) \
-          && ( cd custom_message && python3 -m unittest test_handler ) ); then
+          && ( cd custom_message && python3 -m unittest test_handler ) ) \
+       && ( cd "$ROOT/infra/modules/uptime_canary/lambda" && python3 -m unittest test_uptime_ping ); then
       ok "infra (lambda python): ok"
     else
       fail "infra (lambda python): test rossi"; infra_ok=0
