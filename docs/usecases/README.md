@@ -131,8 +131,83 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | 0054 | 4 | App #2 (B2B multi-user, es. mini-CRM) via `new-application` (valida skill + inviti/seat) | 0046 | 🟢 |
 
 ---
-**Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0057** sono appesi col prossimo `NNNN` libero
-(ID stabili, non riflettono l'area). **Ordine di implementazione**: dato dalla colonna **Fase** + **Dipendenze** (non dal numero).
+
+## Epiche evolutive (evo) — numerazione delle aree da `12`
+
+> **Base ↔ evo.** Le aree `01`–`11` sopra sono l'**implementazione base** del prodotto. Le epiche qui sotto (`12`+)
+> raccolgono il **lavoro evolutivo** formalizzato dal backlog nella change `0064` (dai residui R1–R21 di
+> [_INDEX.md](_INDEX.md) e dai temi di [docs/_BACKLOG.md](../_BACKLOG.md)). Sono storie numerate con la **stessa
+> convenzione globale** (use case a 4 cifre, che qui **continua da `0061`**), raggruppate per epica in cartelle-area
+> numerate a partire da `12`. **Fase = evo**: **non ancora schedulate** nell'ordine di esecuzione topologico principale
+> ([_INDEX.md](_INDEX.md)) — vi entrano quando maturano. **Stato drill-down**: 🟢 scritto (implementazione da avviare).
+> **Ordine di esecuzione dell'onda 2** (topologico sulle dipendenze evo): [EPICS-WAVE-2.md](EPICS-WAVE-2.md).
+
+### 12-ready-for-ai-mcp — Ready for AI (MCP) _(direzione di prodotto, nodi ancora da decidere)_
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0061](12-ready-for-ai-mcp/0061-architettura-server-mcp.md) | Architettura & collocazione del server MCP (per-app vs gateway centrale) | 0004, 0055, 0051, 0014 | 🟢 |
+| [0062](12-ready-for-ai-mcp/0062-auth-consenso-delegato-ai.md) | Autenticazione e consenso delegato (assistente AI → tenant) | 0015, 0016, 0013, 0061 | 🟢 |
+| [0063](12-ready-for-ai-mcp/0063-mappatura-operazioni-strumenti-mcp.md) | Mappatura operazioni app → strumenti MCP (contratto per-app) | 0061, 0051, 0046 | 🟢 |
+| [0064](12-ready-for-ai-mcp/0064-enforcement-quota-entitlement-ai.md) | Enforcement entitlement/quota sulle chiamate AI | 0027, 0026, 0061 | 🟢 |
+| [0065](12-ready-for-ai-mcp/0065-sicurezza-audit-invocazioni-ai.md) | Sicurezza & audit invocazioni AI + postura privacy | 0006, 0030, 0061 | 🟢 |
+| [0066](12-ready-for-ai-mcp/0066-industrializzazione-mcp-newapp.md) | Industrializzazione in `new-application`/`microsaas_app` + riconciliazione claim sito | 0046, 0004, 0037, 0061–0065 | 🟢 |
+
+### 13-abbonamenti-self-service — Abbonamenti self-service & leve billing
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0067](13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md) | Gestione abbonamento self-service (backoffice "Abbonamenti") | 0026, 0028, 0027, 0024, 0020 | 🟢 |
+| [0068](13-abbonamenti-self-service/0068-pausa-ripresa-subscription.md) | Pausa/ripresa subscription self-service _(priorità bassissima)_ | 0026, 0028, 0020 | 🟢 |
+| [0069](13-abbonamenti-self-service/0069-trial-una-tantum-tenant-app.md) | Trial una-tantum per tenant×app _(decisione di prodotto da confermare)_ | 0026, 0024, 0027 | 🟢 |
+| [0070](13-abbonamenti-self-service/0070-bundling-abbonamento-multi-app.md) | Bundling: più app in un unico abbonamento _(priorità bassissima)_ | 0022, 0026 | 🟢 |
+| [0071](13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md) | Riconciliazione netto/revenue | 0025, 0006, 0021 | 🟢 |
+
+### 14-modello-utenti-multiapp — Modello utenti multi-app (B2B/B2C) _(direzione preferita, non ancora decisa)_
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0072](14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md) | Distinzione B2C/B2B a livello app (`App.user_model`) + semantica gestione utenti | 0013, 0059, 0051, 0054 | 🟢 |
+| [0073](14-modello-utenti-multiapp/0073-invito-utenti-per-app-posti-quota.md) | Invito utenti per-app con "posti" come metrica quota `stock` | 0027, 0046, 0047, 0072 | 🟢 |
+| [0074](14-modello-utenti-multiapp/0074-directory-cross-app-ui-membri.md) | Directory cross-app + UI "Membri" ripensata per-app | 0059, 0013, 0072, 0073 | 🟢 |
+
+### 15-supporto-e-piattaforma — Supporto & piattaforma
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0075](15-supporto-e-piattaforma/0075-ticketing-nativo-in-house.md) | Ticketing nativo in-house (`support_ticket` + UI backoffice + console admin) | 0012, 0013, 0020, 0021, 0018, 0034 | 🟢 |
+| [0076](15-supporto-e-piattaforma/0076-disabilita-applicazione.md) | Disabilita applicazione (feature admin reversibile) | 0021, 0027, 0014, 0035 | 🟢 |
+| [0077](15-supporto-e-piattaforma/0077-provider-entitlement-reale.md) | Provider entitlement reale del backoffice/admin (sostituire lo stub) | 0013, 0020, 0021, 0027, 0025, 0024 | 🟢 |
+
+### 16-messa-in-cloud-golive — Messa in cloud & go-live operativo _(operazioni ☁, non codice)_
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0078](16-messa-in-cloud-golive/0078-uscita-ses-sandbox.md) | Uscita di SES dalla modalità di prova (sandbox) _(bloccante go-live)_ | 0018, 0079 | 🟢 |
+| [0079](16-messa-in-cloud-golive/0079-gestione-rimbalzi-reclami-ses.md) | Gestione rimbalzi/reclami SES (notifiche, soppressione, allarme) | 0018, 0006 | 🟢 |
+| [0080](16-messa-in-cloud-golive/0080-prima-esecuzione-live-pipeline.md) | Prima esecuzione live pipeline + configurazione repo GitHub | 0005, 0003, 0004, 0055 | 🟢 |
+| [0081](16-messa-in-cloud-golive/0081-smoke-reali-cloud-test.md) | Smoke reali cloud alla prima accensione di `test` | 0015, 0016, 0014, 0018, 0055, 0005 | 🟢 |
+| [0082](16-messa-in-cloud-golive/0082-script-attivazione-ambienti-fasi.md) | Script attivazione ambienti per fasi (`test-start`/`test-stop` + cron) | 0004, 0055, 0005, 0006 | 🟢 |
+| [0083](16-messa-in-cloud-golive/0083-drift-regione-e-casella-security.md) | Correzione drift regione `eu-south-1`→`eu-west-1` + casella `security@` | 0005, 0037, 0049 | 🟢 |
+
+### 17-skill-e-tooling-contenuto — Skill & tooling di contenuto/manutenzione
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0084](17-skill-e-tooling-contenuto/0084-skill-new-blog-post.md) | Skill `new-blog-post` (scaffold 5 lingue + registro + pilastro↔cluster + copy on-brand) | 0042, 0057, 0046, 0040, 0041 | 🟢 |
+| [0085](17-skill-e-tooling-contenuto/0085-unificazione-renderer-email-commons.md) | Unificazione in `services/commons` dei renderer dei template email | 0018, 0039 | 🟢 |
+
+### 18-brand-e-design-system — Brand & design system condiviso
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0086](18-brand-e-design-system/0086-brand-kit-token-condiviso.md) | Pacchetto brand kit / token condiviso (fonte unica SPA + vetrina + landing) | 0019, 0036, 0046 | 🟢 |
+| [0087](18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md) | Artwork logo finale + stile illustrazioni on-brand | 0019, 0086, 0037 | 🟢 |
+
+### 19-debito-tecnico — Debito tecnico & feature deprioritizzate
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0088](19-debito-tecnico/0088-search-globale-workspace.md) | Search globale dal workspace del backoffice _(deprioritizzata)_ | 0020, 0013 | 🟢 |
+| [0089](19-debito-tecnico/0089-rimozione-legacy-peer-deps.md) | Rimozione `legacy-peer-deps` nel frontend | 0020, 0019 | 🟢 |
+
+---
+**Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0060** appesi col prossimo `NNNN`
+libero (ID stabili, non riflettono l'area). Le **epiche evolutive** (aree `12`+) continuano la stessa sequenza globale da
+**`0061`** (change `0064`). **Ordine di implementazione**: dato dalla colonna **Fase** + **Dipendenze** (non dal numero;
+le evo restano fuori dall'ordine topologico finché non maturano).
 **Stato**: i drill-down sono **scritti** (🟢) tranne **0044** (`new-change`: hook privacy/RoPA + snapshot da wire-are in UC 0031),
 **0002** (documenti legali: impianto deciso, testi ancora da redigere) e i nuovi **0056/0057** (🟡, drill-down scritto,
 implementazione da avviare). Implementazione successiva: una `new-change` per use case (folder `NNNN-use-case-YYYY-…`).
