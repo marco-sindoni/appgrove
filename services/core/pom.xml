@@ -190,6 +190,31 @@
               </resources>
             </configuration>
           </execution>
+          <!--
+            Documenti legali (UC 0056): la SORGENTE UNICA è content/legal/ alla radice del repo (la
+            stessa che rende il sito). Qui i .md (5 lingue) + entity.yaml vengono bundlati in classpath
+            (/legal) invece di essere duplicati: la sync popola legal_version dai frontmatter e
+            l'endpoint /legal/{component} rende il testo coi token {{titolare.*}} risolti in-app.
+          -->
+          <execution>
+            <id>copy-legal-content</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}/legal</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/../../content/legal</directory>
+                  <includes>
+                    <include>*.md</include>
+                    <include>entity.yaml</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>

@@ -122,3 +122,47 @@ export function useRevokeInvitation() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] }),
   })
 }
+
+// ── Ri-accettazione legale runtime (UC 0056) — stato/versionamento dei documenti legali ──────────
+
+/**
+ * Stato legale dell'utente corrente (`GET /me/legal/status`): `pending` = documenti vincolanti da
+ * ri-accettare (blocca la shell), `notices` = aggiornamenti minori (banner non bloccante). `act` vale
+ * `accept` per i termini (accettazione), `acknowledge` per privacy/cookie (presa visione).
+ */
+export function useLegalStatus() {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: ['legal', 'status'],
+    queryFn: () => unwrap(client.GET('/api/platform/v1/me/legal/status')),
+  })
+}
+
+/** Registra l'accettazione dei componenti (`POST /me/legal/acceptance`) e ricarica lo stato. */
+export function useAcceptLegal() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (vars: { components: string[] }) =>
+      unwrap(client.POST('/api/platform/v1/me/legal/acceptance', { body: vars })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['legal', 'status'] }),
+  })
+}
+
+/**
+ * Documento legale localizzato (`GET /legal/{component}?lang`): il `markdown` ha i token già risolti
+ * lato server. Abilitato solo quando `component` è definito (caricamento on-demand alla richiesta).
+ */
+export function useLegalDoc(component: string | undefined, lang: string) {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: ['legal', 'doc', component, lang],
+    queryFn: () =>
+      unwrap(
+        client.GET('/api/platform/v1/legal/{component}', {
+          params: { path: { component: component as string }, query: { lang } },
+        }),
+      ),
+    enabled: component != null,
+  })
+}

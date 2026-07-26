@@ -81,4 +81,17 @@ Schema `platform`: **`legal_version`** (componente/major/effective_date — dato
 - **Sostituzione dei token `{{titolare.*}}` nel rendering in-app dei legali** (da change 0045, UC 0002): il rendering
   delle policy dentro l'app **deve risolvere** i token `{{titolare.<campo>}}` con i valori di `content/legal/entity.yaml`
   prima di mostrarli (stesso contratto del sito, `content/legal/README.md`). *Perché differito*: il rendering in-app è di
-  questo UC. *Owner*: UC 0056.
+  questo UC. ✅ **Chiuso nella change `0056-use-case-0056-…`**: il core espone `GET /api/platform/v1/legal/{component}` che
+  risolve i token lato server (porting di `site/src/lib/legal.ts`) e il frontend rende il markdown con `react-markdown`.
+
+- **Checkbox esplicita di accettazione al signup** (da change `0056-use-case-0056-…`): la change cattura l'accettazione
+  iniziale con lo **stesso gate al primo login** (utente nuovo → nessuna accettazione → componenti vincolanti pendenti →
+  accettazione registrata), un unico meccanismo che evita di toccare il flusso auth. Resta da valutare se aggiungere una
+  **checkbox esplicita nel wizard di signup** (accetto i Termini / prendo atto della Privacy) per catturare l'atto già in
+  fase di registrazione, oltre che al primo ingresso. *Perché differito*: scelta di prodotto/UX sul wizard auth, non
+  bloccante (la prova è comunque registrata). *Owner*: UC 0056.
+
+- **Preavviso 30 giorni per nuovi sub-processor + finestra di opposizione** (#13 C49): la notifica **MINOR** in-app è
+  inclusa nella change 0056 (banner non bloccante), ma il **preavviso email 30gg** e la finestra di opposizione per un
+  nuovo sub-processor richiedono il **canale email/notifiche esterne** (territorio UC 0039) e una macchina a stati
+  dedicata → **differito**. *Owner*: UC 0056.

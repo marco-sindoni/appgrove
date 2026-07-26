@@ -105,6 +105,15 @@ public class TestData {
                 UUID.randomUUID(), tenantId, ticketId, author, body, OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Accettazione legale (UC 0056): riga nel log tenant/utente-scoped, per i test GDPR. */
+    public void legalAcceptance(String tenantId, String userId, String component, String version, int major, String actType) {
+        exec("insert into platform.legal_acceptance"
+                        + "(id,tenant_id,user_id,component,version,major,act_type,accepted_at,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?,?,?)",
+                UUID.randomUUID(), tenantId, userId, component, version, major, actType,
+                OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
     /** Retrodata la chiusura di un ticket (per i test dello sweeper retention, UC 0034). */
     public void backdateTicketClosure(UUID ticketId, OffsetDateTime closedAt) {
         exec("update platform.support_ticket set status='closed', closed_at=? where id=?", closedAt, ticketId);

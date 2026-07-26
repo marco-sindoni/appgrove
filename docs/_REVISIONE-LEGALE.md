@@ -28,6 +28,7 @@ Aggiornato a ogni decisione che tocca aspetti legali.
 | L12 | **Template notifiche data breach** (Garante art. 33, interessati art. 34, controller B2B) IT/EN | #13 J | pre-go-live | ⏳ deliverable |
 | L13 | **Refund Policy** — pagina pubblica **separata**, accessibile dal menu (**requisito Paddle Domain Review**, #14 A2); contenuto "vendite finali/no refund salvo legge + Buyer Terms Paddle" (#09 J43); 5 lingue, IT facente fede | #09 J / #14 A | **prerequisito Paddle** | ⏳ da redigere |
 | L14 | **RoPA generato + classificazioni dei manifesti dati** (`docs/compliance/ropa.{it,en}.md`, `docs/compliance/manifests/*.yaml`): basi giuridiche, retention, classificazione prudente `accounts.name`/`paddle_customer_id`, voce log (legittimo interesse) — bozza interna assemblata automaticamente (UC 0030) | #13 C / UC 0030 | pre-go-live | ⏳ bozza interna |
+| L15 | **Ri-accettazione legale runtime** (UC 0056, change `0056-…`): (a) **blocco dell'accesso anche sulla *presa d'atto*** di Privacy·Cookie su cambio major (informativa = atto unilaterale: confermare se il blocco è opportuno o va reso non bloccante); (b) **base giuridica del log accettazioni** = contratto (art. 6.1.b) + accountability (art. 5.2); (c) **retention del log** = vita account + prescrizione applicabile (oltre il grace 14gg); (d) **classificazione MINOR** del nuovo trattamento (accountability accessoria) | #14 C18/C20 / #13 E/G41 | pre-go-live | ⏳ da validare |
 
 ## Note
 - I documenti **interni** (RoPA, manifesti-dati per-app) NON sono pubblici e non rientrano nella revisione "pubblica":
