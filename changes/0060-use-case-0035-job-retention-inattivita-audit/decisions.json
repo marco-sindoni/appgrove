@@ -1,0 +1,61 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — l'agente risponde alle domande di approfondimento seguendo l'opzione raccomandata; restano allo sviluppatore i tre gate (rilettura/approvazione dei requisiti, consenso al commit, consenso al merge)."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0035 (Job retention/purge). Il testo dell'invocazione nomina esplicitamente UC 0035; dipendenze hard (UC 0032 purge, UC 0006 retention/archivio) sono già in main (✅). Da qui la forma del branch 0060-use-case-0035-…",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "UC 0035 passa a 🟡 all'apertura (step-01) e a ✅ alla chiusura (step-04)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Scope della change delimitato al lavoro RESIDUO e ripe di UC 0035, dopo aver verificato cosa è già in main: (a) l'infrastruttura di retention/archivio è già consegnata da UC 0006 — archivio audit 12 mesi Firehose→S3→Glacier→scadenza, retention log per-categoria via Terraform, lifecycle 7gg degli export ZIP; (b) la grace 14gg è già consegnata dalla change 0029 (AccountDeletionSweeper + TenantOffboarding.offboard); (c) esistono già gli sweeper ticket (0030) e newsletter (24 mesi). Restano quindi tre lavori applicativi in services/core: substrato ultimo-accesso, sweeper inattività 24 mesi, sweeper scadenza tabelle audit GDPR a 12 mesi."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il pattern cloud degli sweeper resta lo scheduler applicativo Quarkus @Scheduled dentro il container ECS del core: a cost-min il servizio gira con desired_count=1 (nessuna alta disponibilità), quindi il job schedula in modo corretto e non-duplicato sull'unico task. Il trigger EventBridge/cron esterno e il publisher EventBridge di tenant.offboarded dal core NON sono in questa change: servono solo con più task ECS (alta disponibilità, evoluzione E3) e non sono verificabili finché il cloud non è attivo (nessun apply). Tracciati come rimando in UC 0035 e in docs/_EVOLUZIONI-DEVOPS.md."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il segnale di 'ultimo accesso' per l'inattività è una colonna last_active_at a livello di ACCOUNT (schema platform.accounts), non per singolo utente: la cancellazione per inattività è account-level (offboarding dell'intero tenant), quindi l'account è attivo finché qualunque suo utente usa il prodotto. Alternative scartate: per-utente (aggregazione max() inutilmente complessa per una decisione account-level) e nessun tracciamento (impossibile misurare l'inattività).",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration", "description": "Nuova migrazione Flyway: colonne last_active_at e inactivity_warned_at su platform.accounts." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) last_active_at è timbrato da un filtro di richiesta nel core su ogni richiesta autenticata (tenant dal JWT verificato, invariante #1), con throttling in memoria per-tenant (finestra breve, default configurabile ~6h) e scrittura best-effort fuori dal percorso della risposta: cattura l'uso reale del prodotto (qualsiasi chiamata autenticata), costa al massimo una scrittura per account per finestra, e a desired_count=1 la cache in memoria è autorevole. Scartato lo stamping solo al login/refresh nel servizio auth (accoppierebbe auth a una tabella del core e mancherebbe l'attività non-login). Il filtro NON deve mai far fallire la richiesta.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core", "description": "Nuovo filtro di richiesta che timbra platform.accounts.last_active_at con throttle in memoria, best-effort." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La finestra di avviso inattività (30 giorni) NON disattiva l'account: durante l'avviso l'account resta 'active' e pienamente usabile — accedere e usare il prodotto è il modo per 'rispondere' e annullare la cancellazione. Diverso dalla grace di eliminazione volontaria (change 0029), che invece disattiva subito (pending_deletion). Solo alla scadenza dei 30 giorni SENZA attività lo sweeper invoca offboarding e soft-cancella l'account (stesso finale di AccountDeletionSweeper). Se l'attività riprende dopo l'avviso (last_active_at > inactivity_warned_at) l'account è 'recuperato': lo sweeper azzera inactivity_warned_at e non cancella.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr", "description": "Nuovo AccountInactivitySweeper: fase 1 avviso a 24 mesi di inattività, fase 2 offboarding a +30gg, con recupero." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'avviso di inattività è inviato ai proprietari dell'account (ruolo OWNER) via Mailer (Mailpit in %dev, SES nel cloud), fail-soft come TicketNotifier: un errore di invio non blocca né altera lo stato del job. Testo bilingue italiano/inglese; la localizzazione per-lingua dell'email è rimandata (materia di localizzazione email, UC 0018/0060) e tracciata.",
+    "files": [
+      { "file": "services/core/src/main/resources/application.properties", "description": "Riusa quarkus-mailer già presente (aggiunto in change 0030); nessuna nuova dipendenza." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La migrazione popola last_active_at = now() (istante del deploy) per gli account esistenti: dà a tutti un orologio di inattività fresco di 24 mesi dal rilascio, evitando che il primo sweep dopo il deploy avvisi/cancelli in massa account storici mai timbrati. Scartato il backfill a created_at (avviserebbe retroattivamente account vecchi ma legittimi)."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Nuovo GdprAuditRetentionSweeper che scade a 12 mesi (hard-delete) le tabelle di prova in schema platform: gdpr_purge_audit e gdpr_restriction_audit — chiude il punto aperto (b) tracciato da UC 0034 ('12 mesi dichiarati, oggi nessun job li scade', #08). Ambito limitato allo schema platform: la retention delle copie per-app gdpr_purge_audit (schemi app_<id>) e la conservazione dell'audit dopo dismissione app (UC 0048) restano rimandi tracciati, perché richiedono di iterare gli schemi app e si intrecciano con la dismissione. La copia forense lunga 12 mesi degli eventi di audit resta sull'archivio S3/Glacier (UC 0006), invariata."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Classificazione privacy attesa: MINOR, piattaforma core. Le nuove colonne last_active_at/inactivity_warned_at sono marcatori tecnici di stato (precedente: status, deletion_requested_at, suspended_reason → nessuna voce di manifesto/RoPA); l'avviso riusa email utente già trattata e SES già in lista dei responsabili; nessuna nuova finalità (attua la minimizzazione/retention già decisa, #13 E26). Da confermare con lo scanner privacy (UC 0031) allo step-03."
+  }
+]
