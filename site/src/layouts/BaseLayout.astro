@@ -17,6 +17,7 @@ import {
 import { brandHref } from '../lib/routes.ts'
 import { organizationJsonLd, serializeJsonLd } from '../lib/seo.ts'
 import { LEGAL_COMPONENTS } from '../lib/legal.ts'
+import { SOCIAL_LINKS } from '../lib/social.ts'
 import { MARKETING } from '../content/marketing/index.ts'
 import { APP_LOGIN, APP_SIGNUP, SUPPORT_EMAIL, SECURITY_TXT } from '../lib/links.ts'
 
@@ -208,6 +209,31 @@ const year = new Date().getFullYear()
               </li>
             </ul>
           </nav>
+
+          {/* Link social del brand (UC 0043): resi SOLO se compilati in
+              content/marketing/social.yaml. Vuoto → nessuna sezione (gli account
+              brand non esistono ancora, azione founder — vedi docs/_LANCIO.md). */}
+          {
+            SOCIAL_LINKS.length > 0 && (
+              <nav aria-label={t.footer.socialHeading} class="text-sm">
+                <p class="mb-2 font-semibold">{t.footer.socialHeading}</p>
+                <ul class="flex flex-col gap-1">
+                  {SOCIAL_LINKS.map((s) => (
+                    <li>
+                      <a
+                        href={s.href}
+                        rel="me noopener"
+                        target="_blank"
+                        class="text-fg-muted hover:text-fg"
+                      >
+                        {s.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )
+          }
 
           <div class="text-sm">
             <p class="mb-2 font-semibold">{t.footer.newsletterTitle}</p>

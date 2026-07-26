@@ -182,6 +182,11 @@ Stima costi viva (principio: costo minimo compatibile coi requisiti), aggiornata
 Registro vivo delle scelte cost-min con il relativo percorso di hardening/scaling (NAT, ALB, HA, …):
 [docs/_EVOLUZIONI-DEVOPS.md](docs/_EVOLUZIONI-DEVOPS.md).
 
+## Runbook di lancio (paid/social/directory)
+
+Piano operativo del lancio lean a due livelli (Product Hunt, directory, LinkedIn brand, paid Google/Meta
+cookieless) con checklist azioni founder e postura privacy difesa: [docs/_LANCIO.md](docs/_LANCIO.md) (UC 0043).
+
 ## Inquadramento fiscale (commercialista)
 
 Note fiscali/contributive per l'avvio come **persona fisica senza società** con Paddle MoR (P.IVA forfettaria, abitualità,

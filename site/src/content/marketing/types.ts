@@ -116,6 +116,8 @@ export interface PricingPage {
 export interface FooterContent {
   tagline: string
   legalHeading: string
+  /** Intestazione della sezione link social (UC 0043); resa solo se ci sono link. */
+  socialHeading: string
   supportLabel: string
   securityLabel: string
   newsletterTitle: string

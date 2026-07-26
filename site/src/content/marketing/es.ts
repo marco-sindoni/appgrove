@@ -191,6 +191,7 @@ export const es: MarketingContent = {
   footer: {
     tagline: 'Herramientas sencillas que crecen con tu negocio.',
     legalHeading: 'Legal',
+    socialHeading: 'Síguenos',
     supportLabel: 'Soporte',
     securityLabel: 'Seguridad',
     newsletterTitle: 'Newsletter',

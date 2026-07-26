@@ -1,0 +1,23 @@
+# Link agli account social BRAND di appgrove (UC 0043 — lancio paid/social).
+#
+# Fonte UNICA dei link social del sito vetrina: il footer li legge da qui
+# (site/src/lib/social.ts). Comportamento:
+#   • file vuoto / lista assente / tutte le voci commentate → NESSUNA sezione
+#     social nel footer (stato attuale: gli account brand non esistono ancora);
+#   • una o più voci compilate → il footer le legge e le mostra da solo, senza
+#     toccare codice.
+#
+# Alla creazione di un account brand (azione del founder — vedi docs/_LANCIO.md):
+# scommentare/aggiungere la voce sotto `links`. Ogni voce richiede:
+#   • label: nome leggibile del canale (es. "LinkedIn", "X");
+#   • href:  URL https ASSOLUTO del profilo brand.
+# Una voce malformata (label vuota o href non https assoluto) è un errore bloccante
+# del build (integrità, come i token dei documenti legali).
+#
+# Canali decisi (#14 J46): LinkedIn primario (pagina brand, ICP SMB EU), X opzionale.
+# NON account personali, no build-in-public.
+links:
+  # - label: LinkedIn
+  #  href: https://www.linkedin.com/company/appgrove
+  # - label: X
+  #   href: https://x.com/appgrove
