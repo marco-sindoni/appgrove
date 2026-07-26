@@ -16,6 +16,7 @@
   },
   "scripts": {
     "gen": "openapi-typescript ../../../services/core/src/main/resources/META-INF/openapi/openapi.yaml -o src/schema.ts",
+    "prepare": "npm run build",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
