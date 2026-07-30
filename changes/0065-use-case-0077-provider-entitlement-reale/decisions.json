@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — dichiarata nell'invocazione (\"autopilot mode on\"). Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; i tre gate (rilettura e approvazione dei requisiti, consenso al commit, consenso al merge) restano dello sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0077 (Provider entitlement reale del backoffice/admin), indicato esplicitamente nell'invocazione: docs/usecases/15-supporto-e-piattaforma/0077-provider-entitlement-reale.md. Da qui la forma del branch NNNN-use-case-0077-…, con NNNN = 0065 (prossimo progressivo in changes/, l'ultimo essendo 0064).",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Indice di esecuzione dell'onda 2 (epiche evo 12–19): è QUI che vive lo stato implementativo delle storie 0061–0089, non in docs/usecases/_INDEX.md (dove 0077 compare solo nella tabella di mappatura residuo → storia). La riga 1 di 0077 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ricognizione preliminare sullo stato reale del codice: la parte centrale descritta da UC 0077 è GIÀ in main, consegnata anticipatamente dalla change che ha implementato UC 0027 — l'endpoint core GET /api/platform/v1/me/entitlements (MeResource + EntitlementReadModel, derivazione abbonamento attivo ∩ app active, tenant dal token) esiste, e il backoffice lo consuma davvero via client API + TanStack Query (registry/entitlementsApi.ts) con EntitlementsProvider reale montato in App.tsx; StubEntitlementsProvider è già confinato ai test. La change NON riscrive quanto già fatto: si concentra sui punti della Definition of Done ancora scoperti (stati caricamento/vuoto/errore della shell, freschezza della cache, coerenza fra derivazione backoffice e matrice admin, coerenza con il polling post-checkout, test di isolamento e end-to-end). Motivo: rifare un endpoint già esistente e funzionante sarebbe lavoro distruttivo senza valore.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/MeResource.java",
+        "description": "Endpoint entitlement del tenant già esistente (UC 0027): resta la fonte, non viene duplicato con un secondo GET /api/platform/v1/entitlements."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/registry/entitlements.tsx",
+        "description": "Provider reale già presente accanto allo stub: la change lavora sugli stati esposti (caricamento/vuoto/errore), non sulla sostituzione dello stub, già avvenuta."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Aree del monorepo in gioco: backend services/core (coerenza della derivazione fra il read-model del tenant e la matrice admin, e con lo stato usato dal polling post-checkout) e frontend/ (stati della shell, invalidazione della cache, test unitari ed end-to-end). Nessun impatto su infra/: la change non tocca Terraform."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Forma del lavoro residuo: si implementano SOLO i punti della Definition of Done ancora scoperti (opzione b fra le tre valutate). Scartata l'opzione (a) 'chiudere lo use case come già fatto', perché quattro punti su sette non sono coperti e uno di essi è un difetto vero e osservabile dall'utente; scartata l'opzione (c) 'rifare endpoint e provider secondo la lettera dello use case', perché duplicherebbe un endpoint funzionante e distruggerebbe lavoro valido. Nello use case 0077 il testo resta la specifica; la change annota che il nome dell'endpoint realizzato è GET /api/platform/v1/me/entitlements (non /entitlements), coerente con la famiglia /me/* del tenant corrente."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Difetto principale da chiudere: l'errore di lettura degli entitlement è oggi indistinguibile dall'assenza di entitlement. Il provider espone isError ma nessun consumatore lo legge; se l'endpoint non risponde, l'insieme entitled resta vuoto e la shell si comporta come se l'account non avesse comprato nulla — sidebar 'Ancora niente qui' e rotte /app/<id> dirottate su 'Non hai accesso a questa app'. Lo use case 0077 §5 vieta esplicitamente questa degradazione silenziosa. Si distinguono quindi i quattro stati previsti (caricamento, vuoto con invito all'acquisto, errore con messaggio chiaro e azione di riprova, pronto) sia nella sidebar sia nelle guardie di rotta, dove l'errore deve produrre un messaggio di errore e mai un diniego di accesso.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx", "description": "La sezione 'Le tue app' deve distinguere caricamento / errore / vuoto invece di collassare tutto su 'Ancora niente qui'; lo stato vuoto porta alla pagina di fatturazione per l'acquisto." },
+      { "file": "frontend/apps/backoffice/src/routing/guards.tsx", "description": "Il contesto delle guardie deve trasportare anche la condizione di errore degli entitlement: in errore la rotta di un modulo mostra un messaggio di errore, non il diniego 'non hai accesso'." },
+      { "file": "frontend/apps/backoffice/src/registry/entitlements.tsx", "description": "Lo stato del provider deve esporre anche il modo per ritentare la lettura, così che l'interfaccia possa offrire 'Riprova' senza ricaricare la pagina." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Freschezza della cache (punto aperto dello use case 0077): la query ['me','entitlements'] non viene invalidata da nessuno, quindi dopo un acquisto, un cambio piano, una disdetta o una ripresa il menu resta stantio fino al ricaricamento della pagina. Si invalida la query nei punti in cui gli entitlement possono cambiare per azione dell'utente: completamento dell'attivazione post-checkout e mutazioni self-service di abbonamento. Scartata una rilettura periodica di fondo: costerebbe una chiamata continua per un evento raro, contro il principio di costo minimo del progetto.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/billing/subscriptionsApi.ts", "description": "Cambio piano, disdetta e ripresa invalidano anche gli entitlement, non solo l'elenco abbonamenti." },
+      { "file": "frontend/apps/backoffice/src/billing/checkoutApi.ts", "description": "Quando il polling post-checkout vede l'abbonamento attivo, gli entitlement vanno riletti: è l'istante in cui una nuova app deve comparire nel menu." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Coerenza fra le due viste (punto 3 della Definition of Done di UC 0077): oggi la regola di accesso è scritta due volte — in Java dentro EntitlementReadModel e in SQL dentro AdminResource — e le due divergono in due casi. La matrice admin parte dalle righe di abbonamento, quindi non mostra mai un'app abilitata dalla baseline del piano gratuito (che il backoffice invece mostra), e ignora l'account in attesa di eliminazione (che per il backoffice ha zero entitlement). Si estrae la regola di accesso in un unico punto condiviso e si allinea la matrice admin ai due casi divergenti, così che la console admin risponda davvero alla domanda 'cosa vede questo cliente'.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementReadModel.java", "description": "Consuma la regola di accesso condivisa invece di ospitarne una propria copia." },
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AdminResource.java", "description": "La matrice entitlement cross-account usa la stessa regola condivisa e copre anche la baseline gratuita e l'account in eliminazione." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Endpoint del polling post-checkout (punto 6 della Definition of Done di UC 0077): si mantengono DUE endpoint con UNA sola derivazione. Fondere il polling nel read-model completo sarebbe peggio — il polling interroga una singola app ogni 1–2 secondi e vuole una risposta minima, mentre il read-model calcola l'elenco completo con piano e limiti — ma il campo che dice 'attiva' nel polling oggi guarda solo lo stato dell'abbonamento e ignora lo stato dell'app: un'app disabilitata dalla piattaforma (UC 0076) durante un acquisto farebbe dire 'attiva' al checkout e 'non abilitata' al menu. Si calcola quel campo con la stessa regola condivisa della decisione 8.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/CheckoutResource.java", "description": "Lo stato minimale per il polling deriva l'accesso dalla regola condivisa (abbonamento che concede accesso ∩ app attiva ∩ account non in eliminazione), non dal solo stato dell'abbonamento." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Ampiezza dei test: unità sulla regola di accesso condivisa (piano gratuito di baseline, abbonamento che non concede accesso, app disabilitata, account in eliminazione); integrazione che confronta la matrice admin e il read-model del tenant sugli stessi dati e ne verifica la coincidenza; frontend sui quattro stati della shell e sull'invalidazione della cache; end-to-end sull'errore dell'endpoint entitlement (il menu non deve mentire dicendo 'nessuna app'). L'isolamento fra account è già coperto dal test esistente entitlementsAreScopedToTenant e non viene riscritto."
+  }
+]
