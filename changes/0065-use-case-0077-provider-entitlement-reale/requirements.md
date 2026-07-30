@@ -73,7 +73,13 @@ gli entitlement cambiano per azione dell'utente.
   rotta di un modulo mostra un messaggio di errore, **mai** il diniego "non hai accesso". Il diniego resta la
   risposta corretta quando gli entitlement sono noti e l'app non c'è.
 - La lettura degli entitlement viene **rinfrescata** quando cambiano per azione dell'utente: attivazione
-  post-acquisto completata, cambio piano, disdetta, ripresa. Nessuna rilettura periodica di fondo.
+  post-acquisto completata, cambio piano, disdetta, ripresa.
+- La lettura degli entitlement viene rinfrescata anche **al ritorno dell'utente sulla scheda del browser e
+  alla riconnessione di rete**, così che un cambiamento avvenuto altrove mentre la scheda era aperta (per
+  esempio la disabilitazione di un'app da parte della piattaforma, o un abbonamento scaduto a fine periodo)
+  si rifletta nel menu senza ricaricare la pagina. Vale **solo** per questa lettura: la shell disattiva quel
+  comportamento in modo generale, e non lo si riattiva altrove. Nessuna rilettura periodica di fondo:
+  costerebbe una chiamata continua per un evento raro.
 - I testi nuovi sono localizzati nelle lingue già gestite dal catalogo condiviso, come ogni testo della shell.
 
 **Documentazione**
@@ -93,9 +99,15 @@ gli entitlement cambiano per azione dell'utente.
 - **Arricchimento della risposta dell'endpoint** con metadati ulteriori per la shell (fascia, stato
   dell'abbonamento nel menu): la forma attuale resta, ampliabile in seguito senza rompere i consumatori.
   Rimando tracciato nello use case 0077.
-- **Aggiornamento in tempo reale del menu** verso eventi non originati dall'utente corrente (un
-  amministratore disabilita un'app mentre la sessione è aperta): richiede un canale di notifica che oggi non
-  esiste. Rimando tracciato nello use case 0077.
+- **Notifica dal server al browser in tempo reale** (connessione persistente o flusso di eventi) per portare
+  il cambiamento nella scheda aperta **nell'istante** in cui avviene, senza attendere che l'utente vi
+  ritorni. È una capacità di piattaforma nuova — connessioni a lunga vita attraverso il bilanciatore,
+  autenticazione del canale, riconnessione, costo per connessione aperta — che servirebbe anche ad altro
+  (notifiche, supporto) e non appartiene a questo use case. Il bus di invalidazione già esistente nel core
+  si ferma ai servizi delle app e non raggiunge il browser. Il ritorno sulla scheda e la riconnessione, che
+  coprono lo scenario realistico, sono **in scope** (vedi sopra). Rimando tracciato in
+  [docs/_BACKLOG.md](../../docs/_BACKLOG.md) (capacità trasversale) con richiamo nei punti aperti dello use
+  case 0077 (sintomo).
 - **Estrazione dei componenti di stato nel sistema di design** (UC 0019): la shell continua a usare i propri.
 - `infra/`: nessuna modifica.
 
@@ -119,6 +131,8 @@ gli entitlement cambiano per azione dell'utente.
       accessibilità, dallo stato di errore.
 - [ ] Dopo l'attivazione post-acquisto e dopo cambio piano, disdetta e ripresa, la lettura degli entitlement
       viene invalidata: il menu riflette la nuova situazione senza ricaricare la pagina.
+- [ ] Il ritorno dell'utente sulla scheda del browser rilegge gli entitlement; il comportamento è attivo
+      **solo** su questa lettura e non viene riattivato globalmente per le altre.
 - [ ] Lo stub degli entitlement resta usato **solo** dai test e dallo sviluppo locale: nessun percorso
       dell'applicazione vi ricade come ripiego in caso di errore.
 - [ ] `./run-tests.sh backend` e `./run-tests.sh frontend` verdi.
@@ -149,7 +163,9 @@ gli entitlement cambiano per azione dell'utente.
 - **Isolamento fra account**: il test esistente resta verde e non viene indebolito.
 - **Frontend (unità)**: la barra laterale distingue caricamento, errore (con riprova), vuoto (con invito
   all'acquisto) e pronto; la guardia di rotta con entitlement in errore non produce il diniego di accesso; le
-  mutazioni di abbonamento e il completamento dell'attivazione invalidano la lettura degli entitlement.
+  mutazioni di abbonamento e il completamento dell'attivazione invalidano la lettura degli entitlement; la
+  lettura degli entitlement è dichiarata come rileggibile al ritorno sulla scheda, mentre le altre letture
+  della shell restano come sono.
 - **End-to-end**: con l'endpoint entitlement in errore il menu non dichiara "nessuna app" e offre la riprova;
   con elenco vuoto mostra l'invito all'acquisto.
 
