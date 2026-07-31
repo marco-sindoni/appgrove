@@ -6,7 +6,6 @@ import app.appgrove.commons.entitlement.MetricLimit;
 import app.appgrove.core.catalog.App;
 import app.appgrove.core.catalog.AppPriceRepository;
 import app.appgrove.core.catalog.AppRepository;
-import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.catalog.AppTier;
 import app.appgrove.core.catalog.AppTierRepository;
 import app.appgrove.core.platform.Account;
@@ -27,11 +26,12 @@ import java.util.UUID;
  * Deriva il read-model degli entitlement del <b>tenant corrente</b> (UC 0027). È la fonte unica
  * consumata sia dal frontend (registry) sia dalle app (gate 402 + cap quota via {@code EntitlementService}).
  *
- * <p>Regola di accesso (#09 dec.30): {@code access = app.status==active && (subscription.grantsAccess()
- * ‖ baseline free tier)}. La subscription a pagamento <b>sovrascrive</b> la baseline; in assenza di
- * subscription l'entitlement effettivo è il <b>tier free</b> dell'app (tier senza prezzo). L'accesso e
- * la fase di lifecycle riusano i building block esistenti ({@link SubscriptionStatus#grantsAccess()},
- * {@link SubscriptionLifecycle}) — questo modello li <b>consuma</b>, non li ri-deriva.
+ * <p>Regola di accesso (#09 dec.30): vive in {@link EntitlementAccess}, punto unico condiviso con la
+ * matrice della console admin e con lo stato del polling post-checkout (UC 0077). La subscription a
+ * pagamento <b>sovrascrive</b> la baseline; in assenza di subscription l'entitlement effettivo è il
+ * <b>tier free</b> dell'app (tier senza prezzo). L'accesso e la fase di lifecycle riusano i building
+ * block esistenti ({@link SubscriptionStatus#grantsAccess()}, {@link SubscriptionLifecycle}) — questo
+ * modello li <b>consuma</b>, non li ri-deriva.
  *
  * <p>Invarianti: le subscription sono lette tenant-scoped (discriminator, #1/#2); il catalogo
  * ({@link App}/{@link AppTier}) è platform-level. La view espone lo <b>slug</b> (riconciliazione
@@ -60,13 +60,12 @@ public class EntitlementReadModel {
 
     /** Entitlement effettivi del tenant del JWT (solo le app a cui ha accesso). */
     public MeEntitlementsView forCurrentTenant() {
-        // Account in grace di eliminazione (UC 0033, #13 E25): disattivazione immediata = zero
-        // entitlement. Chiude sia il registry frontend sia il gate 402 delle app; le API di
-        // piattaforma (annullo, diritti GDPR) restano fruibili (#09 F31).
+        // Lo stato dell'account entra nella regola condivisa: l'account in grace di eliminazione
+        // (UC 0033, #13 E25) ha zero entitlement — disattivazione immediata. Chiude sia il registry
+        // frontend sia il gate 402 delle app; le API di piattaforma (annullo, diritti GDPR) restano
+        // fruibili (#09 F31).
         Account account = accounts.findById(caller.tenantId());
-        if (account != null && account.getStatus() == AccountStatus.pending_deletion) {
-            return new MeEntitlementsView(List.of());
-        }
+        AccountStatus accountStatus = account != null ? account.getStatus() : null;
 
         Map<UUID, Subscription> byApp = new HashMap<>();
         for (Subscription s : subscriptions.listAll()) {
@@ -75,27 +74,26 @@ public class EntitlementReadModel {
 
         List<EntitlementView> entitled = new ArrayList<>();
         for (App app : apps.listAll()) {
-            if (app.getStatus() != AppStatus.active) {
-                continue; // gate 2: app abilitata
-            }
             Subscription sub = byApp.get(app.getId());
+            // Il tier free serve solo in assenza di subscription: non lo cerchiamo quando c'è.
+            Optional<AppTier> free = sub == null ? freeTier(app.getId()) : Optional.empty();
+
+            // Unico punto di verità sull'accesso (UC 0077): stessa regola di matrice admin e polling
+            // post-checkout. Qui NON si ri-deriva nulla a mano.
+            if (!EntitlementAccess.granted(
+                    accountStatus, app.getStatus(), sub != null ? sub.getStatus() : null, free.isPresent())) {
+                continue;
+            }
 
             AppTier tier;
             String phase;
             Instant accessUntil;
             if (sub != null) {
-                if (!sub.getStatus().grantsAccess()) {
-                    continue; // gate 3: subscription presente ma non concede accesso (canceled/paused)
-                }
                 SubscriptionLifecycle lifecycle = SubscriptionLifecycle.of(sub);
                 phase = lifecycle.phase().name();
                 accessUntil = lifecycle.accessUntil();
                 tier = sub.getAppTierId() != null ? tiers.findById(sub.getAppTierId()) : null;
             } else {
-                Optional<AppTier> free = freeTier(app.getId());
-                if (free.isEmpty()) {
-                    continue; // nessuna subscription e nessun tier free → niente accesso
-                }
                 tier = free.get();
                 phase = null; // baseline free (nessuna subscription)
                 accessUntil = null;

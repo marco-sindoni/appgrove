@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { Icon, Logo, cn } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useVisibleModules } from '../registry/registry'
+import { useEntitlements } from '../registry/entitlements'
 import { useAuthStore } from '../auth/authStore'
 import { useLogout } from '../auth/useLogout'
 
@@ -84,6 +85,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   // ristretto alle chiavi statiche note, quindi le voci di modulo si risolvono con una vista `string`.
   const tKey = t as unknown as (key: string) => string
   const modules = useVisibleModules()
+  const { isLoading, isError, retry } = useEntitlements()
   const { pathname } = useLocation()
   const logout = useLogout()
   const claims = useAuthStore((s) => s.claims)
@@ -119,10 +121,46 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         <PlatformLink to="/support" icon="support_agent" label={t('nav.support')} onNavigate={onNavigate} />
 
         <SectionLabel className="pt-4">{t('nav.yourApps')}</SectionLabel>
-        {modules.length === 0 && (
-          <p className="px-2.5 py-2 text-[13px] text-fg-muted">{t('states.empty')}</p>
+        {/*
+          Quattro stati distinti (UC 0077). Il caso che conta è l'errore: prima si collassava sullo
+          stato vuoto, e un guasto di rete diceva a un cliente pagante che non ha nessuna app.
+        */}
+        {isLoading && (
+          <p role="status" className="px-2.5 py-2 text-[13px] text-fg-muted">
+            {t('states.loading')}
+          </p>
         )}
-        {modules.map((mod) => {
+        {!isLoading && isError && (
+          <div role="alert" className="flex flex-col items-start gap-1 px-2.5 py-2">
+            <p className="text-[13px] text-danger">{t('apps.error')}</p>
+            <button
+              type="button"
+              onClick={retry}
+              className="text-[12.5px] font-semibold text-accent hover:underline"
+            >
+              {t('states.retry')}
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && modules.length === 0 && (
+          <div className="flex flex-col items-start gap-1 px-2.5 py-2">
+            <p className="text-[13px] text-fg-muted">{t('apps.empty')}</p>
+            <Link
+              to="/billing"
+              onClick={onNavigate}
+              className="text-[12.5px] font-semibold text-accent hover:underline"
+            >
+              {t('apps.emptyCta')}
+            </Link>
+          </div>
+        )}
+        {/*
+          In errore i moduli comunque noti restano visibili accanto all'avviso: in locale il modulo
+          dimostrativo non dipende dal backend, e nasconderlo per un guasto di rete sarebbe un'altra
+          forma della stessa bugia. In produzione, senza lettura riuscita, l'elenco è vuoto e resta
+          il solo avviso.
+        */}
+        {!isLoading && modules.map((mod) => {
           const isOpen = !collapsed[mod.id]
           const onAppRoute = pathname.startsWith(`/app/${mod.id}`)
           return (

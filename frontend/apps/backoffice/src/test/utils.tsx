@@ -39,6 +39,12 @@ export const fakeIdToken = (overrides: Record<string, unknown> = {}) =>
 
 interface ProviderOptions {
   entitled?: string[]
+  /** Entitlement ancora in lettura (stato di caricamento della shell, UC 0077). */
+  entitlementsLoading?: boolean
+  /** Lettura entitlement fallita: la shell deve mostrare un errore, NON lo stato vuoto (UC 0077). */
+  entitlementsError?: boolean
+  /** Azione di riprova iniettata, per verificare che l'errore sia davvero ritentabile. */
+  entitlementsRetry?: () => void
   apiClient?: ApiClient
   route?: string
   /** Lingua UI del render (default `en`, come il bootstrap senza preferenze). */
@@ -48,6 +54,9 @@ interface ProviderOptions {
 function Providers({
   children,
   entitled = [],
+  entitlementsLoading = false,
+  entitlementsError = false,
+  entitlementsRetry,
   apiClient,
   language,
 }: ProviderOptions & { children: ReactNode }) {
@@ -64,7 +73,14 @@ function Providers({
         <I18nextProvider i18n={i18n}>
           <QueryClientProvider client={makeQueryClient()}>
             <ApiClientProvider client={apiClient}>
-              <StubEntitlementsProvider entitled={entitled}>{children}</StubEntitlementsProvider>
+              <StubEntitlementsProvider
+                entitled={entitled}
+                isLoading={entitlementsLoading}
+                isError={entitlementsError}
+                retry={entitlementsRetry}
+              >
+                {children}
+              </StubEntitlementsProvider>
             </ApiClientProvider>
           </QueryClientProvider>
         </I18nextProvider>

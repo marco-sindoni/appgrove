@@ -15,6 +15,11 @@ export const fr: Resources = {
     privacy: 'Mes données',
     support: 'Assistance',
   },
+  apps: {
+    empty: 'Aucune application active',
+    emptyCta: 'Découvrir les applications',
+    error: 'Impossible de charger vos applications',
+  },
   topbar: {
     notifications: 'Notifications',
     toggleTheme: 'Changer de thème',

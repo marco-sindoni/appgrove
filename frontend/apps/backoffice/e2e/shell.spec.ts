@@ -19,7 +19,16 @@ const idToken = jwt({ sub: 'user-1', email: 'u@x.io', name: 'Utente Uno' })
  * Login programmatico: invece di compilare la (futura, UC 0017) UI di login, mockiamo il
  * `/api/auth/refresh` che la shell chiama al load → la sessione viene ripristinata in memoria.
  */
-async function mockBackend(page: Page, env: 'local' | 'test') {
+/**
+ * Mocka il backend minimo della shell. `entitlements` descrive la risposta di
+ * `/me/entitlements`: un elenco di slug, oppure `'error'` per simulare l'endpoint non raggiungibile
+ * (UC 0077: la shell deve dirlo, non fingere "nessuna app").
+ */
+async function mockBackend(
+  page: Page,
+  env: 'local' | 'test',
+  entitlements: string[] | 'error' = [],
+) {
   await page.route('**/config.json', (route) =>
     route.fulfill({
       json: { env, authBaseUrl: ORIGIN, coreBaseUrl: ORIGIN, cognito: { userPoolId: '', clientId: '' } },
@@ -35,6 +44,11 @@ async function mockBackend(page: Page, env: 'local' | 'test') {
   )
   await page.route('**/api/platform/v1/accounts/me', (route) =>
     route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }),
+  )
+  await page.route('**/api/platform/v1/me/entitlements', (route) =>
+    entitlements === 'error'
+      ? route.fulfill({ status: 503, json: { title: 'Service Unavailable' } })
+      : route.fulfill({ json: { entitlements: entitlements.map((appSlug) => ({ appSlug })) } }),
   )
 }
 
@@ -54,8 +68,30 @@ test('ripristina la sessione, naviga la shell e monta il modulo entitled', async
 })
 
 test('un modulo NON entitled è bloccato dalla route guard', async ({ page }) => {
-  await mockBackend(page, 'test') // env test → nessun entitlement
+  await mockBackend(page, 'test', []) // entitlement letti correttamente: elenco vuoto
   await page.goto('/app/demo')
   await expect(page.getByText('You don’t have access to this app')).toBeVisible()
+  await expect(page.getByTestId('demo-module')).toHaveCount(0)
+})
+
+test('senza app attive il menu invita all’acquisto (UC 0077)', async ({ page }) => {
+  await mockBackend(page, 'test', [])
+  await page.goto('/')
+  await expect(page.getByText('No active apps yet')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Browse the apps' })).toBeVisible()
+})
+
+test('entitlement non leggibili: il menu lo dice e offre la riprova, non "nessuna app" (UC 0077)', async ({
+  page,
+}) => {
+  await mockBackend(page, 'test', 'error')
+  await page.goto('/app/demo')
+
+  // Il menu non mente: errore + riprova, mai lo stato vuoto…
+  await expect(page.getByRole('alert').first()).toContainText('We couldn’t load your apps')
+  await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible()
+  await expect(page.getByText('No active apps yet')).toHaveCount(0)
+  // …e la route non trasforma un guasto in un diniego di accesso.
+  await expect(page.getByText('You don’t have access to this app')).toHaveCount(0)
   await expect(page.getByTestId('demo-module')).toHaveCount(0)
 })

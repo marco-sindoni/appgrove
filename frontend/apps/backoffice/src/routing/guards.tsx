@@ -43,11 +43,23 @@ export const requireEntitlement =
         ? true
         : '/forbidden'
 
-function useGuardContext(): { ready: boolean; ctx: GuardContext } {
+/** Riferimento stabile per l'assenza di ruoli: vedi la nota sul selettore qui sotto. */
+const NO_ROLES: string[] = []
+
+function useGuardContext(): { ready: boolean; entitlementsFailed: boolean; ctx: GuardContext } {
   const status = useAuthStore((s) => s.status)
-  const roles = useAuthStore((s) => s.claims?.roles ?? [])
-  const { entitled, isLoading } = useEntitlements()
-  return { ready: status !== 'idle' && !isLoading, ctx: { status, roles, entitled } }
+  // Il selettore deve restituire un riferimento STABILE: `s.claims?.roles ?? []` creava un array
+  // nuovo a ogni lettura dello store e faceva ciclare il render all'infinito (stessa trappola
+  // documentata in Sidebar.tsx). Finché la rotta si smontava subito — utente anonimo → redirect al
+  // login — il difetto restava nascosto; basta che il componente resti montato un istante perché
+  // l'applicazione esploda con "Maximum update depth exceeded".
+  const roles = useAuthStore((s) => s.claims?.roles) ?? NO_ROLES
+  const { entitled, isLoading, isError } = useEntitlements()
+  return {
+    ready: status !== 'idle' && !isLoading,
+    entitlementsFailed: isError,
+    ctx: { status, roles, entitled },
+  }
 }
 
 /**
@@ -68,8 +80,14 @@ export function ProtectedRoute({ guard }: { guard: Guard }) {
  */
 export function AppModuleHost() {
   const { appId = '' } = useParams()
-  const { ready, ctx } = useGuardContext()
+  const { ready, entitlementsFailed, ctx } = useGuardContext()
   if (!ready) return <FullPageMessage tone="status" messageKey="auth.restoring" />
+  // Entitlement non leggibili: è un **errore**, non un diniego (UC 0077). Dire "non hai accesso a
+  // questa app" a chi l'ha pagata, perché una chiamata è fallita, è il difetto che questa change
+  // chiude. Il ritentativo è a portata di mano nella sidebar, che resta montata accanto.
+  if (ctx.status === 'authenticated' && entitlementsFailed) {
+    return <FullPageMessage tone="error" messageKey="apps.error" />
+  }
   const result = requireEntitlement(appId)(ctx)
   if (result !== true) return <Navigate to={result} replace />
   const module = findModule(appId)

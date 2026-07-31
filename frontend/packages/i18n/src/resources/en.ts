@@ -13,6 +13,11 @@ export const en = {
     privacy: 'My data',
     support: 'Support',
   },
+  apps: {
+    empty: 'No active apps yet',
+    emptyCta: 'Browse the apps',
+    error: 'We couldn’t load your apps',
+  },
   topbar: {
     notifications: 'Notifications',
     toggleTheme: 'Toggle theme',
