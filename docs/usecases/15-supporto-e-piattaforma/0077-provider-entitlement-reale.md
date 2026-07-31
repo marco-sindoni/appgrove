@@ -138,14 +138,30 @@ sulla shell del backoffice e tocca la console admin come fonte della derivazione
 
 ## Punti aperti / decisioni differite
 
-- **Unico endpoint per menu e polling post-checkout**: valutare se `GET /api/platform/v1/entitlements` serva **anche** il
-  polling post-checkout di UC 0024 (Checkout — polling post-checkout). Un'unica fonte di verità è preferibile; se i due usi
-  richiedono forme diverse (per esempio il polling vuole sapere "questa specifica app è già attiva?" con una risposta più
-  snella), tenerli **coerenti** sulla stessa derivazione. Decisione da prendere in implementazione; possiede il punto
-  l'epica 15 in coordinamento con chi possiede UC 0024.
-- **Freschezza vs cache**: TanStack Query mette in cache; definire la strategia di invalidazione dopo eventi che cambiano gli
-  entitlement (acquisto, disdetta, disabilitazione app) per evitare menu stantii — dettaglio di implementazione.
-- **Forma della risposta**: se restituire solo l'elenco `app_id` o anche metadati (fascia, stato dell'abbonamento) utili
-  alla shell; default proposto: elenco `app_id`, arricchibile in seguito senza rompere i consumatori.
+**Chiusi dalla change `0065-use-case-0077-…`** (registro completo in `changes/0065-use-case-0077-provider-entitlement-reale/decisions.json`):
+
+- ~~**Unico endpoint per menu e polling post-checkout**~~ → **deciso: due endpoint, una sola derivazione.** Il polling
+  interroga una singola app ogni 1–2 secondi e vuole una risposta minima; il read-model calcola l'elenco completo con
+  fascia e limiti. Fonderli avrebbe peggiorato entrambi. Ma il verdetto di accesso è uno solo (`EntitlementAccess` in
+  `services/core`), condiviso da read-model del tenant, matrice della console admin e stato del polling: prima il polling
+  guardava solo lo stato dell'abbonamento e avrebbe dichiarato "attiva" un'app disabilitata dalla piattaforma.
+- ~~**Freschezza vs cache**~~ → **deciso**: invalidazione esplicita della lettura dopo le azioni dell'utente (attivazione
+  post-acquisto completata, cambio fascia, disdetta, ripresa) **più** rilettura al ritorno sulla scheda del browser e alla
+  riconnessione di rete, dichiarata **solo** su questa lettura (la shell la tiene disattivata in generale). Scartata la
+  rilettura periodica: una chiamata continua per un evento raro.
+- ~~**Nome dell'endpoint**~~ → realizzato come `GET /api/platform/v1/me/entitlements` (famiglia `/me/*` del tenant
+  corrente), non `/entitlements` come ipotizzato in stesura.
+
+**Ancora aperti:**
+
+- **Forma della risposta**: oggi la risposta porta lo slug dell'app, la fascia, la fase di ciclo di vita e i limiti; la
+  shell ne usa il solo slug. Se serviranno altri metadati al menu (per esempio mostrare la fascia accanto al nome), si
+  aggiungono senza rompere i consumatori esistenti. Nessuna urgenza.
+- **Aggiornamento del menu verso eventi non originati dall'utente**: un'app disabilitata dalla piattaforma o un
+  abbonamento scaduto mentre la scheda è aperta si riflettono nel menu solo quando l'utente vi ritorna (o si riconnette).
+  Chiudere anche quella finestra richiede un **canale di notifica dal server al browser**, capacità di piattaforma nuova e
+  trasversale: tracciata in [docs/_BACKLOG.md](../../_BACKLOG.md) §"Canale di notifica dal server al browser". Non è un
+  buco di sicurezza — il servizio nega comunque (UC 0027) — ma una voce di menu che porta a un errore.
 - **Confine con la disabilitazione app**: la correttezza di questo use case dipende dal fatto che `app.status` sia gestito
-  (UC 0076); i due use case dell'epica 15 vanno implementati in modo coerente.
+  (UC 0076); i due use case dell'epica 15 vanno implementati in modo coerente. Il comando amministrativo di cambio stato
+  esiste già ed è consumato qui in sola lettura.

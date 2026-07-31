@@ -15,6 +15,11 @@ export const it: Resources = {
     privacy: 'I miei dati',
     support: 'Supporto',
   },
+  apps: {
+    empty: 'Nessuna app attiva',
+    emptyCta: 'Scopri le app',
+    error: 'Non riusciamo a caricare le tue app',
+  },
   topbar: {
     notifications: 'Notifiche',
     toggleTheme: 'Cambia tema',

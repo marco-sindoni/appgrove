@@ -33,7 +33,24 @@ async function mockAnonymous(page: Page, authed: { value: boolean }) {
   await page.route('**/api/platform/v1/accounts/me', (route) =>
     route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }),
   )
+  // Entitlement del tenant: va simulato sempre, altrimenti la shell segnala (giustamente) che non
+  // riesce a leggerli — UC 0077.
+  await page.route('**/api/platform/v1/me/entitlements', (route) =>
+    route.fulfill({ json: { entitlements: [] } }),
+  )
 }
+
+test('anonimo: aprire la radice porta al login (la shell non resta appesa)', async ({ page }) => {
+  // Regressione della change 0065: con la sessione anonima la lettura degli entitlement non parte
+  // nemmeno, quindi non sarà mai "conclusa". Trattarla come caricamento in corso lasciava la rotta
+  // protetta montata a tempo indeterminato — senza mai redirigere al login — e la faceva ciclare
+  // fino a "Maximum update depth exceeded". Nessuna prova la copriva: quelle di navigazione usano
+  // lo stub degli entitlement, che è sempre "concluso".
+  await mockAnonymous(page, { value: false })
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/login/)
+  await expect(page.getByLabel('Email')).toBeVisible()
+})
 
 test('login con credenziali porta alla dashboard', async ({ page }) => {
   const authed = { value: false }
@@ -57,6 +74,7 @@ test('signup wizard: account → verifica → workspace → done → dashboard',
   await mockAnonymous(page, authed)
   await page.route('**/api/auth/signup', (route) => route.fulfill({ status: 201, json: { status: 'verification_required' } }))
   await page.route('**/api/platform/v1/accounts/me', (route) => route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }))
+  await page.route('**/api/platform/v1/me/entitlements', (route) => route.fulfill({ json: { entitlements: [] } }))
   // Newsletter (UC 0039): l'iscrizione al signup è best-effort; non spuntiamo il consenso in questo flusso.
   await page.route('**/api/platform/v1/newsletter/**', (route) => route.fulfill({ status: 202 }))
 

@@ -30,6 +30,11 @@ async function mockAuthed(page: Page) {
   await page.route('**/api/platform/v1/accounts/me', (route) =>
     route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }),
   )
+  // Entitlement del tenant: va simulato sempre, altrimenti la shell segnala (giustamente) che non
+  // riesce a leggerli — UC 0077.
+  await page.route('**/api/platform/v1/me/entitlements', (route) =>
+    route.fulfill({ json: { entitlements: [] } }),
+  )
   await page.route('**/api/platform/v1/users?*', (route) =>
     route.fulfill({
       json: {

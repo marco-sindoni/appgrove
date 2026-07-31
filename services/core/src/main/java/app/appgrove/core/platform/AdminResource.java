@@ -5,7 +5,9 @@ import app.appgrove.core.platform.AdminDtos.AccountDetailView;
 import app.appgrove.core.platform.AdminDtos.AdminAccountView;
 import app.appgrove.core.platform.AdminDtos.AdminUserView;
 import app.appgrove.core.platform.AdminDtos.AppView;
+import app.appgrove.core.billing.EntitlementAccess;
 import app.appgrove.core.billing.SubscriptionStatus;
+import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.platform.AdminDtos.BillingRow;
 import app.appgrove.core.platform.AdminDtos.EntitlementCell;
 import app.appgrove.core.platform.AdminDtos.OverviewView;
@@ -133,7 +135,7 @@ public class AdminResource {
     @GET
     @Path("/entitlements")
     public List<EntitlementCell> entitlements() {
-        return rows(ENTITLEMENTS_SQL + " order by a.name, app.slug")
+        return rows(ENTITLEMENTS_SQL + " order by acc.name, app.slug")
                 .stream()
                 .map(this::toEntitlement)
                 .toList();
@@ -190,16 +192,36 @@ public class AdminResource {
 
     // ── helper ───────────────────────────────────────────────────────────────
 
-    // entitled NON è nel SQL: si deriva in Java dalla mappa canonica status→accesso
-    // (SubscriptionStatus.grantsAccess(), UC 0026) ∧ app abilitata → fonte di verità unica, niente
-    // predicato duplicato. app_active resta in SQL (è uno stato dell'app, non della subscription).
-    private static final String ENTITLEMENTS_SQL = """
-            select s.tenant_id, a.name, app.id, app.slug, app.name, s.status,
-                   (app.status = 'active') as app_active
-            from platform.subscription s
-            join platform.accounts a on a.id::text = s.tenant_id
-            join platform.app app on app.id = s.app_id
-            where s.deleted_at is null
+    // entitled NON è nel SQL: si deriva in Java con EntitlementAccess (UC 0077), la stessa regola che
+    // serve il read-model del tenant e il polling post-checkout → niente predicato duplicato che nel
+    // tempo diverge. Il SQL porta soltanto gli ingredienti: stato dell'account, stato dell'app,
+    // eventuale stato della subscription, disponibilità del tier free.
+    //
+    // La matrice parte da (account × app) e NON dalle sole righe di subscription: altrimenti un'app
+    // abilitata dal tier free di baseline — che il backoffice mostra — resterebbe invisibile alla
+    // console. Il filtro tiene le righe che hanno una subscription (come prima) più quelle abilitabili
+    // dalla baseline gratuita; le coppie senza né l'una né l'altra non sono entitlement e non entrano.
+    private static final String ENTITLEMENTS_SQL =
+            """
+            select acc.id::text, acc.name, acc.status, app.id, app.slug, app.name, app.status,
+                   s.status, app.free_tier
+            from platform.accounts acc
+            cross join (
+                select app.id, app.slug, app.name, app.status,
+                       exists (
+                           select 1 from platform.app_tier t
+                           where t.app_id = app.id and t.deleted_at is null
+                             and not exists (
+                                 select 1 from platform.app_price p
+                                 where p.app_tier_id = t.id and p.deleted_at is null)
+                       ) as free_tier
+                from platform.app app
+                where app.deleted_at is null
+            ) app
+            left join platform.subscription s
+                   on s.tenant_id = acc.id::text and s.app_id = app.id and s.deleted_at is null
+            where acc.deleted_at is null
+              and (s.status is not null or (app.status = 'active' and app.free_tier))
             """;
 
     private List<AdminUserView> usersOf(String tenantId) {
@@ -216,7 +238,7 @@ public class AdminResource {
     }
 
     private List<EntitlementCell> entitlementsOf(String tenantId) {
-        return rows(ENTITLEMENTS_SQL + " and s.tenant_id = :tid order by app.slug", "tid", tenantId)
+        return rows(ENTITLEMENTS_SQL + " and acc.id::text = :tid order by app.slug", "tid", tenantId)
                 .stream()
                 .map(this::toEntitlement)
                 .toList();
@@ -227,12 +249,21 @@ public class AdminResource {
     }
 
     private EntitlementCell toEntitlement(Object[] r) {
-        String status = str(r[5]);
-        boolean appActive = bool(r[6]);
-        // entitled = mappa canonica status→accesso (UC 0026) ∧ app abilitata (gate 2).
-        boolean entitled = SubscriptionStatus.valueOf(status).grantsAccess() && appActive;
+        AccountStatus accountStatus = AccountStatus.valueOf(str(r[2]));
+        AppStatus appStatus = AppStatus.valueOf(str(r[6]));
+        String subStatus = str(r[7]); // null sulle righe di baseline gratuita (nessuna subscription)
+        SubscriptionStatus subscriptionStatus = subStatus != null ? SubscriptionStatus.valueOf(subStatus) : null;
+        // entitled = regola unica condivisa (UC 0077), la stessa che vede l'utente nel backoffice.
+        boolean entitled = EntitlementAccess.granted(accountStatus, appStatus, subscriptionStatus, bool(r[8]));
         return new EntitlementCell(
-                str(r[0]), str(r[1]), (UUID) r[2], str(r[3]), str(r[4]), status, appActive, entitled);
+                str(r[0]),
+                str(r[1]),
+                (UUID) r[3],
+                str(r[4]),
+                str(r[5]),
+                subStatus,
+                appStatus == AppStatus.active,
+                entitled);
     }
 
     @SuppressWarnings("unchecked")

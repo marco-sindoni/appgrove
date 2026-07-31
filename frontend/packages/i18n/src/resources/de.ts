@@ -15,6 +15,11 @@ export const de: Resources = {
     privacy: 'Meine Daten',
     support: 'Support',
   },
+  apps: {
+    empty: 'Keine aktiven Apps',
+    emptyCta: 'Apps entdecken',
+    error: 'Ihre Apps konnten nicht geladen werden',
+  },
   topbar: {
     notifications: 'Benachrichtigungen',
     toggleTheme: 'Design wechseln',

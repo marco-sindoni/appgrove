@@ -11,6 +11,7 @@ import {
 } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { MODULES } from '../registry/registry'
+import { useInvalidateEntitlements } from '../registry/entitlementsApi'
 import { useAppTiers, useStartCheckout, useAppSubscriptionStatus } from '../billing/checkoutApi'
 import { createPaddle } from '../billing/paddle'
 import { SubscriptionsPanel } from '../billing/SubscriptionsPanel'
@@ -95,6 +96,13 @@ function CheckoutFlow({ appSlug, onBack }: { appSlug: string; onBack: () => void
   useEffect(() => {
     setPhase((p) => phaseFromPoll(p, statusQuery.data))
   }, [statusQuery.data])
+
+  // Attivazione completata: è l'istante in cui l'app deve comparire nel menu (UC 0077). Senza questa
+  // rilettura la sidebar resterebbe quella di prima fino a un ricaricamento della pagina.
+  const invalidateEntitlements = useInvalidateEntitlements()
+  useEffect(() => {
+    if (phase === 'active') void invalidateEntitlements()
+  }, [phase, invalidateEntitlements])
 
   // Tic dell'orologio per la soglia "rassicurante" (mai un errore) mentre si attende il webhook.
   useEffect(() => {

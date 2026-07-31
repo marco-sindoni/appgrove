@@ -15,6 +15,7 @@ import app.appgrove.core.catalog.AppTierRepository;
 import app.appgrove.core.catalog.BillingCycle;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.AccountRepository;
+import app.appgrove.core.platform.AccountStatus;
 import app.appgrove.core.platform.CallerContext;
 import app.appgrove.core.platform.Roles;
 import io.quarkus.security.Authenticated;
@@ -141,13 +142,30 @@ public class CheckoutResource {
         return new CheckoutTokenView(init.checkoutToken());
     }
 
-    /** Stato minimale della subscription per (tenant, app) — per il solo polling post-checkout. */
+    /**
+     * Stato minimale della subscription per (tenant, app) — per il solo polling post-checkout.
+     *
+     * <p>Restano <b>due</b> endpoint distinti (questo e il read-model completo {@code /me/entitlements}),
+     * perché servono due domande diverse: qui si interroga una singola app ogni 1–2 secondi e serve una
+     * risposta minima, là si calcola l'elenco completo con tier e limiti. Ma il verdetto di accesso è
+     * <b>uno solo</b> ({@link EntitlementAccess}, UC 0077): senza, un'app disabilitata dalla piattaforma
+     * (UC 0076) durante un acquisto farebbe dire "attiva" al checkout e "non abilitata" al menu.
+     *
+     * <p>Il tier free di baseline <b>non</b> entra qui (si passa {@code false}): la domanda del polling è
+     * "la subscription appena acquistata è arrivata?", e un'app freemium risponderebbe "sì" prima ancora
+     * che il webhook la materializzi, chiudendo l'attesa in anticipo. Senza subscription la risposta
+     * resta negativa, come prima.
+     */
     @GET
     @Path("/apps/{appSlug}/subscription")
     public SubscriptionStatusView subscription(@PathParam("appSlug") String appSlug) {
-        UUID appId = resolveApp(appSlug).getId();
-        return subscriptions.findByApp(appId)
-                .map(s -> new SubscriptionStatusView(s.getStatus().name(), s.getStatus().grantsAccess()))
+        App app = resolveApp(appSlug);
+        Account account = accounts.findById(caller.tenantId());
+        AccountStatus accountStatus = account != null ? account.getStatus() : null;
+        return subscriptions.findByApp(app.getId())
+                .map(s -> new SubscriptionStatusView(
+                        s.getStatus().name(),
+                        EntitlementAccess.granted(accountStatus, app.getStatus(), s.getStatus(), false)))
                 .orElse(new SubscriptionStatusView(null, false));
     }
 

@@ -299,14 +299,13 @@ vita** + **UC 0024 checkout** + il self-service R4).
 Emersi implementando la shell SPA (change `0011-use-case-0020-…`). Gli item **solo-frontend** sono nei "Punti aperti"
 di [usecases/06-frontend/0020](usecases/06-frontend/0020-shell-spa-backoffice.md); qui i **trasversali**:
 
-- **Endpoint entitlement nel core (contratto frontend↔core)** 🔑 — la sidebar "YOUR APPS" è *manifest ∩ entitlement del
-  tenant* (#01 dec.10), ma il core (UC 0013) **non espone** un endpoint che serva gli entitlement (derivati da
-  `platform.subscription`, #09 dec.12). La shell usa per ora un **provider stub** (`StubEntitlementsProvider`, set
-  statico). **Serve un endpoint core** (es. `GET /api/platform/v1/entitlements` → `app_id[]` del tenant dal JWT) da
-  consumare via api-client + TanStack Query; la sostituzione tocca **solo** quel provider. **Owner**: area core/billing
-  (probabilmente lo stesso UC che materializza `subscription` via pipeline webhook #09 D, o un piccolo UC core dedicato).
-  Allineare con la "catena di gate enforcement" #09 F30 (402) e l'**endpoint stato entitlement per polling post-checkout
-  #09 C17** (vedi sopra): valutare se è lo **stesso** endpoint.
+- **Endpoint entitlement nel core (contratto frontend↔core)** — ✅ **fatto** (endpoint e provider reale con UC 0027;
+  chiusura dei punti residui con la change `0065`, UC 0077). L'endpoint è `GET /api/platform/v1/me/entitlements` (famiglia
+  `/me/*` del tenant corrente, **non** `/entitlements` come ipotizzato qui); lo stub resta ai soli test e sviluppo locale.
+  Sul raccordo con l'**endpoint di stato per il polling post-checkout** (#09 C17) la decisione presa è: **due endpoint,
+  una sola derivazione** — il polling interroga una singola app ogni 1–2 secondi e vuole una risposta minima, il
+  read-model calcola l'elenco completo con tier e limiti; entrambi, con la matrice della console admin, chiedono il
+  verdetto di accesso allo stesso punto (`EntitlementAccess`).
 - **`legacy-peer-deps` nel frontend** (DevX/tooling) — `frontend/.npmrc` imposta `legacy-peer-deps=true` perché il
   monorepo usa **TypeScript 6** (ultima major) mentre alcune librerie (es. `react-i18next`, `openapi-typescript`)
   dichiarano ancora un peer **opzionale** `typescript@^5` non aggiornato → npm strict lo tratta come conflitto. Solo
@@ -588,3 +587,25 @@ Sollevato dalla change `0052-use-case-0039-…` (newsletter). L'email di conferm
 in `services/core` (gemello compatto). I *testi* restano single-source (bene), solo la logica di resa è in due copie.
 Da estrarre in `services/commons` un unico renderer (con set di lingue parametrizzabile) usato da entrambi i servizi.
 Non fatto nella change 0052 per non rifattorizzare `services/auth` fuori dallo scope di UC 0039. Effort: piccolo/medio.
+
+## Canale di notifica dal server al browser (sollevato 2026-07-30)
+
+Sollevato dalla change `0065-use-case-0077-…` (provider entitlement reale). Il menu del backoffice si aggiorna quando gli
+entitlement cambiano **per azione dell'utente** (acquisto, cambio piano, disdetta, ripresa: invalidazione esplicita) e
+quando l'utente **torna sulla scheda** del browser o la rete si riconnette. Resta scoperta una finestra: un cambiamento
+avvenuto **altrove** mentre la scheda è aperta — un'app disabilitata dalla piattaforma (UC 0076), un abbonamento scaduto a
+fine periodo, un pagamento fallito — non raggiunge la scheda finché l'utente non vi ritorna.
+
+Chiuderla in tempo reale richiede una **capacità di piattaforma nuova**: un canale persistente dal server al browser
+(connessione a lunga vita o flusso di eventi), con quel che comporta — attraversamento del bilanciatore, autenticazione del
+canale, riconnessione, costo per connessione aperta. Non è un dettaglio degli entitlement: servirebbe anche alle notifiche
+in-app e agli aggiornamenti del supporto, e va quindi deciso come capacità, non come rattoppo.
+
+**Attenzione a non confonderlo con quello che c'è già**: il core pubblica l'invalidazione degli entitlement su un bus
+interno (`EntitlementInvalidationPublisher`, una coda per app) diretto ai **servizi delle app**, non al browser. Nessun
+pezzo oggi porta quell'evento fino al cliente.
+
+**Quanto è grave nel frattempo**: non è un buco di sicurezza — il servizio nega comunque (catena di enforcement UC 0027) e
+la guardia di rotta è solo uno strato di comodità. L'effetto è una voce di menu che porta a un errore invece che a un'app.
+**Owner**: da decidere fra #03 (frontend) e #08 (observability/piattaforma); diventerà uno use case quando la capacità sarà
+richiesta da più consumatori. Effort: medio/grande.

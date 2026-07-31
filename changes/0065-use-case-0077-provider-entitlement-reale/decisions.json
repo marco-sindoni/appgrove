@@ -79,5 +79,105 @@
       { "file": "docs/usecases/15-supporto-e-piattaforma/0077-provider-entitlement-reale.md", "description": "Nei punti aperti: cosa resta scoperto (la finestra fra il cambiamento altrui e il ritorno dell'utente sulla scheda) e perché non è grave (il servizio nega comunque, la guardia di rotta è solo comodità)." },
       { "file": "docs/_BACKLOG.md", "description": "Voce trasversale: canale di notifica dal server al browser, capacità di piattaforma non ancora matura, con i suoi possibili consumatori oltre agli entitlement." }
     ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) La regola di accesso condivisa è una classe di sola decisione, senza stato e senza accesso al database: EntitlementAccess.granted(statoAccount, statoApp, statoSubscription, tierFreeDisponibile). Scartata l'alternativa di far leggere alla regola stessa gli ingredienti dal database: i tre chiamanti li raccolgono in modi legittimamente diversi — entità JPA nel percorso del tenant (dove il filtro per tenant di Hibernate è attivo), SQL nativo nella superficie admin cross-account (dove per definizione non lo è) — e centralizzare la lettura avrebbe costretto uno dei due a un accesso innaturale o, peggio, ad aggirare il filtro. Centralizzare la DECISIONE e lasciare libera la raccolta è ciò che rende la coerenza una proprietà per costruzione. La regola vive nel package billing, accanto al read-model che era la sua sede originaria.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementAccess.java", "description": "Nuovo punto unico: account non in attesa di eliminazione ∧ app attiva ∧ (subscription che concede accesso, oppure tier free di baseline se non c'è subscription). Stato dell'account null = non blocca (account inesistente non ha subscription)." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Nel read-model del tenant è stata rimossa l'uscita anticipata per l'account in attesa di eliminazione, che duplicava dentro il chiamante una conoscenza ora appartenente alla regola condivisa. Il costo è qualche ricerca di tier free inutile in uno stato raro (account in eliminazione) su un catalogo di poche app: si è preferita l'assenza di duplicazione alla micro-ottimizzazione, perché è proprio la conoscenza duplicata ad aver fatto divergere le due viste.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementReadModel.java", "description": "Consuma EntitlementAccess; il tier free si cerca solo in assenza di subscription." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La matrice della console admin non parte più dalle sole righe di abbonamento ma dalla combinazione (account × app), filtrata tenendo le coppie che hanno un abbonamento (come prima) più quelle abilitabili dalla baseline gratuita di un'app attiva. Le coppie senza né l'uno né l'altra non sono entitlement e restano fuori, per non allagare la matrice di righe negative. Il SQL porta soltanto gli ingredienti — stato account, stato app, eventuale stato abbonamento, disponibilità del tier free — e il verdetto lo dà la regola condivisa in Java. Conseguenza sul contratto verso la console: la matrice può contenere righe con stato abbonamento assente, forma che l'interfaccia admin già gestiva.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AdminResource.java", "description": "Query della matrice riscritta su (account × app) con join sinistro sull'abbonamento e disponibilità del tier free calcolata una volta sola in una sotto-selezione; il filtro per singolo account passa da s.tenant_id ad acc.id." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Nello stato usato dal polling post-checkout la regola condivisa viene interrogata con 'tier free non disponibile', e l'assenza di abbonamento continua a rispondere 'non attiva'. Motivo: la domanda del polling non è 'ho accesso a quest'app?' ma 'l'abbonamento appena acquistato è arrivato?'. Passare la baseline gratuita avrebbe fatto rispondere 'sì' a un'app freemium prima ancora che il webhook materializzasse l'acquisto, chiudendo l'attesa in anticipo e mostrando come completato un acquisto non ancora registrato. La regola resta una sola: cambia soltanto la domanda che le si pone.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/CheckoutResource.java", "description": "Lo stato minimale considera ora anche stato dell'app e dell'account; senza abbonamento la risposta resta negativa come prima." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Lo stato degli entitlement esposto al frontend porta anche l'azione di rilettura (retry), così che l'errore sia ritentabile dov'è mostrato, senza ricaricare la pagina e senza che ogni consumatore debba conoscere la libreria di gestione delle richieste. Lo stub di test accetta ora anche stato di caricamento, stato di errore e azione di rilettura: serviva per poter provare i quattro stati della shell senza toccare la rete.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/registry/entitlements.tsx", "description": "EntitlementsState acquisisce retry; lo stub accetta isLoading/isError/retry iniettabili." },
+      { "file": "frontend/apps/backoffice/src/test/utils.tsx", "description": "Le utility di render espongono entitlementsLoading/entitlementsError/entitlementsRetry." }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Nella barra laterale, in stato di errore i moduli comunque noti restano visibili accanto all'avviso, invece di essere nascosti. Motivo emerso durante l'implementazione: in sviluppo locale il modulo dimostrativo non dipende dal backend ed è abilitato a prescindere dalla lettura; nasconderlo per un guasto di rete sarebbe un'altra forma della stessa bugia che la change vuole eliminare. In produzione, senza lettura riuscita l'elenco è vuoto e resta il solo avviso — il comportamento voluto. L'invito all'acquisto compare solo quando la lettura è riuscita e non c'è nulla: è un'affermazione sul contenuto, e in errore non si può fare.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx", "description": "Quattro stati: caricamento (ruolo di stato), errore (ruolo di avviso + riprova), vuoto (invito verso la pagina di fatturazione), pronto." }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Nelle guardie di rotta la condizione di errore degli entitlement viaggia accanto al contesto invece di entrare nel contesto stesso: le funzioni-guardia restano predicati puri su ciò che l'utente può fare, e la distinzione fra 'non hai accesso' e 'non lo sappiamo' è una decisione di resa, non di autorizzazione. Solo il montaggio del modulo app la usa, perché è l'unico punto che consulta gli entitlement; il ritentativo non è duplicato nel messaggio a tutta pagina perché la barra laterale, che lo offre, resta montata accanto.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/routing/guards.tsx", "description": "Con entitlement in errore la rotta di un modulo mostra un messaggio di errore invece del diniego di accesso." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) L'invalidazione della lettura entitlement è esposta come funzione riusabile accanto alla lettura stessa, con la chiave condivisa: i chiamanti (mutazioni di abbonamento, completamento dell'attivazione post-acquisto) la invocano senza conoscere la forma della chiave. Il punto di invalidazione dopo l'acquisto è il passaggio alla fase 'attiva' della macchina di checkout, cioè l'istante in cui l'app deve comparire nel menu.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/registry/entitlementsApi.ts", "description": "ENTITLEMENTS_KEY + useInvalidateEntitlements; sulla lettura, rilettura al ritorno sulla scheda e alla riconnessione." },
+      { "file": "frontend/apps/backoffice/src/billing/subscriptionsApi.ts", "description": "Cambio fascia, disdetta e ripresa invalidano anche gli entitlement." },
+      { "file": "frontend/apps/backoffice/src/pages/Billing.tsx", "description": "Il passaggio a fase attiva invalida gli entitlement." }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) I testi nuovi della shell vivono in un gruppo di chiavi dedicato 'apps' (nessuna app attiva, invito all'acquisto, errore di lettura) invece che nel gruppo generico degli stati: sono affermazioni specifiche sull'elenco delle app, e riusare il generico 'Ancora niente qui' era proprio ciò che rendeva indistinguibili errore e assenza. Tradotti in tutte e cinque le lingue del catalogo (UC 0060). Le chiavi generiche di caricamento e riprova restano riusate.",
+    "files": [
+      { "file": "frontend/packages/i18n/src/resources/en.ts", "description": "Gruppo apps: empty, emptyCta, error — sorgente del catalogo, da cui discendono le altre quattro lingue." }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Le prove end-to-end della shell ora simulano esplicitamente l'endpoint degli entitlement, che prima non era simulato affatto: la prova 'modulo non abilitato' passava per il motivo sbagliato — la chiamata falliva e l'elenco risultava vuoto — cioè descriveva un guasto credendo di descrivere un diniego. Ora la simulazione distingue elenco vuoto ed endpoint irraggiungibile, e sono state aggiunte due prove per lo stato vuoto con invito all'acquisto e per lo stato di errore con riprova.",
+    "files": [
+      { "file": "frontend/apps/backoffice/e2e/shell.spec.ts", "description": "mockBackend accetta l'elenco degli entitlement oppure 'error'; due prove nuove sugli stati vuoto ed errore." }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Difetto trovato dalle prove end-to-end e corretto: gli stati esposti alla shell NON sono quelli grezzi della libreria delle richieste. Quando una lettura fallita viene ritentata e non ha ancora alcun dato, la libreria riporta la query a 'in attesa' azzerando l'errore; poiché la guardia di rotta attende la fine del caricamento, ogni ritentativo smontava la pagina aperta e ne perdeva lo stato — con la rilettura al ritorno sulla scheda introdotta da questa change, sarebbe successo di continuo. Nell'istante fra i due stati, inoltre, l'elenco vuoto sarebbe stato scambiato per 'non hai diritto a nulla', cioè esattamente il difetto che la change chiude, ricomparso da un'altra porta. Gli stati sono quindi derivati da una funzione pura: caricamento = nessun esito ancora avvenuto (solo il primo avvio); errore = c'è già stato un esito e continuiamo a non avere dati, e resta tale anche durante il ritentativo finché un esito riuscito non lo smentisce. Scoperto perché la prova end-to-end del checkout ha smesso di vedere l'avvenuta attivazione: la pagina veniva rimontata da capo.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/registry/entitlementsApi.ts", "description": "deriveEntitlementsStatus(settledAtLeastOnce, hasData): funzione pura, con il motivo scritto accanto e provata caso per caso." },
+      { "file": "frontend/apps/backoffice/src/registry/entitlements.tsx", "description": "Il provider espone gli stati derivati, non quelli grezzi della query." }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Le prove end-to-end di autenticazione, checkout e membri non simulavano affatto l'endpoint degli entitlement: giravano quindi su una shell in stato di errore senza accorgersene, perché prima l'errore era invisibile. Ora lo simulano come le altre. Il caso emerso è istruttivo e vale la pena averlo scritto: rendere visibile un errore fa emergere chi conviveva con quell'errore senza saperlo."
+  },
+  {
+    "id": 24,
+    "decision": "Regressione trovata dallo sviluppatore provando lo stack in locale (l'applicazione esplodeva all'apertura con 'Maximum update depth exceeded') e corretta. Riprodotta guidando un browser sullo stack locale: l'errore veniva dal componente della rotta protetta. Causa mia: con la sessione anonima la lettura degli entitlement è disabilitata e quindi non sarà MAI 'conclusa'; la mia derivazione la dichiarava perennemente in caricamento, così la rotta protetta restava montata a tempo indeterminato invece di redirigere al login. La regola di caricamento diventa quindi 'la lettura è davvero in corso E non c'è ancora stato alcun esito': il primo pezzo copre la lettura mai partita, il secondo il ritentativo dopo un errore. Nessuna prova esistente lo copriva perché quelle di navigazione usano lo stub degli entitlement, che è sempre 'concluso': aggiunta una prova end-to-end col provider reale e sessione anonima, verificata sensibile (fallisce se si reintroduce il difetto).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/registry/entitlementsApi.ts", "description": "deriveEntitlementsStatus prende ora anche 'lettura in corso': caricamento = in corso ∧ nessun esito precedente." },
+      { "file": "frontend/apps/backoffice/e2e/auth.spec.ts", "description": "Prova nuova: da anonimo, aprire la radice porta al login e la shell non resta appesa." }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "Difetto PREESISTENTE emerso durante la stessa indagine e corretto qui, pur non essendo stato introdotto da questa change: nelle guardie di rotta il selettore dei ruoli dello store creava un array nuovo a ogni lettura, condizione che fa ciclare il render all'infinito con la libreria di stato in uso. È la stessa trappola già documentata nella barra laterale, dove era stata evitata di proposito. Finora restava innocua solo perché la rotta protetta si smontava subito (utente anonimo → redirect immediato al login): era una trappola armata, che sarebbe scattata al primo componente che fosse rimasto montato un istante di più. Corretta restituendo il riferimento originale e normalizzando l'assenza con una costante stabile. Correzione tenuta dentro questa change perché è nel file che si stava modificando e perché lasciarla avrebbe significato consegnare un difetto noto e già riprodotto.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/routing/guards.tsx", "description": "Selettore dei ruoli con riferimento stabile + nota sul perché, così che non venga riscritto come prima." }
+    ]
   }
 ]

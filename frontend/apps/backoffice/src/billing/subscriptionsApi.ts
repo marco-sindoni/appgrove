@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { unwrap } from '@appgrove/api-client'
 import { useApiClient } from '../api/apiClient'
 import { useAuthStore } from '../auth/authStore'
+import { useInvalidateEntitlements } from '../registry/entitlementsApi'
 
 const KEY = ['me', 'subscriptions']
 
@@ -23,6 +24,9 @@ export function useMySubscriptions() {
 export function useChangeTier(appSlug: string) {
   const client = useApiClient()
   const qc = useQueryClient()
+  // Cambio piano/disdetta/ripresa cambiano ciò a cui il tenant ha diritto: senza rileggere gli
+  // entitlement il menu resterebbe quello di prima fino a un ricaricamento della pagina (UC 0077).
+  const invalidateEntitlements = useInvalidateEntitlements()
   return useMutation({
     mutationFn: (vars: { targetTierKey: string; billingCycle: string }) =>
       unwrap(
@@ -31,7 +35,10 @@ export function useChangeTier(appSlug: string) {
           body: vars,
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: KEY })
+      void invalidateEntitlements()
+    },
   })
 }
 
@@ -39,6 +46,7 @@ export function useChangeTier(appSlug: string) {
 export function useCancelSubscription(appSlug: string) {
   const client = useApiClient()
   const qc = useQueryClient()
+  const invalidateEntitlements = useInvalidateEntitlements()
   return useMutation({
     mutationFn: () =>
       unwrap(
@@ -46,7 +54,10 @@ export function useCancelSubscription(appSlug: string) {
           params: { path: { appSlug } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: KEY })
+      void invalidateEntitlements()
+    },
   })
 }
 
@@ -54,6 +65,7 @@ export function useCancelSubscription(appSlug: string) {
 export function useResumeSubscription(appSlug: string) {
   const client = useApiClient()
   const qc = useQueryClient()
+  const invalidateEntitlements = useInvalidateEntitlements()
   return useMutation({
     mutationFn: () =>
       unwrap(
@@ -61,7 +73,10 @@ export function useResumeSubscription(appSlug: string) {
           params: { path: { appSlug } },
         }),
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: KEY })
+      void invalidateEntitlements()
+    },
   })
 }
 
