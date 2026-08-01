@@ -1,0 +1,40 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot, dichiarata all'invocazione — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; approvazione requisiti, consenso al commit e al merge restano allo sviluppatore, più un gate aggiuntivo richiesto esplicitamente: revisione e approvazione dell'artefatto HTML PRIMA della scrittura delle user story."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Change ad-hoc, non use-case-originated: nessuno use case esistente copre la riprogettazione UX catalogo/billing. UC 0024 traccia nei suoi punti aperti la vetrina dal catalogo reale come follow-up ('o nuovo UC catalogo pubblico se cresce'): questa change è la proposta di progetto di quella crescita; gli use case implementativi nasceranno dalle user story prodotte qui, dopo l'approvazione dell'artefatto."
+  },
+  {
+    "id": 3,
+    "decision": "Bug di incoerenza osservato dallo sviluppatore sullo stack locale e tracciato (fuori dallo scope di questa change): con un'app disabilitata a livello piattaforma la pagina Billing mostra la subscription 'Active' senza segnalare la disabilitazione, mentre la sidebar correttamente non mostra l'app (legge /me/entitlements con la regola unica di accesso, UC 0077; il pannello legge /me/subscriptions, UC 0028). Rimando scritto nella sezione 'Punti aperti / decisioni differite' di docs/usecases/15-supporto-e-piattaforma/0076-disabilita-applicazione.md, che possiede l'esperienza utente della disabilitazione.",
+    "files": [
+      {
+        "file": "docs/usecases/15-supporto-e-piattaforma/0076-disabilita-applicazione.md",
+        "description": "Aggiunto il punto aperto sul fix della pagina Billing per app disabilitata."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Nuova Dashboard = panoramica operativa del workspace: app attive con stato e consumo quota, avvisi azionabili (pagamento in sospeso, 2FA da attivare, documenti legali pendenti), scorciatoie (catalogo, membri, fatturazione). Scartate analitiche/grafici e feed attività: userebbero dati che il backend oggi non espone. L'UUID del tenant si sposta nella pagina Account."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'artefatto è un file HTML autonomo e navigabile versionato in changes/0066-app-catalog-billing-ux-proposal/proposta-ux.html e pubblicato come Artifact per la revisione. UI simulata in inglese (lingua della UI reale), annotazioni di proposta in italiano."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Le user story, dopo l'approvazione dell'artefatto, saranno formalizzate come use case numerati nel catalogo (skill new-usecase, area 06-frontend): nel monorepo l'unità implementabile è lo use case (~1:1 con una change); una forma intermedia sarebbe un doppione da mantenere."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il catalogo mostra solo stati già esistenti nel dominio: available/active/trial/payment-pending/cancellation-scheduled/disabled-by-platform; l'ultimo incluso per sanare in prospettiva l'incoerenza tracciata in UC 0076. Ricerca e paginazione dimostrate nell'artefatto con circa 12 app fittizie (client-side)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Billing ripulita: solo abbonamenti (cambio piano, disdetta, riattivazione) e storico pagamenti/ricevute (Paddle, merchant of record). L'acquisto parte dal catalogo e riusa il flusso di checkout esistente (UC 0024): la proposta sposta l'ingresso, non riprogetta il checkout."
+  }
+]
