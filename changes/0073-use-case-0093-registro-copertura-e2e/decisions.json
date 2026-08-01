@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast. Lo sviluppatore ha rinunciato in anticipo ai tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge); restano obbligatorie la suite completa verde prima del commit (./run-tests.sh senza parametri), il registro decisioni integrale e il file how-to-test.md. Merge e push restano al chiamante (skill go-fast)."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0093 (docs/usecases/20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md), come dichiarato all'invocazione. Numero di change 0073 derivato dalla cartella changes/ (ultima presente: 0072), quindi identificativo 0073-use-case-0093-registro-copertura-e2e."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) docs/usecases/_INDEX.md NON viene toccato: la tabella di esecuzione contiene solo i 60 use case base (0001-0060) e gli use case delle epiche evolutive — fra cui 0093 — non hanno una riga di stato. Stesso comportamento delle change 0069/0070/0071/0072 (UC 0090-0092, 0076). Il punto 5 della Definition of Done dello use case è quindi soddisfatto per assenza: aggiungere le righe evo all'indice sarebbe una ristrutturazione dell'indice, lavoro di un'altra change."
+  }
+]
