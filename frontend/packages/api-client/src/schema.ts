@@ -1739,6 +1739,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CatalogView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/entitlements": {
         parameters: {
             query?: never;
@@ -3051,6 +3101,24 @@ export interface components {
             currentPeriodStart?: string;
             currentPeriodEnd?: string;
         };
+        /** @enum {string} */
+        CatalogAppState: "available" | "active" | "trial" | "payment_pending" | "cancellation_scheduled" | "disabled_by_platform";
+        CatalogAppView: {
+            appSlug?: string;
+            name?: string;
+            category?: string;
+            descriptions?: {
+                [key: string]: string;
+            };
+            state?: components["schemas"]["CatalogAppState"];
+            planName?: string;
+            trialEndsAt?: components["schemas"]["Instant"];
+            cancelAt?: components["schemas"]["Instant"];
+            startingPrice?: components["schemas"]["StartingPrice"];
+        };
+        CatalogView: {
+            apps?: components["schemas"]["CatalogAppView"][];
+        };
         ChangeTierRequest: {
             targetTierKey: string;
             billingCycle: string;
@@ -3288,6 +3356,12 @@ export interface components {
         };
         StartWithdrawal: {
             exportJobId: string;
+        };
+        StartingPrice: {
+            /** Format: int32 */
+            amount?: number;
+            currency?: string;
+            billingCycle?: string;
         };
         SubscribeRequest: {
             email: string;

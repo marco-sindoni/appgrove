@@ -3,6 +3,13 @@ slug: legacy
 name: Legacy
 userModel: multi_user
 status: inactive
+category: violet
+descriptions:
+  it: "App di prova spenta dalla piattaforma: esercita il gate di disponibilità."
+  en: "Test app switched off by the platform: it exercises the availability gate."
+  fr: "Application de test désactivée par la plateforme : elle éprouve le contrôle de disponibilité."
+  es: "Aplicación de prueba apagada por la plataforma: ejercita el control de disponibilidad."
+  de: "Test-App von der Plattform abgeschaltet: sie prüft die Verfügbarkeitssperre."
 tiers:
   - key: std
     name: Legacy Std

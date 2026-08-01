@@ -3,6 +3,16 @@ slug: fatture
 name: Fatture
 userModel: single_user
 status: active
+# Parte descrittiva del listino (UC 0095): tinta di categoria della vetrina + descrizione breve nelle 5
+# lingue del prodotto. Sta qui e non nelle traduzioni del frontend perché il catalogo deve saper descrivere
+# anche un'app senza modulo impacchettato. Non finisce nel database: la legge il read-model del catalogo.
+category: green
+descriptions:
+  it: Crea e invia fatture, tieni traccia degli incassi e dei solleciti.
+  en: Create and send invoices, track payments and reminders.
+  fr: Créez et envoyez des factures, suivez les paiements et les relances.
+  es: Crea y envía facturas, controla los cobros y los recordatorios.
+  de: Rechnungen erstellen und versenden, Zahlungen und Mahnungen im Blick behalten.
 tiers:
   - key: free
     name: Fatture Free

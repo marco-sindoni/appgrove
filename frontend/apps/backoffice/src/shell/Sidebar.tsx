@@ -112,6 +112,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-1">
         <SectionLabel>{t('nav.platform')}</SectionLabel>
         <PlatformLink to="/" icon="space_dashboard" label={t('nav.dashboard')} onNavigate={onNavigate} />
+      <PlatformLink to="/catalog" icon="apps" label={t('nav.appCatalog')} onNavigate={onNavigate} />
         <PlatformLink to="/account" icon="account_circle" label={t('nav.account')} onNavigate={onNavigate} />
         <PlatformLink to="/billing" icon="credit_card" label={t('nav.billing')} onNavigate={onNavigate} />
         {canManageMembers && (
@@ -146,7 +147,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <div className="flex flex-col items-start gap-1 px-2.5 py-2">
             <p className="text-[13px] text-fg-muted">{t('apps.empty')}</p>
             <Link
-              to="/billing"
+              to="/catalog"
               onClick={onNavigate}
               className="text-[12.5px] font-semibold text-accent hover:underline"
             >

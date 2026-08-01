@@ -204,6 +204,45 @@ components:
           type: string
         currentPeriodEnd:
           type: string
+    CatalogAppState:
+      type: string
+      enum:
+      - available
+      - active
+      - trial
+      - payment_pending
+      - cancellation_scheduled
+      - disabled_by_platform
+    CatalogAppView:
+      type: object
+      properties:
+        appSlug:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        descriptions:
+          type: object
+          additionalProperties:
+            type: string
+        state:
+          $ref: "#/components/schemas/CatalogAppState"
+        planName:
+          type: string
+        trialEndsAt:
+          $ref: "#/components/schemas/Instant"
+        cancelAt:
+          $ref: "#/components/schemas/Instant"
+        startingPrice:
+          $ref: "#/components/schemas/StartingPrice"
+    CatalogView:
+      type: object
+      properties:
+        apps:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogAppView"
     ChangeTierRequest:
       type: object
       required:
@@ -675,6 +714,16 @@ components:
         exportJobId:
           type: string
           pattern: \S
+    StartingPrice:
+      type: object
+      properties:
+        amount:
+          type: integer
+          format: int32
+        currency:
+          type: string
+        billingCycle:
+          type: string
     SubscribeRequest:
       type: object
       required:
@@ -1746,6 +1795,24 @@ paths:
       summary: Document
       tags:
       - Legal Document Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/catalog:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Catalog
+      tags:
+      - Me Catalog Resource
       security:
       - SecurityScheme: []
   /api/platform/v1/me/entitlements:

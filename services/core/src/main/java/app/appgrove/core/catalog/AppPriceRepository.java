@@ -25,6 +25,19 @@ public class AppPriceRepository implements PanacheRepositoryBase<AppPrice, UUID>
     }
 
     /**
+     * La fascia ha almeno un price vivo? È la domanda del <b>tier free di baseline</b> (UC 0027): interessa
+     * solo <i>se</i> un prezzo esiste, non quale sia.
+     *
+     * <p>Conta invece di caricare, e la differenza non è di prestazioni ma di <b>robustezza</b>: caricando
+     * le entità, una singola riga con un {@code billing_cycle} fuori dai valori dell'enum — un dato storico,
+     * una riga scritta da un'integrazione — farebbe fallire l'intera lettura degli entitlement, cioè il
+     * percorso che governa l'accesso. Un conteggio non converte nulla e non può rompersi così (change 0076).
+     */
+    public boolean existsForTier(UUID appTierId) {
+        return count("appTierId", appTierId) > 0;
+    }
+
+    /**
      * Risolve il <b>tier</b> dal {@code paddle_price_id} — il mapping "come in prod" abilitato da UC 0022
      * (sbloccava il punto differito di UC 0023: lo stub passava l'{@code app_tier_id} esplicito perché
      * mancavano le entità di catalogo).

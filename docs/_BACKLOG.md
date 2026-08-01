@@ -655,3 +655,29 @@ Da decidere in una change dedicata all'indice: se estendere `_INDEX.md` alle sto
 l'ordinamento topologico, oggi calcolato sui soli 60 base) oppure aggiungere una colonna di stato di implementazione al
 catalogo per area. Chi lo farà, aggiorni anche la guardia dell'esenzione `non-implementato` in `tools/e2e-coverage`.
 Owner: Skills & Tooling (UC 0044/0045), in coordinamento con UC 0094.
+
+## Lettura del listino come entità: un ciclo di fatturazione fuori enum spegne la pagina (change `0076`, 2026-08-01)
+
+**Che cosa.** `AppPrice.billingCycle` è mappata su un enum di due valori (`monthly`, `annual`). Chi carica i
+price come entità JPA — oggi `EntitlementReadModel.freeTier`, che chiede a `AppPriceRepository.listByTier` se
+una fascia ha prezzi — fallisce con un errore non gestito (HTTP 500) se **una sola riga** del database porta un
+valore diverso: un dato storico, una riga scritta da un'integrazione, o semplicemente una fixture. Non è
+teorico: è successo davvero nella change `0076`, dove la lettura del catalogo esplodeva a causa di una riga di
+prova con `billing_cycle = 'year'`.
+
+**Che cosa è già stato fatto.** Il read-model del catalogo (UC 0095) legge prezzi e fasce gratuite in SQL
+nativo, trattando il ciclo come **etichetta** e non come valore su cui decidere: una vetrina deve degradare,
+non spegnersi. Ha anche un test di regressione (`CatalogApiTest.unCicloDiFatturazioneFuoriCatalogoNonSpegneLaVetrina`).
+
+Anche `EntitlementReadModel.freeTier` è stato corretto nella stessa change, e non per prudenza ma per
+necessità: il test di regressione appena aggiunto ha reso quella fragilità **attiva**, facendo fallire
+`AccountDeletionApiTest`. Lì il ciclo non serve affatto (interessa solo *se* la fascia ha prezzi), quindi la
+lettura è diventata un conteggio (`AppPriceRepository.existsForTier`) che non converte nulla. Restano a
+caricare i price come entità i soli tre punti in cui il ciclo **è** l'informazione cercata (avvio del
+checkout, elenco delle fasce, cambio fascia): lì il valore fuori catalogo è un dato sbagliato, non un caso
+da tollerare.
+
+**Che cosa resta.** Decidere se il valore fuori catalogo vada **rifiutato in scrittura** — un vincolo di
+dominio sulla colonna `platform.app_price.billing_cycle` — invece che soltanto tollerato in lettura. Oggi
+nulla impedisce a un'integrazione di scriverne uno. Chi lo possiede: **UC 0022** (pricing-as-code) insieme a
+UC 0027.

@@ -12,9 +12,30 @@ public final class PricingDefinition {
 
     private PricingDefinition() {}
 
-    /** Una app del catalogo con i suoi tier. La chiave stabile dell'app è lo {@code slug}. */
+    /**
+     * Una app del catalogo con i suoi tier. La chiave stabile dell'app è lo {@code slug}.
+     *
+     * <p>{@code category} e {@code descriptions} sono la <b>parte descrittiva</b> del listino (UC 0095):
+     * la tinta/icona di categoria della vetrina e la descrizione breve nelle 5 lingue. Vivono qui perché
+     * il catalogo è codice — devono esistere anche per un'app che non ha (ancora) un modulo impacchettato
+     * nel frontend. Sono <b>facoltative</b>: un'app che non le dichiara resta presentabile (nome + tinta
+     * derivata dallo slug), e non si sincronizzano nel database del catalogo (decisione 4 della change
+     * 0076: contenuto di presentazione env-agnostico, non dato transazionale).
+     */
     public record AppDef(
-            String slug, String name, AppUserModel userModel, AppStatus status, List<TierDef> tiers) {}
+            String slug,
+            String name,
+            AppUserModel userModel,
+            AppStatus status,
+            List<TierDef> tiers,
+            String category,
+            Map<String, String> descriptions) {
+
+        /** Definizione senza parte descrittiva (cataloghi sintetici dei test). */
+        public AppDef(String slug, String name, AppUserModel userModel, AppStatus status, List<TierDef> tiers) {
+            this(slug, name, userModel, status, tiers, null, null);
+        }
+    }
 
     /** Un tier: chiave interna stabile {@code key}, limiti/feature (JSON), eventuali price. */
     public record TierDef(

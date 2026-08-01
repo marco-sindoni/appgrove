@@ -70,6 +70,14 @@ Skill di tooling: l'app generata deve nascere con suite verde (unit/integration/
 
 ## Punti aperti / decisioni differite
 
+- **Parte descrittiva del listino non generata** (aperto dalla change `0076`, UC 0095). Il pricing-as-code
+  accetta ora due campi facoltativi — `category` (tinta di categoria della vetrina) e `descriptions`
+  (descrizione breve nelle 5 lingue) — che la pagina "App catalog" mostra. Il generatore non li scrive: non
+  può inventare cinque traduzioni da solo. Un'app nuova nasce quindi in vetrina con il solo nome e una tinta
+  derivata dallo slug, finché qualcuno non compila i due campi a mano. Da decidere qui: se il co-pilota
+  prezzi/quota della skill debba chiederli (una descrizione in una lingua + traduzione assistita) o se
+  restino un passo di rifinitura della landing (`finalize-landing`, UC 0057).
+
 > **Stato dopo la change `0041-use-case-0046-…`.** I punti sotto marcati **✅ chiuso** sono stati
 > risolti da quella change; restano in elenco (non cancellati) perché il *perché* della soluzione è
 > parte della memoria del caso d'uso. I punti senza marcatura sono ancora aperti.

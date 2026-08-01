@@ -4,6 +4,7 @@ import { ProtectedRoute, AppModuleHost, requireAuth, requireAnyRole } from './gu
 import { Dashboard } from '../pages/Dashboard'
 import { Account } from '../pages/Account'
 import { Billing } from '../pages/Billing'
+import { AppCatalogPage } from '../pages/catalog/AppCatalogPage'
 import { Settings } from '../pages/Settings'
 import { SecurityPage } from '../pages/SecurityPage'
 import { PrivacyPage } from '../pages/privacy/PrivacyPage'
@@ -38,6 +39,8 @@ export const routes: RouteObject[] = [
         element: <ShellLayout />,
         children: [
           { index: true, element: <Dashboard /> },
+          // Vetrina (UC 0095): nessun guard di entitlement — vedere che cosa esiste non richiede diritti.
+          { path: 'catalog', element: <AppCatalogPage /> },
           { path: 'account', element: <Account /> },
           { path: 'billing', element: <Billing /> },
           { path: 'settings', element: <Settings /> },
