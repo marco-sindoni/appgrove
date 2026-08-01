@@ -55,6 +55,7 @@ export const en = {
 
   // Quota (il testo arriva dal listino: segnaposto sostituiti dal generatore, uguali in ogni lingua finché non riscritti)
   quotaLabel: '@@QUOTA_LABEL@@',
+  quotaUnit: '@@QUOTA_UNIT@@',
   quotaReached: '@@QUOTA_REACHED@@',
   quotaUpgrade: 'Upgrade your plan',
 

@@ -51,6 +51,7 @@ export const it: FattureMessages = {
 
   // Quota
   quotaLabel: 'Fatture questo mese',
+  quotaUnit: 'fatture',
   quotaReached: 'Hai raggiunto il limite mensile del tuo piano.',
   quotaUpgrade: 'Passa a un piano superiore',
 

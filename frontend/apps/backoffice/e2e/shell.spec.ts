@@ -58,7 +58,7 @@ test('[L2-SHELL] ripristina la sessione, naviga la shell e monta il modulo entit
 
   // chrome permanente + sezioni
   await expect(page.getByText('Platform')).toBeVisible()
-  await expect(page.getByText('Your apps')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Platform' }).getByText('Your apps')).toBeVisible()
   await expect(page.getByText('Demo app')).toBeVisible()
 
   // monta il modulo entitled

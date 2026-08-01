@@ -18,5 +18,8 @@ export const fattureManifest: ModuleManifest = {
     { id: 'invoices', label: `${FATTURE_NS}:sectionInvoices`, route: '', icon: 'receipt_long' },
   ],
   resources: fattureResources,
+  // Quota principale dell'app, per la barra di consumo della Dashboard (UC 0097): l'uso corrente lo
+  // conosce solo il servizio dell'app, quindi la Dashboard va a leggerlo là.
+  quota: { path: '/api/fatture/v1/quota', unitLabel: `${FATTURE_NS}:quotaUnit` },
   component: lazy(() => import('./FattureModule')),
 }

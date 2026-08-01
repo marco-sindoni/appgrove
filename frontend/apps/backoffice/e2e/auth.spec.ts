@@ -66,7 +66,7 @@ test('[L2-AUTH] login con credenziali porta alla dashboard', async ({ page }) =>
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   await expect(page.getByText('Platform')).toBeVisible()
-  await expect(page.getByText('Your apps')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Platform' }).getByText('Your apps')).toBeVisible()
 })
 
 test('[L2-AUTH] signup wizard: account → verifica → workspace → done → dashboard', async ({ page }) => {

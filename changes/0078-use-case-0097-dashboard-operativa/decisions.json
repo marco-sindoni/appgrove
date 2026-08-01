@@ -58,5 +58,75 @@
   {
     "id": 9,
     "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): si copre ORA. Nasce il percorso di livello 2 `L2-DASHBOARD` (panoramica con app attive, barra di consumo e avvisi; workspace senza app con invito al catalogo; guasto della sola sezione app; identificativo del workspace presente in Account e assente in Dashboard) e si estende il percorso di piattaforma `J-REG`, che già atterra sulla Dashboard, perché verifichi la panoramica vera su stack reale. UC 0097 esce dalle esenzioni `non-implementato` ed entra fra gli use case con superficie."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) La lettura dello stato del secondo fattore è una SOLA lettura: non attiva, non conferma, non disattiva. Il provider locale legge la propria riga di credenziali e un utente senza credenziali (utente dei dati di partenza) risulta semplicemente «non attivo» invece di provocare un errore — questa lettura serve a decidere se mostrare un invito, non a negare un accesso. Il provider Cognito guarda l'elenco dei fattori CONFERMATI restituito da GetUser sull'access token: un'iscrizione avviata e mai confermata non vi compare, che è esattamente la semantica promessa. La disattivazione del secondo fattore resta impossibile (il servizio non la espone): rinvio già tracciato in UC 0058, non riaperto qui.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/IdentityProvider.java",
+        "description": "Nuovo metodo totpEnabled(bearerToken, sub) sul contratto comune ai due provider."
+      },
+      {
+        "file": "services/auth/src/test/java/app/appgrove/auth/TwoFactorTest.java",
+        "description": "Falso prima dell'iscrizione, vero dopo la conferma, 401 senza token."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Correzione della decisione 8 (le voci non si riscrivono: vale questa). Gli avvisi della Dashboard sono DUE, non tre: pagamento in sospeso e secondo fattore. L'avviso sugli aggiornamenti legali minori è stato tolto dopo aver guardato che cosa avrebbe potuto offrire: il guscio ha già il suo banner dedicato (UC 0056) e, soprattutto, una presa visione NON si può registrare da nessuna parte — non esiste una schermata «rivedi i documenti aggiornati», quindi l'avviso sarebbe stato un secondo posto dove dire la stessa cosa senza poterci fare nulla. Costruirla sarebbe stato lavoro di UC 0056, non di questa storia. Il limite è tracciato nei punti aperti di UC 0056; la scelta è tracciata nei punti aperti di UC 0097.",
+    "files": [
+      {
+        "file": "docs/usecases/04-platform-core/0056-riaccettazione-legali-runtime.md",
+        "description": "Nuovo punto aperto: gli aggiornamenti minori si possono solo chiudere, mai prendere in carico."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Le letture di membri e inviti diventano condizionate al ruolo (owner/admin) NELLA loro definizione, non solo nel punto in cui si usano. Prima erano incondizionate perché l'unico chiamante era la pagina Membri, già riservata a quei ruoli; la Dashboard invece la aprono tutti. Meglio spostare la condizione dove vive la lettura che ricordarsi di metterla a ogni nuovo chiamante: chiedere ciò che sappiamo verrebbe rifiutato riempirebbe la pagina d'atterraggio di errori per un dato che comunque non è dato conoscere.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/api/hooks.ts",
+        "description": "useMembers/useInvitations abilitate solo per owner/admin."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Varco di parità dello scaffolding (UC 0046): la change tocca un percorso-sorgente dei modelli (frontend/apps/backoffice/src/modules/fatture — manifest e bundle di traduzione). Scelta la via 1 — AGGIORNARE I MODELLI: il descrittore di quota è precisamente un pattern che ogni app nuova deve ereditare, altrimenti nascerebbe con una card di Dashboard senza barra di consumo e nessuno se ne accorgerebbe. Il generatore acquisisce quindi il segnaposto dell'unità consumata (derivato dalla metrica dichiarata) nei cinque bundle e il campo `quota` nel modello del manifest. Collaudo di parità verde.",
+    "files": [
+      {
+        "file": "tools/new-application/templates/frontend-module/manifest.ts",
+        "description": "Descrittore di quota nel modello del manifest."
+      },
+      {
+        "file": "tools/new-application/lib/context.mjs",
+        "description": "Nuovo segnaposto QUOTA_UNIT = metrica dichiarata dall'app."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Quattro asserzioni end-to-end preesistenti su «Your apps» sono state RESE PRECISE (ristrette al menu laterale) invece di rinominare la sezione della Dashboard. Il testo «Your apps» compare ora due volte nella stessa schermata — intestazione del menu e titolo della sezione — come nel riferimento visivo approvato (change 0066), e quelle asserzioni cercavano il testo nell'intera pagina: erano lasche, e la correzione giusta è renderle precise, non cambiare il prodotto per farle passare. Nessuna asserzione è stata indebolita: continuano a provare che il guscio è visibile (o assente, dietro lo sbarramento legale).",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-LEGAL.spec.ts",
+        "description": "«Your apps» cercato dentro la navigazione, non nella pagina intera."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Gate privacy (UC 0031): nessun segnale. Nessuna migrazione, nessun campo nuovo di entità o DTO che trasporti dati personali, nessuna dipendenza o host nuovi. L'unica informazione nuova che circola è un sì/no sullo stato del secondo fattore dell'utente in sessione — attributo di sicurezza già conservato dal servizio di autenticazione, che ora l'utente può leggere per sé stesso: nessuna nuova finalità, base giuridica, categoria o conservazione, quindi nemmeno una classificazione MINOR da registrare a manifesto. Lo scanner deterministico conferma: gate verde senza intervento."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Promemoria landing stale (UC 0057): l'euristica SCATTA — la change tocca `frontend/apps/backoffice/src/modules/fatture/` e la landing di `fatture` è pubblicata — ma la valutazione è che la landing NON sia diventata vecchia: le due modifiche al modulo sono un'etichetta interna dell'unità consumata (usata solo dalla barra della Dashboard) e il descrittore che dice dove leggere la quota. Nessuna funzionalità, nessun prezzo, nessuna schermata dell'app cambiano, quindi nessuna schermata da ricatturare. Nessuna ri-esecuzione di finalize-landing richiesta; il promemoria resta scritto nel log per il revisore."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Esito della suite COMPLETA `./run-tests.sh` (backend, frontend, infra, compliance, tooling, smoke, platform, site): VERDE. Nessun guasto imputabile alla change. Due esecuzioni precedenti erano rosse per la stessa causa d'ambiente e su test DIVERSI ogni volta — il guardiano dei contenitori di collaudo (Ryuk) non si avviava e la base dati di prova non partiva («Could not connect to Ryuk», «Container startup failed for image postgres:17»), con la macchina che stava già facendo girare lo stack locale per i percorsi di piattaforma. I due test coinvolti (MigrateCommandTest del core, EntitlementGateTest di fatture) sono stati rieseguiti isolatamente e sono verdi, e la terza esecuzione completa è verde su tutte le aree. Deliberatamente NON è stato toccato nulla per «stabilizzare»: un test reso più tollerante per un guasto d'ambiente è un test che smette di sorvegliare."
   }
 ]

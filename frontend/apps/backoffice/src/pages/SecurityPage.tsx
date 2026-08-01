@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,19 +11,27 @@ import { getAccessToken } from '../auth/authStore'
 import { enroll2fa, verify2fa, type EnrollResult } from '../auth/authApi'
 import { totpSchema } from '../auth/schemas'
 import { authErrorMessage } from '../auth/authErrors'
+import { TWOFA_STATUS_KEY, useTwoFaStatus } from '../auth/twoFaApi'
 import { Field } from './auth/Field'
 
 /**
  * Setup 2FA TOTP dal profilo (UC 0017 UC10): enroll → QR/secret → verifica codice → attiva.
  * La **disattivazione** non è implementabile (il servizio auth non espone `/2fa/disable`) — rinvio tracciato.
+ *
+ * <p>Dalla change 0078 la pagina conosce lo **stato reale** del secondo fattore (UC 0097): a chi lo ha
+ * già attivo non si propone più di attivarlo, e l'esito della verifica aggiorna la stessa lettura che
+ * alimenta l'avviso della Dashboard — così le due superfici non possono dire cose diverse.
  */
 export function SecurityPage() {
   const { t } = useTranslation()
   const config = useConfig()
+  const queryClient = useQueryClient()
+  const status = useTwoFaStatus()
   const [enrollment, setEnrollment] = useState<EnrollResult | null>(null)
-  const [enabled, setEnabled] = useState(false)
+  const [justEnabled, setJustEnabled] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const enabled = justEnabled || status.data === true
 
   const form = useForm<z.infer<ReturnType<typeof totpSchema>>>({
     resolver: zodResolver(totpSchema(t)),
@@ -49,7 +58,8 @@ export function SecurityPage() {
       const token = getAccessToken()
       if (!token) throw new Error('no token')
       await verify2fa(config.authBaseUrl, token, values.code)
-      setEnabled(true)
+      setJustEnabled(true)
+      void queryClient.invalidateQueries({ queryKey: TWOFA_STATUS_KEY })
     } catch (err) {
       setError(authErrorMessage(err, t, { 401: t('errors.invalidCode') }))
     }

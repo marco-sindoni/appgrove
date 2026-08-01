@@ -48,7 +48,7 @@ test('[J-LEGAL] nuova major dei Termini → gate bloccante → esenzione "I miei
     await expect(gate.getByRole('checkbox')).toHaveCount(1)
     await expect(gate.getByRole('button', { name: 'Continue' })).toBeDisabled()
     // L'app dietro il gate non è raggiungibile.
-    await expect(page.getByText('Your apps')).toHaveCount(0)
+    await expect(page.getByRole('navigation', { name: 'Platform' }).getByText('Your apps')).toHaveCount(0)
 
     // La pagina "I miei dati" resta raggiungibile (esenzione dei diritti GDPR dal blocco).
     await page.goto('/privacy')

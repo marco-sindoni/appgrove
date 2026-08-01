@@ -1,6 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { unwrap, type InvitationView } from '@appgrove/api-client'
+import { useAuthStore } from '../auth/authStore'
 import { useApiClient } from './apiClient'
+
+/**
+ * Vero se il ruolo in sessione può leggere membri e inviti (owner/admin, come il core).
+ * Serve a **non chiedere** ciò che sappiamo verrebbe rifiutato: la pagina Membri è già riservata a
+ * quei ruoli, ma la Dashboard (UC 0097) mostra gli stessi numeri a chiunque apra il backoffice.
+ */
+function useCanReadMembers(): boolean {
+  return useAuthStore((s) => !!s.claims?.roles?.some((r) => r === 'owner' || r === 'admin'))
+}
 
 /** Profilo dell'utente corrente (`GET /users/me`). Dati personali già dichiarati in UC 0013. */
 export function useCurrentUser() {
@@ -58,8 +68,10 @@ export function useSetNewsletterPreference() {
 /** Lista membri del tenant (`GET /users`). Una pagina ampia: la UI non pagina (fuori scope). */
 export function useMembers() {
   const client = useApiClient()
+  const canRead = useCanReadMembers()
   return useQuery({
     queryKey: ['users', 'list'],
+    enabled: canRead,
     queryFn: () => unwrap(client.GET('/api/platform/v1/users', { params: { query: { size: 100 } } })),
   })
 }
@@ -94,8 +106,10 @@ export function useRemoveMember() {
 /** Inviti in sospeso del tenant (`GET /invitations`). */
 export function useInvitations() {
   const client = useApiClient()
+  const canRead = useCanReadMembers()
   return useQuery({
     queryKey: ['invitations', 'list'],
+    enabled: canRead,
     queryFn: () =>
       unwrap(client.GET('/api/platform/v1/invitations', { params: { query: { size: 100 } } })),
   })

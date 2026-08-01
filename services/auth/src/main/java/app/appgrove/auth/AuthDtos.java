@@ -55,4 +55,7 @@ public final class AuthDtos {
     public record MfaChallenge(boolean mfa_required, String challenge_token) {}
 
     public record EnrollResponse(String secret, String otpauth_uri) {}
+
+    /** Stato del secondo fattore dell'utente del token: attivo o no. Nessun segreto, nessun dettaglio. */
+    public record TwoFaStatusResponse(boolean enabled) {}
 }

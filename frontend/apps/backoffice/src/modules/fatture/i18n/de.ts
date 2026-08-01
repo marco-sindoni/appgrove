@@ -51,6 +51,7 @@ export const de: FattureMessages = {
 
   // Quota
   quotaLabel: 'Rechnungen diesen Monat',
+  quotaUnit: 'Rechnungen',
   quotaReached: 'Sie haben das monatliche Limit Ihres Tarifs erreicht.',
   quotaUpgrade: 'Auf einen höheren Tarif wechseln',
 

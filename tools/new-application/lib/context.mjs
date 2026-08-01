@@ -205,6 +205,8 @@ export function buildContext(options) {
     QUOTA_WINDOW_JAVA: options.quotaNature === 'stock' ? 'null' : '"month"',
     QUOTA_WINDOW_TS: options.quotaNature === 'stock' ? 'null' : "'month'",
     QUOTA_LABEL: options.quotaNature === 'stock' ? 'Consumo attuale' : 'Consumo questo mese',
+    // Unità consumata, accanto ai numeri della barra in Dashboard (UC 0097): "3 di 20 <metrica>".
+    QUOTA_UNIT: options.metric,
     QUOTA_REACHED:
       options.quotaNature === 'stock'
         ? 'Hai raggiunto il limite del tuo piano. Libera un elemento oppure passa a un piano superiore.'

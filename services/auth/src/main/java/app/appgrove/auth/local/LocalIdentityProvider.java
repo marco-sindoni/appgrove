@@ -169,6 +169,13 @@ public class LocalIdentityProvider implements IdentityProvider {
     }
 
     @Override
+    public boolean totpEnabled(String bearerToken, String sub) {
+        // Un utente senza riga di credenziali (utente del seed) non ha 2FA: falso, non un errore —
+        // questa lettura serve a decidere se mostrare un invito, non a negare un accesso.
+        return credentials.find(sub).map(Cred::totpEnabled).orElse(false);
+    }
+
+    @Override
     public Optional<String> jwks() {
         return Optional.of(tokens.jwks());
     }
