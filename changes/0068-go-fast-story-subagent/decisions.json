@@ -33,5 +33,9 @@
   {
     "id": 8,
     "decision": "(autopilot) Coerenza del change id: lo calcola l'orchestratore (gli serve per il tag di backup, creato prima di lanciare il sub-agente) e lo passa nel prompt del sub-agente, che lo usa e ne verifica la corrispondenza col numero che new-change deriva da changes/; una discrepanza è un guasto che ferma il ciclo."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La prima esecuzione della suite completa era rossa in backend e tooling per cause ambientali estranee alla change (porta 8081 occupata da un processo Quarkus dev di fatture rimasto acceso; demone Docker di colima morto durante la corsa): nessuna modifica a codice o test, solo ripristino dell'ambiente (./app-stop.sh + riavvio di colima, dati preservati) e ri-esecuzione integrale, chiusa con tutte e 7 le aree verdi."
   }
 ]
