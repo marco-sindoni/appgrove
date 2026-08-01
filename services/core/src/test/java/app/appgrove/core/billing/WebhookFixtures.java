@@ -49,6 +49,55 @@ final class WebhookFixtures {
         return write(root);
     }
 
+    /**
+     * Evento {@code transaction.*} con i dati economici (UC 0096): oltre allo snapshot di subscription
+     * porta importo, valuta, ciclo, riferimento della transazione e — quando c'è — la ricevuta. Con
+     * {@code receiptUrl} a {@code null} si esercita il caso "ricevuta non ancora disponibile".
+     */
+    static String transaction(
+            String eventId,
+            String type,
+            Instant occurredAt,
+            String tenantId,
+            UUID appId,
+            UUID tierId,
+            String paddleTransactionId,
+            int amount,
+            String currency,
+            String billingCycle,
+            String receiptUrl,
+            Instant billedAt) {
+        ObjectNode root = M.createObjectNode();
+        root.put("event_id", eventId);
+        root.put("event_type", type);
+        root.put("occurred_at", occurredAt.toString());
+        ObjectNode data = root.putObject("data");
+        data.put("paddle_subscription_id", "sub_" + eventId);
+        data.put("status", "active");
+        data.put("current_period_start", occurredAt.toString());
+        data.put("paddle_transaction_id", paddleTransactionId);
+        data.put("amount", amount);
+        if (currency != null) {
+            data.put("currency", currency);
+        }
+        if (billingCycle != null) {
+            data.put("billing_cycle", billingCycle);
+        }
+        if (receiptUrl != null) {
+            data.put("receipt_url", receiptUrl);
+        }
+        if (billedAt != null) {
+            data.put("billed_at", billedAt.toString());
+        }
+        ObjectNode custom = data.putObject("custom_data");
+        custom.put("tenant_id", tenantId);
+        custom.put("app_id", appId.toString());
+        if (tierId != null) {
+            custom.put("app_tier_id", tierId.toString());
+        }
+        return write(root);
+    }
+
     /** Evento {@code customer.updated} (cattura {@code paddle_customer_id}). */
     static String customer(String eventId, Instant occurredAt, String tenantId, String paddleCustomerId) {
         ObjectNode root = M.createObjectNode();

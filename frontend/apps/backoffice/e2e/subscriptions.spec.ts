@@ -31,6 +31,9 @@ async function mockSession(page: Page) {
     route.fulfill({ json: { id: 'a1', name: 'Acme', status: 'active' } }),
   )
   await page.route('**/api/platform/v1/me/entitlements', (route) => route.fulfill({ json: { entitlements: [] } }))
+  // Billing ha ora anche lo storico pagamenti (UC 0096): qui non è l'oggetto della prova, ma senza
+  // risposta la sua sezione mostrerebbe un errore e sporcherebbe le asserzioni di questi percorsi.
+  await page.route('**/api/platform/v1/me/payments', (route) => route.fulfill({ json: { payments: [] } }))
 }
 
 test('[L2-SUB] self-service: downgrade programmato a fine periodo', async ({ page }) => {

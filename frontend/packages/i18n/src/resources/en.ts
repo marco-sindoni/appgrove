@@ -30,6 +30,7 @@ export const en = {
     next: 'Next',
     pageOf: 'Page {{page}} of {{pages}}',
     open: 'Open',
+    upgrade: 'Upgrade plan',
     fixPayment: 'Fix payment',
     undoCancellation: 'Undo cancellation',
     contactSupport: 'Contact support',
@@ -330,12 +331,13 @@ export const en = {
     invalidCode: 'Invalid code.',
     generic: 'Something went wrong. Please try again.',
   },
+  // Pagina Billing — solo fatturazione (UC 0096): abbonamenti + storico pagamenti.
+  billing: {
+    title: 'Billing',
+    subtitle: 'Manage your plans, payments and receipts.',
+  },
   // Checkout d'acquisto app (UC 0024) — backoffice.
   checkout: {
-    title: 'Get an app',
-    subtitle: 'Pick an app and a plan to subscribe.',
-    chooseApp: 'Choose an app',
-    noApps: 'No apps available to purchase.',
     monthly: 'Monthly',
     annual: 'Annual',
     save2Months: '2 months free',
@@ -389,6 +391,33 @@ export const en = {
     appDisabledTitle: 'App suspended by the platform',
     appDisabledBody: 'This app is temporarily unavailable to every account. Your subscription stays valid and your data is untouched: it becomes reachable again as soon as the suspension is lifted.',
     blockedTitle: 'Downgrade not possible',
+    emptyCta: 'Browse the app catalog',
+    contactSupport: 'Contact support',
+  },
+  // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
+  payments: {
+    title: 'Payments & receipts',
+    subtitle: 'Processed by Paddle, our merchant of record. Receipts open on Paddle.',
+    empty: 'No payments yet.',
+    error: 'We couldn’t load your payment history.',
+    restricted: 'Only owners and admins can see payments and receipts.',
+    colDate: 'Date',
+    colApp: 'App',
+    colDescription: 'Description',
+    colAmount: 'Amount',
+    colStatus: 'Status',
+    colReceipt: 'Receipt',
+    receipt: 'Receipt',
+    receiptPending: 'Not available yet',
+    status: {
+      paid: 'Paid',
+      failed: 'Failed',
+      disputed: 'Disputed',
+    },
+    cycle: {
+      monthly: 'monthly',
+      annual: 'annual',
+    },
   },
   // Actionable enforcement banners (UC 0028 closes UC 0027's open point): 402/429.
   enforcement: {

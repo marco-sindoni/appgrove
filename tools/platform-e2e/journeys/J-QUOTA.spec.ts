@@ -59,9 +59,11 @@ test('[J-QUOTA] core-loop fatture fino al tetto → banner → 429 reale con inv
   await expect(moduleAlert).toBeVisible()
   // Il 429 alimenta anche il banner globale di enforcement (UC 0027).
   await expect(page.getByRole('alert').filter({ hasText: 'Plan limit reached' })).toBeVisible()
-  // La CTA del modulo porta al catalogo (upgrade non ancora possibile: nessun tier a pagamento).
+  // La CTA del modulo porta a Billing, dove vivono i cambi di piano (UC 0096: la pagina è ora di sola
+  // fatturazione; `fatture` non ha tier a pagamento, quindi lì non c'è nulla da comprare — ciò che il
+  // journey prova è che l'invito porti da qualche parte di sensato, non nel vuoto).
   await moduleAlert.getByRole('button', { name: 'Upgrade your plan' }).click()
-  await expect(page.getByRole('heading', { name: 'Get an app', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Billing', level: 1 })).toBeVisible()
 
   // ── assert DB: il contatore quota è il consumo reale del mese, solo di questo tenant ──
   expect(

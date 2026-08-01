@@ -80,3 +80,27 @@ badge; avviso rosso tenue per l'app disabilitata; tabella pagamenti con importi 
 - **Decisioni**: change 0066; UC 0076 (punto aperto Billing che questo UC chiude); #09 (Paddle merchant of record).
 - **DoD**: Billing senza elementi di catalogo; storico pagamenti reale in locale (webhook stub); avviso
   disabilitazione; i18n 5 lingue; test verdi; punto aperto UC 0076 marcato risolto con rimando a questa change.
+
+## Punti aperti / decisioni differite
+
+Aperti dalla change `0077` (implementazione di questo use case).
+
+- **Lo storico pagamenti non è paginato né filtrabile.** La tabella mostra tutte le transazioni del
+  conto, dalla più recente. Per un conto giovane è la cosa giusta — vederle tutte è il punto — ma un
+  conto con anni di rinnovi su più app produrrà centinaia di righe in un colpo solo. Quando succederà
+  servirà una paginazione lato server (l'indice `(tenant_id, billed_at desc)` c'è già) e, probabilmente,
+  un filtro per app e per anno. Non anticipato qui perché sarebbe complessità senza un problema:
+  possiede il tema questo use case.
+- **Rimborsi e note di credito non sono modellati.** Lo storico distingue tre esiti — pagato, fallito,
+  contestato — perché sono i soli che il set di eventi sottoscritto (#09 D21) sa distinguere. Un
+  rimborso (`transaction.refunded` o simile) oggi non arriva affatto e quindi non compare: l'utente lo
+  vedrebbe solo nel portale del fornitore. Va deciso insieme all'allargamento del set di eventi, che
+  possiede **UC 0025** (pipeline webhook), e alla politica commerciale dei rimborsi.
+- **L'importo mostrato è quello che il fornitore ci ha comunicato.** In locale lo stub lo ricava dal
+  listino della fascia; in produzione arriverà dal payload reale di Paddle, il cui formato preciso è
+  materia dell'ambiente di prova del fornitore (livello 3, UC 0029). Se il campo reale avesse un nome o
+  un'unità diversi da quelli assunti qui (`amount` in unità minori, `currency`, `receipt_url`), la
+  mappatura andrà corretta in un punto solo — `PaddleWebhookEvent` — e il resto regge.
+- **Il read-model risolve nome dell'app e della fascia una riga alla volta.** Con decine di righe è
+  irrilevante; se la pagina crescerà (vedi la paginazione qui sopra) conviene una sola lettura con
+  l'unione, come già fatto per la vetrina nella change `0076`.

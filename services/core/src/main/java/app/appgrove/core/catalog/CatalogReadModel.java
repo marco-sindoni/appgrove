@@ -103,6 +103,14 @@ public class CatalogReadModel {
                     app.getStatus(), sub != null ? sub.getStatus() : null, sub != null ? sub.getCancelAt() : null,
                     accessGranted);
 
+            // Via all'acquisto per un'app freemium (UC 0096, punto aperto lasciato da UC 0095): l'app è
+            // usabile grazie alla sola fascia gratuita, quindi la card dice "attiva" — ma un piano a
+            // pagamento esiste e finora non c'era modo di comprarlo da nessuna parte, perché in Billing
+            // non c'è alcuna card di abbonamento su cui agire.
+            boolean upgradeAvailable = state == CatalogAppState.active
+                    && sub == null
+                    && startingPrices.containsKey(app.getId());
+
             AppDef def = definitions.get(app.getSlug());
             view.add(new CatalogAppView(
                     app.getSlug(),
@@ -113,7 +121,8 @@ public class CatalogReadModel {
                     planName(sub, freeTierName),
                     state == CatalogAppState.trial && sub != null ? sub.getTrialEnd() : null,
                     state == CatalogAppState.cancellation_scheduled && sub != null ? sub.getCancelAt() : null,
-                    startingPrices.get(app.getId())));
+                    startingPrices.get(app.getId()),
+                    upgradeAvailable));
         }
         view.sort(Comparator.comparing(CatalogAppView::name, String.CASE_INSENSITIVE_ORDER));
         return new CatalogView(view);

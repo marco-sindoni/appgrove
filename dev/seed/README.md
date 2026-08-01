@@ -70,6 +70,19 @@ YAML in `services/core/.../pricing/` per i valori.
 | Acme | Legacy | std | `active` | app `inactive` → esercita il gate "app abilitata" |
 | Bob | Teams | team | `canceled` | `cancel_at` valorizzato |
 
+## Storico pagamenti (`billing_transaction`, UC 0096)
+
+Stesso file `seed-subscriptions.sql`. Senza queste righe la sezione «Payments & receipts» della pagina Billing
+sarebbe vuota su ogni account locale e non sarebbe osservabile senza prima fare un acquisto. Sono coerenti con
+gli abbonamenti qui sopra.
+
+| Tenant | App | Esito | Importo | Ricevuta | Note |
+|---|---|---|---|---|---|
+| Acme | Teams | `paid` | €19,00 | sì | giugno 2024 |
+| Acme | Teams | `paid` | €19,00 | sì | maggio 2024 |
+| Acme | Notes | `failed` | €9,00 | **no** | è il motivo del `past_due`; esercita il caso «ricevuta non disponibile» |
+| Bob | Teams | `paid` | €19,00 | sì | pagato prima della disdetta: lo storico resta |
+
 ## Runbook
 
 ```bash

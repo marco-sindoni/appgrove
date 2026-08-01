@@ -89,6 +89,31 @@ describe('Pagina Catalogo app (UC 0095)', () => {
     expect(within(sei).getByText('Disabled by platform')).toBeInTheDocument()
   })
 
+  it('un’app freemium già in uso offre comunque la via al piano a pagamento (UC 0096)', async () => {
+    apps = [
+      card({ appSlug: 'crm', name: 'Mini-CRM', state: 'active', planName: 'Free', upgradeAvailable: true }),
+      card({ appSlug: 'notes', name: 'Notes', state: 'active', planName: 'Notes Pro' }),
+    ]
+    renderWithProviders(<AppCatalogPage />)
+    await screen.findByText('Mini-CRM')
+
+    // freemium senza abbonamento: "Apri" più la via all'acquisto, che prima non esisteva da nessuna parte
+    const crm = cardOf('Mini-CRM')
+    expect(within(crm).getByRole('button', { name: 'Open' })).toBeInTheDocument()
+    expect(within(crm).getByRole('button', { name: 'Upgrade plan' })).toBeEnabled()
+
+    // app con abbonamento: il cambio di piano vive in Billing, qui non si offre di ricomprarla
+    expect(within(cardOf('Notes')).queryByRole('button', { name: 'Upgrade plan' })).not.toBeInTheDocument()
+  })
+
+  it('la via al piano a pagamento è preclusa a chi non può comprare', async () => {
+    apps = [card({ appSlug: 'crm', name: 'Mini-CRM', state: 'active', upgradeAvailable: true })]
+    useAuthStore.getState().setSession({ accessToken: fakeAccessToken({ roles: ['member'] }) })
+    renderWithProviders(<AppCatalogPage />)
+    await screen.findByText('Mini-CRM')
+    expect(screen.getByRole('button', { name: 'Upgrade plan' })).toBeDisabled()
+  })
+
   it('un member vede prezzi e stati ma non può attivare, e legge il perché', async () => {
     useAuthStore.getState().setSession({ accessToken: fakeAccessToken({ roles: ['member'] }) })
     renderWithProviders(<AppCatalogPage />)

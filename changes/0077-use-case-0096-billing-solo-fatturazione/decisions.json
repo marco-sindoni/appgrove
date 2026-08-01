@@ -1,0 +1,208 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata all'invocazione dalla skill go-fast. Nessun gate di workflow (né revisione requisiti né consenso al commit); restano obbligatori la suite completa `./run-tests.sh` verde prima del commit, il registro decisioni integrale e la checklist di verifica manuale how-to-test.md. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0096 (Billing solo-fatturazione: abbonamenti + storico pagamenti/ricevute), epica evo 21-catalogo-app-backoffice, da cui la forma del branch 0077-use-case-0096-billing-solo-fatturazione. Il numero 0077 è il progressivo derivato dalla cartella changes/ (ultima presente: 0076).",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo stato di implementazione delle storie evo vive nell'ultima colonna di questa tabella (non in _INDEX.md, che copre le storie base): 0096 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Fonte tecnica dello storico pagamenti: PERSISTENZA delle transazioni alimentata dalla pipeline webhook (UC 0025), non lettura on-demand dal fornitore. Tre ragioni concrete: (a) il requisito di completezza chiede TUTTE le transazioni del conto, anche le fallite, e la pipeline le riceve già tutte; (b) la lettura on-demand richiederebbe un `paddle_customer_id` che è nullo finché non si è comprato qualcosa, e metterebbe una chiamata di rete verso l'esterno dentro il percorso di rendering di una pagina — un fornitore lento renderebbe lenta la pagina; (c) la pipeline è già idempotente, ordinata e collaudata: aggiungere una scrittura dentro la stessa transazione costa poco e non introduce un secondo modo di sbagliare. Contropartita accettata: lo storico riflette ciò che il webhook ci ha raccontato, quindi un evento perso è un buco — ma un evento perso è già oggi un abbonamento sbagliato, quindi non è un rischio nuovo.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V14__billing_transaction.sql",
+        "description": "Nuova tabella tenant-scoped platform.billing_transaction, unicità sul riferimento della transazione del fornitore."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionWriter.java",
+        "description": "La transazione si scrive NELLA STESSA transazione di database in cui l'evento si applica all'abbonamento: o entrambe o nessuna."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Contratto: nuova lettura `GET /api/platform/v1/me/payments`, senza alcun parametro (il conto viene solo dal token verificato), ristretta ai ruoli `owner` e `admin`. Motivo del gate: UC 0096 §2 assegna esplicitamente pagamenti e ricevute a owner/admin e lascia al member il solo accesso alla pagina; gli importi pagati dal workspace non sono informazione di cui un member abbia bisogno. La sezione non compare affatto per un member — meglio nasconderla che mostrarla rotta.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/PaymentsResource.java",
+        "description": "@RolesAllowed({owner, admin}); nessun parametro di conto."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Sorte del flusso di acquisto in Billing: la griglia delle app acquistabili (costruita dai moduli impacchettati nel frontend) viene RIMOSSA insieme al titolo \"Get an app\", ma il componente di checkout resta montato in Billing per il solo caso della RIATTIVAZIONE di un abbonamento scaduto. Motivo: riattivare non è scoprire — è un'azione self-service di UC 0028 che parte da una card di abbonamento già presente in pagina, e mandarla nel catalogo costringerebbe l'utente a cercare l'app che sta già guardando.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/Billing.tsx",
+        "description": "Via AppPicker e i suoi testi; restano il pannello abbonamenti, il nuovo pannello pagamenti e il checkout per la sola riattivazione."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Punto aperto ereditato da UC 0095 (nessuna via all'acquisto dalla vetrina per un'app freemium): RISOLTO qui, come UC 0095 chiedeva. La vetrina dichiara un campo nuovo `upgradeAvailable`, vero quando la card è `active` SENZA abbonamento (accesso dalla fascia gratuita di baseline) e l'app ha almeno un prezzo vivo: in quel caso la card offre, accanto ad \"Apri\", un'azione secondaria che apre lo stesso flusso di acquisto già ospitato dal catalogo. Scartata l'alternativa di rimandare a Billing: per un'app freemium senza abbonamento in Billing non c'è nulla da cambiare — non esiste una card di abbonamento — quindi il rimando sarebbe finito nel vuoto. Per un'app `active` CON abbonamento il campo resta falso: lì il cambio di piano vive in Billing e c'è davvero.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogReadModel.java",
+        "description": "upgradeAvailable derivato da (nessun abbonamento) ∧ (esiste un prezzo di partenza): entrambe le informazioni erano già calcolate, nessuna lettura in più."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/catalog/AppCatalogPage.tsx",
+        "description": "Azione secondaria di passaggio a un piano a pagamento sulla card active freemium, riservata a chi può comprare (owner)."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il simulatore locale del fornitore porta i dati economici veri: gli eventi `transaction.*` includono importo, valuta, ciclo, riferimento della transazione e collegamento alla ricevuta, risolti dal listino della fascia in gioco; e il percorso felice di attivazione emette, dopo l'attivazione, anche un `transaction.completed`. Senza questo lo storico in locale sarebbe sempre vuoto e la pagina non sarebbe verificabile a mano né collaudabile da un percorso end-to-end reale. Il calcolo dell'importo dal listino sta nello stub (dev/test) e non nel consumer: in produzione l'importo è un dato che arriva dal fornitore, e il backend non deve mai inventarlo.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/StubScenarioEmitter.java",
+        "description": "Dati economici negli eventi di transazione e pagamento riuscito nel percorso felice."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Diritti dell'interessato: la nuova tabella entra sia nell'ESPORTAZIONE dei dati del conto sia nella CANCELLAZIONE fisica alla chiusura del conto. La cancellazione non è opinabile (una tabella tenant-scoped che sopravvive alla purga è un difetto); l'esportazione è una scelta: uno storico di pagamenti è esattamente ciò che una persona si aspetta di ritrovare in una richiesta di accesso, e la tabella ha un filtro per conto pulito. Nessuna annotazione di dato personale e nessuna voce di manifesto: coerente con `subscription`, sono dati commerciali riferiti al conto senza identificatori diretti — l'unico identificatore verso il fornitore (`accounts.paddle_customer_id`) è già classificato a manifesto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "billing_transaction esportata e cancellata (prima di subscription, per l'ordine delle chiavi esterne)."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): si copre ORA. Nasce il percorso di livello 2 `L2-BILLING` (pagina senza elementi di vetrina, storico con pagamento fallito e riga senza ricevuta, stato vuoto con rimando al catalogo, guasto della sola sezione pagamenti, card di app sospesa dalla piattaforma) e si estende il percorso di piattaforma `J-BUY` perché, dopo l'acquisto vero, la transazione compaia davvero nello storico di Billing. UC 0096 esce dalle esenzioni `non-implementato` ed entra fra gli use case con superficie."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) L'avviso «app sospesa dalla piattaforma» sulla card di abbonamento NON viene riscritto: esiste già dalla change 0071 (badge «Sospesa» + spiegazione «abbonamento valido, dati intatti»), quindi il punto aperto di UC 0076 che UC 0096 doveva chiudere è già chiuso. Si aggiunge solo l'azione «Contatta l'assistenza» prevista dal riferimento visivo approvato, che dà una via d'uscita a chi legge l'avviso. Deliberatamente NON si scrive che l'abbonamento «non viene addebitato durante la sospensione», come suggerirebbe il mockup: UC 0076 lascia esplicitamente fuori la gestione commerciale, quindi sarebbe una promessa che il prodotto non mantiene. La domanda — se una sospensione di piattaforma debba sospendere l'addebito — è di prodotto e prezzo, non dell'agente: tracciata nei punti aperti di UC 0076."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La transazione si scrive nella STESSA transazione di database in cui l'evento si applica all'abbonamento, dentro SubscriptionWriter, e non in un consumatore separato: o si registrano entrambi o nessuno dei due. Uno storico e uno stato di abbonamento che si contraddicono sarebbero peggio di un dato mancante, e il dedup della pipeline (una riga per event_id) copre già l'idempotenza dell'insieme. La riga porta inoltre la stessa guardia out-of-order della subscription: un evento vecchio consegnato dopo uno nuovo non riporta a «fallito» un pagamento poi riuscito.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionWriter.java",
+        "description": "recordTransaction(): upsert su paddle_transaction_id con guardia su last_event_occurred_at."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il ciclo di fatturazione della transazione è persistito e trattato come TESTO, non come enum, e l'esito è un enum di soli tre valori (pagato/fallito/contestato) — quelli che il set di eventi sottoscritto sa davvero distinguere. Motivo del testo: qui il ciclo è un'etichetta da mostrare, e una riga storica con un valore fuori catalogo non deve poter spegnere l'intera pagina (è la lezione già pagata dalla vetrina, change 0076 decisione 22). Il frontend traduce i cicli che conosce e mostra gli altri così come sono.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/BillingTransactionStatus.java",
+        "description": "Tre esiti soltanto: non si promette una precisione che gli eventi non danno."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Un evento di transazione privo di importo o valuta NON produce alcuna riga di storico, invece di essere completato d'ufficio con valori di ripiego. In una pagina di fatturazione un importo inventato dal backend è un dato falso, e il costo dell'alternativa (una riga in meno) è incomparabilmente più basso. Provato da un test dedicato."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Conseguenza sul journey di piattaforma J-BUY: la seconda via all'acquisto che il journey esercitava — la griglia d'acquisto della pagina Billing — non esiste più, quindi il Mini-CRM viene ora comprato dalla VETRINA con la nuova azione «Passa a un piano superiore». È un miglioramento, non un ripiego: il journey prova esattamente il buco che questa storia chiude (un'app freemium senza via all'acquisto) e continua a provare che il modulo comprato si monta davvero. In coda il journey apre Billing e verifica che il pagamento appena fatto compaia nello storico con la sua ricevuta, più l'assert sul database delle due transazioni registrate.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-BUY.spec.ts",
+        "description": "Acquisto del Mini-CRM dalla vetrina via upgrade; nuovo passo su Billing e assert sulle transazioni."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Gate privacy (UC 0031): lo scanner ha segnalato la nuova migrazione e i campi della nuova entità. Classificazione decisa e registrata a manifesto — categoria ORDINARIA, nessun dato dell'art. 9, nessun nuovo responsabile esterno del trattamento (Paddle è già nel registro come titolare autonomo), nessun nuovo host o dipendenza. Tre voci nuove: `billing_transactions.paddle_transaction_id` (identificativo online presso il fornitore), `billing_transactions.amount` (dati di fatturazione: importo e valuta — NON dati di pagamento in senso stretto: nessun dato di carta transita o è conservato da appgrove) e `billing_transactions.receipt_url` (collegamento al documento ospitato dal fornitore). Finalità: mostrare al titolare del conto quanto e quando ha pagato ed aprirne la ricevuta. Base giuridica: contratto (art. 6.1.b). Conservazione: account attivo + 14 giorni di grazia; la conservazione fiscale resta in capo a Paddle. Classificazione del cambio: MINOR — nessuna nuova finalità, base giuridica, categoria di dati o conservazione: notizia agli interessati, non ri-accettazione. Manifesto aggiornato nelle due lingue, registro dei trattamenti rigenerato, campi annotati `@PersonalData` (il controllo bloccante li incrocia in `mvn test`).",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "Tre voci nuove per platform.billing_transaction, in italiano e inglese."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/BillingTransaction.java",
+        "description": "@PersonalData su paddleTransactionId, amount e receiptUrl."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Scelta deliberata di classificare a manifesto invece di seguire il precedente di `subscription`, che NON è annotata. Ragionamento: il precedente più vicino è `accounts.paddle_customer_id`, che È classificato come pseudo-identificatore presso lo stesso fornitore — e una riga di pagamento con importo e ricevuta dice, di una persona fisica titolare di un conto B2C, più di quanto dica un abbonamento. Meglio classificare in eccesso che dover spiegare un'omissione. L'asimmetria che ne risulta — gli abbonamenti restano fuori sia dal manifesto sia dall'esportazione, le transazioni ora sono in entrambi — non è stata sanata qui (sarebbe stato allargare il contratto di esportazione a un'entità che questa change non introduce) ed è tracciata in docs/_BACKLOG.md, con il tema assegnato a UC 0033/0032.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Nuova voce sull'asimmetria fra abbonamenti e transazioni nell'esportazione dei dati."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Decisioni differite tracciate. Nei punti aperti di UC 0096: assenza di paginazione e filtri sullo storico (il tetto arriverà con gli anni di rinnovi; l'indice per conto e data c'è già), rimborsi e note di credito non modellati (dipendono dall'allargamento del set di eventi, che possiede UC 0025), formato reale del payload di transazione del fornitore da confermare nell'ambiente di prova (UC 0029), risoluzione dei nomi app/fascia riga per riga da unire in una sola lettura se la pagina crescerà. Nei punti aperti di UC 0076: se una sospensione di piattaforma debba sospendere o rimborsare l'addebito — domanda di prodotto e prezzo, non dell'agente."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Il testo dell'avviso di sospensione NON dice «l'abbonamento non viene addebitato», come farebbe il mockup della change 0066: nulla nel prodotto sospende l'addebito presso il fornitore, quindi sarebbe una promessa non mantenuta. Resta il testo onesto già in produzione dalla change 0071 (abbonamento valido, dati intatti) più la nuova azione «Contatta il supporto», che dà una via d'uscita a chi ha bisogno di sapere di più."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Correzione della decisione 8 (le voci non si riscrivono: vale questa). La decisione 8 diceva «nessuna annotazione di dato personale e nessuna voce di manifesto», per coerenza con `subscription`. È stata cambiata dopo aver eseguito il gate privacy: vedi le decisioni 15 e 16. La parte della decisione 8 che resta valida è l'inserimento della tabella nell'esportazione e nella cancellazione fisica."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Guasto trovato dalla suite COMPLETA e non dai test mirati: aggiungendo il pagamento al percorso felice, uno scenario dello stub è passato da due a tre eventi, e due scenari lanciati nello stesso secondo — cosa normale in un test — facevano scartare come «vecchio» il secondo, per la guardia out-of-order del consumer (SubscriptionSelfServiceTest: un abbonamento restava `active` invece di diventare `canceled`). Correzione alla radice invece che sul sintomo: il simulatore tiene ora un proprio orologio MONOTÒNO — ogni scenario parte dopo l'ultimo evento emesso — che è lo stesso accorgimento già applicato alle mutazioni self-service, esteso a tutti gli scenari. Il tempo compresso dello stub non può contraddire la regola di ordinamento che il consumer applica sul serio.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/StubScenarioEmitter.java",
+        "description": "nextBase()/remember(): l'istante di partenza di uno scenario è sempre successivo all'ultimo evento emesso."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Ricadute della rimozione della griglia d'acquisto da Billing su tre percorsi esistenti, tutte adeguate nella stessa change: (a) il percorso di livello 2 L2-CHECKOUT partiva da Billing e ora parte dalla VETRINA, che è dove l'acquisto vive (UC 0095); (b) i journey di piattaforma J-QUOTA e J-MEMBERS asserivano l'intestazione «Get an app» dopo aver premuto l'invito all'upgrade: l'invito continua a portare a /billing — che è dove vivono i cambi di piano — e l'asserzione diventa «Billing». Nessun invito è stato ripuntato: cambiare la destinazione di quelle chiamate all'azione sarebbe stato un cambiamento di prodotto non richiesto dai requisiti."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Varco di parità dello scaffolding (UC 0046): la change tocca un percorso-sorgente dei modelli (tools/platform-e2e/journeys/J-QUOTA.spec.ts). Scelta la via 2 — registrare la motivazione: il tocco è il solo adeguamento di un testo dell'interfaccia di piattaforma, e il modello del journey è scritto apposta per NON dipendere dai testi (asserisce l'identificativo di prova del modulo, il ruolo del banner, il codice del record). Il controllo di contenuto della coppia sono i moduli importati, che non cambiano: non c'è nulla da portare nel modello. Deroga scritta in docs/_PARITA-SCAFFOLD.md; collaudo di parità verde.",
+    "files": [
+      {
+        "file": "docs/_PARITA-SCAFFOLD.md",
+        "description": "Nuova riga di deviazione consapevole per J-QUOTA.spec.ts."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Promemoria landing stale (UC 0057): NON scatta. La change non tocca né `services/<app>/` (solo `core`), né i moduli frontend delle app, né alcun listino `pricing/<app>.yaml`: la storia che le landing pubblicate raccontano non è cambiata. Nessuna ri-esecuzione di finalize-landing richiesta."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Esito della suite COMPLETA `./run-tests.sh` (backend, frontend, infra, compliance, tooling, smoke, platform, site): VERDE. Due guasti trovati e corretti lungo la strada, entrambi conseguenza reale della change e non aggiustamenti di comodo: l'orologio non monotòno del simulatore (decisione 20) e il conteggio degli step di esportazione GDPR, salito da 6 a 7 con l'aggiunta dello storico pagamenti — il test è stato aggiornato al numero vero, non alleggerito."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Il seed locale acquisisce quattro transazioni deterministiche, coerenti con gli abbonamenti che già contiene: senza, la sezione «Payments & receipts» sarebbe vuota su ogni account locale e la pagina non sarebbe osservabile senza prima fare un acquisto. Le righe sono scelte per esercitare a occhio i casi che contano: due pagamenti riusciti con ricevuta (Acme→Teams), uno FALLITO e SENZA ricevuta (Acme→Notes — è anche il motivo per cui quell'abbonamento è `past_due`, quindi il seed diventa più coerente di prima) e un pagamento di un abbonamento poi disdetto (Bob→Teams), che dimostra che lo storico sopravvive alla disdetta. Restano fuori dal seed le transazioni prodotte dallo stub durante un acquisto vero: quelle nascono dalla pipeline, ed è giusto che il collaudo end-to-end le crei da sé.",
+    "files": [
+      {
+        "file": "dev/seed/seed-subscriptions.sql",
+        "description": "Blocco billing_transaction idempotente e deterministico, accanto alle subscription da cui dipende."
+      },
+      {
+        "file": "dev/seed/README.md",
+        "description": "Tabella dello storico pagamenti del seed, con il perché di ogni riga."
+      }
+    ]
+  }
+]

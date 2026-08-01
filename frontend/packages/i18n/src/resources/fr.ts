@@ -32,6 +32,7 @@ export const fr: Resources = {
     next: 'Suivant',
     pageOf: 'Page {{page}} sur {{pages}}',
     open: 'Ouvrir',
+    upgrade: 'Passer à une formule supérieure',
     fixPayment: 'Régler le paiement',
     undoCancellation: 'Annuler la résiliation',
     contactSupport: 'Contacter l’assistance',
@@ -332,12 +333,13 @@ export const fr: Resources = {
     invalidCode: 'Code invalide.',
     generic: 'Une erreur est survenue. Veuillez réessayer.',
   },
+  // Pagina Billing — solo fatturazione (UC 0096): abbonamenti + storico pagamenti.
+  billing: {
+    title: 'Facturation',
+    subtitle: 'Gérez vos formules, vos paiements et vos reçus.',
+  },
   // Tunnel d’achat d’application (UC 0024) — back-office.
   checkout: {
-    title: 'Obtenir une application',
-    subtitle: 'Choisissez une application et une formule pour vous abonner.',
-    chooseApp: 'Choisir une application',
-    noApps: 'Aucune application disponible à l’achat.',
     monthly: 'Mensuel',
     annual: 'Annuel',
     save2Months: '2 mois offerts',
@@ -391,6 +393,33 @@ export const fr: Resources = {
     appDisabledTitle: 'Application suspendue par la plateforme',
     appDisabledBody: 'Cette application est temporairement indisponible pour tous les comptes. Votre abonnement reste valable et vos données sont intactes : elle redeviendra accessible dès la levée de la suspension.',
     blockedTitle: 'Passage à une formule inférieure impossible',
+    emptyCta: 'Parcourir le catalogue d’applications',
+    contactSupport: 'Contacter l’assistance',
+  },
+  // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
+  payments: {
+    title: 'Paiements et reçus',
+    subtitle: 'Traités par Paddle, notre vendeur officiel. Les reçus s’ouvrent sur Paddle.',
+    empty: 'Aucun paiement pour l’instant.',
+    error: 'Impossible de charger l’historique des paiements.',
+    restricted: 'Seuls les propriétaires et les administrateurs voient les paiements et les reçus.',
+    colDate: 'Date',
+    colApp: 'Application',
+    colDescription: 'Description',
+    colAmount: 'Montant',
+    colStatus: 'Statut',
+    colReceipt: 'Reçu',
+    receipt: 'Reçu',
+    receiptPending: 'Pas encore disponible',
+    status: {
+      paid: 'Payé',
+      failed: 'Échoué',
+      disputed: 'Contesté',
+    },
+    cycle: {
+      monthly: 'mensuel',
+      annual: 'annuel',
+    },
   },
   // Bannières d’application des règles (UC 0028 clôt le point ouvert d’UC 0027) : 402/429.
   enforcement: {

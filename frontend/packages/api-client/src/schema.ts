@@ -1950,6 +1950,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payments */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaymentsView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/portal-session": {
         parameters: {
             query?: never;
@@ -3102,6 +3152,8 @@ export interface components {
             currentPeriodEnd?: string;
         };
         /** @enum {string} */
+        BillingTransactionStatus: "paid" | "failed" | "disputed";
+        /** @enum {string} */
         CatalogAppState: "available" | "active" | "trial" | "payment_pending" | "cancellation_scheduled" | "disabled_by_platform";
         CatalogAppView: {
             appSlug?: string;
@@ -3115,6 +3167,7 @@ export interface components {
             trialEndsAt?: components["schemas"]["Instant"];
             cancelAt?: components["schemas"]["Instant"];
             startingPrice?: components["schemas"]["StartingPrice"];
+            upgradeAvailable?: boolean;
         };
         CatalogView: {
             apps?: components["schemas"]["CatalogAppView"][];
@@ -3273,6 +3326,21 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+        };
+        PaymentView: {
+            billedAt?: components["schemas"]["Instant"];
+            appSlug?: string;
+            appName?: string;
+            planName?: string;
+            billingCycle?: string;
+            /** Format: int32 */
+            amount?: number;
+            currency?: string;
+            status?: components["schemas"]["BillingTransactionStatus"];
+            receiptUrl?: string;
+        };
+        PaymentsView: {
+            payments?: components["schemas"]["PaymentView"][];
         };
         PortalSessionView: {
             url?: string;

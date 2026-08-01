@@ -681,3 +681,25 @@ da tollerare.
 dominio sulla colonna `platform.app_price.billing_cycle` — invece che soltanto tollerato in lettura. Oggi
 nulla impedisce a un'integrazione di scriverne uno. Chi lo possiede: **UC 0022** (pricing-as-code) insieme a
 UC 0027.
+
+## Esportazione dei dati: gli abbonamenti restano fuori, le transazioni ora ci sono (change `0077`, 2026-08-01)
+
+**Contesto.** La change `0077` (UC 0096) ha introdotto lo storico pagamenti come tabella tenant-scoped e
+l'ha inserita sia nella **cancellazione fisica** dei dati del conto sia nell'**esportazione** dei dati
+dell'interessato (`PlatformDataContract`): uno storico di pagamenti è ciò che una persona si aspetta di
+ritrovare quando chiede «che cosa avete su di me».
+
+**Il punto aperto.** La tabella `platform.subscription` — che pure è tenant-scoped e racconta quali app
+il conto ha attivato, con quali piani e per quanto tempo — **non compare nell'esportazione** e non è mai
+stata inserita. Viene cancellata alla purga, ma non restituita all'interessato. Ora che accanto ad essa
+c'è una tabella esportata, l'asimmetria è visibile e va sciolta in un verso o nell'altro:
+
+- **o si esporta anche l'abbonamento** (posizione prudente: è un dato riferito al conto, come le
+  transazioni, e completa la storia commerciale che l'esportazione racconta);
+- **o si scrive perché non va esportato** (posizione difendibile solo se si sostiene che sia un dato
+  contrattuale e non personale — argomento più debole ora che i pagamenti sono dentro).
+
+**Chi possiede il tema**: UC 0033 (self-service GDPR) insieme a UC 0032 (esportazione), col conforto
+della revisione legale (`docs/_REVISIONE-LEGALE.md`). Non è stato deciso nella change 0077 perché
+allargare il contratto di esportazione a un'entità che quella change non introduce sarebbe stato uscire
+dal suo scope scritto.

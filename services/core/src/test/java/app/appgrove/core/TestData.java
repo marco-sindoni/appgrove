@@ -85,6 +85,16 @@ public class TestData {
                 OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Riga di storico pagamenti {@code (tenant, app)} — per i test GDPR e di fatturazione (UC 0096). */
+    public void billingTransaction(String tenantId, UUID appId, String paddleTransactionId, int amount) {
+        exec("insert into platform.billing_transaction"
+                        + "(id,tenant_id,app_id,paddle_transaction_id,status,amount,currency,billed_at,"
+                        + "created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?,?,?) on conflict (paddle_transaction_id) do nothing",
+                UUID.randomUUID(), tenantId, appId, paddleTransactionId, "paid", amount, "EUR",
+                OffsetDateTime.now(), OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
     /** Crea una subscription {@code (tenant, app)} nello stato dato — per i test GDPR (UC 0032). */
     public void subscription(String tenantId, UUID appId, String status) {
         exec("insert into platform.subscription(id,tenant_id,app_id,status,created_at,updated_at)"

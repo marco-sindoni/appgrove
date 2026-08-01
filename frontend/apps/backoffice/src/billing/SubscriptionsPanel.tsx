@@ -49,11 +49,7 @@ export function SubscriptionsPanel({ onReactivate }: { onReactivate: (appSlug: s
           {t('states.error')}
         </p>
       )}
-      {query.data && query.data.subscriptions?.length === 0 && (
-        <Card>
-          <CardContent className="text-fg-muted">{t('subscriptions.empty')}</CardContent>
-        </Card>
-      )}
+      {query.data && query.data.subscriptions?.length === 0 && <EmptyState />}
 
       <div className="grid gap-4">
         {query.data?.subscriptions?.map((sub) => (
@@ -61,6 +57,25 @@ export function SubscriptionsPanel({ onReactivate }: { onReactivate: (appSlug: s
         ))}
       </div>
     </section>
+  )
+}
+
+/**
+ * Nessun abbonamento: si dice dove si trovano le app, non si mostra una griglia d'acquisto (UC 0096).
+ * Scoprire le app e pagarle sono due cose diverse, e la prima ha finalmente una pagina propria.
+ */
+function EmptyState() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  return (
+    <Card>
+      <CardContent className="space-y-3">
+        <p className="text-fg-muted">{t('subscriptions.empty')}</p>
+        <Button size="sm" onClick={() => navigate('/catalog')}>
+          {t('subscriptions.emptyCta')}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -183,6 +198,17 @@ function SubscriptionCard({
               }
             >
               {t('subscriptions.manage')}
+            </Button>
+          )}
+          {/*
+            App sospesa dalla piattaforma: l'avviso spiega cosa sta succedendo, questo pulsante dà una
+            via d'uscita a chi vuole sapere quando tornerà disponibile o come stanno le cose per il suo
+            addebito — domanda commerciale che UC 0076 lascia fuori dal prodotto, e che quindi non
+            possiamo rispondere in una card senza promettere qualcosa che non manteniamo.
+          */}
+          {sub.appDisabled && (
+            <Button size="sm" variant="secondary" onClick={() => navigate('/support')}>
+              {t('subscriptions.contactSupport')}
             </Button>
           )}
           {sub.phase === 'ENDED' && (

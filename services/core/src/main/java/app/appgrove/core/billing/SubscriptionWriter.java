@@ -86,6 +86,36 @@ public class SubscriptionWriter {
                or platform.subscription.last_event_occurred_at <= excluded.last_event_occurred_at
             """;
 
+    /**
+     * Storico pagamenti (UC 0096): una riga per transazione del fornitore, idempotente sul suo riferimento
+     * e con la <b>stessa</b> guardia out-of-order dell'abbonamento — un evento più vecchio non riscrive un
+     * esito più recente (un pagamento riuscito dopo un tentativo fallito non deve tornare "fallito" se i
+     * due eventi arrivano nell'ordine sbagliato).
+     */
+    private static final String UPSERT_TRANSACTION =
+            """
+            insert into platform.billing_transaction
+              (id, tenant_id, app_id, app_tier_id, paddle_transaction_id, status,
+               amount, currency, billing_cycle, receipt_url, billed_at, last_event_occurred_at,
+               created_at, updated_at, created_by, updated_by)
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
+            on conflict (paddle_transaction_id)
+            do update set
+              app_id                 = excluded.app_id,
+              app_tier_id            = excluded.app_tier_id,
+              status                 = excluded.status,
+              amount                 = excluded.amount,
+              currency               = excluded.currency,
+              billing_cycle          = excluded.billing_cycle,
+              receipt_url            = excluded.receipt_url,
+              billed_at              = excluded.billed_at,
+              last_event_occurred_at = excluded.last_event_occurred_at,
+              updated_at             = now(),
+              updated_by             = 'system'
+            where platform.billing_transaction.last_event_occurred_at is null
+               or platform.billing_transaction.last_event_occurred_at <= excluded.last_event_occurred_at
+            """;
+
     private static final String UPDATE_CUSTOMER =
             "update platform.accounts set paddle_customer_id = ?, updated_at = now(), updated_by = 'system'"
                     + " where id = ?";
@@ -155,12 +185,45 @@ public class SubscriptionWriter {
             updateCustomer(c, event);
             return Outcome.PROCESSED;
         }
+        // Storico pagamenti (UC 0096): indipendente dall'effetto sull'abbonamento, e nella STESSA
+        // transazione — o si registrano entrambi o nessuno dei due, altrimenti uno storico e uno stato
+        // che si contraddicono sarebbero peggio di un dato mancante.
+        recordTransaction(c, event);
+
         SubscriptionStatus target = WebhookEventMapping.targetStatus(event);
         if (target == null) {
             // evento non sottoscritto/senza effetto su subscription → no-op registrato (meno rumore, #09 D21)
             return Outcome.PROCESSED;
         }
         return upsertSubscription(c, event, target) ? Outcome.PROCESSED : Outcome.SKIPPED_STALE;
+    }
+
+    /**
+     * Registra la transazione nello storico, se l'evento ne porta una con i dati economici. Un evento di
+     * transazione privo di importo o valuta viene ignorato invece di essere completato d'ufficio: un
+     * importo inventato dal backend sarebbe un dato falso in una pagina di fatturazione.
+     */
+    private void recordTransaction(Connection c, PaddleWebhookEvent event) throws SQLException {
+        BillingTransactionStatus status = event.transactionStatus();
+        PaddleWebhookEvent.TransactionData tx = event.transaction();
+        if (status == null || tx == null || tx.currency() == null) {
+            return;
+        }
+        try (PreparedStatement ps = c.prepareStatement(UPSERT_TRANSACTION)) {
+            ps.setObject(1, UUID.randomUUID());
+            ps.setObject(2, event.tenantId());
+            setNullable(ps, 3, event.appId());
+            setNullable(ps, 4, event.appTierId());
+            ps.setString(5, tx.paddleTransactionId());
+            ps.setString(6, status.name());
+            ps.setInt(7, tx.amount());
+            ps.setString(8, tx.currency());
+            setNullable(ps, 9, tx.billingCycle());
+            setNullable(ps, 10, tx.receiptUrl());
+            setTimestamp(ps, 11, tx.billedAt());
+            setTimestamp(ps, 12, event.occurredAt());
+            ps.executeUpdate();
+        }
     }
 
     /** Upsert idempotente con guardia out-of-order; true se ha applicato, false se stale. */

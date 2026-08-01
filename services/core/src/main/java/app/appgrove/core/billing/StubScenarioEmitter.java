@@ -2,8 +2,13 @@ package app.appgrove.core.billing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -33,6 +38,12 @@ public class StubScenarioEmitter {
     @Inject
     ObjectMapper mapper;
 
+    @Inject
+    AgroalDataSource ds;
+
+    /** Istante dell'evento più avanti emesso finora: tiene monotòno il tempo compresso dello stub. */
+    private Instant lastEmittedAt;
+
     /** Evento emesso, per la risposta dell'endpoint dev. */
     public record EmittedEvent(String eventType, String status) {}
 
@@ -43,7 +54,7 @@ public class StubScenarioEmitter {
     public List<EmittedEvent> emit(
             LifecycleScenario scenario, String tenantId, UUID appId, UUID appTierId, UUID targetTierId) {
         String paddleSubId = "sub_" + UUID.randomUUID().toString().replace("-", "").substring(0, 24);
-        Instant base = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        Instant base = nextBase();
         List<EmittedEvent> out = new ArrayList<>();
         switch (scenario) {
             case happy_path -> {
@@ -51,6 +62,11 @@ public class StubScenarioEmitter {
                         paddleSubId, base, base, base.plus(14, ChronoUnit.DAYS), null, base.plus(14, ChronoUnit.DAYS)));
                 out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
                         paddleSubId, base.plusSeconds(1), base, base.plus(365, ChronoUnit.DAYS), null, null));
+                // Il pagamento che ha attivato l'abbonamento (UC 0096): senza di lui lo storico dei
+                // pagamenti resterebbe vuoto anche dopo un acquisto, e la pagina Billing non sarebbe
+                // verificabile in locale. Stesso periodo dell'attivazione: non muove nulla, racconta.
+                out.add(send("transaction.completed", SubscriptionStatus.active, tenantId, appId, appTierId,
+                        paddleSubId, base.plusSeconds(2), base, base.plus(365, ChronoUnit.DAYS), null, null));
             }
             case past_due -> {
                 out.add(send("subscription.activated", SubscriptionStatus.active, tenantId, appId, appTierId,
@@ -137,6 +153,28 @@ public class StubScenarioEmitter {
                 scheduledTierId, scheduledChangeAt);
     }
 
+    /**
+     * Istante di partenza del prossimo scenario, <b>monotòno</b> rispetto a tutto ciò che questo
+     * simulatore ha già emesso.
+     *
+     * <p>Serve perché il tempo dello stub è compresso: due scenari lanciati nello stesso secondo — cosa
+     * normalissima in un test — partirebbero dallo stesso {@code occurred_at}, e la guardia out-of-order
+     * del consumer (UC 0025) scarterebbe come "vecchio" il secondo, che invece è il più recente. È lo
+     * stesso accorgimento già applicato alle mutazioni self-service, esteso agli scenari perché uno di
+     * essi ora dura tre eventi (il pagamento del percorso felice, UC 0096) invece di due.
+     */
+    private synchronized Instant nextBase() {
+        Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+        return lastEmittedAt == null || now.isAfter(lastEmittedAt) ? now : lastEmittedAt.plusSeconds(1);
+    }
+
+    /** Ricorda l'istante più avanti fra quelli emessi, per la monotonia di {@link #nextBase()}. */
+    private synchronized void remember(Instant occurredAt) {
+        if (occurredAt != null && (lastEmittedAt == null || occurredAt.isAfter(lastEmittedAt))) {
+            lastEmittedAt = occurredAt;
+        }
+    }
+
     private EmittedEvent send(
             String eventType, SubscriptionStatus status, String tenantId, UUID appId, UUID appTierId,
             String paddleSubId, Instant occurredAt, Instant periodStart, Instant periodEnd,
@@ -152,6 +190,7 @@ public class StubScenarioEmitter {
         String body = build(eventType, status, tenantId, appId, appTierId, paddleSubId, occurredAt,
                 periodStart, periodEnd, cancelAt, trialEnd, scheduledTierId, scheduledChangeAt);
         ingest.ingest(body, signature.sign(body));
+        remember(occurredAt);
         return new EmittedEvent(eventType, status.name());
     }
 
@@ -210,10 +249,68 @@ public class StubScenarioEmitter {
         if (scheduledTierId != null) {
             custom.put("scheduled_tier_id", scheduledTierId.toString());
         }
+        if (eventType != null && eventType.startsWith("transaction.")) {
+            putTransaction(data, appTierId, occurredAt);
+        }
         try {
             return mapper.writeValueAsString(root);
         } catch (Exception e) {
             throw new IllegalStateException("Serializzazione webhook fallita", e);
+        }
+    }
+
+    /**
+     * Dati economici di una transazione (UC 0096), che nel mondo vero arrivano dal fornitore: qui li
+     * ricaviamo dal <b>listino</b> della fascia in gioco, così che lo storico locale contenga gli importi
+     * veri dell'app e non numeri inventati. Senza questi campi la pagina "Payments &amp; receipts"
+     * resterebbe per sempre vuota in locale e non sarebbe verificabile né a mano né da un percorso
+     * end-to-end.
+     *
+     * <p>Sta nello stub — cioè in dev/test — e non nel consumer: in produzione l'importo effettivamente
+     * pagato lo sa solo chi ha incassato, e un backend che se lo calcolasse da sé scriverebbe un dato
+     * falso nella pagina di fatturazione.
+     *
+     * <p>Il prezzo si legge in SQL nativo, non come entità: il ciclo di fatturazione qui è un'etichetta
+     * da riportare, e una riga di listino con un valore fuori catalogo non deve far fallire l'emissione
+     * (stessa ragione della vetrina, change 0076).
+     */
+    private void putTransaction(ObjectNode data, UUID appTierId, Instant occurredAt) {
+        data.put(
+                "paddle_transaction_id",
+                "txn_" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+        data.put("billed_at", occurredAt.toString());
+        // La ricevuta del fornitore: URL plausibile, mai raggiunto dai test (nessuna chiamata in uscita).
+        data.put("receipt_url", "https://sandbox-my.paddle.com/receipts/" + UUID.randomUUID());
+        int amount = 0;
+        String currency = "EUR";
+        String cycle = null;
+        if (appTierId != null) {
+            String sql =
+                    """
+                    select p.amount, p.currency, p.billing_cycle
+                      from platform.app_price p
+                     where p.app_tier_id = ? and p.deleted_at is null
+                     order by case when p.billing_cycle = 'monthly' then 0 else 1 end, p.amount
+                     limit 1
+                    """;
+            try (Connection c = ds.getConnection();
+                    PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setObject(1, appTierId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        amount = rs.getInt(1);
+                        currency = rs.getString(2);
+                        cycle = rs.getString(3);
+                    }
+                }
+            } catch (SQLException e) {
+                throw new IllegalStateException("lettura del listino per la transazione finta fallita", e);
+            }
+        }
+        data.put("amount", amount);
+        data.put("currency", currency);
+        if (cycle != null) {
+            data.put("billing_cycle", cycle);
         }
     }
 
