@@ -33,7 +33,7 @@ async function mockSession(page: Page) {
   await page.route('**/api/platform/v1/me/entitlements', (route) => route.fulfill({ json: { entitlements: [] } }))
 }
 
-test('self-service: downgrade programmato a fine periodo', async ({ page }) => {
+test('[L2-SUB] self-service: downgrade programmato a fine periodo', async ({ page }) => {
   await mockSession(page)
   let downgraded = false
 
@@ -96,7 +96,7 @@ test('self-service: downgrade programmato a fine periodo', async ({ page }) => {
   await expect(page.getByText(/Downgrade scheduled to “basic”/)).toBeVisible()
 })
 
-test('enforcement: 429 quota → banner azionabile con CTA upgrade', async ({ page }) => {
+test('[L2-SUB] enforcement: 429 quota → banner azionabile con CTA upgrade', async ({ page }) => {
   await mockSession(page)
   await page.route('**/api/platform/v1/me/subscriptions', (route) =>
     route.fulfill({ json: { subscriptions: [] } }),
@@ -116,7 +116,7 @@ test('enforcement: 429 quota → banner azionabile con CTA upgrade', async ({ pa
   await expect(page.getByRole('button', { name: 'Upgrade' })).toBeVisible()
 })
 
-test('app disabilitata dalla piattaforma: l’abbonamento resta ma l’avviso spiega perché', async ({
+test('[L2-SUB] app disabilitata dalla piattaforma: l’abbonamento resta ma l’avviso spiega perché', async ({
   page,
 }) => {
   await mockSession(page)

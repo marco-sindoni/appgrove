@@ -88,7 +88,7 @@ async function mockAuthed(page: Page) {
   await page.route('**/api/platform/v1/admin/apps/audit', (route) => route.fulfill({ json: audit }))
 }
 
-test('overview → apps → disabilita e riabilita un’app, con motivazione nel registro', async ({ page }) => {
+test('[L2-ADMIN-APPS] overview → apps → disabilita e riabilita un’app, con motivazione nel registro', async ({ page }) => {
   await mockAuthed(page)
 
   await page.goto('/')

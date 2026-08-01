@@ -15,7 +15,7 @@ import { dbRow, dbRows } from '../helpers/db'
  * L'app comprabile è il Mini-CRM, attivato per la run dal global-setup (decisione 3, change 0070).
  */
 
-test('J-BUY: catalogo → tier → fake Paddle → webhook reale → attivata → modulo montato → DB coerente', async ({
+test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → attivata → modulo montato → DB coerente', async ({
   page,
 }) => {
   const t = await tenant('jbuy')

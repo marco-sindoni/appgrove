@@ -32,7 +32,7 @@ async function mySubscription(t: { tokens: Parameters<typeof authedFetch>[2] }):
  * dati ripristinati.
  */
 
-test('J-SUB: downgrade programmato → disdetta → scadenza via webhook → 402 e dati intatti → riattivazione', async ({
+test('[J-SUB] downgrade programmato → disdetta → scadenza via webhook → 402 e dati intatti → riattivazione', async ({
   page,
 }) => {
   const t = await tenant('jsub')

@@ -20,7 +20,7 @@ test.describe('L3 — smoke checkout su Paddle Sandbox', () => {
       'suite pre-release, non per-PR — vedi e2e-l3/README.md',
   )
 
-  test('acquisto sandbox: checkout reale → webhook reale → attivazione', async ({ page }) => {
+  test('[L3-CHECKOUT] acquisto sandbox: checkout reale → webhook reale → attivazione', async ({ page }) => {
     // login reale (auth locale, UC 0010) sull'ambiente deployato
     await page.goto('/login')
     await page.getByLabel(/email/i).fill(EMAIL!)

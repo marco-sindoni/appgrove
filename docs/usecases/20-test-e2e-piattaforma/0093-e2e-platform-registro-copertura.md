@@ -106,3 +106,26 @@ registro semmai li rende visibili (i journey che li verificano sono mappati).
   consentirebbe (`livello` aggiuntivo), ma la decisione appartiene a un eventuale UC futuro — non anticipare.
 - **Sincronizzazione con `_INDEX.md`**: un'integrazione più stretta (lo stato di copertura mostrato nell'indice
   degli use case) è possibile ma differita a quando il processo di UC 0094 sarà rodato.
+
+_Tracciato dalla change `0073-use-case-0093-…` (implementazione):_
+
+- **Definizione adottata di "superficie frontend"**: superficie **navigabile con un browser dentro il prodotto**
+  (backoffice, console admin, moduli delle app). Il **sito vetrina** (Astro, pagine statiche) è escluso come classe
+  con categoria `vetrina-statica`: è coperto dai controlli post-build dell'area `site` di `run-tests.sh`, e
+  aggiungere percorsi a browser sulle sue pagine sarebbe costo senza rischio coperto. Se un domani la vetrina
+  acquisisse comportamento interattivo vero (oltre l'iscrizione alla newsletter), la classe va rivista: la
+  decisione appartiene a UC 0036/0039, non a questo registro.
+- **Guardia dell'esenzione temporanea basata sulle cartelle `changes/`, non su `_INDEX.md`**: l'indice di
+  esecuzione contiene solo i 60 use case base, quindi non può dire se una storia evolutiva sia stata
+  implementata. Il controllo verifica perciò l'esistenza di `changes/*-use-case-NNNN-*`. Se un domani l'indice
+  coprirà anche le storie evolutive (rimando aperto in [docs/_BACKLOG.md](../../_BACKLOG.md)), quella diventerà
+  la sorgente naturale e la guardia va spostata lì.
+- **Granularità delle etichette ai livelli 2 e 3**: la convenzione adottata è **un identificativo per file di
+  test** (`L2-<AREA>`, `L3-<AREA>`), contro l'**un identificativo per percorso** della suite di piattaforma. Il
+  formato ammette entrambe (più test possono condividere l'etichetta); se un file crescerà fino a coprire due
+  percorsi davvero distinti, va spezzato — e il registro segue. Non c'è un controllo che lo imponga: sarebbe un
+  giudizio, non un fatto.
+- **Il registro si aggiorna a mano finché non arriva UC 0094**: oggi nulla obbliga una change a *aggiungere* una
+  voce quando nasce una superficie nuova — il controllo se ne accorge solo se lo use case entra in
+  `usecases_con_superficie` o se un test viene etichettato. È esattamente il divario che UC 0094 chiude
+  agganciando il registro alle skill.

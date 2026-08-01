@@ -66,7 +66,7 @@ async function mockAuthed(page: Page) {
   })
 }
 
-test('supporto: apri un ticket privacy e rispondi nel thread', async ({ page }) => {
+test('[L2-SUPPORT] supporto: apri un ticket privacy e rispondi nel thread', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/')
   await page.getByRole('link', { name: 'Support' }).click()

@@ -18,7 +18,7 @@ import { dbRow, dbRows } from '../helpers/db'
  * Un secondo tenant "canarino" prova l'isolamento: né il ticket né l'export devono sfiorarlo.
  */
 
-test('A-GDPR: ticket privacy + export → aggregazione in console → risposta visibile → limitazione art. 18 applicata e rimossa', async ({
+test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta visibile → limitazione art. 18 applicata e rimossa', async ({
   page,
   browser,
 }) => {

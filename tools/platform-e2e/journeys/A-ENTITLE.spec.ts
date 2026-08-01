@@ -44,7 +44,7 @@ async function appsSeenBy(browser: Browser, t: Tenant): Promise<string[]> {
   }
 }
 
-test('A-ENTITLE: acquisto attivo · sola fascia gratuita · account in eliminazione → matrice ≡ menu laterale', async ({
+test('[A-ENTITLE] acquisto attivo · sola fascia gratuita · account in eliminazione → matrice ≡ menu laterale', async ({
   browser,
 }) => {
   const run = Date.now().toString(36)

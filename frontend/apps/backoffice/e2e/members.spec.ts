@@ -63,7 +63,7 @@ async function mockAuthed(page: Page) {
   await page.route('**/api/auth/invitations/send', (route) => route.fulfill({ status: 202, body: '' }))
 }
 
-test('membri: invita → compare tra i pendenti → revoca', async ({ page }) => {
+test('[L2-MEMBERS] membri: invita → compare tra i pendenti → revoca', async ({ page }) => {
   await mockAuthed(page)
 
   await page.goto('/members')

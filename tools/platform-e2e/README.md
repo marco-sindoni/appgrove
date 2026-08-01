@@ -97,7 +97,10 @@ su a fine corsa (come per lo smoke); i processi della suite vengono fermati.
     `adminSession()` (seconda sessione browser sulla console admin, contesto isolato);
   - `services` — `stopService()` / `startService()` / `ensureServiceUp()`: la leva che permette a
     `F-DEGRADE` di produrre un guasto **vero** (processo fermo, non risposta finta).
-- `journeys/` — un file per journey; il nome del file/test è l'ID (registro di copertura: UC 0093).
+- `journeys/` — un file per journey; il nome del file è l'ID, che il titolo del test ripete come
+  **etichetta in testa**: `test('[J-BUY] …')`. L'etichetta è l'aggancio verificato dal registro di
+  copertura ([`docs/testing/copertura-e2e.yaml`](../../docs/testing/copertura-e2e.yaml), UC 0093): un
+  journey nuovo senza voce nel registro — o una voce senza journey — fa diventare rossa l'area `tooling`.
 
 ## Diagnosi dopo un rosso
 

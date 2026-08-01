@@ -20,7 +20,7 @@ const NEW_PASSWORD = 'NuovaPassword2!'
  * punti aperti di UC 0058 (decisione 7, change 0070).
  */
 
-test('J-PWD: reset con email reale → nuova password → 2FA enroll + login a due passi', async ({
+test('[J-PWD] reset con email reale → nuova password → 2FA enroll + login a due passi', async ({
   page,
   browser,
 }) => {

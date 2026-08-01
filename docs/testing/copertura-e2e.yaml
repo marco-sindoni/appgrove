@@ -1,0 +1,594 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Registro di copertura end-to-end (UC 0093)
+#
+# Mappa: use case con superficie applicativa → percorso (journey) richiesto → test che lo copre.
+# È LEGGIBILE DA UN PROGRAMMA: il controllo `tools/e2e-coverage` lo confronta con la realtà del
+# repository a ogni esecuzione di `./run-tests.sh tooling` e diventa rosso quando divergono.
+#
+# Formato, regole di manutenzione e come leggere un rosso: docs/testing/README.md
+# NON si modifica a mano senza rileggere quel documento.
+# ─────────────────────────────────────────────────────────────────────────────
+
+versione: 1
+aggiornato: 2026-08-01
+
+# ── Use case la cui superficie applicativa interattiva ESISTE OGGI in main ────
+# Elenco autorevole (non desunto dalla prosa dei drill-down: il controllo dev'essere deterministico).
+# Ognuno di questi DEVE essere referenziato da almeno un percorso qui sotto, in qualunque stato.
+usecases_con_superficie:
+  - "0017" # Flussi auth UI (signup/login/reset/invito/2FA/onboarding)
+  - "0020" # Backoffice SPA shell
+  - "0021" # Console admin SPA
+  - "0024" # Checkout (overlay + attesa attivazione)
+  - "0028" # Portale cliente / gestione abbonamento self-service
+  - "0033" # Self-service GDPR ("I miei dati")
+  - "0034" # Console "Diritti GDPR" (admin)
+  - "0052" # Modulo frontend app #1 (fatture)
+  - "0054" # App #2 (mini-CRM) via new-application
+  - "0056" # Ri-accettazione ToU/PP a runtime (schermata bloccante)
+  - "0059" # Gestione membri & inviti (UI backoffice)
+  - "0060" # Localizzazione UI delle app alle 5 lingue
+  - "0076" # Disabilita applicazione (leva admin, effetti sul cliente)
+  - "0077" # Provider entitlement reale (menu laterale e matrice)
+
+# ── I percorsi ────────────────────────────────────────────────────────────────
+percorsi:
+  # ---- Suite di piattaforma (stack reale + browser vero + Mailpit) -----------
+  - id: J-REG
+    titolo: Registrazione — iscrizione, verifica email reale, primo ingresso, cruscotto
+    usecases: ["0017", "0020", "0056", "0058"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-REG.spec.ts
+
+  - id: J-REG-API
+    titolo: Creazione programmatica di un conto di prova (autodiagnosi dell'helper condiviso)
+    usecases: ["0013", "0058"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-REG.spec.ts
+
+  - id: J-BUY
+    titolo: Acquisto e attivazione — catalogo, fascia a pagamento, pagamento finto, webhook reale, modulo montato
+    usecases: ["0022", "0023", "0024", "0025", "0026", "0027", "0054"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-BUY.spec.ts
+
+  - id: J-QUOTA
+    titolo: Quota a consumo su fatture — avviso, tetto raggiunto, rifiuto reale con invito a passare di fascia
+    usecases: ["0027", "0051", "0052"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-QUOTA.spec.ts
+
+  - id: J-MEMBERS
+    titolo: Inviti fra aziende — email reale, seconda sessione, posti esauriti, passaggio di fascia, ruoli e revoca
+    usecases: ["0013", "0026", "0027", "0054", "0059"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-MEMBERS.spec.ts
+
+  - id: J-SUB
+    titolo: Ciclo di vita dell'abbonamento — riduzione programmata, disdetta, scadenza, dati intatti, riattivazione
+    usecases: ["0025", "0026", "0027", "0028"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-SUB.spec.ts
+
+  - id: J-PWD
+    titolo: Reimpostazione password con email reale e secondo fattore a tempo al nuovo accesso
+    usecases: ["0017", "0058"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-PWD.spec.ts
+
+  - id: J-PRIVACY
+    titolo: Diritti dell'interessato — rettifica, esportazione reale scaricata, recesso per-app, eliminazione con periodo di grazia
+    usecases: ["0032", "0033", "0035"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-PRIVACY.spec.ts
+
+  - id: J-LEGAL
+    titolo: Ri-accettazione dei documenti legali — nuova versione maggiore, schermata bloccante, esenzione "I miei dati"
+    usecases: ["0002", "0056"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-LEGAL.spec.ts
+
+  - id: A-GDPR
+    titolo: Console diritti fra due attori — richiesta del cliente, presa in carico dell'amministratore, risposta visibile, limitazione applicata e rimossa
+    usecases: ["0032", "0033", "0034"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/A-GDPR.spec.ts
+
+  - id: A-ENTITLE
+    titolo: Coerenza dei diritti — tre conti diversi, matrice della console identica al menu laterale del cliente
+    usecases: ["0021", "0027", "0077"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/A-ENTITLE.spec.ts
+
+  - id: A-CONSOLE
+    titolo: Disabilitazione di un'applicazione — l'amministratore la spegne, il cliente perde accesso ma non i dati, riaccensione
+    usecases: ["0021", "0076"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/A-CONSOLE.spec.ts
+
+  - id: F-DEGRADE
+    titolo: Guasto vero di un servizio — errore con riprova e mai diniego, rientro senza ricaricare la pagina
+    usecases: ["0010", "0020", "0052"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/F-DEGRADE.spec.ts
+
+  # ---- Livello 2 (browser vero, servizi simulati con page.route) -------------
+  - id: L2-AUTH
+    titolo: Accesso e iscrizione dal backoffice — radice anonima, accesso con credenziali, procedura guidata di iscrizione
+    usecases: ["0017", "0020"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/auth.spec.ts
+
+  - id: L2-SHELL
+    titolo: Guscio del backoffice — ripresa della sessione, montaggio del modulo, blocco delle rotte non concesse, menu senza app attive
+    usecases: ["0020", "0077"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/shell.spec.ts
+
+  - id: L2-CHECKOUT
+    titolo: Acquisto dal backoffice — scelta della fascia, sovrapposizione di pagamento, attesa dell'attivazione
+    usecases: ["0024", "0029"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/checkout.spec.ts
+
+  - id: L2-SUB
+    titolo: Abbonamenti dal backoffice — riduzione programmata, avviso di quota con invito a passare di fascia, app disabilitata dalla piattaforma
+    usecases: ["0027", "0028", "0076"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/subscriptions.spec.ts
+
+  - id: L2-FATTURE
+    titolo: Ciclo principale dell'app #1 — elenco con avviso di quota, creazione, blocco della rotta non concessa
+    usecases: ["0027", "0052"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/fatture.spec.ts
+
+  - id: L2-CRM
+    titolo: Ciclo principale dell'app #2 — elenco con avviso posti, creazione contatto, assegnazione di un posto, blocco della rotta non concessa
+    usecases: ["0027", "0054", "0059"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/crm.spec.ts
+
+  - id: L2-MEMBERS
+    titolo: Membri e inviti — invito, comparsa fra i pendenti, revoca
+    usecases: ["0013", "0059"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/members.spec.ts
+
+  - id: L2-PRIVACY
+    titolo: Pagina "I miei dati" — rettifica, esportazioni (profilo e conto), esportazione fallita, recesso per-app, eliminazione con annullamento
+    usecases: ["0032", "0033", "0034"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/privacy.spec.ts
+
+  - id: L2-LEGAL
+    titolo: Sbarramento legale — versione maggiore pendente, schermata bloccante, accettazione, esenzione della pagina dei diritti
+    usecases: ["0002", "0056"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/legal.spec.ts
+
+  - id: L2-SUPPORT
+    titolo: Supporto — apertura di una richiesta di privacy e risposta nella conversazione
+    usecases: ["0034"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/support.spec.ts
+
+  - id: L2-ADMIN-APPS
+    titolo: Console admin — panoramica, elenco applicazioni, disabilitazione e riabilitazione con motivazione nel registro
+    usecases: ["0021", "0076"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/admin/e2e/admin.spec.ts
+
+  - id: L2-ADMIN-GDPR
+    titolo: Console admin "Diritti GDPR" — aggregazione, richiesta, risposta, limitazione del trattamento
+    usecases: ["0034"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/admin/e2e/gdpr.spec.ts
+
+  # ---- Livello 3 (ambiente di prova del fornitore di pagamento) --------------
+  - id: L3-CHECKOUT
+    titolo: Acquisto reale nell'ambiente di prova Paddle — pagamento vero, webhook vero, attivazione
+    usecases: ["0024", "0029"]
+    stato: coperto
+    test:
+      - livello: l3
+        file: frontend/apps/backoffice/e2e-l3/checkout-smoke.spec.ts
+
+  # ---- Buchi dichiarati -----------------------------------------------------
+  - id: J-QUOTA-UPGRADE
+    titolo: Quota a consumo — il passaggio di fascia sblocca di nuovo la creazione (su fatture)
+    usecases: ["0027", "0052"]
+    stato: da-coprire
+    motivo: >-
+      Il catalogo di `fatture` ha oggi la sola fascia gratuita, e i percorsi collaudano l'esistente senza
+      estendere il prodotto. Il ciclo completo tetto → rifiuto → passaggio di fascia → sblocco è coperto
+      sulla metrica a giacenza (posti) del mini-CRM dentro J-MEMBERS. Da estendere quando `fatture` avrà
+      una fascia a pagamento (decisione di listino, skill `pricing-change`).
+    possiede: "0091"
+
+  - id: J-PWD-REVOKE
+    titolo: Reimpostazione password — le sessioni aperte in precedenza smettono di valere
+    usecases: ["0017", "0058"]
+    stato: da-coprire
+    motivo: >-
+      Il provider di autenticazione locale non revoca i gettoni di rinnovo (token senza stato, nessuna lista
+      di revoca): l'asserzione «il vecchio rinnovo non vale più» oggi fallirebbe sul comportamento reale.
+      Divario di prodotto, non di collaudo.
+    possiede: "0058"
+
+  - id: J-PRIVACY-WITHDRAW-MSG
+    titolo: Recesso per-app — conferma esplicita all'utente dopo la cancellazione dei dati dell'app
+    usecases: ["0033"]
+    stato: da-coprire
+    motivo: >-
+      Il messaggio «recesso completato» è reso dentro la riga dell'applicazione, che viene smontata appena
+      l'elenco si rinfresca: la conferma può non essere mai visibile. J-PRIVACY accetta perciò come esito
+      valido sia il messaggio sia la sparizione dell'app. Il percorso diventa collaudabile quando la conferma
+      sarà spostata fuori dall'elenco (avviso di pagina o notifica persistente).
+    possiede: "0033"
+
+  - id: A-GDPR-RESTRICT-ACCOUNT
+    titolo: Limitazione del trattamento applicata al conto (non al singolo utente) con effetto osservabile
+    usecases: ["0034"]
+    stato: da-coprire
+    motivo: >-
+      Limitare un conto sospende la riga del conto, ma la validità di una sessione dipende solo dallo stato
+      della riga utente: la misura viene registrata e non produce alcun effetto. A-GDPR applica quindi la
+      limitazione all'utente, che funziona. Va prima deciso se la limitazione sul conto debba propagarsi ai
+      suoi utenti o se il bersaglio "conto" vada rimosso perché fuorviante: è direzione di prodotto.
+    possiede: "0034"
+
+  - id: A-GDPR-RESTRICT-MSG
+    titolo: L'utente sotto limitazione legge un messaggio dedicato, non "credenziali non valide"
+    usecases: ["0017", "0034"]
+    stato: da-coprire
+    motivo: >-
+      Il servizio di autenticazione risponde con un errore generico per ogni utenza non attiva, quindi chi è
+      sotto limitazione legge «credenziali non valide» invece del testo dedicato che pure esiste nel catalogo
+      dei messaggi. Può essere una scelta deliberata di riservatezza: da valutare insieme ai flussi di
+      autenticazione prima di collaudarla.
+    possiede: "0034"
+
+  - id: J-I18N
+    titolo: Localizzazione end-to-end — interfaccia ed email nella stessa lingua, per tutte e cinque le lingue
+    usecases: ["0060"]
+    stato: da-coprire
+    motivo: >-
+      La parità dei cataloghi di traduzione è già coperta dai test unitari e di livello 2; un percorso per
+      lingua quintuplicherebbe il tempo della suite di piattaforma senza aggiungere rischio coperto. Si
+      riapre quando la localizzazione dell'interfaccia delle app sarà esercitata da utenti reali.
+    possiede: "0060"
+
+  - id: J-SUPPORT-TICKETING
+    titolo: Assistenza con il sistema di richieste nativo — apertura, presa in carico, conversazione, chiusura
+    usecases: ["0034"]
+    stato: da-coprire
+    motivo: >-
+      Il flusso di assistenza odierno è quello minimo nato con la console dei diritti; il sistema di richieste
+      nativo lo sostituirà. Quando arriverà, A-GDPR e L2-SUPPORT andranno aggiornati e questo percorso preso
+      in carico.
+    possiede: "0075"
+
+  # ---- Esclusioni motivate --------------------------------------------------
+  - id: F-DEGRADE-TELEMETRY
+    titolo: Guasto di un servizio — allarmi e telemetria emessi correttamente
+    usecases: ["0006", "0007"]
+    stato: escluso
+    motivo: >-
+      F-DEGRADE osserva l'esperienza dell'utente durante un guasto vero. Le asserzioni su allarmi, metriche e
+      segnalazione degli errori appartengono all'area di osservabilità e ai suoi test dedicati: verificarle
+      con un browser costerebbe molto e coprirebbe poco.
+
+# ── Use case senza superficie applicativa da collaudare a browser ─────────────
+# Ogni use case del catalogo che NON compare in `usecases_con_superficie` DEVE comparire qui,
+# con una categoria e un motivo. Categorie ammesse:
+#   • senza-superficie  — nessuna superficie applicativa propria (servizi, infrastruttura, strumenti,
+#                         adempimenti di business, librerie di stile). Esenzione permanente.
+#   • vetrina-statica   — superficie del sito vetrina (pagine statiche Astro), coperta dai controlli
+#                         post-build dell'area `site` e non da percorsi a browser. Esenzione permanente.
+#   • non-implementato  — la superficie NON esiste ancora in main. Esenzione TEMPORANEA: il controllo la
+#                         rifiuta appena compare una cartella changes/*-use-case-NNNN-*.
+esenzioni:
+  - usecase: "0001"
+    categoria: senza-superficie
+    motivo: Adempimenti di business e fiscali fuori dal prodotto (commercialista, partita IVA, conto Paddle).
+  - usecase: "0002"
+    categoria: vetrina-statica
+    motivo: I documenti legali sono resi dalla vetrina; l'accettazione dentro il prodotto è UC 0056, coperta da J-LEGAL.
+  - usecase: "0003"
+    categoria: senza-superficie
+    motivo: Fondamenta Terraform — infrastruttura, nessuna interfaccia.
+  - usecase: "0004"
+    categoria: senza-superficie
+    motivo: Modulo Terraform `microsaas_app` e script di supporto — infrastruttura.
+  - usecase: "0005"
+    categoria: senza-superficie
+    motivo: Pipeline di integrazione e rilascio continui — nessuna interfaccia.
+  - usecase: "0006"
+    categoria: senza-superficie
+    motivo: Osservabilità di base (log, metriche, allarmi) — nessuna interfaccia del prodotto.
+  - usecase: "0007"
+    categoria: senza-superficie
+    motivo: Irrobustimento dell'osservabilità — nessuna interfaccia del prodotto.
+  - usecase: "0008"
+    categoria: senza-superficie
+    motivo: Stack di sviluppo locale (Compose) — strumento per chi sviluppa.
+  - usecase: "0009"
+    categoria: senza-superficie
+    motivo: Script `dev/` — strumento a riga di comando.
+  - usecase: "0010"
+    categoria: senza-superficie
+    motivo: Provider di autenticazione locale — servizio, senza interfaccia propria; esercitato da J-REG/J-PWD/F-DEGRADE.
+  - usecase: "0011"
+    categoria: senza-superficie
+    motivo: Dati di partenza deterministici — dati, nessuna interfaccia.
+  - usecase: "0012"
+    categoria: senza-superficie
+    motivo: Servizio core e multi-tenancy — servizio, nessuna interfaccia.
+  - usecase: "0013"
+    categoria: senza-superficie
+    motivo: API REST del core (conti, utenti, inviti) — servizio; le interfacce che la usano sono UC 0020/0059.
+  - usecase: "0014"
+    categoria: senza-superficie
+    motivo: Controllo del gettone al confine dell'infrastruttura — nessuna interfaccia.
+  - usecase: "0015"
+    categoria: senza-superficie
+    motivo: Cognito e strato di autenticazione lato server — nessuna interfaccia propria.
+  - usecase: "0016"
+    categoria: senza-superficie
+    motivo: Funzione di arricchimento del gettone e validazione — nessuna interfaccia.
+  - usecase: "0018"
+    categoria: senza-superficie
+    motivo: Localizzazione delle email di autenticazione — contenuto email, non interfaccia del prodotto.
+  - usecase: "0019"
+    categoria: senza-superficie
+    motivo: >-
+      Sistema di design e brand kit: libreria di token e componenti, nessun percorso utente proprio.
+      È esercitata indirettamente da tutti i percorsi che navigano il backoffice e la console.
+  - usecase: "0022"
+    categoria: senza-superficie
+    motivo: Listino come codice e sincronizzazione col fornitore — nessuna interfaccia; effetti visti da J-BUY.
+  - usecase: "0023"
+    categoria: senza-superficie
+    motivo: Simulatore locale del fornitore di pagamento — strumento di collaudo.
+  - usecase: "0025"
+    categoria: senza-superficie
+    motivo: Pipeline dei webhook (ingestione, coda, consumatore idempotente) — servizio.
+  - usecase: "0026"
+    categoria: senza-superficie
+    motivo: Macchina a stati dell'abbonamento — servizio; l'interfaccia è UC 0028.
+  - usecase: "0027"
+    categoria: senza-superficie
+    motivo: Applicazione di diritti e quote a tempo di esecuzione — servizio; gli avvisi in interfaccia sono dei moduli app.
+  - usecase: "0029"
+    categoria: senza-superficie
+    motivo: Use case di collaudo dei pagamenti (livelli 1/2/3) — definisce test, non superficie.
+  - usecase: "0030"
+    categoria: senza-superficie
+    motivo: Manifesti dati e registro dei trattamenti — documenti generati, nessuna interfaccia.
+  - usecase: "0031"
+    categoria: senza-superficie
+    motivo: Presidio privacy dentro la skill `new-change` — strumento di processo.
+  - usecase: "0032"
+    categoria: senza-superficie
+    motivo: Framework di esportazione e cancellazione — servizio; le interfacce sono UC 0033/0034.
+  - usecase: "0035"
+    categoria: senza-superficie
+    motivo: Lavori periodici di conservazione e purga — processi in background.
+  - usecase: "0036"
+    categoria: vetrina-statica
+    motivo: Ossatura del sito vetrina (Astro) — pagine statiche, coperte dai controlli post-build dell'area `site`.
+  - usecase: "0037"
+    categoria: vetrina-statica
+    motivo: Pagina iniziale, navigazione e piè di pagina della vetrina — pagine statiche.
+  - usecase: "0038"
+    categoria: vetrina-statica
+    motivo: Modello di pagina di presentazione per-app — pagine statiche.
+  - usecase: "0039"
+    categoria: vetrina-statica
+    motivo: Iscrizione alla newsletter e statistiche senza cookie — superficie della vetrina.
+  - usecase: "0040"
+    categoria: vetrina-statica
+    motivo: SEO tecnico — metadati delle pagine statiche.
+  - usecase: "0041"
+    categoria: vetrina-statica
+    motivo: Leggibilità per gli assistenti AI (`llms.txt`) — file statici.
+  - usecase: "0042"
+    categoria: vetrina-statica
+    motivo: Blog e risorse — pagine statiche.
+  - usecase: "0043"
+    categoria: senza-superficie
+    motivo: Piano operativo di lancio (annunci, directory, campagne) — attività, non software.
+  - usecase: "0044"
+    categoria: senza-superficie
+    motivo: Aggiornamento della skill `new-change` — strumento di processo.
+  - usecase: "0045"
+    categoria: senza-superficie
+    motivo: Skill `new-usecase` — strumento di processo.
+  - usecase: "0046"
+    categoria: senza-superficie
+    motivo: Skill `new-application` — generatore; la superficie che produce è quella delle app (UC 0052/0054).
+  - usecase: "0047"
+    categoria: senza-superficie
+    motivo: Skill `pricing-change` — strumento di processo.
+  - usecase: "0048"
+    categoria: senza-superficie
+    motivo: Skill `drop-application` — strumento di processo.
+  - usecase: "0049"
+    categoria: senza-superficie
+    motivo: Skill `breach-response` e relativi runbook/registri — strumento di processo.
+  - usecase: "0050"
+    categoria: senza-superficie
+    motivo: Skill `campaign-guide` — strumento di processo.
+  - usecase: "0051"
+    categoria: senza-superficie
+    motivo: Backend dell'app #1 — servizio; l'interfaccia è UC 0052.
+  - usecase: "0053"
+    categoria: vetrina-statica
+    motivo: Pagina di presentazione dell'app #1 — pagina statica della vetrina.
+  - usecase: "0055"
+    categoria: senza-superficie
+    motivo: Risorse condivise per ambiente — infrastruttura.
+  - usecase: "0057"
+    categoria: senza-superficie
+    motivo: Skill `finalize-landing` — strumento di processo.
+  - usecase: "0058"
+    categoria: senza-superficie
+    motivo: >-
+      Flussi di autenticazione locali completi — endpoint di servizio ed email; le interfacce corrispondenti
+      sono UC 0017. Comunque esercitati da J-REG e J-PWD.
+  - usecase: "0061"
+    categoria: non-implementato
+    motivo: Architettura del server per assistenti AI — epica evolutiva non ancora implementata.
+  - usecase: "0062"
+    categoria: non-implementato
+    motivo: Autenticazione e consenso delegato verso l'assistente AI — epica evolutiva non ancora implementata.
+  - usecase: "0063"
+    categoria: non-implementato
+    motivo: Mappatura delle operazioni delle app a strumenti per assistenti AI — non ancora implementata.
+  - usecase: "0064"
+    categoria: non-implementato
+    motivo: Diritti e quote sulle chiamate degli assistenti AI — non ancora implementata.
+  - usecase: "0065"
+    categoria: non-implementato
+    motivo: Sicurezza e tracciamento delle invocazioni degli assistenti AI — non ancora implementata.
+  - usecase: "0066"
+    categoria: non-implementato
+    motivo: Industrializzazione del canale per assistenti AI nello scaffolding — non ancora implementata.
+  - usecase: "0067"
+    categoria: non-implementato
+    motivo: Pagina "Abbonamenti" self-service del backoffice — non ancora implementata.
+  - usecase: "0068"
+    categoria: non-implementato
+    motivo: Sospensione e ripresa dell'abbonamento self-service — non ancora implementata.
+  - usecase: "0069"
+    categoria: non-implementato
+    motivo: Prova gratuita una-tantum per conto e applicazione — non ancora implementata.
+  - usecase: "0070"
+    categoria: non-implementato
+    motivo: Abbonamento unico per più applicazioni — non ancora implementato.
+  - usecase: "0071"
+    categoria: non-implementato
+    motivo: Riconciliazione fra incassato netto e ricavi — non ancora implementata.
+  - usecase: "0072"
+    categoria: non-implementato
+    motivo: Distinzione fra app per singolo utente e app per aziende — non ancora implementata.
+  - usecase: "0073"
+    categoria: non-implementato
+    motivo: Invito di utenti per singola applicazione con i posti come quota — non ancora implementato.
+  - usecase: "0074"
+    categoria: non-implementato
+    motivo: Rubrica utenti fra applicazioni e pagina "Membri" ripensata — non ancora implementata.
+  - usecase: "0075"
+    categoria: non-implementato
+    motivo: Sistema di richieste di assistenza nativo — non ancora implementato (percorso J-SUPPORT-TICKETING già dichiarato da coprire).
+  - usecase: "0078"
+    categoria: senza-superficie
+    motivo: Uscita del servizio email dalla modalità di prova — operazione presso il fornitore cloud.
+  - usecase: "0079"
+    categoria: senza-superficie
+    motivo: Gestione dei rimbalzi e dei reclami email — configurazione cloud e allarmi.
+  - usecase: "0080"
+    categoria: senza-superficie
+    motivo: Prima esecuzione della pipeline in cloud e configurazione del repository — operazione.
+  - usecase: "0081"
+    categoria: senza-superficie
+    motivo: Verifiche di fumo sull'ambiente cloud alla prima accensione — collaudo di infrastruttura, non a browser.
+  - usecase: "0082"
+    categoria: senza-superficie
+    motivo: Script di accensione e spegnimento degli ambienti — strumento a riga di comando.
+  - usecase: "0083"
+    categoria: senza-superficie
+    motivo: Correzione della regione e casella per le segnalazioni di sicurezza — configurazione.
+  - usecase: "0084"
+    categoria: senza-superficie
+    motivo: Skill `new-blog-post` — strumento di processo.
+  - usecase: "0085"
+    categoria: senza-superficie
+    motivo: Unificazione dei generatori di modelli email — rifattorizzazione di servizio.
+  - usecase: "0086"
+    categoria: senza-superficie
+    motivo: Pacchetto condiviso di token di marca — libreria, nessun percorso utente proprio (come UC 0019).
+  - usecase: "0087"
+    categoria: senza-superficie
+    motivo: Logo definitivo e stile delle illustrazioni — materiali grafici.
+  - usecase: "0088"
+    categoria: non-implementato
+    motivo: Ricerca globale dal backoffice — debito tecnico non ancora implementato.
+  - usecase: "0089"
+    categoria: senza-superficie
+    motivo: Rimozione dell'opzione di installazione permissiva del frontend — debito tecnico di costruzione.
+  - usecase: "0090"
+    categoria: senza-superficie
+    motivo: Fondamenta della suite end-to-end — infrastruttura di collaudo, non superficie del prodotto.
+  - usecase: "0091"
+    categoria: senza-superficie
+    motivo: Batteria di percorsi lato utente — collaudo, non superficie del prodotto.
+  - usecase: "0092"
+    categoria: senza-superficie
+    motivo: Batteria di percorsi lato amministratore e guasti — collaudo, non superficie del prodotto.
+  - usecase: "0093"
+    categoria: senza-superficie
+    motivo: Questo registro e il suo controllo meccanico — strumento di processo.
+  - usecase: "0094"
+    categoria: senza-superficie
+    motivo: Integrazione della copertura nel workflow delle skill — strumento di processo.
+  - usecase: "0095"
+    categoria: non-implementato
+    motivo: Pagina "Catalogo app" del backoffice — non ancora implementata.
+  - usecase: "0096"
+    categoria: non-implementato
+    motivo: Sezione di sola fatturazione (abbonamenti e ricevute) — non ancora implementata.
+  - usecase: "0097"
+    categoria: non-implementato
+    motivo: Cruscotto operativo dello spazio di lavoro — non ancora implementato.

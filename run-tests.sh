@@ -8,15 +8,19 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing (UC 0046/0048/0047/0057) →
-#                collaudo delle skill `new-application`, `drop-application`, `pricing-change` e `finalize-landing`:
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage (UC 0046/0048/0047/0057/0093) →
+#                collaudo delle skill `new-application`, `drop-application`, `pricing-change` e `finalize-landing`,
+#                più il controllo del registro di copertura end-to-end:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
 #                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
 #                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
 #                DURA (non compila più); (3) de-generatore drop-application — round-trip genera→de-genera che
 #                deve riportare il repo identico (simmetria col generatore) + inversi delle modifiche condivise;
 #                (4) pricing-change — fee effettiva (avviso soft >10%) + modifiche al pricing-as-code con
-#                immutabilità (nuovo prezzo = nuovo tier, mai muta un prezzo vivo) su fixture YAML.
+#                immutabilità (nuovo prezzo = nuovo tier, mai muta un prezzo vivo) su fixture YAML;
+#                (5) e2e-coverage (UC 0093) — il registro docs/testing/copertura-e2e.yaml deve rispecchiare i
+#                test end-to-end realmente presenti (etichette [J-*] nei titoli) e classificare OGNI use case
+#                del catalogo: coglie la mappa di copertura che invecchia in silenzio.
 #                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
 #                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
@@ -50,7 +54,7 @@ ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 warn() { printf '%s! %s%s\n' "$C_YEL" "$*" "$C_RESET"; }
 
-usage() { sed -n '2,42p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,46p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 # aree richieste (default: tutte)
 AREAS=()
@@ -237,6 +241,13 @@ run_tooling() {
     ( cd "$ROOT/tools/finalize-landing" && export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 && { npm ci || npm install; } ) >/dev/null 2>&1 || true
   fi
   ( cd "$ROOT/tools/finalize-landing" && npm test )      || rc=1
+  # (6) registro di copertura end-to-end (UC 0093): test dello strumento su cartelle di prova +
+  # controllo del registro VERO contro i test presenti nel repository (docs/testing/README.md).
+  if [ ! -d "$ROOT/tools/e2e-coverage/node_modules" ] && [ -f "$ROOT/tools/e2e-coverage/package-lock.json" ]; then
+    ( cd "$ROOT/tools/e2e-coverage" && { npm ci || npm install; } ) >/dev/null 2>&1 || true
+  fi
+  ( cd "$ROOT/tools/e2e-coverage" && npm test )          || rc=1
+  ( cd "$ROOT/tools/e2e-coverage" && npm run check )     || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

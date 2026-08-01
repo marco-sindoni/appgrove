@@ -40,7 +40,7 @@ async function mockAnonymous(page: Page, authed: { value: boolean }) {
   )
 }
 
-test('anonimo: aprire la radice porta al login (la shell non resta appesa)', async ({ page }) => {
+test('[L2-AUTH] anonimo: aprire la radice porta al login (la shell non resta appesa)', async ({ page }) => {
   // Regressione della change 0065: con la sessione anonima la lettura degli entitlement non parte
   // nemmeno, quindi non sarà mai "conclusa". Trattarla come caricamento in corso lasciava la rotta
   // protetta montata a tempo indeterminato — senza mai redirigere al login — e la faceva ciclare
@@ -52,7 +52,7 @@ test('anonimo: aprire la radice porta al login (la shell non resta appesa)', asy
   await expect(page.getByLabel('Email')).toBeVisible()
 })
 
-test('login con credenziali porta alla dashboard', async ({ page }) => {
+test('[L2-AUTH] login con credenziali porta alla dashboard', async ({ page }) => {
   const authed = { value: false }
   await mockAnonymous(page, authed)
   await page.route('**/api/auth/login', (route) => {
@@ -69,7 +69,7 @@ test('login con credenziali porta alla dashboard', async ({ page }) => {
   await expect(page.getByText('Your apps')).toBeVisible()
 })
 
-test('signup wizard: account → verifica → workspace → done → dashboard', async ({ page }) => {
+test('[L2-AUTH] signup wizard: account → verifica → workspace → done → dashboard', async ({ page }) => {
   const authed = { value: false }
   await mockAnonymous(page, authed)
   await page.route('**/api/auth/signup', (route) => route.fulfill({ status: 201, json: { status: 'verification_required' } }))

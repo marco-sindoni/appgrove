@@ -52,7 +52,7 @@ async function mockBackend(
   )
 }
 
-test('ripristina la sessione, naviga la shell e monta il modulo entitled', async ({ page }) => {
+test('[L2-SHELL] ripristina la sessione, naviga la shell e monta il modulo entitled', async ({ page }) => {
   await mockBackend(page, 'local') // env local → demo entitled
   await page.goto('/')
 
@@ -67,21 +67,21 @@ test('ripristina la sessione, naviga la shell e monta il modulo entitled', async
   await expect(page.getByTestId('demo-module')).toBeVisible()
 })
 
-test('un modulo NON entitled è bloccato dalla route guard', async ({ page }) => {
+test('[L2-SHELL] un modulo NON entitled è bloccato dalla route guard', async ({ page }) => {
   await mockBackend(page, 'test', []) // entitlement letti correttamente: elenco vuoto
   await page.goto('/app/demo')
   await expect(page.getByText('You don’t have access to this app')).toBeVisible()
   await expect(page.getByTestId('demo-module')).toHaveCount(0)
 })
 
-test('senza app attive il menu invita all’acquisto (UC 0077)', async ({ page }) => {
+test('[L2-SHELL] senza app attive il menu invita all’acquisto (UC 0077)', async ({ page }) => {
   await mockBackend(page, 'test', [])
   await page.goto('/')
   await expect(page.getByText('No active apps yet')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Browse the apps' })).toBeVisible()
 })
 
-test('entitlement non leggibili: il menu lo dice e offre la riprova, non "nessuna app" (UC 0077)', async ({
+test('[L2-SHELL] entitlement non leggibili: il menu lo dice e offre la riprova, non "nessuna app" (UC 0077)', async ({
   page,
 }) => {
   await mockBackend(page, 'test', 'error')
