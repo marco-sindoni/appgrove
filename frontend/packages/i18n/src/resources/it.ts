@@ -32,6 +32,7 @@ export const it: Resources = {
     next: 'Successiva',
     pageOf: 'Pagina {{page}} di {{pages}}',
     open: 'Apri',
+    upgrade: 'Passa a un piano superiore',
     fixPayment: 'Sistema il pagamento',
     undoCancellation: 'Annulla la disdetta',
     contactSupport: 'Contatta il supporto',
@@ -332,12 +333,13 @@ export const it: Resources = {
     invalidCode: 'Codice non valido.',
     generic: 'Qualcosa è andato storto. Riprova.',
   },
+  // Pagina Billing — solo fatturazione (UC 0096): abbonamenti + storico pagamenti.
+  billing: {
+    title: 'Fatturazione',
+    subtitle: 'Gestisci i tuoi piani, i pagamenti e le ricevute.',
+  },
   // Checkout d'acquisto app (UC 0024) — backoffice.
   checkout: {
-    title: 'Aggiungi un’app',
-    subtitle: 'Scegli un’app e un piano per abbonarti.',
-    chooseApp: 'Scegli un’app',
-    noApps: 'Nessuna app disponibile all’acquisto.',
     monthly: 'Mensile',
     annual: 'Annuale',
     save2Months: '2 mesi gratis',
@@ -391,6 +393,33 @@ export const it: Resources = {
     appDisabledTitle: 'App sospesa dalla piattaforma',
     appDisabledBody: 'Questa app è temporaneamente indisponibile per tutti gli account. Il tuo abbonamento resta valido e i tuoi dati sono intatti: tornerà accessibile appena la sospensione sarà rimossa.',
     blockedTitle: 'Downgrade non possibile',
+    emptyCta: 'Vai al catalogo delle app',
+    contactSupport: 'Contatta il supporto',
+  },
+  // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
+  payments: {
+    title: 'Pagamenti e ricevute',
+    subtitle: 'Gestiti da Paddle, il nostro venditore di record. Le ricevute si aprono su Paddle.',
+    empty: 'Ancora nessun pagamento.',
+    error: 'Non siamo riusciti a caricare lo storico dei pagamenti.',
+    restricted: 'Solo i titolari e gli amministratori vedono pagamenti e ricevute.',
+    colDate: 'Data',
+    colApp: 'App',
+    colDescription: 'Descrizione',
+    colAmount: 'Importo',
+    colStatus: 'Esito',
+    colReceipt: 'Ricevuta',
+    receipt: 'Ricevuta',
+    receiptPending: 'Non ancora disponibile',
+    status: {
+      paid: 'Pagato',
+      failed: 'Fallito',
+      disputed: 'Contestato',
+    },
+    cycle: {
+      monthly: 'mensile',
+      annual: 'annuale',
+    },
   },
   // Banner azionabili di enforcement (UC 0028 chiude il punto aperto di UC 0027): 402/429.
   enforcement: {

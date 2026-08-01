@@ -32,6 +32,7 @@ export const de: Resources = {
     next: 'Weiter',
     pageOf: 'Seite {{page}} von {{pages}}',
     open: 'Öffnen',
+    upgrade: 'Tarif upgraden',
     fixPayment: 'Zahlung klären',
     undoCancellation: 'Kündigung zurücknehmen',
     contactSupport: 'Support kontaktieren',
@@ -332,12 +333,13 @@ export const de: Resources = {
     invalidCode: 'Ungültiger Code.',
     generic: 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
   },
+  // Pagina Billing — solo fatturazione (UC 0096): abbonamenti + storico pagamenti.
+  billing: {
+    title: 'Abrechnung',
+    subtitle: 'Verwalten Sie Ihre Tarife, Zahlungen und Belege.',
+  },
   // Checkout d'acquisto app (UC 0024) — backoffice.
   checkout: {
-    title: 'Eine App hinzufügen',
-    subtitle: 'Wählen Sie eine App und einen Tarif, um ein Abonnement abzuschließen.',
-    chooseApp: 'Eine App auswählen',
-    noApps: 'Keine Apps zum Kauf verfügbar.',
     monthly: 'Monatlich',
     annual: 'Jährlich',
     save2Months: '2 Monate gratis',
@@ -391,6 +393,33 @@ export const de: Resources = {
     appDisabledTitle: 'App von der Plattform ausgesetzt',
     appDisabledBody: 'Diese App ist vorübergehend für alle Konten nicht verfügbar. Ihr Abonnement bleibt gültig und Ihre Daten bleiben unangetastet: Sie ist wieder erreichbar, sobald die Aussetzung aufgehoben wird.',
     blockedTitle: 'Downgrade nicht möglich',
+    emptyCta: 'Zum App-Katalog',
+    contactSupport: 'Support kontaktieren',
+  },
+  // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
+  payments: {
+    title: 'Zahlungen und Belege',
+    subtitle: 'Abgewickelt von Paddle, unserem Verkäufer (Merchant of Record). Belege öffnen sich bei Paddle.',
+    empty: 'Noch keine Zahlungen.',
+    error: 'Der Zahlungsverlauf konnte nicht geladen werden.',
+    restricted: 'Nur Inhaber und Administratoren sehen Zahlungen und Belege.',
+    colDate: 'Datum',
+    colApp: 'App',
+    colDescription: 'Beschreibung',
+    colAmount: 'Betrag',
+    colStatus: 'Status',
+    colReceipt: 'Beleg',
+    receipt: 'Beleg',
+    receiptPending: 'Noch nicht verfügbar',
+    status: {
+      paid: 'Bezahlt',
+      failed: 'Fehlgeschlagen',
+      disputed: 'Beanstandet',
+    },
+    cycle: {
+      monthly: 'monatlich',
+      annual: 'jährlich',
+    },
   },
   // Actionable enforcement banners (UC 0028 closes UC 0027's open point): 402/429.
   enforcement: {

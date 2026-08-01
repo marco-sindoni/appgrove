@@ -97,7 +97,12 @@ Previous/Next con "Page N of M"; stati loading/error/empty/success.
 
 Aperti dalla change `0076` (implementazione di questo use case).
 
-- **Nessuna via all'acquisto dalla vetrina per un'app freemium.** Un'app con una fascia gratuita di
+- ~~**Nessuna via all'acquisto dalla vetrina per un'app freemium.**~~ — **chiuso** nella change
+  `0077-use-case-0096-billing-solo-fatturazione`: la vetrina espone `upgradeAvailable` (vero quando la
+  card è `active` senza abbonamento e l'app ha ancora un prezzo vivo) e quella card guadagna, accanto ad
+  "Apri", l'azione "Passa a un piano superiore" che apre lo stesso flusso di acquisto già ospitato dal
+  catalogo. Il journey `J-BUY` compra ora il Mini-CRM proprio per quella via. Testo originale:
+  Un'app con una fascia gratuita di
   baseline e fasce a pagamento è, per questo use case, in stato `active`: la card offre "Open" e il nome
   del piano, e il passaggio a una fascia superiore vive in Billing. È coerente con la tabella
   stato → azione approvata (change `0066`), ma significa che per la maggior parte delle app freemium il

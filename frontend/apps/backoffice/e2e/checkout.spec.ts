@@ -41,6 +41,23 @@ async function mockCheckout(page: Page) {
   await page.route('**/api/platform/v1/me/entitlements', (route) =>
     route.fulfill({ json: { entitlements: [] } }),
   )
+  // La vetrina da cui parte l'acquisto è ora il catalogo (UC 0095); Billing è di sola fatturazione
+  // (UC 0096) e non ospita più alcuna griglia d'acquisto.
+  await page.route('**/api/platform/v1/me/catalog', (route) =>
+    route.fulfill({
+      json: {
+        apps: [
+          {
+            appSlug: 'demo',
+            name: 'Demo app',
+            descriptions: { en: 'Demo app for the checkout journey' },
+            state: 'available',
+            startingPrice: { amount: 900, currency: 'EUR', billingCycle: 'monthly' },
+          },
+        ],
+      },
+    }),
+  )
 
   // Catalogo tier/prezzi (default annuale + sconto + trial).
   await page.route('**/api/platform/v1/checkout/apps/*/tiers', (route) =>
@@ -86,11 +103,11 @@ async function mockCheckout(page: Page) {
 test('[L2-CHECKOUT] checkout: scelta tier → overlay → polling attivazione → attivato', async ({ page }) => {
   await mockCheckout(page)
 
-  await page.goto('/billing')
-  await expect(page.getByRole('heading', { name: 'Get an app', level: 1 })).toBeVisible()
+  await page.goto('/catalog')
+  await expect(page.getByRole('heading', { name: 'App catalog', level: 1 })).toBeVisible()
 
-  // scegli un'app → entra nella scelta tier (default UI language = EN)
-  await page.getByRole('button', { name: 'Subscribe' }).first().click()
+  // scegli un'app dalla vetrina → entra nella scelta tier (default UI language = EN)
+  await page.getByRole('article', { name: 'Demo app' }).getByRole('button', { name: 'Subscribe' }).click()
 
   // tier Pro con prezzo annuale (default) + sconto + trial
   await expect(page.getByRole('heading', { name: 'Pro' })).toBeVisible()

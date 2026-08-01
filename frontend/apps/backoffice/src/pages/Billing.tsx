@@ -1,64 +1,41 @@
 import { useState } from 'react'
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
-import { MODULES } from '../registry/registry'
 import { CheckoutFlow } from '../billing/CheckoutFlow'
+import { PaymentsPanel } from '../billing/PaymentsPanel'
 import { SubscriptionsPanel } from '../billing/SubscriptionsPanel'
 
 /**
- * Sezione fatturazione / checkout (UC 0024): abbonamenti in corso, scelta dell'app da attivare e flusso
- * di acquisto.
+ * Pagina **Billing** — solo fatturazione (UC 0096): gli abbonamenti del workspace con le azioni
+ * self-service (UC 0028) e lo storico dei pagamenti con le ricevute.
  *
- * <p>La griglia d'acquisto qui sotto è la **vecchia** vetrina, costruita dai moduli impacchettati nel
- * frontend: la vetrina vera, dal catalogo reale del backend, è la pagina App catalog (UC 0095). Le due
- * convivono per una change soltanto — togliere di qui l'acquisto è compito di UC 0096, che possiede la
- * pulizia di Billing.
+ * <p>Fino alla change 0077 questa pagina faceva due mestieri: si intitolava "Get an app" ed era per metà
+ * una vetrina d'acquisto costruita sui moduli impacchettati nel frontend. Quella vetrina ora vive nel
+ * catalogo reale (UC 0095, pagina **App catalog**) e da qui è sparita: chi cerca "dove si compra" e chi
+ * cerca "quanto ho pagato" non finiscono più nello stesso posto.
+ *
+ * <p>Il flusso di acquisto resta montato qui per il **solo** caso della riattivazione di un abbonamento
+ * scaduto: riattivare non è scoprire — è un'azione di fatturazione che parte da una card di abbonamento
+ * già in pagina, e mandarla nel catalogo costringerebbe l'utente a cercare l'app che sta già guardando.
  */
 export function Billing() {
   const { t } = useTranslation()
-  const [appSlug, setAppSlug] = useState<string | null>(null)
+  const [reactivateSlug, setReactivateSlug] = useState<string | null>(null)
 
   return (
     <div className="space-y-[22px]">
       <header className="space-y-1">
-        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('checkout.title')}</h1>
-        <p className="text-sm text-fg-muted">{t('checkout.subtitle')}</p>
+        <h1 className="text-[27px] font-extrabold tracking-[-0.025em] text-fg">{t('billing.title')}</h1>
+        <p className="text-sm text-fg-muted">{t('billing.subtitle')}</p>
       </header>
-      {appSlug ? (
-        <CheckoutFlow appSlug={appSlug} onBack={() => setAppSlug(null)} />
+      {reactivateSlug ? (
+        <CheckoutFlow appSlug={reactivateSlug} onBack={() => setReactivateSlug(null)} />
       ) : (
         <>
-          <SubscriptionsPanel onReactivate={setAppSlug} />
-          <AppPicker onPick={setAppSlug} />
+          <SubscriptionsPanel onReactivate={setReactivateSlug} />
+          <PaymentsPanel />
         </>
       )}
     </div>
-  )
-}
-
-/** Lista delle app acquistabili (dal registry build-time). Sostituita dal catalogo reale in UC 0096. */
-function AppPicker({ onPick }: { onPick: (slug: string) => void }) {
-  const { t } = useTranslation()
-  if (MODULES.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-fg-muted">{t('checkout.noApps')}</CardContent>
-      </Card>
-    )
-  }
-  return (
-    <section aria-label={t('checkout.chooseApp')} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {MODULES.map((m) => (
-        <Card key={m.id}>
-          <CardHeader>
-            <CardTitle>{m.name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => onPick(m.id)}>{t('checkout.subscribe')}</Button>
-          </CardContent>
-        </Card>
-      ))}
-    </section>
   )
 }
 

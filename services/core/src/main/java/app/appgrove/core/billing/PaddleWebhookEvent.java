@@ -14,7 +14,10 @@ import java.util.UUID;
  * {@code custom_data={tenant_id, app_id}} impostati server-side (non manomettibili, #09 C14/D21).
  *
  * <p>{@code status} è {@code null} per gli eventi che non sono uno snapshot di subscription (es.
- * {@code customer.*}); {@code paddleCustomerId} è valorizzato solo dagli eventi {@code customer.*}.
+ * {@code customer.*}); {@code paddleCustomerId} è valorizzato solo dagli eventi {@code customer.*};
+ * {@code transaction} è valorizzato solo dagli eventi {@code transaction.*} che portano i dati economici
+ * (UC 0096) — un evento di transazione senza quei dati resta valido e semplicemente non produce una riga
+ * di storico, perché inventare un importo sarebbe peggio che non mostrarlo.
  *
  * <p>Forma JSON (subscription):
  * <pre>{
@@ -42,11 +45,49 @@ public record PaddleWebhookEvent(
         UUID scheduledTierId,
         Instant scheduledChangeAt,
         String paddleSubscriptionId,
-        String paddleCustomerId) {
+        String paddleCustomerId,
+        TransactionData transaction) {
+
+    /**
+     * Dati economici di una transazione (UC 0096): quanto, in che valuta, con quale ricevuta. Vengono dal
+     * fornitore — il backend non li calcola mai da sé, perché il prezzo che l'utente ha davvero pagato lo
+     * sa solo chi ha incassato.
+     *
+     * @param paddleTransactionId riferimento della transazione presso il fornitore (chiave di idempotenza)
+     * @param amount importo in unità minori (centesimi)
+     * @param billingCycle etichetta del ciclo ({@code monthly}/{@code annual}), da mostrare così com'è
+     * @param receiptUrl ricevuta del fornitore; {@code null} quando non è ancora disponibile
+     * @param billedAt istante dell'addebito; se assente vale l'{@code occurred_at} dell'evento
+     */
+    public record TransactionData(
+            String paddleTransactionId,
+            int amount,
+            String currency,
+            String billingCycle,
+            String receiptUrl,
+            Instant billedAt) {}
 
     /** True per gli eventi {@code customer.*} (mappati su {@code accounts.paddle_customer_id}). */
     public boolean isCustomerEvent() {
         return eventType != null && eventType.startsWith("customer.");
+    }
+
+    /**
+     * Esito da registrare nello storico per questo evento, o {@code null} se l'evento non è una
+     * transazione da mostrare. Sta qui, accanto alla forma del payload, per la stessa ragione per cui
+     * {@link WebhookEventMapping} tiene la mappa verso lo stato di subscription: la semantica dei tipi di
+     * evento non si sparpaglia.
+     */
+    public BillingTransactionStatus transactionStatus() {
+        if (eventType == null) {
+            return null;
+        }
+        return switch (eventType) {
+            case "transaction.completed" -> BillingTransactionStatus.paid;
+            case "transaction.payment_failed" -> BillingTransactionStatus.failed;
+            case "transaction.disputed" -> BillingTransactionStatus.disputed;
+            default -> null;
+        };
     }
 
     public static PaddleWebhookEvent from(ObjectMapper mapper, String body) {
@@ -70,10 +111,32 @@ public record PaddleWebhookEvent(
                     uuid(custom, "scheduled_tier_id"),
                     instant(data, "scheduled_change_at"),
                     text(data, "paddle_subscription_id"),
-                    text(data, "paddle_customer_id"));
+                    text(data, "paddle_customer_id"),
+                    transaction(data, instant(root, "occurred_at")));
         } catch (Exception e) {
             throw new IllegalArgumentException("Payload webhook non valido", e);
         }
+    }
+
+    /**
+     * Dati economici, se il payload li porta. Il riferimento della transazione è il minimo indispensabile
+     * (è la chiave di idempotenza): senza, non si registra nulla — meglio uno storico incompleto di uno
+     * storico che duplica la stessa riga a ogni ri-consegna dell'evento.
+     */
+    private static TransactionData transaction(JsonNode data, Instant occurredAt) {
+        String id = text(data, "paddle_transaction_id");
+        if (id == null) {
+            return null;
+        }
+        JsonNode amount = data.get("amount");
+        Instant billedAt = instant(data, "billed_at");
+        return new TransactionData(
+                id,
+                amount == null || amount.isNull() ? 0 : amount.asInt(),
+                text(data, "currency"),
+                text(data, "billing_cycle"),
+                text(data, "receipt_url"),
+                billedAt != null ? billedAt : occurredAt);
     }
 
     private static String text(JsonNode node, String field) {

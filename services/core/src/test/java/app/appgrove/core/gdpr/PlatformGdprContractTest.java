@@ -43,6 +43,10 @@ class PlatformGdprContractTest {
         data.newsletterSubscriber("gdpr-a@example.test", "confirmed");
         // Accettazione legale (UC 0056): prova che l'export copre il log accettazioni.
         data.legalAcceptance(TENANT_A, "sub-gdpr-a", "terms", "1.0.0", 1, "accept");
+        // Storico pagamenti (UC 0096): l'export deve restituire anche quello che il conto ha pagato.
+        java.util.UUID gdprApp = java.util.UUID.randomUUID();
+        data.app(gdprApp, "gdpr-app-" + gdprApp.toString().substring(0, 8));
+        data.billingTransaction(TENANT_A, gdprApp, "txn_gdpr_" + gdprApp, 1500);
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());

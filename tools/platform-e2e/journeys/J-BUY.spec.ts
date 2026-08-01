@@ -4,24 +4,27 @@ import { browserLogin } from '../helpers/browser'
 import { dbRow, dbRows } from '../helpers/db'
 
 /**
- * J-BUY — acquisto e attivazione (UC 0091, esteso alla vetrina dalla change 0076 / UC 0095).
+ * J-BUY — acquisto e attivazione (UC 0091, esteso alla vetrina dalla change 0076 / UC 0095 e allo
+ * storico pagamenti dalla change 0077 / UC 0096).
  *
  * Tenant fresco → **catalogo** (/catalog): la card di Teams è `Available` col prezzo di partenza letto
  * dal listino vero → acquisto → overlay del fake Paddle → il webhook (pipeline REALE: ingest → coda →
  * consumer) materializza la subscription → ritorno alla vetrina, dove **la stessa card è ora `Active`**.
- * Poi l'acquisto del Mini-CRM dalla pagina Billing (l'altra via, ancora viva fino a UC 0096) → la
- * sidebar mostra l'app tra YOUR APPS → il modulo si monta e risponde. Assert DB: subscription ed eventi
- * webhook col tenant_id giusto, nessuna riga per altri tenant (leak detector, #10 dec. 13).
+ * Poi il Mini-CRM, che è freemium: dalla sua card `Active` si passa al piano a pagamento — la via aperta
+ * da UC 0096 — e la sidebar mostra l'app tra YOUR APPS, col modulo che si monta e risponde. Infine
+ * **Billing**, dove il pagamento appena fatto compare nello storico con la sua ricevuta. Assert DB:
+ * subscription, transazioni ed eventi webhook col tenant_id giusto, nessuna riga per altri tenant
+ * (leak detector, #10 dec. 13).
  *
  * Perché due app e non una: il Mini-CRM è l'unica app con un modulo frontend **e** un tier a pagamento,
- * ma ha anche un tier gratuito di baseline — nel catalogo è quindi già `Active`, non acquistabile. Teams
- * è l'unica app genuinamente `Available` e serve a provare la transizione della card; il Mini-CRM resta
- * per provare che il modulo comprato si monta davvero.
+ * ma ha anche un tier gratuito di baseline — nel catalogo è quindi già `Active`. Teams è l'unica app
+ * genuinamente `Available` e serve a provare la transizione della card da proposta d'acquisto ad app in
+ * uso; il Mini-CRM prova il passaggio di piano di un'app freemium e il montaggio del modulo comprato.
  *
  * L'app comprabile col modulo è il Mini-CRM, attivato per la run dal global-setup (decisione 3, change 0070).
  */
 
-test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attivata → modulo montato → DB coerente', async ({
+test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attivata → modulo montato → pagamento nello storico → DB coerente', async ({
   page,
 }) => {
   const t = await tenant('jbuy')
@@ -55,15 +58,11 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attiv
   await expect(teamsAfter.getByRole('button', { name: 'Open' })).toBeVisible()
   await expect(teamsAfter.getByRole('button', { name: 'Subscribe' })).toHaveCount(0)
 
-  // ── 4. l'altra via all'acquisto (Billing, viva fino a UC 0096) e il modulo che si monta ─────
-  await page.goto('/billing')
-  await expect(page.getByRole('heading', { name: 'Get an app', level: 1 })).toBeVisible()
-  const picker = page.getByRole('region', { name: 'Choose an app' })
-  await picker
-    .locator(':scope > *')
-    .filter({ hasText: 'Mini-CRM' })
-    .getByRole('button', { name: 'Subscribe' })
-    .click()
+  // ── 4. l'app freemium: dalla vetrina si passa al piano a pagamento, e il modulo si monta ────
+  // È il buco chiuso da UC 0096: il Mini-CRM è già `Active` grazie alla fascia gratuita, quindi fino
+  // alla change 0077 il suo piano a pagamento non era comprabile da nessuna parte del prodotto.
+  const crm = page.getByRole('article', { name: 'Mini-CRM' })
+  await crm.getByRole('button', { name: 'Upgrade plan' }).click()
 
   await expect(page.getByRole('heading', { name: 'Mini-CRM Team' })).toBeVisible()
   await expect(page.getByText('14-day free trial')).toBeVisible()
@@ -79,7 +78,18 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attiv
   const nav = page.getByRole('navigation', { name: 'Platform' })
   await expect(nav.locator('a[href="/app/crm"]')).toBeVisible()
 
-  // ── 5. assert DB (leak detector) ────────────────────────────────────────────
+  // ── 5. Billing: il pagamento appena fatto compare nello storico con la sua ricevuta ─────────
+  await page.goto('/billing')
+  await expect(page.getByRole('heading', { name: 'Billing', level: 1 })).toBeVisible()
+  // Billing è ora di sola fatturazione: la vetrina d'acquisto non c'è più (UC 0096).
+  await expect(page.getByRole('region', { name: 'Choose an app' })).toHaveCount(0)
+  const history = page.getByRole('table')
+  await expect(history).toBeVisible()
+  await expect(history.getByText('Mini-CRM Team — monthly').first()).toBeVisible()
+  await expect(history.getByText('Paid').first()).toBeVisible()
+  await expect(history.getByRole('link', { name: /Receipt/ }).first()).toBeVisible()
+
+  // ── 6. assert DB (leak detector) ────────────────────────────────────────────
   for (const slug of ['crm', 'teams']) {
     const [status, tierKey] = dbRow(
       `select s.status, at.key
@@ -104,4 +114,16 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attiv
     dbRows(`select tenant_id from platform.subscription where tenant_id = $1`, [t.tenantId]),
   ).toHaveLength(2)
   expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
+  // Storico pagamenti (UC 0096): una transazione riuscita per ciascuna delle due app comprate,
+  // scritta dalla stessa pipeline webhook che ha materializzato la subscription.
+  const paid = dbRows(
+    `select a.slug, bt.status, bt.amount
+       from platform.billing_transaction bt
+       join platform.app a on a.id = bt.app_id
+      where bt.tenant_id = $1 and bt.deleted_at is null`,
+    [t.tenantId],
+  )
+  expect(paid).toHaveLength(2)
+  expect(paid.every(([, status]) => status === 'paid')).toBeTruthy()
+  expect(paid.every(([, , amount]) => Number(amount) > 0)).toBeTruthy()
 })

@@ -288,6 +288,80 @@ entries:
       it: "Per la vita dell'account e il periodo di prescrizione applicabile (prova del consenso contrattuale, #13 E) — da confermare in revisione legale"
       en: "For the account lifetime and the applicable limitation period (proof of contractual consent, #13 E) — to be confirmed in legal review"
 
+  - key: billing_transactions.paddle_transaction_id
+    entity: app.appgrove.core.billing.BillingTransaction
+    field: paddleTransactionId
+    location:
+      it: Tabella `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Titolari dell'account che hanno effettuato un pagamento (nei B2C individuali, persone fisiche)
+      en: Account holders who made a payment (for individual B2C accounts, natural persons)
+    data_category:
+      it: Identificativo online (id della transazione presso Paddle, pseudo-identificatore)
+      en: Online identifier (transaction id at Paddle, pseudo-identifier)
+    purpose:
+      it: >-
+        Storico pagamenti e ricevute mostrato al titolare del conto nella pagina Billing (UC 0096) e
+        riconciliazione con Paddle (Merchant of Record, titolare autonomo — #13 H)
+      en: >-
+        Payment history and receipts shown to the account holder on the Billing page (UC 0096) and
+        reconciliation with Paddle (Merchant of Record, independent controller — #13 H)
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace; gli obblighi fiscali sui pagamenti restano in capo a Paddle
+      en: While the account is active + 14-day grace period; fiscal retention on payments rests with Paddle
+
+  - key: billing_transactions.amount
+    entity: app.appgrove.core.billing.BillingTransaction
+    field: amount
+    location:
+      it: Tabella `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1)
+      en: Table `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1)
+    data_subjects:
+      it: Titolari dell'account che hanno effettuato un pagamento (nei B2C individuali, persone fisiche)
+      en: Account holders who made a payment (for individual B2C accounts, natural persons)
+    data_category:
+      it: >-
+        Dati di fatturazione (importo e valuta della transazione). NON sono dati di pagamento in senso
+        stretto: nessun dato di carta o di conto transita o è conservato da appgrove (PCI in capo a Paddle)
+      en: >-
+        Billing data (transaction amount and currency). NOT payment instrument data: no card or bank
+        details ever transit through or are stored by appgrove (PCI scope rests with Paddle)
+    purpose:
+      it: Mostrare al titolare del conto quanto e quando ha pagato (esecuzione del contratto, UC 0096)
+      en: Showing the account holder what was paid and when (contract performance, UC 0096)
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace; gli obblighi fiscali sui pagamenti restano in capo a Paddle
+      en: While the account is active + 14-day grace period; fiscal retention on payments rests with Paddle
+
+  - key: billing_transactions.receipt_url
+    entity: app.appgrove.core.billing.BillingTransaction
+    field: receiptUrl
+    location:
+      it: Tabella `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1) — il documento è ospitato da Paddle
+      en: Table `platform.billing_transaction` (Aurora PostgreSQL, eu-west-1) — the document itself is hosted by Paddle
+    data_subjects:
+      it: Titolari dell'account che hanno effettuato un pagamento
+      en: Account holders who made a payment
+    data_category:
+      it: Collegamento a un documento di pagamento ospitato da Paddle (ricevuta intestata al cliente)
+      en: Link to a payment document hosted by Paddle (receipt made out to the customer)
+    purpose:
+      it: Consentire al titolare del conto di aprire la ricevuta del proprio pagamento (UC 0096)
+      en: Letting the account holder open the receipt for their own payment (UC 0096)
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché l'account è attivo + 14 giorni di grace; il documento è conservato da Paddle (MoR)
+      en: While the account is active + 14-day grace period; the document is retained by Paddle (MoR)
+
   - key: logs.structured
     location:
       it: CloudWatch Logs (eu-west-1/eu-central-1); audit su S3/Glacier (#08 I)

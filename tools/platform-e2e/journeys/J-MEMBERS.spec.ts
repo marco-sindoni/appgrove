@@ -80,7 +80,9 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
     page.getByRole('alert').filter({ hasText: 'Posti esauriti: fai upgrade per assegnarne altri.' }),
   ).toBeVisible()
   await page.getByRole('button', { name: 'Passa a un piano superiore' }).click()
-  await expect(page.getByRole('heading', { name: 'Get an app', level: 1 })).toBeVisible()
+  // Billing è ora di sola fatturazione (UC 0096): l'invito all'upgrade porta dov'è la card
+  // dell'abbonamento con il suo "Change plan", non su una griglia d'acquisto.
+  await expect(page.getByRole('heading', { name: 'Billing', level: 1 })).toBeVisible()
 
   // Upgrade: acquisto del tier Team (checkout reale via API; l'attivazione passa dai webhook).
   await buyApp(owner.tokens, 'crm', 'team')

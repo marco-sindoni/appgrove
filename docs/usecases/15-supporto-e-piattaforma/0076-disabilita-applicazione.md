@@ -148,6 +148,15 @@ modifica infrastrutturale; la dismissione definitiva (→ UC 0048 via skill `dro
   `0071-use-case-0076-disabilita-applicazione`: `/me/subscriptions` espone `appDisabled` e la card dell'abbonamento
   mostra badge "Sospesa" più l'avviso "app sospesa dalla piattaforma — abbonamento valido, dati intatti". L'abbonamento
   continua a essere elencato (per disegno UC 0028 li mostra tutti), ma non contraddice più la barra laterale.
+- **Effetto della sospensione sull'addebito** (tracciato 2026-08-01, change `0077`): la card
+  dell'abbonamento di un'app sospesa dalla piattaforma dice oggi la verità che conosciamo — abbonamento
+  valido, dati intatti, come contattare l'assistenza — e **non** dice, come suggerirebbe il riferimento
+  visivo approvato della change `0066`, che «l'abbonamento non viene addebitato finché l'app non è
+  disponibile». Sarebbe una promessa che il prodotto non mantiene: questo use case lascia esplicitamente
+  fuori la gestione commerciale (rimborsi, comunicazioni) e nulla sospende l'addebito presso il
+  fornitore. La domanda — se una sospensione di piattaforma debba sospendere o rimborsare l'addebito, e
+  con quale automatismo — è di **prodotto e prezzo** e non è dell'agente: va decisa insieme al listino
+  (skill `pricing-change`) prima di poterla scrivere in un'interfaccia.
 - **Rinfresco delle proiezioni entitlement lato app** (tracciato 2026-08-01, change `0071`): disabilitare un'app
   **non** pubblica alcun evento di invalidazione degli entitlement. L'unico pubblicatore esistente
   (`EntitlementInvalidationPublisher`, UC 0027) lavora **per tenant** su un cambio di stato di fatturazione; qui il

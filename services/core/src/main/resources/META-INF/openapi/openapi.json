@@ -304,6 +304,10 @@
           }
         }
       },
+      "BillingTransactionStatus" : {
+        "type" : "string",
+        "enum" : [ "paid", "failed", "disputed" ]
+      },
       "CatalogAppState" : {
         "type" : "string",
         "enum" : [ "available", "active", "trial", "payment_pending", "cancellation_scheduled", "disabled_by_platform" ]
@@ -340,6 +344,9 @@
           },
           "startingPrice" : {
             "$ref" : "#/components/schemas/StartingPrice"
+          },
+          "upgradeAvailable" : {
+            "type" : "boolean"
           }
         }
       },
@@ -789,6 +796,50 @@
           "totalPages" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "PaymentView" : {
+        "type" : "object",
+        "properties" : {
+          "billedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "planName" : {
+            "type" : "string"
+          },
+          "billingCycle" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "status" : {
+            "$ref" : "#/components/schemas/BillingTransactionStatus"
+          },
+          "receiptUrl" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PaymentsView" : {
+        "type" : "object",
+        "properties" : {
+          "payments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PaymentView"
+            }
           }
         }
       },
@@ -2671,6 +2722,33 @@
         "tags" : [ "Legal Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/me/payments" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaymentsView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Payments",
+        "tags" : [ "Payments Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "owner", "admin" ]
         } ]
       }
     },

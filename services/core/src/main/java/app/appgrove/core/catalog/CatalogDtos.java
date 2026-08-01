@@ -32,6 +32,11 @@ public final class CatalogDtos {
      * @param cancelAt fine dell'accesso per disdetta programmata, valorizzato solo in
      *     {@code cancellation_scheduled}
      * @param startingPrice prezzo di partenza; assente per un'app con sole fasce gratuite
+     * @param upgradeAvailable vero quando l'app è già in uso <b>grazie alla sola fascia gratuita</b> (nessun
+     *     abbonamento) ed esiste ancora un piano a pagamento da comprare. Serve a chiudere il buco tracciato
+     *     da UC 0095: senza, un'app freemium risulta {@code active} e dalla vetrina non c'è alcuna via
+     *     all'acquisto del piano superiore. Falso quando un abbonamento c'è già: lì il cambio di piano vive
+     *     in Billing, e mandare l'utente al checkout gli farebbe comprare due volte la stessa cosa
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record CatalogAppView(
@@ -43,7 +48,8 @@ public final class CatalogDtos {
             String planName,
             Instant trialEndsAt,
             Instant cancelAt,
-            StartingPrice startingPrice) {}
+            StartingPrice startingPrice,
+            boolean upgradeAvailable) {}
 
     /** Il prezzo più basso da cui si parte, in unità minori (centesimi), come il resto del listino. */
     public record StartingPrice(int amount, String currency, String billingCycle) {}

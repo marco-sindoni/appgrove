@@ -249,6 +249,16 @@ function AppCard({
               <Button variant="ghost" size="sm" onClick={() => navigate(`/app/${app.appSlug}`)}>
                 {t('catalog.open')}
               </Button>
+              {/*
+                App già in uso grazie alla sola fascia gratuita: senza questa azione il piano a pagamento
+                non era comprabile da nessuna parte — la card diceva "attiva" e in Billing non c'è alcuna
+                card di abbonamento su cui agire. È il buco che UC 0095 aveva lasciato aperto a UC 0096.
+              */}
+              {app.upgradeAvailable && (
+                <Button size="sm" disabled={!canSubscribe} onClick={onSubscribe}>
+                  {t('catalog.upgrade')}
+                </Button>
+              )}
               <span className="ml-auto text-[12.5px] text-fg-muted">
                 {state === 'trial' && app.trialEndsAt
                   ? t('catalog.trialEnds', { date: date(app.trialEndsAt) })

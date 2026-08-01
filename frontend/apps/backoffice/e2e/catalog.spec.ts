@@ -26,6 +26,7 @@ interface CatalogApp {
   trialEndsAt?: string
   cancelAt?: string
   startingPrice?: { amount: number; currency: string; billingCycle: string }
+  upgradeAvailable?: boolean
 }
 
 const app = (over: Partial<CatalogApp> = {}): CatalogApp => ({
@@ -223,4 +224,39 @@ test('[L2-CATALOG] l’acquisto parte dalla vetrina e riusa il checkout esistent
   // Tornare indietro riporta alla vetrina, che è dove si osserva il cambio di stato della card.
   await page.getByRole('button', { name: 'Back' }).click()
   await expect(card(page, 'Notes').getByRole('button', { name: 'Subscribe' })).toBeVisible()
+})
+
+test('[L2-CATALOG] un’app freemium già in uso ha comunque la via al piano a pagamento', async ({
+  page,
+}) => {
+  // Fino a UC 0096 questa card diceva soltanto "Apri": l'app era attiva grazie alla fascia gratuita e
+  // il piano a pagamento non era comprabile da nessuna parte — in Billing non c'è alcuna card su cui agire.
+  await mockBackend(page, {
+    apps: [app({ appSlug: 'notes', name: 'Notes', state: 'active', planName: 'Free', upgradeAvailable: true })],
+  })
+  await page.route('**/api/platform/v1/checkout/apps/notes/tiers', (route) =>
+    route.fulfill({
+      json: {
+        appId: 'a-notes',
+        slug: 'notes',
+        name: 'Notes',
+        tiers: [
+          {
+            tierId: 't-pro',
+            key: 'pro',
+            name: 'Notes Pro',
+            trialDays: 0,
+            limits: {},
+            features: {},
+            prices: [{ billingCycle: 'monthly', amount: 900, currency: 'EUR' }],
+          },
+        ],
+      },
+    }),
+  )
+
+  await page.goto('/catalog')
+  await expect(card(page, 'Notes').getByRole('button', { name: 'Open' })).toBeVisible()
+  await card(page, 'Notes').getByRole('button', { name: 'Upgrade plan' }).click()
+  await expect(page.getByText('Notes Pro')).toBeVisible()
 })

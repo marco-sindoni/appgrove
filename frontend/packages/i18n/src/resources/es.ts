@@ -32,6 +32,7 @@ export const es: Resources = {
     next: 'Siguiente',
     pageOf: 'Página {{page}} de {{pages}}',
     open: 'Abrir',
+    upgrade: 'Mejorar el plan',
     fixPayment: 'Arreglar el pago',
     undoCancellation: 'Deshacer la cancelación',
     contactSupport: 'Contactar con soporte',
@@ -332,12 +333,13 @@ export const es: Resources = {
     invalidCode: 'Código no válido.',
     generic: 'Algo salió mal. Inténtalo de nuevo.',
   },
+  // Pagina Billing — solo fatturazione (UC 0096): abbonamenti + storico pagamenti.
+  billing: {
+    title: 'Facturación',
+    subtitle: 'Gestiona tus planes, pagos y recibos.',
+  },
   // Checkout d'acquisto app (UC 0024) — backoffice.
   checkout: {
-    title: 'Consigue una app',
-    subtitle: 'Elige una app y un plan para suscribirte.',
-    chooseApp: 'Elige una app',
-    noApps: 'No hay apps disponibles para comprar.',
     monthly: 'Mensual',
     annual: 'Anual',
     save2Months: '2 meses gratis',
@@ -391,6 +393,33 @@ export const es: Resources = {
     appDisabledTitle: 'App suspendida por la plataforma',
     appDisabledBody: 'Esta app no está disponible temporalmente para ninguna cuenta. Tu suscripción sigue siendo válida y tus datos están intactos: volverá a ser accesible en cuanto se retire la suspensión.',
     blockedTitle: 'Cambio a plan inferior no posible',
+    emptyCta: 'Ver el catálogo de apps',
+    contactSupport: 'Contactar con soporte',
+  },
+  // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
+  payments: {
+    title: 'Pagos y recibos',
+    subtitle: 'Procesados por Paddle, nuestro comerciante registrado. Los recibos se abren en Paddle.',
+    empty: 'Aún no hay pagos.',
+    error: 'No hemos podido cargar el historial de pagos.',
+    restricted: 'Solo los propietarios y administradores pueden ver los pagos y recibos.',
+    colDate: 'Fecha',
+    colApp: 'App',
+    colDescription: 'Descripción',
+    colAmount: 'Importe',
+    colStatus: 'Estado',
+    colReceipt: 'Recibo',
+    receipt: 'Recibo',
+    receiptPending: 'Aún no disponible',
+    status: {
+      paid: 'Pagado',
+      failed: 'Fallido',
+      disputed: 'Disputado',
+    },
+    cycle: {
+      monthly: 'mensual',
+      annual: 'anual',
+    },
   },
   // Actionable enforcement banners (UC 0028 closes UC 0027's open point): 402/429.
   enforcement: {
