@@ -1,0 +1,160 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast. Lo sviluppatore ha rinunciato in anticipo ai tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge); restano obbligatorie la suite completa verde prima del commit (./run-tests.sh senza parametri), il registro decisioni integrale e il file how-to-test.md. Merge e push restano al chiamante (skill go-fast)."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0093 (docs/usecases/20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md), come dichiarato all'invocazione. Numero di change 0073 derivato dalla cartella changes/ (ultima presente: 0072), quindi identificativo 0073-use-case-0093-registro-copertura-e2e."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) docs/usecases/_INDEX.md NON viene toccato: la tabella di esecuzione contiene solo i 60 use case base (0001-0060) e gli use case delle epiche evolutive — fra cui 0093 — non hanno una riga di stato. Stesso comportamento delle change 0069/0070/0071/0072 (UC 0090-0092, 0076). Il punto 5 della Definition of Done dello use case è quindi soddisfatto per assenza: aggiungere le righe evo all'indice sarebbe una ristrutturazione dell'indice, lavoro di un'altra change. Il divario è stato tracciato in docs/_BACKLOG.md."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Definizione operativa di «use case con superficie frontend»: superficie NAVIGABILE CON UN BROWSER DENTRO IL PRODOTTO (backoffice, console admin, moduli delle app). Il sito vetrina (Astro, pagine statiche) è escluso come classe, perché è già coperto dai controlli post-build dell'area `site` di run-tests.sh e percorsi a browser sulle sue pagine sarebbero costo senza rischio coperto. Alternativa scartata: includere la vetrina e dichiarare nove voci `da-coprire` che nessuno avrebbe mai chiuso — un registro pieno di buchi finti perde credibilità.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "Categoria di esenzione `vetrina-statica` per gli use case 0002, 0036-0042, 0053."
+      },
+      {
+        "file": "docs/testing/README.md",
+        "description": "La definizione è scritta nella sezione «usecases_con_superficie»."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'elenco autorevole degli use case con superficie sta DENTRO il registro (campo `usecases_con_superficie`) e non viene dedotto dalla prosa dei drill-down: lo use case lo chiedeva esplicitamente e il controllo dev'essere deterministico. Complemento: ogni altro use case del catalogo deve comparire fra le `esenzioni` con categoria e motivo. Il controllo verifica che ogni numero del catalogo compaia in una e una sola delle due liste — così un use case nuovo non può passare inosservato.",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "Regola `catalogo`: completezza e non sovrapposizione fra superfici ed esenzioni."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Tre categorie di esenzione anziché un motivo libero: `senza-superficie` (servizi, infrastruttura, strumenti, adempimenti di business, librerie di stile), `vetrina-statica` (sito Astro) e `non-implementato` (superficie non ancora esistente in main). Le prime due sono permanenti, la terza è TEMPORANEA e sorvegliata. Senza la distinzione, le 19 storie evolutive sarebbero state esentate con la stessa formula delle esenzioni definitive e ci sarebbero rimaste per sempre.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "19 esenzioni `non-implementato` (epiche 12-15, 19, 21), 9 `vetrina-statica`, 55 `senza-superficie`."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La guardia sull'esenzione `non-implementato` usa l'esistenza di una cartella `changes/*-use-case-NNNN-*` come prova che la storia è stata implementata, NON lo stato di docs/usecases/_INDEX.md: l'indice non ha righe per le storie evolutive, quindi non saprebbe rispondere. È deterministica e non richiede convenzioni nuove. Il rimando allo spostamento su una sorgente migliore è scritto nei punti aperti di UC 0093 e in docs/_BACKLOG.md.",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "`listImplementedUseCases()` e la regola `esenzione` che rifiuta l'esenzione scaduta."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Aggancio test↔registro con l'etichetta `[ID]` IN TESTA al titolo del test, come proposto dallo use case. Il controllo pretende che OGNI test nelle cartelle mappate porti un'etichetta: senza questa regola in più, un test nuovo senza etichetta sfuggirebbe al registro in silenzio, che è esattamente il difetto che il registro esiste per chiudere. L'etichetta non disturba l'esecuzione mirata (`run.sh --journey J-BUY` filtra per espressione regolare sul titolo e continua a funzionare) e nessun test usa i titoli per nominare istantanee visive (verificato: nessun toHaveScreenshot/toMatchSnapshot nel repo).",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "`scanTests()` raccoglie le dichiarazioni di test con primo argomento stringa; `test.skip(condizione, 'motivo')` è escluso di proposito."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Granularità degli identificativi: UN identificativo per PERCORSO nella suite di piattaforma (già così: un file per journey) e UN identificativo per FILE ai livelli 2 e 3, con prefisso `L2-`/`L3-`. Alternativa scartata: un identificativo per singolo test di livello 2, che avrebbe portato 29 voci quasi identiche nel registro senza aggiungere informazione — il file è già l'unità coerente di flusso. Il formato ammette comunque più test con la stessa etichetta, quindi la scelta è reversibile file per file.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "13 voci di piattaforma, 12 di livello 2, 1 di livello 3."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il campo `livello` di ogni voce `test` viene VERIFICATO contro la cartella in cui il file vive (tools/platform-e2e/journeys → platform, frontend/apps/*/e2e → l2, frontend/apps/*/e2e-l3 → l3). Il campo è richiesto dallo use case e sarebbe deducibile: verificarlo invece di dedurlo lo trasforma da ridondanza a controllo, e coglie gli errori di copia-incolla fra voci.",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "`livelloDelFile()` e la regola `coperto` che confronta atteso e dichiarato."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Lo strumento è Node puro con la sola dipendenza `yaml`, sullo stampo di tools/compliance (stessa dipendenza, stessi script `test`/`check`, stessi test con `node --test` su cartelle di prova costruite in una cartella temporanea). Nessuna libreria di validazione di schemi: le regole sono nove e scritte a mano producono messaggi in italiano che nominano la voce da sistemare, cosa che un validatore generico non fa.",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/package.json",
+        "description": "Dipendenza `yaml`, script `test` e `check`."
+      },
+      {
+        "file": "tools/e2e-coverage/test/check.test.mjs",
+        "description": "25 test su repository finti; nessun test tocca il repository vero."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il controllo entra nell'area `tooling` di run-tests.sh come sesto blocco, in DUE comandi: `npm test` (i test dello strumento su cartelle di prova) e `npm run check` (il registro VERO contro i test del repository). Le dipendenze si installano da sole se assenti, come già fanno pricing-change e finalize-landing. Aggiornata anche l'intestazione dello script e l'intervallo di righe usato da `usage()` (era 2,42 → 2,46), che altrimenti avrebbe troncato l'aiuto.",
+    "files": [
+      {
+        "file": "run-tests.sh",
+        "description": "Blocco (6) in run_tooling + intestazione dell'area tooling + intervallo di usage()."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Popolamento iniziale: 26 voci `coperto` (13 piattaforma, 12 livello 2, 1 livello 3), 7 voci `da-coprire` e 1 `escluso`. I buchi provengono dai punti aperti già scritti negli use case 0091 (ramo upgrade della quota su fatture; invalidazione delle sessioni al reset; localizzazione end-to-end), 0092 (sistema di richieste nativo), 0033 (conferma del recesso per-app non osservabile) e 0034 (limitazione art. 18 sul conto senza effetto; messaggio dedicato all'utente limitato). L'esclusione è quella già decisa in UC 0092: allarmi e telemetria durante un guasto appartengono all'area osservabilità, non a un percorso a browser."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La leva «account in eliminazione» di A-ENTITLE NON diventa una voce `da-coprire`: la decisione 4 della change 0072 aveva già accertato che il terzo stato si ottiene con la richiesta reale di cancellazione, senza alcuna leva artificiosa — quindi non c'è nulla di scoperto. Verificato prima di scrivere il registro per non ereditare un'ipotesi prudenziale ormai superata."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) La menzione del registro in CLAUDE.md NON viene fatta qui: è esplicitamente il punto 2 della Definition of Done di UC 0094 («new-change aggiornata: passo di copertura nel processo + menzione in CLAUDE.md»), insieme al passo di processo che le dà senso. Anticiparla significherebbe scrivere in CLAUDE.md un obbligo che nessuna skill sa ancora eseguire. La scoperta è comunque garantita da tre rimandi: docs/10-testing.md (sezione F), tools/platform-e2e/README.md e i punti aperti di UC 0093/0094.",
+    "files": [
+      {
+        "file": "docs/10-testing.md",
+        "description": "Nota in coda alla sezione F (Frontend E2E) che punta al registro e al controllo."
+      },
+      {
+        "file": "tools/platform-e2e/README.md",
+        "description": "La riga su journeys/ ora descrive l'etichetta nel titolo e il legame col registro."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il test end-to-end generato da `new-application` resta SENZA etichetta: il controllo diventerà rosso alla prima app nuova, con un messaggio che dice cosa fare. È il comportamento voluto (il registro deve costringere a dichiarare il percorso) e industrializzarlo appartiene a UC 0094, che ha già in Definition of Done «new-application genera journey + voce di registro». Il caso è documentato nella tabella di manutenzione di docs/testing/README.md perché nessuno lo scopra a sorpresa. Verificato che il collaudo di livello 3 del generatore non esegue il controllo di copertura, quindi la suite resta verde."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Rimandi differiti tracciati per iscritto, come prescrive CLAUDE.md: (a) nei punti aperti di UC 0093 — definizione di superficie adottata e revisione se la vetrina diventasse interattiva, guardia dell'esenzione da spostare quando l'indice coprirà le storie evolutive, granularità delle etichette ai livelli 2/3, aggiornamento manuale del registro fino a UC 0094; (b) nei punti aperti di UC 0094 — consegna degli artefatti e le due leve pronte da agganciare alle skill; (c) in docs/_BACKLOG.md — l'indice di esecuzione degli use case non ha righe per le storie evolutive, per cui `new-change` non riesce a marcarle e il controllo ha dovuto usare le cartelle changes/.",
+    "files": [
+      {
+        "file": "docs/usecases/20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md",
+        "description": "Quattro rimandi nuovi nella sezione «Punti aperti / decisioni differite»."
+      },
+      {
+        "file": "docs/usecases/20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md",
+        "description": "Sezione di consegna dalla change 0073, con il divario che resta a quello use case."
+      },
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Voce nuova: nessuna riga per le storie evolutive in _INDEX.md."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) La prima esecuzione della suite completa ha dato l'area `backend` rossa per un guasto TRANSITORIO dell'infrastruttura di test: PricingCatalogRealOnlyTest non ha avviato Quarkus perché Flyway non ha stabilito la connessione col container Postgres appena creato («errore impostando la connessione SSL»). Accertato che la change non tocca alcun file sotto services/ e che il test rieseguito da solo passa; la suite completa è stata rieseguita da capo ed è risultata verde su tutte e otto le aree. Non si è piegato né disattivato alcun test. Instabilità della stessa famiglia sono già tracciate in docs/_BACKLOG.md, quindi non si è aperto un rimando nuovo."
+  }
+]

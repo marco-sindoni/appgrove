@@ -20,7 +20,7 @@ const MEMBER_PASSWORD = 'Password1!'
  * sessione) → protezione ultimo owner (assert UI).
  */
 
-test('J-MEMBERS: invito con email reale → seconda sessione → seat fino al 429 → upgrade sblocca → ruoli e revoca', async ({
+test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 429 → upgrade sblocca → ruoli e revoca', async ({
   page,
   browser,
 }) => {

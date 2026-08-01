@@ -144,7 +144,7 @@ async function mockAuthed(page: Page) {
   )
 }
 
-test('console GDPR: aggregazione → ticket → risposta → limitazione art. 18', async ({ page }) => {
+test('[L2-ADMIN-GDPR] console GDPR: aggregazione → ticket → risposta → limitazione art. 18', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/')
   await page.getByRole('link', { name: 'GDPR rights' }).click()

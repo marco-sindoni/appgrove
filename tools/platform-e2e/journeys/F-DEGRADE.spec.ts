@@ -37,7 +37,7 @@ test.afterEach(() => {
   if (problem) throw new Error(problem)
 })
 
-test('F-DEGRADE: servizio fermato davvero → errore con riprova, mai diniego → riavvio → rientro senza ricaricare', async ({
+test('[F-DEGRADE] servizio fermato davvero → errore con riprova, mai diniego → riavvio → rientro senza ricaricare', async ({
   page,
 }) => {
   // ── 0. cliente autenticato con l'app funzionante ────────────────────────────

@@ -23,7 +23,7 @@ const CORE_API = process.env.PLATFORM_CORE_API ?? 'http://localhost:20080'
  * Un secondo tenant "canarino" prova l'isolamento: i suoi dati non devono comparire nell'export.
  */
 
-test('J-PRIVACY: rettifica → export reale con download validato → recesso per-app → eliminazione con grace', async ({
+test('[J-PRIVACY] rettifica → export reale con download validato → recesso per-app → eliminazione con grace', async ({
   page,
 }) => {
   const canary = await tenant('jprivacy-canary')

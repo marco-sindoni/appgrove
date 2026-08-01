@@ -97,7 +97,7 @@ async function mockAuthed(page: Page) {
   return { purges }
 }
 
-test('I miei dati: rettifica del nome visualizzato', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: rettifica del nome visualizzato', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/privacy')
   await expect(page.getByRole('heading', { name: 'My data', level: 1 })).toBeVisible()
@@ -107,7 +107,7 @@ test('I miei dati: rettifica del nome visualizzato', async ({ page }) => {
   await expect(page.getByText('Saved')).toBeVisible()
 })
 
-test('I miei dati: export profilo scarica un JSON', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: export profilo scarica un JSON', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/privacy')
 
@@ -117,7 +117,7 @@ test('I miei dati: export profilo scarica un JSON', async ({ page }) => {
   expect(download.suggestedFilename()).toBe('appgrove-profilo.json')
 })
 
-test('I miei dati: export fallito → messaggio con link alla pagina Supporto (UC 0034)', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: export fallito → messaggio con link alla pagina Supporto (UC 0034)', async ({ page }) => {
   await mockAuthed(page)
   // override (registrato dopo mockAuthed → vince): l'export fallisce; il ticket privacy nasce lato server
   const failed = {
@@ -141,7 +141,7 @@ test('I miei dati: export fallito → messaggio con link alla pagina Supporto (U
   await expect(page.getByRole('heading', { name: 'Support', level: 1 })).toBeVisible()
 })
 
-test('I miei dati: export account → pronto → link con scadenza', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: export account → pronto → link con scadenza', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/privacy')
 
@@ -150,7 +150,7 @@ test('I miei dati: export account → pronto → link con scadenza', async ({ pa
   await expect(page.getByRole('button', { name: 'Download archive' })).toBeEnabled()
 })
 
-test('I miei dati: recesso per-app esporta → conferma → recesso completato', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: recesso per-app esporta → conferma → recesso completato', async ({ page }) => {
   const { purges } = await mockAuthed(page)
   await page.goto('/privacy')
 
@@ -167,7 +167,7 @@ test('I miei dati: recesso per-app esporta → conferma → recesso completato',
   expect(purges).toEqual([{ slug: 'fatture', exportJobId: 'job-1' }])
 })
 
-test('I miei dati: elimina account → grace con scadenza → annulla', async ({ page }) => {
+test('[L2-PRIVACY] I miei dati: elimina account → grace con scadenza → annulla', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/privacy')
 

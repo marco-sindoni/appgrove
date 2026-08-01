@@ -64,7 +64,7 @@ async function mockAuthed(page: Page, env: 'local' | 'test') {
   })
 }
 
-test('core-loop fatture: lista + banner quota → crea → compare in lista', async ({ page }) => {
+test('[L2-FATTURE] core-loop fatture: lista + banner quota → crea → compare in lista', async ({ page }) => {
   await mockAuthed(page, 'local') // env local → fatture entitled
 
   await page.goto('/app/fatture')
@@ -82,7 +82,7 @@ test('core-loop fatture: lista + banner quota → crea → compare in lista', as
   await expect(page.getByRole('cell', { name: 'Cliente E2E' })).toBeVisible()
 })
 
-test("un'app non entitled è bloccata dalla route guard", async ({ page }) => {
+test("[L2-FATTURE] un'app non entitled è bloccata dalla route guard", async ({ page }) => {
   await mockAuthed(page, 'test') // env test → nessun entitlement
   await page.goto('/app/fatture')
   await expect(page.getByText('You don’t have access to this app')).toBeVisible()

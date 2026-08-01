@@ -18,7 +18,7 @@ import { dbRow, dbExec } from '../helpers/db'
  * legale allo startup dei servizi riallinea le versioni a ogni esecuzione della suite).
  */
 
-test('J-LEGAL: nuova major dei Termini → gate bloccante → esenzione "I miei dati" → accettazione registrata', async ({
+test('[J-LEGAL] nuova major dei Termini → gate bloccante → esenzione "I miei dati" → accettazione registrata', async ({
   page,
 }) => {
   const t = await tenant('jlegal')

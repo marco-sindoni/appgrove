@@ -24,7 +24,7 @@ const BACKOFFICE_URL = process.env.PLATFORM_BACKOFFICE_URL ?? 'http://localhost:
  * tenant, quindi non può convivere con i journey paralleli.
  */
 
-test('A-CONSOLE: cliente con app attiva → admin disabilita → app negata ma dati intatti → riabilita → tutto torna', async ({
+test('[A-CONSOLE] cliente con app attiva → admin disabilita → app negata ma dati intatti → riabilita → tutto torna', async ({
   page,
   browser,
 }) => {

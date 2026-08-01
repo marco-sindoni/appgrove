@@ -83,7 +83,7 @@ async function mockCheckout(page: Page) {
   })
 }
 
-test('checkout: scelta tier → overlay → polling attivazione → attivato', async ({ page }) => {
+test('[L2-CHECKOUT] checkout: scelta tier → overlay → polling attivazione → attivato', async ({ page }) => {
   await mockCheckout(page)
 
   await page.goto('/billing')

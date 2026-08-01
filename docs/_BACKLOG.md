@@ -635,3 +635,23 @@ che dipende dall'ordine delle aree erode la fiducia nel comando unico.
   interferenza con l'area `backend` eseguita prima (lo schema OpenAPI è rigenerato in `src/main/resources` dai test e
   copiato in `target/classes`). Rimedio candidato: build dello smoke su target pulito o esclusione del file dalla
   copia. Owner: #07 (DevOps/CI) con #04.
+
+## Indice di esecuzione degli use case: nessuna riga per le storie evolutive (change `0073`, 2026-08-01)
+
+`docs/usecases/_INDEX.md` contiene la tabella di esecuzione dei soli **60 use case base** (0001–0060). Le **37 storie
+evolutive** (0061–0097, epiche 12–21) vivono solo nel catalogo per area `docs/usecases/README.md`, che però riporta lo
+stato del **drill-down** (la spec è scritta?), non lo stato di **implementazione** (il codice è in `main`?).
+
+Conseguenze già osservate:
+
+- la skill `new-change` non riesce a marcare 🟡/✅ una storia evolutiva: il suo `sed` cerca una riga `[NNNN](` che non
+  esiste, quindi non fa nulla e nessuno se ne accorge (è successo alle change `0069`–`0072` per gli UC 0090–0092, e a
+  questa change per lo UC 0093);
+- il controllo del registro di copertura (UC 0093) ha dovuto usare l'esistenza di una cartella
+  `changes/*-use-case-NNNN-*` come prova che una storia è stata implementata, invece dello stato dell'indice, che
+  sarebbe la sorgente naturale.
+
+Da decidere in una change dedicata all'indice: se estendere `_INDEX.md` alle storie evolutive (ri-eseguendo
+l'ordinamento topologico, oggi calcolato sui soli 60 base) oppure aggiungere una colonna di stato di implementazione al
+catalogo per area. Chi lo farà, aggiorni anche la guardia dell'esenzione `non-implementato` in `tools/e2e-coverage`.
+Owner: Skills & Tooling (UC 0044/0045), in coordinamento con UC 0094.

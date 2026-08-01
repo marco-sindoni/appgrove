@@ -72,6 +72,14 @@ senso compliance/legale (→ #13).
     (Da encodare nelle skill `new-change`/`new-application`.) Visual-AI SaaS (Applitools/Percy/Chromatic) = evoluzione E17.
 22. **Multi-browser** (WebKit/Firefox) = evoluzione E18.
 
+> **Registro di copertura end-to-end** (UC 0093, change `0073`). Quali funzionalità sono coperte da un percorso
+> end-to-end — e quali no, con motivo e proprietario — non vive più nella memoria di chi ha scritto i test: sta in
+> [`docs/testing/copertura-e2e.yaml`](testing/copertura-e2e.yaml), leggibile da un programma, con la prosa in
+> [`docs/testing/README.md`](testing/README.md). Ogni test end-to-end (piattaforma, L2, L3) porta l'**etichetta del
+> percorso in testa al titolo** (`test('[J-BUY] …')`) e il controllo `tools/e2e-coverage` — area `tooling` di
+> `run-tests.sh` — diventa rosso se registro e realtà divergono. Il controllo misura che la **mappa sia vera**, non
+> la qualità dei test.
+
 ### G. Contract testing / OpenAPI
 23. **OpenAPI = unica fonte di verità**: spec generato da Quarkus e **committato**.
 24. **Conformità lato BE**: gli integration test **validano le risposte contro lo schema OpenAPI** (es.

@@ -87,7 +87,7 @@ async function mockAuthed(page: Page, env: 'local' | 'test') {
   })
 }
 
-test('ciclo principale crm: elenco + banner posti → crea contatto → compare in elenco', async ({ page }) => {
+test('[L2-CRM] ciclo principale crm: elenco + banner posti → crea contatto → compare in elenco', async ({ page }) => {
   await mockAuthed(page, 'local') // env local → app entitled
 
   await page.goto('/app/crm')
@@ -102,7 +102,7 @@ test('ciclo principale crm: elenco + banner posti → crea contatto → compare 
   await expect(page.getByRole('cell', { name: 'Contatto E2E' })).toBeVisible()
 })
 
-test('schermata Membri: assegna un posto B2B', async ({ page }) => {
+test('[L2-CRM] schermata Membri: assegna un posto B2B', async ({ page }) => {
   await mockAuthed(page, 'local')
 
   await page.goto('/app/crm/members')
@@ -116,7 +116,7 @@ test('schermata Membri: assegna un posto B2B', async ({ page }) => {
   await expect(page.getByText('2 / 2')).toBeVisible()
 })
 
-test("un'app non entitled è bloccata dalla route guard", async ({ page }) => {
+test("[L2-CRM] un'app non entitled è bloccata dalla route guard", async ({ page }) => {
   await mockAuthed(page, 'test') // env test → nessun entitlement
   await page.goto('/app/crm')
   await expect(page.getByText('You don’t have access to this app')).toBeVisible()

@@ -110,3 +110,15 @@ quello di UC 0093 (già in `tooling`).
   raccolta, tracciato qui.
 - **Metriche di copertura** (percentuale UC coperti, tempo suite nel tempo): cruscotto possibile ma non necessario
   al processo; differito.
+
+_Consegna dalla change `0073-use-case-0093-…` (il registro esiste, gli agganci no):_
+
+- Artefatti su cui appoggiarsi: registro `docs/testing/copertura-e2e.yaml`, prosa e regole di manutenzione in
+  `docs/testing/README.md`, controllo `tools/e2e-coverage/` nell'area `tooling` di `run-tests.sh`.
+- Convenzione di aggancio già in vigore: ogni test end-to-end porta l'etichetta `[ID]` **in testa al titolo**;
+  il controllo rifiuta i test senza etichetta, le etichette sconosciute e le voci orfane.
+- **Divario che resta a questo use case**: nulla obbliga oggi una change a *aggiungere* una voce al registro
+  quando nasce una superficie nuova. Le due leve pronte da usare: (a) far scrivere a `new-usecase` la
+  classificazione dello use case (superficie o esenzione) alla nascita; (b) far togliere a `new-change`
+  l'esenzione `non-implementato` quando implementa una storia evolutiva — il controllo la rifiuta già da sé
+  appena la cartella `changes/*-use-case-NNNN-*` esiste, quindi la skill deve solo *rimediare*, non accorgersi.

@@ -18,7 +18,7 @@ const BACKOFFICE_URL = process.env.PLATFORM_BACKOFFICE_URL ?? 'http://localhost:
  * dei posti crm dentro J-MEMBERS (decisione 4, change 0070; rimando nei punti aperti di UC 0091).
  */
 
-test('J-QUOTA: core-loop fatture fino al tetto → banner → 429 reale con invito upgrade → DB coerente', async ({
+test('[J-QUOTA] core-loop fatture fino al tetto → banner → 429 reale con invito upgrade → DB coerente', async ({
   page,
 }) => {
   const t = await tenant('jquota')

@@ -1,0 +1,14 @@
+{
+  "name": "appgrove-e2e-coverage",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Controllo meccanico del registro di copertura end-to-end (UC 0093): verifica che docs/testing/copertura-e2e.yaml rispecchi i test realmente presenti nel repository e che ogni use case del catalogo sia classificato.",
+  "type": "module",
+  "scripts": {
+    "check": "node check.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  }
+}

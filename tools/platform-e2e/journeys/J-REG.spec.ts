@@ -17,7 +17,7 @@ const CORE_API = process.env.PLATFORM_CORE_API ?? 'http://localhost:20080'
  * suite. Ogni test crea da zero il proprio tenant (email sintetica unica per run).
  */
 
-test('J-REG: signup → email verificata davvero → onboarding → dashboard → DB coerente', async ({
+test('[J-REG] signup → email verificata davvero → onboarding → dashboard → DB coerente', async ({
   page,
   baseURL,
 }) => {
@@ -115,7 +115,7 @@ test('J-REG: signup → email verificata davvero → onboarding → dashboard �
   expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [tenantId])[0]).toBe('1')
 })
 
-test('J-REG-API: tenant() programmatico — helper pronto per gli UC 0091/0092', async () => {
+test('[J-REG-API] tenant() programmatico — helper pronto per gli UC 0091/0092', async () => {
   // Collauda l'helper condiviso: stesso flusso (signup → email vera → verify) via API, senza
   // browser. È la precondizione "tenant fresco" dei journey futuri: qui ne dimostriamo la
   // coerenza col DB e col claim tenant_id del JWT emesso (mai fornito dal client).

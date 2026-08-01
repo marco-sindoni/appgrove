@@ -42,7 +42,7 @@ async function mockWithPendingLegal(page: Page) {
   })
 }
 
-test('gate legale: major pendente → schermata bloccante → accetta → ingresso', async ({ page }) => {
+test('[L2-LEGAL] gate legale: major pendente → schermata bloccante → accetta → ingresso', async ({ page }) => {
   await mockWithPendingLegal(page)
   await page.goto('/')
 
@@ -59,7 +59,7 @@ test('gate legale: major pendente → schermata bloccante → accetta → ingres
   await expect(page.getByText('Your apps')).toBeVisible()
 })
 
-test('diritti GDPR esenti: la pagina "I miei dati" è raggiungibile col blocco pendente', async ({ page }) => {
+test('[L2-LEGAL] diritti GDPR esenti: la pagina "I miei dati" è raggiungibile col blocco pendente', async ({ page }) => {
   await mockWithPendingLegal(page)
   await page.goto('/privacy')
   // /privacy è esente dal gate: NON deve comparire la schermata bloccante
