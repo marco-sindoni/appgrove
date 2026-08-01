@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — autopilot senza fermate di workflow (nessuna revisione dei requisiti, nessun consenso al commit), dichiarata all'invocazione dall'orchestratore go-fast. Contropartite obbligatorie: suite completa `./run-tests.sh` verde prima del commit, registro decisioni integrale, `how-to-test.md` nella cartella della change. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0092 (Batteria journey end-to-end lato amministratore + guasti di piattaforma), indicato esplicitamente all'invocazione; da qui la forma del branch `0072-use-case-0092-e2e-journey-admin`. Il numero 0072 è il progressivo della cartella `changes/` (ultima esistente: 0071).",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Indice di esecuzione delle storie evo: la riga 0092 passa a 🟡 all'apertura della change e a ✅ alla chiusura. Le storie evo non hanno riga in docs/usecases/_INDEX.md."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ordine di esecuzione dei journey. A-CONSOLE (disabilita un'app di catalogo, che è stato GLOBALE per tutti i tenant) e F-DEGRADE (ferma davvero un servizio condiviso) non possono girare insieme agli altri journey: li romperebbero. Si serializzano in coda alla batteria con una catena di progetti Playwright — `chromium` (paralleli) → `legal-serial` (J-LEGAL, già esistente) → `admin-serial` (A-CONSOLE) → `degrade-serial` (F-DEGRADE) — perché la dipendenza fra progetti è l'unico meccanismo che garantisce esecuzione STRETTAMENTE sequenziale anche fra file diversi. A-GDPR e A-ENTITLE restano nel gruppo parallelo: agiscono solo dentro i propri tenant. Alternativa scartata: un unico progetto seriale con più file — `fullyParallel:false` serializza i test dentro un file, non i file fra loro.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/playwright.config.ts",
+        "description": "Quattro progetti in catena; ogni progetto seriale dichiara il precedente come dipendenza."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Leva di stop/start dei servizi richiesta da UC 0092 (§5): si realizza con uno script dedicato `tools/platform-e2e/service-ctl.sh` più un descrittore `.run/services.json` che `run.sh` genera nello STESSO ciclo in cui avvia i servizi (porta, registro, variabili d'ambiente per ruolo). Così il riavvio riproduce per costruzione l'avvio originale, invece di duplicarne le regole in un secondo posto dove col tempo divergerebbero. Da qui discende che anche l'avvio iniziale passa dallo script: un solo percorso di codice, un solo punto dove sbagliare. Alternativa scartata: ricostruire l'ambiente dentro l'helper TypeScript — avrebbe cablato a mano ciò che la scoperta automatica dei servizi già deriva.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/service-ctl.sh",
+        "description": "start/stop/restart/status/stop-all di un servizio della suite, guidati dal descrittore."
+      },
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "Genera .run/services.json dalla scoperta servizi e avvia tramite service-ctl.sh; la pulizia finale ferma tutto per descrittore invece che per elenco di identificativi di processo."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Freschezza del menu laterale in A-CONSOLE: l'effetto della disabilitazione lato cliente si osserva dopo un RICARICAMENTO della pagina, non pilotando il ritorno sulla scheda del browser. Motivo: in un browser senza finestre l'evento di visibilità non è pilotabile in modo deterministico e produrrebbe un journey instabile — e l'instabilità, per UC 0090/0092, è un difetto della storia. La via basata sul ritorno sulla scheda è già coperta dai collaudi del frontend (`entitlementsFreshness.test.tsx`), quindi non si perde copertura: si evita solo di ricoprirla dove non è osservabile con certezza."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Terzo stato di A-ENTITLE («account in eliminazione»): si ottiene con la RICHIESTA REALE di cancellazione dell'account, che l'utente compie dalla propria pagina dei dati e che porta l'account in `pending_deletion` — stato che la regola unica di accesso (EntitlementAccess) tratta come zero diritti. Nessuna leva artificiosa serve, quindi non c'è alcun caso da segnare come «da coprire» nel registro di UC 0093, contrariamente all'ipotesi prudenziale dello use case."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) A-GDPR applica la limitazione art. 18 sull'UTENTE e non sull'account. Motivo: il servizio di autenticazione decide se una sessione è ancora valida guardando lo stato della riga UTENTE (`platform.users.status`), quindi solo la limitazione sull'utente produce un effetto osservabile dalla sessione del cliente — che è esattamente ciò che lo use case chiede al passo 3. La limitazione sull'account resta corretta e tracciata nel registro, ma oggi non ha alcuna conseguenza visibile: divergenza annotata come punto aperto di UC 0034, che possiede la console diritti."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) A-GDPR asserisce anche la RIMOZIONE della limitazione e il rientro del cliente. Lo use case chiede solo l'applicazione, ma la reversibilità è la promessa centrale della misura art. 18 (una limitazione che non si sa togliere è una sospensione mascherata) e verificarla costa due passi. Rientra nel principio «massimizzare il lavoro portato a termine dentro il task» senza anticipare nulla di un'altra storia."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Variante sessione di F-DEGRADE: l'invalidazione della sessione lato server si ottiene con una LEVA D'AMBIENTE via `dbExec` (sospensione della riga utente del tenant del journey), secondo uso sanzionato di quella funzione dopo la pubblicazione della versione legale di J-LEGAL. Motivazione richiesta dalla documentazione dell'helper: non esiste un'azione utente né un endpoint di sviluppo che invalidi una sessione lato server, e le uniche vie di prodotto equivalenti appartengono ad altri journey (rimozione del membro in J-MEMBERS, limitazione art. 18 in A-GDPR) — usarle qui sarebbe duplicazione, non copertura. La leva agisce solo sul tenant usa-e-getta del journey.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/helpers/db.ts",
+        "description": "La documentazione di dbExec elenca ora i due usi sanzionati: versione legale (J-LEGAL) e sospensione utente (F-DEGRADE)."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) I collaudi di livello 2 esistenti della console admin (`frontend/apps/admin/e2e/admin.spec.ts` e `gdpr.spec.ts`) NON vengono rimossi né ridotti, benché UC 0092 §9 chieda di togliere le duplicazioni. Sono un percorso felice minimo su backend simulato — l'eccezione esplicitamente ammessa dal criterio di riparto di UC 0091 §1 — e coprono per giunta stati che uno stack vero in locale non sa produrre (export fallito, collegamenti alle console del fornitore cloud). Rimuoverli scambierebbe copertura per pulizia."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La pulizia finale della suite (global-teardown) verifica che ogni servizio scoperto sia di nuovo in ascolto e lo riavvia se non lo è, oltre a riportare il catalogo allo stato di riposo. È la rete di sicurezza del requisito «nessun residuo, servizi tutti su a fine batteria anche dopo F-DEGRADE»: il ripristino dentro il journey copre il caso normale, questo copre il caso in cui il journey muoia nel punto sbagliato."
+  }
+]
