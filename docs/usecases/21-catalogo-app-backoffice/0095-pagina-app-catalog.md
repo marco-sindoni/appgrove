@@ -92,3 +92,26 @@ Previous/Next con "Page N of M"; stati loading/error/empty/success.
   (che questo UC assorbe); UC 0077 (stati e freschezza).
 - **DoD**: pagina in produzione locale con `./app-start.sh`; menu aggiornato; i 6 stati corretti contro dati veri;
   ricerca+paginazione; test verdi delle aree toccate; i18n 5 lingue; `_INDEX.md`/indici aggiornati dalla change.
+
+## Punti aperti / decisioni differite
+
+Aperti dalla change `0076` (implementazione di questo use case).
+
+- **Nessuna via all'acquisto dalla vetrina per un'app freemium.** Un'app con una fascia gratuita di
+  baseline e fasce a pagamento è, per questo use case, in stato `active`: la card offre "Open" e il nome
+  del piano, e il passaggio a una fascia superiore vive in Billing. È coerente con la tabella
+  stato → azione approvata (change `0066`), ma significa che per la maggior parte delle app freemium il
+  catalogo **non** è l'ingresso all'acquisto che il titolo promette. Chi decide: **UC 0096** (Billing
+  solo-fatturazione), che possiede il cambio di piano — se la scelta è portarlo in vetrina, la card
+  `active` guadagna un'azione secondaria verso lo stesso selettore di fascia. Effetto collaterale già
+  visibile: il journey `J-BUY` deve comprare **Teams** (l'unica app genuinamente `available`) per provare
+  la transizione della card, e continua a comprare il Mini-CRM per provare il montaggio del modulo.
+- **Ricerca e paginazione lato client.** Decise in locale perché il catalogo è un elenco piccolo e
+  limitato (decine di app) e la ricerca deve comunque filtrare l'intero catalogo. Il giorno in cui il
+  catalogo crescesse di un ordine di grandezza vanno portate sul server, con l'ordinamento come
+  contratto. Nessun use case lo possiede ancora: si riapre qui.
+- **Descrizione e categoria non sono persistite nel catalogo del database.** Il read-model le legge
+  in-processo dal pricing-as-code (contenuto di presentazione env-agnostico). La decisione va rivista se
+  il catalogo diventasse modificabile dalla console admin: in quel caso servono colonne su
+  `platform.app`, un ramo di sincronizzazione e la loro migrazione. Possiede il tema **UC 0022**
+  (pricing-as-code) insieme alla console di piattaforma.

@@ -3,6 +3,13 @@ slug: teams
 name: Teams
 userModel: multi_user
 status: active
+category: teal
+descriptions:
+  it: Spazi di lavoro condivisi e posti per collaborare con il tuo team.
+  en: Shared workspaces and seats to collaborate with your team.
+  fr: Espaces de travail partagés et sièges pour collaborer en équipe.
+  es: Espacios de trabajo compartidos y puestos para colaborar en equipo.
+  de: Gemeinsame Arbeitsbereiche und Plätze für die Zusammenarbeit im Team.
 tiers:
   - key: team
     name: Teams

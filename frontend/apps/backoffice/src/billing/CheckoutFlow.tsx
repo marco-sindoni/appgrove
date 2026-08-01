@@ -1,0 +1,267 @@
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  SegmentedControl,
+} from '@appgrove/design-system'
+import { useTranslation } from '@appgrove/i18n'
+import { useInvalidateEntitlements } from '../registry/entitlementsApi'
+import { useInvalidateCatalog } from '../catalog/catalogApi'
+import { useAppTiers, useStartCheckout, useAppSubscriptionStatus } from './checkoutApi'
+import { createPaddle } from './paddle'
+import {
+  annualFreeMonths,
+  formatPrice,
+  phaseFromPoll,
+  shouldPoll,
+  shouldReassure,
+  type CheckoutPhase,
+} from './checkoutMachine'
+
+type Cycle = 'monthly' | 'annual'
+
+/**
+ * Flusso di acquisto di una app (UC 0024): scelta della fascia (mensile/annuale con sconto e prova) →
+ * checkout avviato dal server → sovrapposizione Paddle (finta in locale) → attesa rassicurante
+ * dell'attivazione. L'attivazione vera arriva **solo** dal webhook: qui si interroga lo stato finché non
+ * è attivo, senza mai fingere.
+ *
+ * <p>Vive in <code>billing/</code> e non dentro una pagina perché ha <b>due</b> ingressi: la vetrina del
+ * catalogo (UC 0095), che è l'ingresso naturale all'acquisto, e la riattivazione da Billing. Estrarlo
+ * (change 0076) è ciò che permetterà a UC 0096 di togliere la griglia d'acquisto da Billing senza
+ * toccare una riga di questo flusso.
+ */
+export function CheckoutFlow({ appSlug, onBack }: { appSlug: string; onBack: () => void }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const tiersQuery = useAppTiers(appSlug)
+  const startCheckout = useStartCheckout(appSlug)
+
+  const [cycle, setCycle] = useState<Cycle>('annual')
+  const [phase, setPhase] = useState<CheckoutPhase>('idle')
+  const [activatingSince, setActivatingSince] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  const paddleRef = useRef<ReturnType<typeof createPaddle> | null>(null)
+
+  // Polling dello stato: attivo solo durante l'attivazione, si ferma da sé quando active.
+  const statusQuery = useAppSubscriptionStatus(appSlug, shouldPoll(phase))
+  useEffect(() => {
+    setPhase((p) => phaseFromPoll(p, statusQuery.data))
+  }, [statusQuery.data])
+
+  // Attivazione completata: è l'istante in cui l'app deve comparire nel menu (UC 0077) e in cui la card
+  // del catalogo deve passare da "available" ad "active" (UC 0095). Senza queste riletture entrambe le
+  // viste resterebbero quelle di prima fino a un ricaricamento della pagina.
+  const invalidateEntitlements = useInvalidateEntitlements()
+  const invalidateCatalog = useInvalidateCatalog()
+  useEffect(() => {
+    if (phase === 'active') {
+      void invalidateEntitlements()
+      void invalidateCatalog()
+    }
+  }, [phase, invalidateEntitlements, invalidateCatalog])
+
+  // Tic dell'orologio per la soglia "rassicurante" (mai un errore) mentre si attende il webhook.
+  useEffect(() => {
+    if (phase !== 'activating') return
+    const id = setInterval(() => setNow(Date.now()), 1_000)
+    return () => clearInterval(id)
+  }, [phase])
+
+  function subscribe(tierKey: string | undefined) {
+    if (!tierKey) return
+    setPhase('submitting')
+    startCheckout.mutate(
+      { tierKey, billingCycle: cycle },
+      {
+        onSuccess: (res) => {
+          const token = res.checkoutToken
+          if (!token) {
+            setPhase('error')
+            return
+          }
+          const paddle = createPaddle({
+            eventCallback: (event) => {
+              if (event.name === 'checkout.completed') {
+                // SOLO UX: l'attivazione vera arriva dal webhook → si passa al polling (#09 C16/C17).
+                setActivatingSince(Date.now())
+                setNow(Date.now())
+                setPhase('activating')
+              }
+            },
+          })
+          paddleRef.current = paddle
+          paddle.Checkout.open({ transactionToken: token })
+        },
+        onError: () => setPhase('error'),
+      },
+    )
+  }
+
+  if (phase === 'activating' || phase === 'active') {
+    return (
+      <ActivationState
+        phase={phase}
+        reassuring={shouldReassure(phase, activatingSince, now)}
+        onOpenApp={() => navigate(`/app/${appSlug}`)}
+        onBack={onBack}
+      />
+    )
+  }
+
+  if (phase === 'error') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('checkout.errorTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-fg-muted">{t('checkout.errorBody')}</p>
+          <div className="flex gap-2">
+            <Button onClick={() => setPhase('idle')}>{t('checkout.retry')}</Button>
+            <Button variant="ghost" onClick={onBack}>
+              {t('checkout.back')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          ← {t('checkout.back')}
+        </Button>
+        <SegmentedControl
+          aria-label={t('checkout.annual')}
+          value={cycle}
+          onValueChange={(v) => setCycle(v as Cycle)}
+          options={[
+            { value: 'monthly', label: t('checkout.monthly') },
+            { value: 'annual', label: t('checkout.annual') },
+          ]}
+        />
+      </div>
+
+      {tiersQuery.isLoading && <p className="text-sm text-fg-muted">{t('states.loading')}</p>}
+      {tiersQuery.isError && (
+        <p role="alert" className="text-sm text-danger">
+          {t('states.error')}
+        </p>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tiersQuery.data?.tiers?.map((tier) => (
+          <TierCard
+            key={tier.tierId}
+            tier={tier}
+            cycle={cycle}
+            submitting={phase === 'submitting'}
+            onSubscribe={() => subscribe(tier.key)}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+type TierData = NonNullable<NonNullable<ReturnType<typeof useAppTiers>['data']>['tiers']>[number]
+
+function TierCard({
+  tier,
+  cycle,
+  submitting,
+  onSubscribe,
+}: {
+  tier: TierData
+  cycle: Cycle
+  submitting: boolean
+  onSubscribe: () => void
+}) {
+  const { t } = useTranslation()
+  const prices = tier.prices ?? []
+  const price = prices.find((p) => p.billingCycle === cycle)
+  const monthly = prices.find((p) => p.billingCycle === 'monthly')?.amount ?? null
+  const annual = prices.find((p) => p.billingCycle === 'annual')?.amount ?? null
+  const freeMonths = annualFreeMonths(monthly, annual)
+
+  return (
+    <Card>
+      <CardHeader className="space-y-2">
+        <CardTitle>{tier.name}</CardTitle>
+        <div className="flex flex-wrap gap-2">
+          {(tier.trialDays ?? 0) > 0 && (
+            <Badge tone="success">{t('checkout.trialDays', { days: tier.trialDays ?? 0 })}</Badge>
+          )}
+          {cycle === 'annual' && freeMonths > 0 && <Badge tone="accent">{t('checkout.save2Months')}</Badge>}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {price && (
+          <p className="text-xl font-semibold text-fg">
+            {formatPrice(price.amount ?? 0, price.currency ?? 'EUR')}
+            <span className="text-sm font-normal text-fg-muted">
+              {cycle === 'annual' ? t('checkout.perYear') : t('checkout.perMonth')}
+            </span>
+          </p>
+        )}
+        <Button className="w-full" disabled={submitting || !price} onClick={onSubscribe}>
+          {t('checkout.subscribe')}
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ActivationState({
+  phase,
+  reassuring,
+  onOpenApp,
+  onBack,
+}: {
+  phase: 'activating' | 'active'
+  reassuring: boolean
+  onOpenApp: () => void
+  onBack: () => void
+}) {
+  const { t } = useTranslation()
+  if (phase === 'active') {
+    return (
+      <Card>
+        <CardContent className="space-y-4 py-8 text-center">
+          <p className="text-lg font-semibold text-fg">{t('checkout.activated')}</p>
+          <div className="flex justify-center gap-2">
+            <Button onClick={onOpenApp}>{t('checkout.openApp')}</Button>
+            {/* Ritorno al punto di partenza: dal catalogo è lì che si vede la card cambiare stato. */}
+            <Button variant="ghost" onClick={onBack}>
+              {t('checkout.back')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center gap-3 py-10 text-center" aria-live="polite">
+        <span
+          aria-hidden="true"
+          className="size-8 animate-spin rounded-full border-2 border-line border-t-accent"
+        />
+        <p className="text-base font-medium text-fg">{t('checkout.activating')}</p>
+        <p className="max-w-sm text-sm text-fg-muted">
+          {reassuring ? t('checkout.stillActivating') : t('checkout.activatingHint')}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
+export default CheckoutFlow

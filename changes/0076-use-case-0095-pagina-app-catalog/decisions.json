@@ -72,5 +72,137 @@
         "description": "Nuovo percorso L2-CATALOG; \"0095\" aggiunto a J-BUY e a usecases_con_superficie; esenzione rimossa."
       }
     ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Il contratto è un endpoint nuovo GET /api/platform/v1/me/catalog, aperto a ogni ruolo autenticato e senza alcun parametro: il tenant può venire solo dal token verificato. È il rovescio della medaglia di /me/entitlements (che elenca ciò a cui si ha accesso); qui si elenca tutto ciò che si può vedere, accesso incluso o meno. Lo spec OpenAPI committato e i tipi del frontend sono stati rigenerati nello stesso commit.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/MeCatalogResource.java",
+        "description": "Endpoint della vetrina: @Authenticated senza restrizione di ruolo, nessun parametro."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogReadModel.java",
+        "description": "Derivazione della vetrina: quali app entrano, stato, piano, prezzo di partenza, parte descrittiva."
+      },
+      {
+        "file": "frontend/packages/api-client/src/schema.ts",
+        "description": "Tipi rigenerati da openapi-typescript (npm run gen)."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Lo stato della card è un tipo del dominio (enum CatalogAppState) con una derivazione pura e testabile per combinazioni, non una stringa costruita nella vista. Motivo: l'incoerenza che questa storia chiude — app spenta dalla piattaforma mostrata \"Active\" in Billing e assente dal menu — nasceva proprio da due derivazioni scritte a mano in due posti. La disabilitazione di piattaforma vince su tutto, anche su un abbonamento formalmente attivo.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogAppState.java",
+        "description": "I sei stati e la funzione di derivazione; consuma SubscriptionLifecycle ed EntitlementAccess, non li duplica."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Nessuna migrazione di database e nessuna nuova colonna: la vetrina si deriva interamente da ciò che esiste (platform.app, app_tier, app_price, subscription) più il pricing-as-code letto in-processo. Una storia di sola lettura che aggiungesse schema sarebbe un costo senza contropartita."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Trovato durante l'implementazione un limite reale della tabella stato → azione approvata: un'app freemium (fascia gratuita di baseline + fasce a pagamento) è in stato `active`, quindi la sua card offre solo \"Open\" e il catalogo NON è per lei un ingresso all'acquisto. Non è stato risolto qui — sarebbe uscire dai requisiti scritti — ed è tracciato nei punti aperti di UC 0095, che ne assegna la decisione a UC 0096 (proprietario del cambio di piano).",
+    "files": [
+      {
+        "file": "docs/usecases/21-catalogo-app-backoffice/0095-pagina-app-catalog.md",
+        "description": "Nuova sezione «Punti aperti / decisioni differite» con i tre rimandi aperti dalla change."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Conseguenza operativa del punto sopra sul journey J-BUY: l'unica app con modulo frontend e fascia a pagamento (Mini-CRM) ha anche una fascia gratuita, quindi nella vetrina è già `active` e non acquistabile. Il journey compra perciò Teams dal catalogo — l'unica app genuinamente `available` — per provare la transizione della card da proposta d'acquisto ad app in uso, e continua a comprare il Mini-CRM dalla pagina Billing per provare che il modulo comprato si monta davvero. Costo: un secondo giro di checkout+webhook nel journey più lungo della suite; accettato perché entrambe le prove sono reali e nessuna delle due copre l'altra.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-BUY.spec.ts",
+        "description": "Journey esteso: parte dalla vetrina, asserisce la card prima e dopo, poi la via Billing con il montaggio del modulo."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Il rimando su `new-application` è scritto nei punti aperti di UC 0046: il generatore non compila `category`/`descriptions` (non può produrre cinque traduzioni da solo), quindi un'app nuova nasce in vetrina col solo nome e una tinta derivata dallo slug. I due campi sono facoltativi apposta perché questo non rompa nulla; il collaudo di parità dei modelli di scaffolding resta verde.",
+    "files": [
+      {
+        "file": "docs/usecases/10-skills-tooling/0046-skill-new-application.md",
+        "description": "Punto aperto sulla parte descrittiva del listino nei modelli generati."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Gate privacy (UC 0031): lo scanner deterministico non rileva alcun segnale. Coerente con l'analisi — la change non introduce campi, tabelle, dipendenze né host esterni, e la nuova lettura espone dati di listino e stato di abbonamento già esposti da /me/entitlements e /me/subscriptions. Nessuna classificazione, nessun aggiornamento di manifesto o RoPA, nessun cambio MAJOR/MINOR."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) L'invito «nessuna app attiva» del menu laterale punta ora al catalogo invece che alla fatturazione: scoprire le app e pagarle sono due cose diverse, e la prima ha finalmente una pagina propria. Aggiornata di conseguenza l'asserzione del test del menu.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx",
+        "description": "Voce di menu «App catalog» sotto Dashboard e invito ripuntato a /catalog."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Guasto trovato dalla suite COMPLETA e non dai test mirati: una singola riga di listino con un ciclo di fatturazione fuori dall'enum (`billing_cycle = 'year'`, prodotta da una fixture di un altro test) faceva fallire l'intera lettura del catalogo con un errore non gestito, perché i prezzi venivano caricati come entità JPA. Correzione: prezzo di partenza e fascia gratuita si leggono in SQL nativo, trattando il ciclo come etichetta da mostrare e non come valore su cui decidere — una vetrina deve degradare, non spegnersi. Effetto collaterale positivo: due letture per l'intera pagina invece di una per ogni fascia. Aggiunto il test che avrebbe colto il difetto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogReadModel.java",
+        "description": "startingPrices() e freeTierNames(): una sola lettura ciascuna, in SQL nativo, senza conversione a enum."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/catalog/CatalogApiTest.java",
+        "description": "Test di regressione: un ciclo fuori catalogo non spegne la vetrina e viene mostrato così com'è."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) La stessa fragilità esiste, latente, in EntitlementReadModel (cerca la fascia gratuita caricando i prezzi come entità). NON è stata corretta qui: è un percorso che governa l'accesso e allargare lo scope della change su di esso sarebbe stato imprudente senza una revisione. Rimando scritto in docs/_BACKLOG.md, con la proposta di trasformare quella lettura in un `exists` e di decidere se il valore fuori catalogo vada anche rifiutato in scrittura; possiede il tema UC 0027.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Nuova voce sulla lettura del listino come entità e sulla fragilità residua di EntitlementReadModel."
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Varco di parità dello scaffolding (UC 0046): la change tocca un percorso-sorgente dei modelli (services/core/src/main/resources/pricing/fatture.yaml). Scelta la via 1 — aggiornare i modelli: entrambi i listini-modello di new-application documentano ora `category` e `descriptions` con un esempio commentato da tradurre. Commentato e non valorizzato di proposito: consegnare copy segnaposto a un'app nuova significherebbe pubblicare in vetrina un testo finto; così il campo è visibile a chi genera l'app e resta assente finché qualcuno non lo scrive. Collaudo di parità verde.",
+    "files": [
+      {
+        "file": "tools/new-application/templates/pricing/@@APP_ID@@.flow.yaml",
+        "description": "Blocco commentato con categoria e descrizioni nelle 5 lingue, coerente con il tono «bozza da completare» del modello."
+      },
+      {
+        "file": "tools/new-application/templates/pricing/@@APP_ID@@.stock.yaml",
+        "description": "Idem per il modello a giacenza."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Promemoria landing stale (UC 0057): la change tocca services/core/src/main/resources/pricing/fatture.yaml e la landing di `fatture` è pubblicata. Il tocco riguarda però solo la parte descrittiva del listino (categoria e descrizioni brevi per la vetrina interna), non feature né prezzi: la landing non è resa stantìa. Nessuna ri-esecuzione di finalize-landing richiesta; segnalato comunque al revisore."
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Correzione della decisione 23 (le voci non si riscrivono: vale questa). La fragilità di EntitlementReadModel NON è rimasta un rimando: il test di regressione aggiunto al catalogo introduce nel database di prova una riga con ciclo di fatturazione fuori catalogo, e questo ha reso il difetto ATTIVO — la suite completa ha fatto fallire AccountDeletionApiTest con un errore non gestito sulla lettura degli entitlement. Corretto quindi anche lì, in modo minimo: la ricerca della fascia gratuita chiede l'ESISTENZA di un prezzo (AppPriceRepository.existsForTier, un conteggio) invece di caricarne le entità. I tre punti che caricano i price come entità perché il ciclo È l'informazione cercata (avvio checkout, elenco fasce, cambio fascia) restano come sono: lì un valore fuori catalogo è un dato sbagliato, non un caso da tollerare. In docs/_BACKLOG.md resta aperta la sola domanda del vincolo in scrittura, che possiede UC 0022.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/AppPriceRepository.java",
+        "description": "existsForTier(): conteggio invece di caricamento, con il motivo scritto accanto."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementReadModel.java",
+        "description": "freeTier() usa l'esistenza: il percorso che governa l'accesso non si rompe più per una riga malformata."
+      }
+    ]
   }
 ]

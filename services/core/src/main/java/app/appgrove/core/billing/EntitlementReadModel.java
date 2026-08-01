@@ -109,10 +109,16 @@ public class EntitlementReadModel {
         return new MeEntitlementsView(entitled);
     }
 
-    /** Tier free di baseline: il primo tier dell'app <b>senza alcun prezzo</b> (freemium). */
+    /**
+     * Tier free di baseline: il primo tier dell'app <b>senza alcun prezzo</b> (freemium).
+     *
+     * <p>Chiede l'<b>esistenza</b> di un prezzo invece di caricarli: qui non serve sapere quali siano, e
+     * caricarli esporrebbe il percorso che governa l'accesso a una singola riga con un ciclo di
+     * fatturazione fuori catalogo (change 0076).
+     */
     private Optional<AppTier> freeTier(UUID appId) {
         return tiers.listByApp(appId).stream()
-                .filter(t -> prices.listByTier(t.getId()).isEmpty())
+                .filter(t -> !prices.existsForTier(t.getId()))
                 .findFirst();
     }
 

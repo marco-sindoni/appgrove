@@ -42,10 +42,12 @@ describe('Sidebar', () => {
     expect(screen.queryByText('No active apps yet')).not.toBeInTheDocument()
   })
 
-  it('senza app attive invita all’acquisto', () => {
+  it('senza app attive invita alla vetrina del catalogo', () => {
+    // L'invito punta al catalogo (UC 0095), non più alla fatturazione: scoprire le app e pagarle sono
+    // due cose diverse, e la prima ora ha una pagina sua.
     renderWithProviders(<Sidebar />, { entitled: [] })
     expect(screen.getByText('No active apps yet')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Browse the apps' })).toHaveAttribute('href', '/billing')
+    expect(screen.getByRole('link', { name: 'Browse the apps' })).toHaveAttribute('href', '/catalog')
   })
 
   it('la riprova richiama la rilettura degli entitlement', async () => {

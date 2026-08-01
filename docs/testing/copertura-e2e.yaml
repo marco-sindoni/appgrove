@@ -30,6 +30,7 @@ usecases_con_superficie:
   - "0060" # Localizzazione UI delle app alle 5 lingue
   - "0076" # Disabilita applicazione (leva admin, effetti sul cliente)
   - "0077" # Provider entitlement reale (menu laterale e matrice)
+  - "0095" # Pagina "App catalog" del backoffice (vetrina, stati, ricerca, paginazione)
 
 # ── I percorsi ────────────────────────────────────────────────────────────────
 percorsi:
@@ -51,8 +52,8 @@ percorsi:
         file: tools/platform-e2e/journeys/J-REG.spec.ts
 
   - id: J-BUY
-    titolo: Acquisto e attivazione — catalogo, fascia a pagamento, pagamento finto, webhook reale, modulo montato
-    usecases: ["0022", "0023", "0024", "0025", "0026", "0027", "0054"]
+    titolo: Acquisto e attivazione — vetrina del catalogo, fascia a pagamento, pagamento finto, webhook reale, card in uso, modulo montato
+    usecases: ["0022", "0023", "0024", "0025", "0026", "0027", "0054", "0095"]
     stato: coperto
     test:
       - livello: platform
@@ -162,6 +163,14 @@ percorsi:
     test:
       - livello: l2
         file: frontend/apps/backoffice/e2e/checkout.spec.ts
+
+  - id: L2-CATALOG
+    titolo: Vetrina del catalogo — sei stati con la loro azione, ricerca, paginazione, member senza acquisto, errore di lettura
+    usecases: ["0095", "0076"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/catalog.spec.ts
 
   - id: L2-SUB
     titolo: Abbonamenti dal backoffice — riduzione programmata, avviso di quota con invito a passare di fascia, app disabilitata dalla piattaforma
@@ -583,9 +592,6 @@ esenzioni:
   - usecase: "0094"
     categoria: senza-superficie
     motivo: Integrazione della copertura nel workflow delle skill — strumento di processo.
-  - usecase: "0095"
-    categoria: non-implementato
-    motivo: Pagina "Catalogo app" del backoffice — non ancora implementata.
   - usecase: "0096"
     categoria: non-implementato
     motivo: Sezione di sola fatturazione (abbonamenti e ricevute) — non ancora implementata.

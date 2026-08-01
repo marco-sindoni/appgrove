@@ -16,6 +16,20 @@
 slug: @@APP_ID@@
 name: @@APP_NAME@@
 userModel: @@USER_MODEL@@
+# Parte descrittiva mostrata nella vetrina del catalogo (UC 0095): `category` è la tinta della card
+# (green | amber | red | blue | violet | teal — senza, se ne deriva una stabile dallo slug) e
+# `descriptions` la descrizione breve nelle 5 lingue del prodotto. Entrambe FACOLTATIVE, entrambe DA
+# COMPLETARE come il resto della bozza: il generatore non può scrivere cinque traduzioni al posto tuo.
+# Finché mancano, in vetrina la card mostra il solo nome — e comunque l'app non vi compare finché
+# `status` resta `inactive`. Esempio da scommentare e tradurre:
+#
+# category: blue
+# descriptions:
+#   it: Che cosa fa @@APP_NAME@@, in una riga.
+#   en: What @@APP_NAME@@ does, in one line.
+#   fr: Ce que fait @@APP_NAME@@, en une ligne.
+#   es: Qué hace @@APP_NAME@@, en una línea.
+#   de: Was @@APP_NAME@@ macht, in einer Zeile.
 # `inactive` finché il listino non è completo e rivisto: l'app esiste a catalogo ma non è vendibile.
 # Passa ad `active` quando i livelli a pagamento sono decisi e la landing è pronta.
 status: inactive

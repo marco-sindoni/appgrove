@@ -3,6 +3,13 @@ slug: notes
 name: Notes
 userModel: single_user
 status: active
+category: amber
+descriptions:
+  it: Note condivise e documenti leggeri per il tuo team.
+  en: Shared notes and lightweight docs for your team.
+  fr: Notes partagées et documents légers pour votre équipe.
+  es: Notas compartidas y documentos ligeros para tu equipo.
+  de: Geteilte Notizen und schlanke Dokumente für dein Team.
 tiers:
   - key: free
     name: Notes Free

@@ -24,6 +24,13 @@ slug: crm
 name: Mini-CRM
 userModel: multi_user
 status: inactive
+category: blue
+descriptions:
+  it: Contatti, trattative e una pipeline semplice per piccoli team.
+  en: Contacts, deals and a simple pipeline for small teams.
+  fr: Contacts, affaires et un pipeline simple pour les petites équipes.
+  es: Contactos, oportunidades y un embudo sencillo para equipos pequeños.
+  de: Kontakte, Deals und eine einfache Pipeline für kleine Teams.
 tiers:
   - key: free
     name: Mini-CRM Free
