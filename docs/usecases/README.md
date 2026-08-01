@@ -203,6 +203,15 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | [0088](19-debito-tecnico/0088-search-globale-workspace.md) | Search globale dal workspace del backoffice _(deprioritizzata)_ | 0020, 0013 | 🟢 |
 | [0089](19-debito-tecnico/0089-rimozione-legacy-peer-deps.md) | Rimozione `legacy-peer-deps` nel frontend | 0020, 0019 | 🟢 |
 
+### 20-test-e2e-piattaforma — Test end-to-end di piattaforma (suite su stack reale + processo di copertura)
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0090](20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md) | Fondamenta suite e2e di piattaforma: stack reale + browser + Mailpit + helper + area `platform` in `run-tests.sh` + primo journey (registrazione con email vera) | 0058, 0018, 0020, 0023, 0029 | 🟢 |
+| [0091](20-test-e2e-piattaforma/0091-e2e-platform-journey-utente.md) | Batteria journey lato utente: acquisto, uso app+quota, membri/inviti, ciclo abbonamento, password/2FA, privacy, gate legale | 0090, 0024, 0027, 0059, 0028, 0033, 0056 | 🟢 |
+| [0092](20-test-e2e-piattaforma/0092-e2e-platform-journey-admin.md) | Batteria journey lato amministratore + guasti di piattaforma (disabilita app cross-tenant, console GDPR, entitlement illeggibili) | 0090, 0021, 0034, 0076, 0077 | 🟢 |
+| [0093](20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md) | Registro di copertura e2e leggibile da programma (UC ↔ journey ↔ test) + check meccanico in area `tooling` | 0090, 0091, 0092, 0045 | 🟢 |
+| [0094](20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md) | Integrazione nel workflow delle skill: `new-usecase`/`new-change`/`new-application` identificano e registrano i journey a ogni change | 0093, 0044, 0045, 0046 | 🟢 |
+
 ---
 **Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0060** appesi col prossimo `NNNN`
 libero (ID stabili, non riflettono l'area). Le **epiche evolutive** (aree `12`+) continuano la stessa sequenza globale da
