@@ -3,8 +3,11 @@
 #
 # Aree (vedi CLAUDE.md "Esecuzione dei test"):
 #   • backend  — services/* (Quarkus/Maven)  → `mvn test`  [richiede Docker/Colima: Testcontainers/Dev Services]
-#   • frontend — frontend/  (npm workspaces)  → `npm test` + `npm run e2e`  [vitest + Playwright L2 (UC 0029),
-#                browser chromium auto-installato se assente; la suite L3 sandbox NON è qui: è pre-release]
+#   • frontend — frontend/  (npm workspaces)  → `npm run typecheck` + `npm test` + `npm run e2e`
+#                [controllo dei tipi `tsc --noEmit` su tutti i pacchetti e le app (change 0075: `vite build`
+#                traspila SENZA verificare i tipi, quindi senza questo passo un errore di tipo resta invisibile)
+#                + vitest + Playwright L2 (UC 0029), browser chromium auto-installato se assente;
+#                la suite L3 sandbox NON è qui: è pre-release]
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
@@ -54,7 +57,7 @@ ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 warn() { printf '%s! %s%s\n' "$C_YEL" "$*" "$C_RESET"; }
 
-usage() { sed -n '2,46p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,49p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 # aree richieste (default: tutte)
 AREAS=()
@@ -124,7 +127,7 @@ build_frontend_packages() {
 }
 
 run_frontend() {
-  hdr "FRONTEND — frontend/ (npm test + Playwright e2e)"
+  hdr "FRONTEND — frontend/ (tsc --noEmit + npm test + Playwright e2e)"
   if [ ! -d "$ROOT/frontend/node_modules" ]; then
     warn "frontend/node_modules assente: installo le dipendenze (npm ci)…"
     ( cd "$ROOT/frontend" && { npm ci || npm install; } ) || { fail "frontend: install dipendenze fallita"; record frontend FAIL; return; }
@@ -137,6 +140,14 @@ run_frontend() {
     fail "frontend: build dei pacchetti-libreria fallita"; record frontend FAIL; return
   fi
   local rc=0
+  # Controllo dei tipi (change 0075): `vite build` TRASPILA senza verificare i tipi, quindi senza questo
+  # passo un errore di tipo reale resta invisibile al cancello. Va DOPO la build dei pacchetti (le app
+  # risolvono i tipi dei pacchetti condivisi dal loro dist/) e PRIMA delle suite, per fallire in fretta.
+  if ( cd "$ROOT/frontend" && npm run typecheck ); then
+    ok "frontend: controllo dei tipi verde"
+  else
+    fail "frontend: controllo dei tipi fallito (tsc --noEmit)"; rc=1
+  fi
   if ( cd "$ROOT/frontend" && npm test ); then
     ok "frontend: unit/component verdi"
   else

@@ -124,7 +124,7 @@ jobs:
             -Dtest='ArchitectureTest,MultiTenancyTest,FailClosedTest,JwtTenantResolverTest,PersonalDataManifestVerifierTest' \
             -Dsurefire.failIfNoSpecifiedTests=false
 
-  # ── Frontend: vitest se toccato; E2E Playwright SEMPRE (#10 35) ────────────
+  # ── Frontend: controllo dei tipi + vitest se toccato; E2E Playwright SEMPRE (#10 35) ──
   frontend:
     needs: changes
     runs-on: ubuntu-latest
@@ -138,6 +138,13 @@ jobs:
       - name: Dipendenze
         working-directory: frontend
         run: npm ci
+      # `vite build` traspila SENZA verificare i tipi: senza questo passo un errore di tipo reale
+      # resta invisibile al cancello (change 0075). `npm ci` ha già costruito i pacchetti-libreria
+      # tramite gli script `prepare`, quindi le app risolvono i tipi condivisi dal loro dist/.
+      - name: Controllo dei tipi (tsc --noEmit)
+        if: needs.changes.outputs.frontend == 'true'
+        working-directory: frontend
+        run: npm run typecheck
       - name: Unit/component (vitest)
         if: needs.changes.outputs.frontend == 'true'
         working-directory: frontend

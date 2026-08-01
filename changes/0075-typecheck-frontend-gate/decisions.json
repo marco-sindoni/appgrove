@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione. Nessun gate di workflow (niente revisione requisiti, niente consenso al commit); in contropartita valgono suite completa `./run-tests.sh` verde prima del commit, registro decisioni integrale e `how-to-test.md` nella cartella della change. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change NON nasce da uno use case del catalogo: è una change tecnica di qualità del cancello di test. Verificato che le storie dell'epica 20 (0090–0094, test end-to-end) riguardano la copertura end-to-end, non il controllo statico dei tipi. Da qui la forma del branch senza segmento `use-case`: `change/0075-typecheck-frontend-gate`. Nessuna riga di `docs/usecases/_INDEX.md` da aggiornare."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Numero di change 0075 derivato dalla cartella `changes/` (ultima presente: 0074-use-case-0094-copertura-e2e-workflow-skill), coincidente con l'id assegnato all'invocazione: nessun disallineamento."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Ordine dei lavori: prima si azzerano i due errori di tipo esistenti, poi si aggancia il controllo dei tipi al cancello. L'ordine inverso farebbe nascere il cancello rosso, cioè inutilizzabile: nessun commit potrebbe passare finché gli errori non fossero corretti, e la suite completa richiesta dalla modalità fast non potrebbe mai essere verde."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Errore TS2430 su PageHeader: si esclude l'attributo nativo `title` dagli attributi HTML ereditati invece di declassare la proprietà a stringa. Il titolo come contenuto React è voluto (le storie Storybook e i mockup prevedono titoli composti) e declassarlo a stringa sarebbe una regressione dell'interfaccia pubblica del design system; escludere l'attributo omonimo non toglie nulla ai consumatori, che oggi non usano il suggerimento nativo del browser su questo componente. Alternativa scartata: rinominare la proprietà (rottura di tutti i sette usi esistenti senza alcun beneficio).",
+    "files": [
+      { "file": "frontend/packages/design-system/src/components/PageHeader.tsx", "description": "L'interfaccia delle proprietà eredita gli attributi HTML meno `title`, così la proprietà del componente resta contenuto React." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Errore TS2550 su privacy.spec.ts: si rimuove la causa (la configurazione del compilatore ferma a una libreria standard che non conosce il metodo `.at()` degli array) e non il sintomo. Riscrivere la riga con un accesso per indice nasconderebbe il problema e lo lascerebbe pronto a ripresentarsi al prossimo uso di un metodo moderno."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il controllo dei tipi si aggancia all'area frontend di `run-tests.sh` DOPO la costruzione dei pacchetti-libreria (le applicazioni risolvono i tipi dei pacchetti condivisi dal loro `dist/`, quindi un `dist/` assente farebbe fallire il controllo per la ragione sbagliata) e PRIMA di vitest e degli end-to-end, così che l'esito arrivi in fretta. Un fallimento marca l'area come rossa ma non interrompe le suite successive, coerentemente con la regola di `run-tests.sh` \"esegue tutte le aree, non si ferma al primo errore\".",
+    "files": [
+      { "file": "run-tests.sh", "description": "Nella funzione run_frontend il controllo dei tipi è un passo fra la build dei pacchetti e vitest; contribuisce all'esito dell'area tramite la stessa variabile di accumulo degli altri passi." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il controllo dei tipi si aggancia anche alla verifica di integrazione continua (`.github/workflows/verify-pr.yml`, lavoro `frontend`), condizionato al filtro di percorso `frontend` esattamente come il passo vitest: un cancello che esiste solo sulla macchina dello sviluppatore non protegge il ramo principale, e chi apre una richiesta di unione non è tenuto a eseguire la suite completa in locale. Costo aggiuntivo trascurabile (`tsc --noEmit` su sette progetti, poche decine di secondi) rispetto agli end-to-end già presenti nello stesso lavoro."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Non si scrive un test automatico che verifichi che `run-tests.sh` chiami il controllo dei tipi (un \"test del cancello\"). Nel monorepo non esiste alcuna infrastruttura di collaudo dello script e introdurla per un solo passo sarebbe sproporzionato; la rimozione accidentale del passo è coperta dalla revisione delle richieste di unione e dal fatto che lo stesso passo esiste in due posti indipendenti (script locale e integrazione continua). La verifica che il cancello diventi davvero rosso è un controllo manuale documentato in `how-to-test.md`."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Attuazione della decisione 5: `PageHeaderProps` eredita `Omit<HTMLAttributes<HTMLElement>, 'title'>`. Verificati tutti i consumatori prima di scegliere — sette usi nelle pagine di `apps/admin`, tre negli schermi di `apps/backoffice`, più i test e le due storie del pacchetto: nessuno passa l'attributo nativo `title` al componente, quindi l'esclusione non rompe nulla. Aggiunto un commento sul perché dell'esclusione, così che nessuno la rimuova credendola superflua.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/components/PageHeader.tsx", "description": "Interfaccia con `Omit<..., 'title'>` e commento esplicativo; nessuna modifica al comportamento a video." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Attuazione della decisione 6: `target` e `lib` passano da ES2021 a ES2022 in TUTTI e sette i progetti TypeScript del frontend (cinque pacchetti condivisi e due applicazioni), non solo in `apps/backoffice` dove l'errore si manifestava. Motivazione della scelta uniforme come via MENO rischiosa, non più: (a) `lib` è puramente dichiarativo — aggiunge le firme delle interfacce standard note al compilatore e non può far fallire codice che prima compilava; (b) `target` qui non ha effetto sul codice spedito, perché nessun progetto emette JavaScript con `tsc` (`noEmit: true` ovunque, la costruzione è `vite build`) e Vite 8 sceglie da sé il livello di traspilazione del pacchetto finale, già superiore a ES2022; (c) `useDefineForClassFields` è dichiarato esplicitamente ovunque, quindi il cambio di `target` non ne muove il valore predefinito; (d) lasciare sei progetti indietro creerebbe una trappola: lo stesso metodo moderno funzionerebbe in un progetto e fallirebbe nell'altro senza ragione visibile. Verificato empiricamente: `npm run typecheck` esce 0 su tutti e sette dopo il cambio.",
+    "files": [
+      { "file": "frontend/apps/backoffice/tsconfig.json", "description": "Progetto dove si manifestava l'errore TS2550 su `.at()`: `target`/`lib` a ES2022." },
+      { "file": "frontend/packages/design-system/tsconfig.json", "description": "Allineato a ES2022 con gli altri sei progetti, per uniformità." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) `run-tests.sh`: oltre al passo di controllo dei tipi, aggiornata l'intestazione che descrive l'area frontend (è anche il testo di `./run-tests.sh -h`) e di conseguenza l'intervallo di righe letto dalla funzione `usage` — l'intestazione è cresciuta di tre righe e senza l'aggiornamento l'aiuto sarebbe risultato troncato a metà. Aggiornata anche la riga corrispondente di `CLAUDE.md`, sezione \"Esecuzione dei test\", perché è la descrizione normativa del cancello.",
+    "files": [
+      { "file": "run-tests.sh", "description": "Intestazione dell'area frontend, intervallo di `usage` (2,49) e passo di controllo dei tipi in `run_frontend`." },
+      { "file": "CLAUDE.md", "description": "La sezione \"Esecuzione dei test\" cita ora il controllo dei tipi fra i passi dell'area frontend." },
+      { "file": ".github/workflows/verify-pr.yml", "description": "Nuovo passo \"Controllo dei tipi (tsc --noEmit)\" nel lavoro frontend, condizionato al filtro di percorso come vitest." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): valutazione \"nessun impatto\". La change non muove nulla che un browser possa osservare — corregge dichiarazioni di tipo (che non esistono a tempo di esecuzione), alza la versione della libreria standard nota al compilatore e aggiunge un passo allo script dei test. Nessuna voce di `docs/testing/copertura-e2e.yaml` da creare o modificare; il controllo `node tools/e2e-coverage/check.mjs` resta verde."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Varco di parità dei modelli di scaffolding (UC 0046): la modifica a `.github/workflows/verify-pr.yml` fa scattare il rilevatore dei percorsi-sorgente. Scelta la via 2 delle due ammesse — registrare la motivazione in `docs/_PARITA-SCAFFOLD.md` invece di aggiornare i modelli — perché nessun modello di `tools/new-application/templates/` replica il workflow (verificato: la stringa `verify-pr` non compare nel generatore) e il passo aggiunto lavora su tutti gli spazi di lavoro npm, quindi un modulo frontend generato vi rientra da solo senza frammenti per-app. Estesa la riga già esistente per quel file (aperta dalla change 0069) invece di aprirne una nuova con la stessa chiave.",
+    "files": [
+      { "file": "docs/_PARITA-SCAFFOLD.md", "description": "Riga `file:.github/workflows/verify-pr.yml` estesa con la motivazione della change 0075." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Gate privacy (UC 0031): lo scanner deterministico dei segnali (`npm run privacy-scan` in `tools/compliance`) esce 0 — nessun segnale. Coerente con la natura della change: nessuna migrazione, nessun campo di entità o oggetto di trasporto, nessuna dipendenza o host esterno nuovo, nessuna chiave di classificazione toccata nei manifesti dati."
+  }
+]
