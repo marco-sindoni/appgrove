@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot (on) — dichiarata implicitamente dallo sviluppatore ('se è tutto chiaro e non hai domande per me, procedi'). I gate classici restano: approvazione dei requisiti, consenso al commit e al merge."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Change ad-hoc, non use-case-originated: nessuno use case del catalogo copre la skill go-fast né la modalità fast di new-change; la specifica è dettata direttamente dallo sviluppatore in conversazione."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) In modalità fast le fermate di escalation dell'autopilot restano attive (direzione di prodotto, prezzi/quote, classificazioni ambigue su dati personali, effetti irreversibili o verso l'esterno): 'nessuna domanda' rimuove i gate di workflow (requisiti/commit/merge), non i presidi di sicurezza — un'implementazione automatica che decidesse da sola un nuovo trattamento di dati personali violerebbe la costituzione del repo."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Divisione dei compiti: new-change fast termina con la suite completa verde (./run-tests.sh senza parametri) e il commit sul branch, senza chiedere consensi; merge e push spettano al chiamante — go-fast nel ciclo iterativo, lo sviluppatore se fast è invocata da sola."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) go-fast salta le story marcate 🟠 in EPICS-WAVE-2.md (decisione di prodotto pendente) segnalandole nel rapporto finale: è la regola di escalation applicata al ciclo; l'ordine di esecuzione delle story è quello topologico dell'onda 2."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) how-to-test.md è scritto da go-fast nella cartella della change e committato sul branch PRIMA del merge, così il manuale di verifica arriva su main insieme alla story."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il tag di backup è creato sul commit di main precedente all'avvio della change (nome <change-id>-backup, es. 0068-use-case-0095-…-backup) e pushato su origin prima di invocare new-change: punto di ripristino remoto sicuro per la modalità fast."
+  }
+]
