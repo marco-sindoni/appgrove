@@ -62,7 +62,7 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | **C3. Catalogo app & UX backoffice** |
 | 21 | [0095](21-catalogo-app-backoffice/0095-pagina-app-catalog.md) | Pagina "App catalog" del backoffice (card, stati, ricerca, paginazione) | 21 | 0077 | 0020, 0022, 0024, 0026 | 🟢 | ✅ |
 | 22 | [0096](21-catalogo-app-backoffice/0096-billing-solo-fatturazione.md) | Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute) | 21 | 0095, 0076 (soft), 0077 | 0028, 0025, 0026 | 🟢 | ✅ |
-| 23 | [0097](21-catalogo-app-backoffice/0097-dashboard-operativa.md) | Dashboard operativa del workspace (+ Workspace ID in Account) | 21 | 0095, 0077 | 0027, 0028, 0059, 0056 | 🟢 | ⬜ |
+| 23 | [0097](21-catalogo-app-backoffice/0097-dashboard-operativa.md) | Dashboard operativa del workspace (+ Workspace ID in Account) | 21 | 0095, 0077 | 0027, 0028, 0059, 0056 | 🟢 | 🟡 |
 | **D. Direzione di prodotto da decidere** |
 | 24 | [0072](14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md) | Distinzione B2C/B2B a livello app (`App.user_model`) | 14 | — | 0013, 0059, 0051, 0054 | 🟠 | ⬜ |
 | 25 | [0073](14-modello-utenti-multiapp/0073-invito-utenti-per-app-posti-quota.md) | Invito utenti per-app con "posti" come metrica `stock` | 14 | 0072 | 0027, 0046, 0047 | 🟠 | ⬜ |

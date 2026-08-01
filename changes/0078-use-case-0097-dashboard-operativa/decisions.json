@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata all'invocazione dalla skill go-fast. Nessun gate di workflow (né revisione dei requisiti né consenso al commit); restano obbligatori la suite completa `./run-tests.sh` verde prima del commit, il registro decisioni integrale e la checklist di verifica manuale how-to-test.md. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0097 (Dashboard operativa del workspace + Workspace ID in Account), ultima storia dell'epica evo 21-catalogo-app-backoffice, da cui la forma del branch 0078-use-case-0097-dashboard-operativa. Il numero 0078 è il progressivo derivato dalla cartella changes/ (ultima presente: 0077) e coincide con quello atteso dal chiamante.",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo stato di implementazione delle storie evo vive nell'ultima colonna di questa tabella (non in _INDEX.md, che copre le storie base): 0097 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Nessun read-model aggregato nuovo nel core: la Dashboard compone quattro letture che esistono già — la vetrina del catalogo (UC 0095, da cui app attive, stato, nome della fascia e tinta di categoria), gli abbonamenti self-service (UC 0028, da cui il prossimo rinnovo e il pagamento in sospeso), i membri e gli inviti (UC 0059) e lo stato legale (UC 0056). È ciò che UC 0097 §3 chiede espressamente («la Dashboard compone dati già esposti»), ed è anche la scelta migliore nel merito: un endpoint riassuntivo nuovo duplicherebbe quattro derivazioni già collaudate e legherebbe la pagina d'atterraggio a una quinta lettura che diventerebbe un punto unico di guasto — l'opposto della degradazione per-sezione richiesta da §5."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il consumo di quota per la barra della card NON viene da un read-model di piattaforma — non esiste e non deve esistere: l'uso corrente lo conosce soltanto il servizio dell'app, che lo espone già oggi (`GET /api/<app>/v1/quota`, UC 0027). Il manifest del modulo frontend guadagna quindi un descrittore di quota FACOLTATIVO (percorso della lettura + etichetta dell'unità) e la Dashboard lo interroga per ogni app attiva che ne ha uno. Scartata l'alternativa di far interpellare le app dal core: introdurrebbe chiamate fra servizi che oggi non esistono, per un dato puramente informativo. Contropartita accettata: una richiesta di rete in più per app attiva (oggi al massimo due) e nessuna barra per le app senza modulo impacchettato — che è la degradazione onesta, non un difetto.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/registry/types.ts",
+        "description": "Nuovo tipo ModuleQuota e campo facoltativo `quota` nel manifest del modulo."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'avviso «attiva il secondo fattore» richiede un segnale VERO, quindi nasce la lettura `GET /api/auth/2fa/status` nel servizio di autenticazione, implementata da entrambi i provider (locale: la propria riga di credenziali; Cognito: le impostazioni di secondo fattore restituite da GetUser sull'access token). Motivo: oggi il prodotto non sa se un utente ha il secondo fattore attivo — il banner esistente è puramente locale al browser e si limita a farsi chiudere. Un avviso permanente sulla pagina d'atterraggio che dica il falso a chi ha già fatto la cosa giusta è peggio dell'avviso che sostituisce. Il costo è minimo (un metodo per provider, nessuna scrittura, nessun dato nuovo conservato) e chiude un rinvio esplicito di UC 0017 UC10.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/AuthResource.java",
+        "description": "GET /2fa/status, autenticato, sul soggetto del token."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il banner di invito al secondo fattore viene RIMOSSO dal guscio invece di essere reso veritiero e lasciato dov'è. Ragione: con gli avvisi della Dashboard lo stesso messaggio comparirebbe due volte sulla pagina d'atterraggio, e i due esemplari direbbero cose diverse (uno chiudibile e dimenticato per sempre nel browser, l'altro persistente finché il problema c'è). Un solo posto, quello progettato per contenere le cose da fare, è meglio di due che si contraddicono. La copertura non peggiora: la Dashboard è la rotta indice del backoffice, quindi ogni sessione ci passa. Coerentemente anche la pagina Security smette di proporre l'attivazione a chi ha già il secondo fattore attivo.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/shell/TwoFaNudge.tsx",
+        "description": "Rimosso: la sua ragione d'essere passa agli avvisi della Dashboard."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Nel riepilogo «At a glance» le righe «membri» e «inviti pendenti» compaiono SOLO a owner e admin. Non è una scelta estetica: le due letture del core sono riservate a quei ruoli e a un member risponderebbero con un diniego, riempiendo la pagina d'atterraggio di un errore per un dato che comunque non gli è dato conoscere (la pagina Membri stessa gli è preclusa). Le righe «app attive» e «prossimo rinnovo» restano per tutti, perché le loro fonti sono aperte a tutti i ruoli. Stessa regola per le azioni: «Manage plan» e «Invite a member» non sono offerte a chi non può usarle, come chiede UC 0097 §5."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Gli avvisi della Dashboard sono TRE, nell'ordine di gravità: (1) pagamento in sospeso su almeno un'app — è la cosa che fa perdere l'accesso, e la si legge dallo stato della vetrina, non da una nuova derivazione; (2) secondo fattore non attivo; (3) documenti legali aggiornati da rivedere. Il terzo copre i soli aggiornamenti MINORI: quelli vincolanti non possono mai comparire qui, perché lo sbarramento di UC 0056 sostituisce l'intera shell prima che la Dashboard sia resa. Nessun avviso viene mostrato «per completezza»: se non c'è nulla da fare la striscia non esiste, altrimenti l'utente impara a ignorarla."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): si copre ORA. Nasce il percorso di livello 2 `L2-DASHBOARD` (panoramica con app attive, barra di consumo e avvisi; workspace senza app con invito al catalogo; guasto della sola sezione app; identificativo del workspace presente in Account e assente in Dashboard) e si estende il percorso di piattaforma `J-REG`, che già atterra sulla Dashboard, perché verifichi la panoramica vera su stack reale. UC 0097 esce dalle esenzioni `non-implementato` ed entra fra gli use case con superficie."
+  }
+]
