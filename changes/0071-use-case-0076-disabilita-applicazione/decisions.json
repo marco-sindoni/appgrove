@@ -7,28 +7,40 @@
     "id": 2,
     "decision": "(autopilot) La change implementa lo use case 0076 (Disabilita applicazione, feature admin reversibile), indicato esplicitamente all'invocazione; da qui la forma del branch `0071-use-case-0076-disabilita-applicazione`. Il numero 0071 è il progressivo della cartella `changes/` (ultima esistente: 0070).",
     "files": [
-      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Indice di esecuzione delle storie evo: la riga 0076 passa a 🟡 all'apertura della change e a ✅ alla chiusura. Le storie evo NON hanno riga in docs/usecases/_INDEX.md (fuori dall'ordine topologico dell'onda 1), quindi l'indice da sincronizzare è questo." }
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Indice di esecuzione delle storie evo: la riga 0076 passa a 🟡 all'apertura della change e a ✅ alla chiusura. Le storie evo NON hanno riga in docs/usecases/_INDEX.md (fuori dall'ordine topologico dell'onda 1), quindi l'indice da sincronizzare è questo."
+      }
     ]
   },
   {
     "id": 3,
     "decision": "(autopilot) Perimetro reale della storia: metà del meccanismo esiste già (campo `app.status`, endpoint `PATCH /admin/apps/{id}` gated `platform-admin`, pulsante con dialogo nella console admin, e soprattutto l'applicazione della regola a valle in `EntitlementAccess`). La change quindi NON reintroduce l'enforcement e NON riscrive il toggle: aggiunge ciò che manca alla Definition of Done dello use case — motivazione, audit persistito e consultabile, idempotenza esplicita, copy che distingue dalla dismissione definitiva, e coerenza dell'esperienza utente sulla pagina Billing.",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementAccess.java", "description": "Regola di accesso già esistente che scarta le app non `active`: consumata, non duplicata." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementAccess.java",
+        "description": "Regola di accesso già esistente che scarta le app non `active`: consumata, non duplicata."
+      }
     ]
   },
   {
     "id": 4,
     "decision": "(autopilot) Nome dello stato: si mantiene l'enum esistente `active` | `inactive`, NON si rinomina in `disabled` come recita il testo dello use case. Motivo: il valore vive già nello schema del database, nei dati seminati, nel pricing-as-code e nella suite end-to-end di piattaforma (`tools/platform-e2e/global-setup.ts` usa la leva); una rinomina sarebbe una migrazione a valore funzionale nullo con rischio di rottura diffuso. La parola \"disabilitata\" resta nel copy dell'interfaccia, che è dove serve al lettore umano.",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/catalog/AppStatus.java", "description": "Enum invariato: `active` | `inactive`." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/AppStatus.java",
+        "description": "Enum invariato: `active` | `inactive`."
+      }
     ]
   },
   {
     "id": 5,
     "decision": "(autopilot) L'audit della transizione si persiste in una NUOVA tabella dedicata `platform.app_status_audit` (migrazione Flyway V13), non riusando tabelle esistenti: le tabelle di prova attuali sono tenant-scoped e di dominio GDPR, mentre qui il soggetto è il catalogo di piattaforma e non c'è alcun tenant. Struttura sul modello già collaudato di `gdpr_restriction_audit` (identificativo, bersaglio, azione, attore, nota, istante di esecuzione).",
     "files": [
-      { "file": "services/core/src/main/resources/db/migration/V13__app_status_audit.sql", "description": "Nuova tabella con app_id, from_status, to_status, actor, reason, executed_at + indice su (app_id, executed_at)." }
+      {
+        "file": "services/core/src/main/resources/db/migration/V13__app_status_audit.sql",
+        "description": "Nuova tabella con app_id, from_status, to_status, actor, reason, executed_at + indice su (app_id, executed_at)."
+      }
     ]
   },
   {
@@ -39,29 +51,44 @@
     "id": 7,
     "decision": "(autopilot) La motivazione è FACOLTATIVA e limitata a 512 caratteri. Facoltativa perché lo use case la descrive così e perché renderla obbligatoria romperebbe i chiamanti automatici esistenti. Trattamento prudente del testo libero: la motivazione finisce SOLO nella riga di database (conservazione 12 mesi) e non entra mai nell'evento di audit strutturato che confluisce nell'archivio a 12 mesi su oggetti cloud — stessa regola già applicata alla nota della limitazione art. 18, perché il testo libero può contenere dati personali non previsti.",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/platform/AdminDtos.java", "description": "`UpdateAppStatus` guadagna il campo facoltativo `reason` con lunghezza massima 512." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AdminDtos.java",
+        "description": "`UpdateAppStatus` guadagna il campo facoltativo `reason` con lunghezza massima 512."
+      }
     ]
   },
   {
     "id": 8,
     "decision": "(autopilot) Conservazione del nuovo registro: 12 mesi come le altre prove di audit nel database, applicata dal job già esistente invece che da un secondo job gemello. Il job viene però GENERALIZZATO — da `GdprAuditRetentionSweeper` (pacchetto gdpr) a `AuditRetentionSweeper` (pacchetto platform) — perché ora conserva anche una tabella che di GDPR non ha nulla: lasciare il nome GDPR su un job che spazza il catalogo di piattaforma sarebbe una bugia destinata a confondere chi legge dopo.",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/platform/AuditRetentionSweeper.java", "description": "Rinominato e spostato da app.appgrove.core.gdpr.GdprAuditRetentionSweeper; spazza tre tabelle: gdpr_purge_audit, gdpr_restriction_audit, app_status_audit." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AuditRetentionSweeper.java",
+        "description": "Rinominato e spostato da app.appgrove.core.gdpr.GdprAuditRetentionSweeper; spazza tre tabelle: gdpr_purge_audit, gdpr_restriction_audit, app_status_audit."
+      }
     ]
   },
   {
     "id": 9,
     "decision": "(autopilot) Il registro delle transizioni si consulta dalla sezione App della console admin (sotto la tabella delle app), non da una pagina nuova: è l'unico posto dove l'operatore agisce sul catalogo e lo use case chiede \"vista audit coerente con l'audit di piattaforma\" — la stessa forma già adottata per il registro delle limitazioni dentro la pagina Diritti GDPR. Nuova lettura `GET /api/platform/v1/admin/apps/audit`, riservata a `platform-admin`, più recenti prima.",
     "files": [
-      { "file": "frontend/apps/admin/src/pages/Apps.tsx", "description": "La pagina ospita tabella app + dialogo con motivazione + registro delle transizioni." }
+      {
+        "file": "frontend/apps/admin/src/pages/Apps.tsx",
+        "description": "La pagina ospita tabella app + dialogo con motivazione + registro delle transizioni."
+      }
     ]
   },
   {
     "id": 10,
     "decision": "(autopilot) Il punto aperto \"pagina Billing incoerente per app disabilitata\", annotato nello use case 0076 il 2026-08-01 e dichiarato di proprietà di questo use case, viene chiuso QUI e non rimandato alla revisione UX catalogo/billing (UC 0096): è l'esperienza utente diretta della disabilitazione, cioè il senso della storia, e senza di essa l'utente vede un abbonamento \"attivo\" per un'app che è sparita dalla barra laterale. Realizzazione: `/me/subscriptions` espone `appDisabled` e la card mostra un avviso esplicito; l'abbonamento continua a essere elencato (per disegno UC 0028 li mostra tutti).",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java", "description": "La vista dell'abbonamento porta il flag `appDisabled`, derivato dallo stato dell'app di catalogo." },
-      { "file": "frontend/apps/backoffice/src/billing/SubscriptionsPanel.tsx", "description": "Avviso \"app sospesa dalla piattaforma\" sulla card, con la rassicurazione che dati e abbonamento restano intatti." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java",
+        "description": "La vista dell'abbonamento porta il flag `appDisabled`, derivato dallo stato dell'app di catalogo."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/billing/SubscriptionsPanel.tsx",
+        "description": "Avviso \"app sospesa dalla piattaforma\" sulla card, con la rassicurazione che dati e abbonamento restano intatti."
+      }
     ]
   },
   {
@@ -71,5 +98,83 @@
   {
     "id": 12,
     "decision": "(autopilot) Restano fuori, come già scritto nei punti aperti dello use case 0076 e senza bisogno di nuovi rimandi: kill-switch all'edge (l'authorizer non legge il database), disabilitazione mirata su un singolo account, comunicazione automatica agli utenti impattati, finestra di manutenzione programmata. Nessuna di queste è matura e nessuna appartiene al perimetro della leva reversibile."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) La scrittura dello stato e la scrittura del registro vivono insieme in un servizio dedicato `AppStatusService` (pacchetto catalog), estratto dalla risorsa REST: la transizione + audit deve essere un'unica unità transazionale e la risorsa non è il posto dove tenere una regola di dominio. La risorsa resta sottile (traduzione del protocollo: 400 su stato non ammesso, 404 su app inesistente). Il servizio scrive con SQL nativo, come già faceva la console: l'entità `App` è dichiaratamente il read-model del catalogo e non espone modificatori.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/AppStatusService.java",
+        "description": "Transizione + riga di registro in una sola transazione; ritorna null quando l'app non esiste, lasciando alla risorsa la scelta del codice di risposta."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AdminResource.java",
+        "description": "Il toggle delega al servizio; nuova lettura GET /admin/apps/audit; rimossi il logger e l'insieme di stati ammessi che ora vivono nel servizio (lo stato ammesso è l'enum AppStatus, non più una lista di stringhe parallela)."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La motivazione viene ripulita e troncata nel servizio (spazi tolti, stringa vuota = nessuna motivazione, taglio a 512 caratteri) oltre a essere validata nel corpo della richiesta. Difesa in profondità: la validazione del corpo protegge il chiamante onesto, il troncamento protegge la colonna da qualunque percorso futuro che aggirasse la validazione."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il badge di stato dell'app nella console admin passa dal valore grezzo del database (`active`/`inactive`) a un'etichetta tradotta (Attiva/Disabilitata), come chiede lo use case. Gli asserti dei test unitari e end-to-end che leggevano il valore grezzo sono stati aggiornati di conseguenza: è un cambio di interfaccia voluto, non un test piegato.",
+    "files": [
+      {
+        "file": "frontend/apps/admin/src/pages/Apps.tsx",
+        "description": "Badge tradotto, dialogo con motivazione e copy esteso, registro delle transizioni sotto la tabella."
+      },
+      {
+        "file": "frontend/apps/admin/e2e/admin.spec.ts",
+        "description": "Il percorso end-to-end copre ora disabilita-con-motivazione → badge → registro → riabilita → due righe di registro."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) `ConfirmDialog` guadagna uno slot per contenuto aggiuntivo (`children`) invece di ricevere un elenco crescente di proprietà specifiche: il dialogo serve già più azioni diverse e la motivazione è un campo di questa sola azione. Nello stesso spirito `QueryState` accetta un testo di stato vuoto specifico, perché \"Ancora niente qui\" non dice nulla di utile davanti a un registro di audit.",
+    "files": [
+      {
+        "file": "frontend/apps/admin/src/pages/ConfirmDialog.tsx",
+        "description": "Slot children fra testo e pulsanti; il riquadro diventa scorrevole perché ora può contenere più testo."
+      },
+      {
+        "file": "frontend/apps/admin/src/shell/QueryState.tsx",
+        "description": "Proprietà facoltativa emptyLabel."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Gate privacy (UC 0031) — lo scanner segnala una sola cosa: la nuova tabella `platform.app_status_audit`. Classificazione: natura = registro amministrativo di audit; l'unico dato riferibile a una persona è l'identificativo opaco (`sub`) dell'**operatore di piattaforma**, esattamente come nella già esistente `gdpr_restriction_audit`. Finalità = sicurezza e tracciabilità delle azioni amministrative; base giuridica = legittimo interesse (art. 6.1.f); conservazione = 12 mesi nel database; categoria ordinaria, nessun dato dell'art. 9, nessun nuovo responsabile esterno, nessun dato di utente finale. Classificazione del cambio: **MINOR** — nessuna nuova finalità, base, categoria o conservazione, quindi nessuna ri-accettazione dei legali. Nessuna annotazione `@PersonalData` da mettere: la tabella non ha un'entità JPA (SQL nativo) e nessun campo di dato personale di utente finale. Nessuna voce nuova nel manifesto, coerentemente con le due tabelle di prova già esistenti."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Rimando tracciato in docs/_BACKLOG.md (§Compliance & privacy): le tre tabelle di prova nel database (`gdpr_purge_audit`, `gdpr_restriction_audit`, `app_status_audit`) non hanno una voce dedicata nel manifesto dati e sono coperte solo implicitamente dalla voce `logs.structured`, che però parla di log su cloud e non di righe di database. Da chiudere in una revisione di compliance prima della revisione legale pre-go-live; non è una decisione di questa change.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Voce aggiunta in §Compliance & privacy."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Rimando tracciato nei punti aperti di UC 0076: disabilitare un'app non pubblica alcun evento di invalidazione degli entitlement verso le app. Il pubblicatore esistente lavora per singolo tenant su cambi di fatturazione; qui il cambio è di catalogo e riguarda tutti i tenant, quindi servirebbe una diffusione a tappeto che oggi non esiste. Conseguenza accettata (stessa rinuncia già dichiarata per token e cache lato client): la proiezione di un'app può restare indietro fino al primo rinfresco utile.",
+    "files": [
+      {
+        "file": "docs/usecases/15-supporto-e-piattaforma/0076-disabilita-applicazione.md",
+        "description": "Punto aperto aggiunto; il punto aperto sulla pagina Billing è invece marcato chiuso da questa change."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Scostamento consapevole dai requisiti scritti: l'avviso \"app sospesa dalla piattaforma\" sulla card dell'abbonamento è coperto dal test end-to-end di livello L2 del backoffice invece che da un test di componente con vitest. Motivo: per il pannello abbonamenti non esiste alcuna impalcatura di test di componente (esiste solo il test della logica pura `subscriptionsView`), mentre il percorso end-to-end monta l'applicazione vera e verifica ciò che l'utente legge davvero — copertura più fedele allo stesso costo."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Copertura end-to-end (rilevazione obbligatoria per le change che toccano superficie frontend): SÌ, due percorsi estesi — console admin (`frontend/apps/admin/e2e/admin.spec.ts`) e backoffice (`frontend/apps/backoffice/e2e/subscriptions.spec.ts`). Nessun journey nuovo nella suite di piattaforma: quello lato admin è di UC 0092, la storia successiva."
   }
 ]

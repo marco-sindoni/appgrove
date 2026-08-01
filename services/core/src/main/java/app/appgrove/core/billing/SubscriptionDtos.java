@@ -27,6 +27,10 @@ public final class SubscriptionDtos {
      * @param phase fase lifecycle (TRIAL/ACTIVE/CANCELING/GRACE/ENDED) da {@link SubscriptionLifecycle}
      * @param scheduledTierKey tier di destinazione del downgrade schedulato, o {@code null}
      * @param limits tetti del tier corrente ({@code metric → {cap, nature, window}})
+     * @param appDisabled l'app è stata <b>sospesa dalla piattaforma</b> (UC 0076: {@code app.status}
+     *     diverso da {@code active}). L'abbonamento resta elencato e valido e i dati restano intatti,
+     *     ma l'app non è raggiungibile: senza questo flag il pannello mostrerebbe "attivo" per un'app
+     *     che è sparita dalla barra laterale, che è la incoerenza annotata nello use case 0076
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SubscriptionView(
@@ -48,7 +52,8 @@ public final class SubscriptionDtos {
             boolean canCancel,
             boolean canResume,
             boolean canReactivate,
-            boolean portalAvailable) {}
+            boolean portalAvailable,
+            boolean appDisabled) {}
 
     /**
      * Richiesta di cambio piano: tier di destinazione (chiave interna) + ciclo. Il {@code tenant_id}

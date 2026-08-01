@@ -10,12 +10,15 @@ export function QueryState({
   isLoading,
   isError,
   isEmpty,
+  emptyLabel,
   onRetry,
   children,
 }: {
   isLoading: boolean
   isError: boolean
   isEmpty?: boolean
+  /** Testo dello stato vuoto quando quello generico non dice abbastanza (es. il registro di UC 0076). */
+  emptyLabel?: string
   onRetry?: () => void
   children: ReactNode
 }) {
@@ -41,7 +44,7 @@ export function QueryState({
     )
   }
   if (isEmpty) {
-    return <p className="text-sm text-fg-muted">{t('states.empty')}</p>
+    return <p className="text-sm text-fg-muted">{emptyLabel ?? t('states.empty')}</p>
   }
   return <>{children}</>
 }

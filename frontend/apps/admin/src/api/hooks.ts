@@ -21,6 +21,7 @@ export type AdminUserView = components['schemas']['AdminUserView']
 export type EntitlementCell = components['schemas']['EntitlementCell']
 export type BillingRow = components['schemas']['BillingRow']
 export type AppView = components['schemas']['AppView']
+export type AppStatusAuditView = components['schemas']['AppStatusAuditView']
 
 /** KPI di piattaforma (`GET /admin/overview`). */
 export function useOverview() {
@@ -234,23 +235,35 @@ export function usePurgeAudit() {
 }
 
 /**
- * Abilita/disabilita un'app (`PATCH /admin/apps/{id}`, danger zone). Invalida il catalogo app e la
- * matrice entitlement (lo stato `appActive` cambia per ogni tenant).
+ * Disabilita/riabilita un'app (`PATCH /admin/apps/{id}`, danger zone — UC 0076). La `reason` è la
+ * motivazione facoltativa dell'operatore, che finisce nel registro. Invalida il catalogo app, il
+ * registro e la matrice entitlement (lo stato `appActive` cambia per ogni tenant).
  */
 export function useSetAppStatus() {
   const client = useApiClient()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (vars: { id: string; status: 'active' | 'inactive' }) =>
+    mutationFn: (vars: { id: string; status: 'active' | 'inactive'; reason?: string }) =>
       unwrap<AppView>(
         client.PATCH('/api/platform/v1/admin/apps/{id}', {
           params: { path: { id: vars.id } },
-          body: { status: vars.status },
+          body: { status: vars.status, ...(vars.reason ? { reason: vars.reason } : {}) },
         }),
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'apps'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'apps-audit'] })
       void queryClient.invalidateQueries({ queryKey: ['admin', 'entitlements'] })
     },
+  })
+}
+
+/** Registro delle disabilitazioni/riabilitazioni (`GET /admin/apps/audit`, UC 0076), più recenti prima. */
+export function useAppStatusAudit() {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: ['admin', 'apps-audit'],
+    queryFn: () =>
+      unwrap<AppStatusAuditView[]>(client.GET('/api/platform/v1/admin/apps/audit')),
   })
 }

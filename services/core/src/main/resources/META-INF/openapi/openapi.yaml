@@ -123,6 +123,27 @@ components:
           type: string
         tenantName:
           type: string
+    AppStatusAuditView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        appId:
+          $ref: "#/components/schemas/UUID"
+        appSlug:
+          type: string
+        appName:
+          type: string
+        fromStatus:
+          type: string
+        toStatus:
+          type: string
+        actor:
+          type: string
+        reason:
+          type: string
+        executedAt:
+          $ref: "#/components/schemas/Instant"
     AppTiersView:
       type: object
       properties:
@@ -720,6 +741,8 @@ components:
           type: boolean
         portalAvailable:
           type: boolean
+        appDisabled:
+          type: boolean
     TargetKind:
       type: string
       enum:
@@ -820,6 +843,9 @@ components:
         status:
           type: string
           pattern: \S
+        reason:
+          type: string
+          maxLength: 512
     UpdateMe:
       type: object
       required:
@@ -1019,6 +1045,27 @@ paths:
         "403":
           description: Not Allowed
       summary: Apps
+      tags:
+      - Admin Resource
+      security:
+      - SecurityScheme:
+        - platform-admin
+  /api/platform/v1/admin/apps/audit:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppStatusAuditView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: App Status Audit
       tags:
       - Admin Resource
       security:

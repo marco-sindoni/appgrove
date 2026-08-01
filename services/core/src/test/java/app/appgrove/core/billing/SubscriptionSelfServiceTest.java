@@ -76,6 +76,24 @@ class SubscriptionSelfServiceTest {
                 .body("subscriptions.find { it.appSlug == '" + appSlug + "' }.canReactivate", is(true));
     }
 
+    @Test
+    void flagsSubscriptionsWhoseAppWasDisabledByThePlatform() {
+        activateOn(TENANT_A, basicTier);
+
+        // app attiva: l'abbonamento non porta alcun segnale di sospensione
+        sub(TENANT_A).body("appDisabled", is(false));
+
+        // leva di piattaforma (UC 0076): l'app viene messa in pausa per tutti
+        data.appStatus(appId, "inactive");
+
+        // l'abbonamento resta elencato e valido, ma dice perché l'app non è raggiungibile —
+        // senza questo flag il pannello contraddirebbe la barra laterale, che l'app non la mostra.
+        sub(TENANT_A).body("appDisabled", is(true)).body("status", is("active"));
+
+        data.appStatus(appId, "active");
+        sub(TENANT_A).body("appDisabled", is(false));
+    }
+
     // ── upgrade immediato / downgrade schedulato ───────────────────────────────
     @Test
     void upgradeChangesTierImmediately() {

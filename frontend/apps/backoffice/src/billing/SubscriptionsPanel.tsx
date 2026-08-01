@@ -88,11 +88,25 @@ function SubscriptionCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle>{sub.appName ?? sub.appSlug}</CardTitle>
-        <Badge tone={PHASE_TONE[sub.phase ?? ''] ?? 'neutral'}>
-          {t(`subscriptions.phase.${sub.phase ?? 'ACTIVE'}` as TKey)}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {sub.appDisabled && <Badge tone="warning">{t('subscriptions.appDisabledBadge')}</Badge>}
+          <Badge tone={PHASE_TONE[sub.phase ?? ''] ?? 'neutral'}>
+            {t(`subscriptions.phase.${sub.phase ?? 'ACTIVE'}` as TKey)}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/*
+          App messa in pausa dalla piattaforma (UC 0076): l'abbonamento resta elencato e valido, ma
+          senza questo avviso il pannello direbbe "Attivo" per un'app che la barra laterale — a
+          ragione — non mostra più. Meglio dire cosa sta succedendo che lasciare l'utente a indovinare.
+        */}
+        {sub.appDisabled && (
+          <div role="status" className="rounded-md border border-warning/40 bg-warning/10 p-3">
+            <p className="text-sm font-medium text-fg">{t('subscriptions.appDisabledTitle')}</p>
+            <p className="mt-1 text-sm text-fg-muted">{t('subscriptions.appDisabledBody')}</p>
+          </div>
+        )}
         {sub.tierKey && (
           <p className="text-sm text-fg">
             {t('subscriptions.tier')}: <span className="font-medium">{sub.tierName ?? sub.tierKey}</span>

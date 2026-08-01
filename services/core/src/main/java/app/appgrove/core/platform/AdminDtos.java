@@ -1,6 +1,9 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.core.catalog.AppStatusService;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -52,6 +55,26 @@ public final class AdminDtos {
     public record AccountDetailView(
             UUID id, String name, String status, List<AdminUserView> users, List<EntitlementCell> entitlements) {}
 
-    /** Body del toggle disable-app (unico write della console). */
-    public record UpdateAppStatus(@NotBlank String status) {}
+    /**
+     * Body del toggle disable-app (unico write della console, UC 0076). La <b>motivazione</b> è
+     * facoltativa — lo use case la vuole tale, e i chiamanti automatici esistenti (la suite
+     * end-to-end di piattaforma attiva l'app in preparazione) non la passano.
+     */
+    public record UpdateAppStatus(
+            @NotBlank String status, @Size(max = AppStatusService.REASON_MAX_LENGTH) String reason) {}
+
+    /**
+     * Riga del registro delle disabilitazioni/riabilitazioni (UC 0076): chi, quando, quale app, da
+     * quale stato a quale, con la motivazione se è stata data. Platform-level: nessun tenant.
+     */
+    public record AppStatusAuditView(
+            UUID id,
+            UUID appId,
+            String appSlug,
+            String appName,
+            String fromStatus,
+            String toStatus,
+            String actor,
+            String reason,
+            Instant executedAt) {}
 }
