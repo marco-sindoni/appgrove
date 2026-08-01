@@ -3,7 +3,8 @@
 **Ordine di esecuzione reale** delle **37 storie evolutive** (UC `0061`–`0097`, epiche `12`–`21`), nello stesso spirito di
 [_INDEX.md](_INDEX.md): un ordinamento **topologico sulle dipendenze effettive**, da implementare **dall'alto verso il
 basso**, così che ogni storia trovi i suoi prerequisiti *sopra* di sé. Catalogo per epica: [README.md](README.md) →
-"Epiche evolutive (evo)". Formalizzazione dal backlog: change `0064`.
+"Epiche evolutive (evo)". Formalizzazione: epiche 12–19 dal backlog (change `0064`); epica 20 (test e2e di
+piattaforma) aggiunta con gli UC 0090–0094; epica 21 (catalogo app & UX backoffice) dalla change `0066`.
 
 ## Criterio di ordinamento
 
