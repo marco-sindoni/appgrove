@@ -57,8 +57,8 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 16 | [0090](20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md) | Fondamenta suite e2e di piattaforma (stack reale + Mailpit + primo journey) | 20 | — | 0058, 0018, 0020, 0023, 0029 | 🟢 | ✅ |
 | 17 | [0091](20-test-e2e-piattaforma/0091-e2e-platform-journey-utente.md) | Batteria journey e2e lato utente | 20 | 0090 | 0024, 0027, 0059, 0028, 0033, 0056 | 🟢 | ✅ |
 | 18 | [0092](20-test-e2e-piattaforma/0092-e2e-platform-journey-admin.md) | Batteria journey e2e lato admin + guasti di piattaforma | 20 | 0090, 0076, 0077 | 0021, 0034 | 🟢 | ✅ |
-| 19 | [0093](20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md) | Registro di copertura e2e + check meccanico | 20 | 0090, 0091, 0092 | 0045 | 🟢 | ⬜ |
-| 20 | [0094](20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md) | Integrazione copertura e2e nel workflow delle skill | 20 | 0093 | 0044, 0045, 0046 | 🟢 | ⬜ |
+| 19 | [0093](20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md) | Registro di copertura e2e + check meccanico | 20 | 0090, 0091, 0092 | 0045 | 🟢 | ✅ |
+| 20 | [0094](20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md) | Integrazione copertura e2e nel workflow delle skill | 20 | 0093 | 0044, 0045, 0046 | 🟢 | ✅ |
 | **C3. Catalogo app & UX backoffice** |
 | 21 | [0095](21-catalogo-app-backoffice/0095-pagina-app-catalog.md) | Pagina "App catalog" del backoffice (card, stati, ricerca, paginazione) | 21 | 0077 | 0020, 0022, 0024, 0026 | 🟢 | ⬜ |
 | 22 | [0096](21-catalogo-app-backoffice/0096-billing-solo-fatturazione.md) | Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute) | 21 | 0095, 0076 (soft), 0077 | 0028, 0025, 0026 | 🟢 | ⬜ |
