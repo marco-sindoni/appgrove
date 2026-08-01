@@ -344,6 +344,9 @@ function buildPlan(ctx) {
       ctx,
     ),
     ...expand(path.join(TEMPLATES, 'frontend-e2e'), 'frontend/apps/backoffice/e2e', ctx),
+    // Journey core-loop della suite di piattaforma (UC 0094): ogni app nasce col suo percorso
+    // end-to-end etichettato `[J-<APP>]` e con le voci nel registro di copertura (vedi EDITORS).
+    ...expand(path.join(TEMPLATES, 'platform-e2e'), 'tools/platform-e2e/journeys', ctx),
     ...expand(path.join(TEMPLATES, 'compliance'), 'docs/compliance/manifests', ctx),
     ...expand(path.join(TEMPLATES, 'pricing'), 'services/core/src/main/resources/pricing', ctx),
     // Bozza landing del sito vetrina (UC 0046 → UC 0057): 5 file lingua + index per-app,
@@ -448,6 +451,13 @@ function printHandoff(ctx) {
      invarianti già dimostrati. Sostituirlo è il primo lavoro vero.
 
   4. Tipi del client  npm run gen:${ctx.APP_ID}  (dopo la prima compilazione del backend)
+
+  5. Journey end-to-end  tools/platform-e2e/journeys/J-${ctx.APP_UPPER}.spec.ts
+     L'app nasce col suo percorso di piattaforma e con le due voci nel registro di
+     copertura (docs/testing/copertura-e2e.yaml). Il journey SI SALTA finché il listino
+     è \`inactive\` — nessun diritto d'uso, nessun percorso possibile — e si accende da
+     solo quando passa ad \`active\`. Provalo allora con:
+         tools/platform-e2e/run.sh --journey J-${ctx.APP_UPPER}
 
   Verifica subito che l'app nasca verde:
       cd services && mvn -B -pl ${ctx.APP_ID} -am test

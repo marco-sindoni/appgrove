@@ -113,3 +113,9 @@ personale reale, nessun manifesto da aggiornare.
   aggiornato — rimando tracciato qui e da registrare in `da-coprire` nel registro alla nascita di quel UC.
 - **Osservabilità dei guasti** (allarmi, error-reporter): F-DEGRADE osserva solo l'esperienza utente; le assert
   sugli allarmi/telemetria appartengono all'area observability (#08) e non a questa suite.
+- **`A-ENTITLE` occasionalmente instabile all'accesso** (osservato dalla change `0074`, che non tocca alcun
+  codice eseguibile): con sei processi paralleli l'attesa di `browserLogin` sulla navigazione «Platform» può
+  scadere ai 5 secondi predefiniti e il journey passa solo al secondo tentativo. `A-ENTITLE` fa **tre** accessi
+  dal browser in un test solo — è il journey più esposto alla contesa. La riesecuzione mirata è verde al primo
+  colpo, quindi non è un difetto del prodotto ma dell'attesa: da chiudere alzando l'attesa del solo passo di
+  accesso, oppure serializzando `A-ENTITLE` come già si fa per `A-CONSOLE` e `F-DEGRADE`. Possiede: **UC 0092**.

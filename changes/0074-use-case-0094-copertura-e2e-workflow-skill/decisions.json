@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dal chiamante (skill go-fast, che invoca sempre new-change in fast). Lo sviluppatore rinuncia in anticipo ai tre gate di workflow: i requisiti si scrivono e si committano ma l'implementazione parte subito, il commit avviene senza consenso e solo a suite completa verde (./run-tests.sh senza parametri), il merge resta al chiamante. Restano attive le fermate di escalation."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0094 (integrazione della copertura end-to-end nel workflow delle skill), ultima storia dell'epica 20. Da qui la forma del branch e della cartella: 0074-use-case-0094-copertura-e2e-workflow-skill. Il numero 0074 è il progressivo della cartella changes/ (l'ultima era 0073) e coincide con quello atteso dall'orchestratore."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) L'indice di esecuzione docs/usecases/_INDEX.md NON viene aggiornato: la sua tabella copre i soli 60 use case base (0001–0060) e non ha alcuna riga per le 37 storie evolutive, quindi non c'è nulla da marcare né 🟡 né ✅. È lo stesso comportamento delle change 0069–0073. Il divario è già tracciato in docs/_BACKLOG.md (§ indice di esecuzione e storie evolutive): non lo si risolve qui perché estendere l'indice significa ri-eseguire l'ordinamento topologico su 97 use case, che è una change dedicata.",
+    "files": [
+      { "file": "docs/usecases/_INDEX.md", "description": "Non toccato: nessuna riga per lo use case 0094 (storia evolutiva)." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La classificazione di uno use case nuovo nel registro di copertura si fa allo step-01 di new-usecase (scaffolding), non allo step-02 (drill-down). Motivo tecnico, non estetico: il controllo di UC 0093 pretende che OGNI file .md del catalogo sia classificato, quindi appena lo scaffolding crea il file l'area tooling diventerebbe rossa. Lo step-02 resta il posto dove la classificazione si affina se il drill-down rivela una superficie che lo scaffolding aveva esentato.",
+    "files": [
+      { "file": ".claude/skills/new-usecase/step-01-scaffold.md", "description": "Nuova sezione «Classify it in the end-to-end coverage registry»: le tre categorie di esenzione, il caso superficie, la verifica con check.mjs e il riepilogo del gate di scaffolding." },
+      { "file": ".claude/skills/new-usecase/step-02-detail.md", "description": "Nuova sezione con la domanda esplicita sui journey e l'obbligo di coerenza fra drill-down e registro." },
+      { "file": ".claude/skills/new-usecase/SKILL.md", "description": "Nuovo gate «Coverage classification» fra i gate obbligatori." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La sotto-sezione «Journey end-to-end di piattaforma» entra nel §9 del template degli use case con TRE risposte ammesse ed esclusive (journey nuovo / estensione / esenzione motivata), non con una domanda aperta. Una domanda aperta produce prosa che nessuno può verificare; tre risposte chiuse producono un dato che si trasferisce nel registro senza interpretazione.",
+    "files": [
+      { "file": "docs/usecases/_TEMPLATE.md", "description": "§9 acquisisce la sotto-sezione con le tre risposte e i collegamenti al registro e alla sua guida." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) In new-change il passo di copertura vive in step-03 (implementazione: leggi → decidi → implementa o rimanda → aggiorna → il controllo conferma) e la sua verifica in step-04, come sezione autonoma prima del varco di commit, simmetrica al varco di parità dello scaffolding. Non si è aggiunto un gate bloccante nuovo: il blocco esiste già ed è la suite rossa. Lo step-04 verifica ciò che il comando non può vedere — che la domanda sia stata posta e che una storia evolutiva non resti esentata come `non-implementato`.",
+    "files": [
+      { "file": ".claude/skills/new-change/step-03-implement.md", "description": "Nuova sezione «End-to-end coverage step» con la sequenza-tipo, i tre esiti ammessi e i due casi che una change dimentica (storia evolutiva, change solo backend)." },
+      { "file": ".claude/skills/new-change/step-04-close.md", "description": "Nuova sezione di verifica del registro prima del varco di commit." },
+      { "file": ".claude/skills/new-change/SKILL.md", "description": "Terzo «tracked hook»: il registro di copertura, dichiarato parte del Definition of Done." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La menzione in CLAUDE.md è una SEZIONE propria («Registro di copertura end-to-end»), non una riga dentro «Esecuzione dei test». Il registro impone doveri a tre skill diverse e alle change: appenderlo alla sezione dei test lo avrebbe fatto leggere come un dettaglio di esecuzione invece che come una regola di processo.",
+    "files": [
+      { "file": "CLAUDE.md", "description": "Nuova sezione non negoziabile dopo «Esecuzione dei test»: dove vive il registro, chi lo sorveglia, i quattro doveri (use case nuovo, change, storia evolutiva, app nuova)." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il journey di piattaforma generato da new-application SI SALTA da sé finché il listino dell'app è `status: inactive`. Non è prudenza: è un fatto verificato nel codice: EntitlementAccess.granted() nega l'accesso a ogni app che non sia `active`, e PricingSyncService riporta lo `status` del listino sulla riga di catalogo. Un journey generato senza questa guardia sarebbe ROSSO alla nascita di ogni app — cioè lo scaffolding consegnerebbe una suite rossa. La guardia legge /api/platform/v1/me/entitlements col token del tenant di prova e usa test.skip(condizione, motivo), che il controllo di copertura non scambia per una dichiarazione di test. Il percorso si accende da solo, senza promemoria, quando il listino passa ad `active`.",
+    "files": [
+      { "file": "tools/new-application/templates/platform-e2e/J-@@APP_UPPER@@.spec.ts", "description": "Nuovo modello del journey core-loop: guardia sul diritto d'uso, creazione fino al tetto via API, asserzioni a schermo, 429 reale oltre il tetto, conteggio sul database." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il journey generato NON si aggancia ai testi dell'interfaccia (a differenza del test di livello 2, che è generato insieme al modulo e vive con lui). Usa l'identificativo di prova del modulo, il ruolo `status` del banner quota, il codice del record restituito dall'API e il conteggio sul database. Motivo: il primo lavoro dopo lo scaffolding è riscrivere dominio e stringhe dell'app, quindi un journey agganciato a «New record» diventerebbe rosso il giorno dopo per un motivo che non riguarda il prodotto. Il banner mostra `{used} / {limit}` come numeri, che sono indipendenti dalla lingua: quella asserzione si può tenere."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il generatore scrive DUE voci di registro per app, non una: `J-<APP>` (piattaforma) e `L2-<APP>` (livello 2), coerentemente con la convenzione già in uso per l'app #1 (J-QUOTA e L2-FATTURE sono percorsi distinti). Nella stessa mossa il modello del test di livello 2 acquisisce l'etichetta `[L2-<APP>]`: prima nasceva senza etichetta e l'area tooling restava rossa apposta finché una persona non la aggiungeva a mano — un debito che questo use case aveva il compito di estinguere. Le voci sono racchiuse fra due marcatori-commento, ed è ciò che permette a drop-application di toglierle e riportare il file byte per byte com'era.",
+    "files": [
+      { "file": "tools/new-application/lib/edits.mjs", "description": "Nuovo editor editCoverageRegistry + i due marcatori esportati; il registro entra in EDITED_FILES." },
+      { "file": "tools/drop-application/lib/unedits.mjs", "description": "Inverso uneditCoverageRegistry: rimozione del blocco fra i marcatori, senza reinterpretare lo YAML (un serializzatore cancellerebbe i commenti, che di quel registro sono metà del valore)." },
+      { "file": "tools/new-application/templates/frontend-e2e/@@APP_ID@@.spec.ts", "description": "I due test acquisiscono l'etichetta [L2-@@APP_UPPER@@]." },
+      { "file": "tools/new-application/lib/context.mjs", "description": "Nuovo segnaposto APP_UPPER (toUpperTag): l'underscore diventa trattino perché il controllo accetta solo [A-Z0-9-] negli identificativi di percorso." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il blocco generato si inserisce in coda alla sezione `percorsi:`, individuata risalendo sopra il blocco di commento che introduce la chiave di primo livello `esenzioni:`. Appendere in fondo al file avrebbe messo i percorsi dentro le esenzioni: YAML valido, registro sbagliato, e nessun controllo se ne sarebbe accorto perché entrambe le sezioni accettano elenchi di mappe. Un test dedicato verifica che il blocco cada prima di `esenzioni:`."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) La parità del nuovo modello di journey si fa con due meccanismi nuovi in tools/scaffold-parity invece che con una coppia ordinaria: `soloFile` (restringe il confronto al solo J-QUOTA dentro una cartella che contiene una dozzina di journey — senza restrizione ogni altro journey risulterebbe «assente dal modello», rumore puro) e il controllo `importazioni` (insieme dei moduli importati). Non si confronta il CORPO dei due test perché deve divergere: domini diversi, asserzioni diverse. Le importazioni sono invece l'analogo delle dipendenze del pom: se J-QUOTA comincia a usare un helper nuovo della suite e il modello no, ogni app nascerà con un journey scritto col vocabolario di ieri. La corrispondenza di nome J-FATTURE ↔ J-QUOTA sta fra i `dominio` della configurazione: il journey dell'app #1 porta il nome di ciò che dimostra, non quello dell'app.",
+    "files": [
+      { "file": "tools/scaffold-parity/parity-check.mjs", "description": "Nuova opzione soloFile (con verifica che i file dichiarati esistano ancora), nuovo controllo importazioni, prefisso di deroga `imp:` riconosciuto nel registro delle deviazioni." },
+      { "file": "tools/scaffold-parity/parity.config.json", "description": "Nuova coppia platform-e2e, segnaposto app_upper, corrispondenza di dominio J-FATTURE → J-QUOTA." },
+      { "file": "tools/scaffold-parity/source-paths.json", "description": "Dichiarati come percorsi-sorgente J-QUOTA.spec.ts e tools/platform-e2e/helpers: toccarli fa scattare il varco di step-04 di new-change." },
+      { "file": "docs/_PARITA-SCAFFOLD.md", "description": "Nuova sezione «Le coppie confrontate» con la tabella delle tre coppie e la spiegazione delle due particolarità della coppia platform-e2e." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Il collaudo di livello 3 dello scaffolding verifica la copertura in modo STRUTTURALE (il journey esiste, porta l'etichetta, le due voci ci sono, il controllo di copertura è verde sulla copia usa-e-getta) e non ESEGUE il journey. Eseguirlo richiederebbe l'intero stack — Postgres, servizi, Mailpit, browser — su una copia temporanea del repository, per un'app che è per costruzione inattiva e il cui journey si salterebbe comunque. Il controllo gira dal repository vero puntato sulla copia (check.mjs accetta la radice come argomento), perché la copia esclude node_modules. Divario tracciato nei punti aperti di UC 0094.",
+    "files": [
+      { "file": "tools/new-application/generate-smoke.sh", "description": "Nuovo passo di verifica della copertura + il journey e il test di livello 2 entrano nel controllo dei segnaposto residui." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) I collaudi di processo si scrivono come SCENARI composti in tools/e2e-coverage/test, non come nuove regole: i test esistenti verificano una regola alla volta, i quattro nuovi verificano le tre situazioni in cui il workflow lascia indietro il registro (superficie nuova senza voce, test senza etichetta, storia evolutiva ancora esentata, use case non classificato) e — in coppia — la rimediazione che il processo prescrive. Un test che dimostra solo il rosso non dimostra che la via d'uscita esista.",
+    "files": [
+      { "file": "tools/e2e-coverage/test/check.test.mjs", "description": "Nuova sezione «collaudo di PROCESSO (UC 0094)»: quattro scenari, tre dei quali in coppia rosso→verde." },
+      { "file": "tools/scaffold-parity/test/parity-check.test.mjs", "description": "Tre test nuovi: lettura delle importazioni, soloFile che restringe e morde, soloFile che punta a un file sparito." },
+      { "file": "tools/drop-application/test/unedits.test.mjs", "description": "Round-trip dell'inverso sul registro, rifiuto del doppio innesto, e la verifica di idempotenza ora pretende un contenuto di prova per OGNI file condiviso (prima l'elenco era scritto a mano e un file nuovo poteva sfuggirle)." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Rimandi tracciati nei punti aperti di UC 0094: (a) una voce `coperto` il cui test si salta è una tensione con la veridicità del registro — se il caso diventerà frequente si valuterà uno stato `coperto-condizionato` (possiede UC 0093); (b) il journey generato non viene eseguito da alcun collaudo (possiede UC 0090); (c) gli `usecases` delle voci generate restano segnaposto da sostituire a mano (possiede UC 0093). Non sono stati risolti qui perché ciascuno cambierebbe il formato del registro o il perimetro della suite, cioè lavoro di un altro use case.",
+    "files": [
+      { "file": "docs/usecases/20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md", "description": "Tre rimandi aggiunti in «Punti aperti / decisioni differite», ciascuno con il proprio use case proprietario." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) La copertura di questa change stessa: nessun impatto end-to-end. La change tocca skill, modelli di scaffolding, documenti di processo e strumenti di collaudo; nessuna superficie navigabile con un browser cambia, quindi nessun percorso nuovo e nessuna voce di registro da aggiungere. Lo use case 0094 è già classificato `senza-superficie` nel registro (esenzione permanente, non `non-implementato`): non c'è alcuna esenzione scaduta da togliere. È l'applicazione a sé stessa del passo di copertura introdotto da questa change."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Nella prima esecuzione della suite completa il journey A-ENTITLE è risultato instabile (fallito al primo tentativo con attesa scaduta sull'accesso dal browser, verde al secondo). NON è imputabile a questa change: il diff non contiene una sola riga di codice eseguibile del prodotto (solo skill, modelli, documenti e strumenti di collaudo), e la riesecuzione mirata dell'area platform è risultata 13/13 verde al primo tentativo. Non è stato «riparato» qui perché toccare l'attesa di un journey altrui sarebbe lavoro fuori perimetro: è stato tracciato come punto aperto di UC 0092, che possiede A-ENTITLE, con le due vie di chiusura (alzare l'attesa del solo passo di accesso, oppure serializzare il journey come già A-CONSOLE e F-DEGRADE).",
+    "files": [
+      { "file": "docs/usecases/20-test-e2e-piattaforma/0092-e2e-platform-journey-admin.md", "description": "Rimando aggiunto in «Punti aperti / decisioni differite»: instabilità di A-ENTITLE all'accesso sotto carico parallelo." }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Il file run-tests.sh non è stato modificato: la change non aggiunge né rimuove moduli e non cambia il comando di test di alcuna area. I nuovi collaudi vivono dentro strumenti che l'area `tooling` già esegue (tools/e2e-coverage, tools/scaffold-parity, tools/drop-application, generate-smoke.sh). Il dovere del Definition of Done è quindi soddisfatto per assenza, non per dimenticanza."
+  }
+]

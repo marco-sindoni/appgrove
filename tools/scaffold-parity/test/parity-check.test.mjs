@@ -10,6 +10,7 @@ import { test } from 'node:test';
 import {
   annotazioniFile,
   caricaConfig,
+  importazioniFile,
   chiaviProperties,
   confrontaCoppia,
   corrisponde,
@@ -188,4 +189,75 @@ test('il messaggio di modelli assenti spiega cosa fare', () => {
   const testo = renderReport({ modelliAssenti: true, divergenze: [], derogate: [] }, cfg);
   assert.match(testo, /modelli-sorgente non ancora presenti/);
   assert.match(testo, /tools\/new-application\/templates/);
+});
+
+test('le importazioni di un file TypeScript si leggono come specificatori di modulo', () => {
+  const testo = [
+    "import { test, expect } from '@playwright/test'",
+    "import { tenant } from '../helpers/api'",
+    "export { x } from './altro'",
+    "// nota: from 'in-un-commento' viene letto come importazione — lettura volutamente generosa",
+  ].join('\n');
+  const imp = importazioniFile(testo);
+  assert.ok(imp.has('@playwright/test'));
+  assert.ok(imp.has('../helpers/api'));
+  assert.ok(imp.has('./altro'));
+  // Generosa e non chirurgica di proposito: il costo di un falso positivo è una divergenza che una
+  // persona chiude in un minuto; il costo di un falso negativo è un modello che invecchia in silenzio.
+  assert.ok(imp.has('in-un-commento'));
+});
+
+// `soloFile` + `importazioni`: la coppia del journey di piattaforma (UC 0094) confronta UN file
+// dentro una cartella che ne contiene molti, e ne sorveglia i moduli importati.
+test('soloFile restringe il confronto e le importazioni divergenti diventano divergenze', () => {
+  const base = mkdtempSync(join(tmpdir(), 'parita-solofile-'));
+  const scrivi = (p, testo) => {
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, testo);
+  };
+
+  const rif = join(base, 'journeys');
+  scrivi(join(rif, 'J-QUOTA.spec.ts'), "import { tenant } from '../helpers/api'\nimport { dbRow } from '../helpers/db'\n");
+  scrivi(join(rif, 'J-ALTRO.spec.ts'), "import { tenant } from '../helpers/api'\n"); // non generabile: va ignorato
+  const modello = join(base, 'templates', 'platform-e2e');
+  scrivi(join(modello, 'J-@@APP_UPPER@@.spec.ts'), "import { tenant } from '../helpers/api'\n"); // manca ../helpers/db
+
+  const coppia = {
+    id: 'finta-journey',
+    riferimento: rif,
+    marcatore: 'J-QUOTA.spec.ts',
+    soloFile: ['J-QUOTA.spec.ts'],
+    controlli: ['file', 'importazioni'],
+  };
+  const div = confrontaCoppia(coppia, cfg, join(base, 'templates'));
+
+  assert.ok(
+    !div.some((d) => d.chiave.includes('J-ALTRO')),
+    'i file fuori da soloFile non devono generare divergenze: sono rumore, non invecchiamento',
+  );
+  assert.ok(
+    div.some((d) => d.tipo === 'import-mancante' && d.chiave.endsWith('#../helpers/db')),
+    'un helper usato dal journey dell’app #1 e non dal modello è un modello invecchiato',
+  );
+});
+
+test('un file dichiarato in soloFile ma sparito dal riferimento è una divergenza', () => {
+  const base = mkdtempSync(join(tmpdir(), 'parita-solofile-rinominato-'));
+  const scrivi = (p, testo) => {
+    mkdirSync(dirname(p), { recursive: true });
+    writeFileSync(p, testo);
+  };
+  const rif = join(base, 'journeys');
+  scrivi(join(rif, 'J-QUOTA.spec.ts'), "import { tenant } from '../helpers/api'\n");
+  scrivi(join(base, 'templates', 'platform-e2e', 'J-@@APP_UPPER@@.spec.ts'), "import { tenant } from '../helpers/api'\n");
+
+  const coppia = {
+    id: 'finta-journey',
+    riferimento: rif,
+    marcatore: 'J-QUOTA.spec.ts',
+    soloFile: ['J-QUOTA.spec.ts', 'J-SPARITO.spec.ts'],
+    controlli: ['file'],
+  };
+  const div = confrontaCoppia(coppia, cfg, join(base, 'templates'));
+  assert.ok(div.some((d) => d.chiave.includes('J-SPARITO.spec.ts')), 'soloFile non deve poter puntare nel vuoto in silenzio');
 });

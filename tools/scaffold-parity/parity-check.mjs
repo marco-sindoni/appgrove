@@ -40,6 +40,8 @@ export const ETICHETTE = {
   'prop-mancante': 'Chiavi di application.properties presenti nell’app #1 e assenti dal modello',
   'prop-extra': 'Chiavi di application.properties presenti nel modello e assenti dall’app #1',
   annotazione: 'Annotazioni portanti divergenti sulle classi corrispondenti',
+  'import-mancante': 'Moduli importati dall’app #1 e non dal modello',
+  'import-extra': 'Moduli importati dal modello e non dall’app #1',
 };
 
 // ── Utilità pure (esportate per i test) ──────────────────────────────────────────────────────────
@@ -137,6 +139,17 @@ export function chiaviProperties(testo) {
   return chiavi;
 }
 
+// Moduli importati da un file TypeScript/JavaScript (`import … from 'x'`, `export … from 'x'`).
+// È l'equivalente, per un file di test, delle dipendenze del pom: se il journey vivo dell'app #1
+// comincia ad appoggiarsi a un helper nuovo della suite e il modello no, il modello è invecchiato —
+// e questa è la sola parità di CONTENUTO che si possa verificare su un test senza confrontarne il
+// corpo, che è giusto diverga (domini diversi, asserzioni diverse).
+export function importazioniFile(testo) {
+  const insieme = new Set();
+  for (const m of testo.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g)) insieme.add(m[1]);
+  return insieme;
+}
+
 // Annotazioni portanti presenti in un file Java (solo quelle dichiarate in configurazione: le altre
 // sono dettaglio di dominio e non fanno parte del pattern).
 export function annotazioniFile(testo, portanti) {
@@ -153,7 +166,7 @@ export function leggiDeroghe(markdown) {
   const a = markdown.indexOf(DEROGHE_FINE);
   if (da === -1 || a === -1 || a < da) return new Set();
   const chiavi = new Set();
-  for (const m of markdown.slice(da, a).matchAll(/`((?:file|file-extra|dep|prop|ann):[^`]+)`/g)) {
+  for (const m of markdown.slice(da, a).matchAll(/`((?:file|file-extra|dep|prop|ann|imp):[^`]+)`/g)) {
     chiavi.add(m[1].trim());
   }
   return chiavi;
@@ -192,7 +205,22 @@ export function confrontaCoppia(coppia, cfg, templatesAbs) {
   const percorsoModello = (rel) => join(cfg.templatesRoot, modelloRel, rel).replaceAll('\\', '/');
   const percorsoRif = (rel) => `${coppia.riferimento}/${rel}`;
 
-  const fileRif = elencaFile(rifAbs, coppia.ignora ?? []);
+  // Una coppia può restringere il confronto a POCHI file della cartella di riferimento (`soloFile`).
+  // Serve quando il modello ha un gemello preciso dentro una cartella che ne contiene molti altri —
+  // il journey core-loop generato ↔ `J-QUOTA`, in mezzo ai journey della suite di piattaforma.
+  // Senza la restrizione ogni altro journey risulterebbe "presente nell'app #1 e assente dal
+  // modello": rumore, non invecchiamento. La restrizione è dichiarata e verificata: un file elencato
+  // in `soloFile` che non esiste più (rinominato) diventa una divergenza, non un silenzio.
+  const soloFile = Array.isArray(coppia.soloFile) ? new Set(coppia.soloFile) : null;
+  const tuttiRif = elencaFile(rifAbs, coppia.ignora ?? []);
+  const fileRif = soloFile ? tuttiRif.filter((rel) => soloFile.has(rel)) : tuttiRif;
+  if (soloFile) {
+    for (const rel of soloFile) {
+      if (!tuttiRif.includes(rel)) {
+        nota('file-mancante', `file:${percorsoRif(rel)}`, '`soloFile` lo dichiara ma non esiste più: rinominato o spostato');
+      }
+    }
+  }
   const fileModello = elencaFile(modelloAbs, coppia.ignora ?? []);
 
   // mappa "percorso in termini dell'app #1" → "percorso reale nel modello"
@@ -206,6 +234,7 @@ export function confrontaCoppia(coppia, cfg, templatesAbs) {
     const variante = varianteDi(rel, cfg.varianti);
     if (variante && variante !== cfg.varianteRiferimento) continue;
     const normalizzato = normalizzaPercorsoModello(rel, cfg);
+    if (soloFile && !soloFile.has(normalizzato)) continue;
     mappa.set(normalizzato, rel);
     const residui = normalizzato.match(SEGNAPOSTO_RESIDUO);
     if (residui) {
@@ -251,6 +280,19 @@ export function confrontaCoppia(coppia, cfg, templatesAbs) {
       const kMod = chiaviProperties(sostituisciSegnaposto(mod, cfg.segnaposto));
       for (const k of differenza(kRif, kMod)) nota('prop-mancante', `prop:${k}`, `presente in ${percorsoRif(coppia.properties)}`);
       for (const k of differenza(kMod, kRif)) nota('prop-extra', `prop:${k}`, 'presente solo nel modello');
+    }
+  }
+
+  // 3-bis. moduli importati, sui soli file TypeScript/JavaScript presenti da entrambe le parti
+  if (controlli.includes('importazioni')) {
+    for (const rel of fileRif) {
+      if (!/\.(ts|tsx|js|mjs)$/.test(rel)) continue;
+      const relMod = relModello(rel);
+      if (!relMod) continue; // già segnalato come file mancante
+      const iRif = importazioniFile(leggi(rifAbs, rel) ?? '');
+      const iMod = importazioniFile(sostituisciSegnaposto(leggi(modelloAbs, relMod) ?? '', cfg.segnaposto));
+      for (const i of differenza(iRif, iMod)) nota('import-mancante', `imp:${percorsoRif(rel)}#${i}`, 'importato dall’app #1, non dal modello');
+      for (const i of differenza(iMod, iRif)) nota('import-extra', `imp:${percorsoRif(rel)}#${i}`, 'importato dal modello, non dall’app #1');
     }
   }
 

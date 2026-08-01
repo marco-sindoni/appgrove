@@ -39,8 +39,10 @@ Infrastruttura validata, mai applicata:
 
 ## Checklist di consegna
 
-- servizio, modulo frontend, test end-to-end, manifesto, listino: **rimossi**; RoPA rigenerata senza drift
-- cinque modifiche condivise disfatte (pom, registry, package.json, pricing index, elasticmq)
+- servizio, modulo frontend, test end-to-end di livello 2, **journey di piattaforma**, manifesto, listino:
+  **rimossi**; RoPA rigenerata senza drift
+- sei modifiche condivise disfatte (pom, registry, package.json, pricing index, elasticmq, **registro di
+  copertura end-to-end**): un journey orfano non solo non collauda nulla, rende rossa l'area `tooling`
 - comando `offboard-app` disponibile e testato; runbook scritto con tutti i passi irreversibili
 - trattamento abbonati **deciso dallo sviluppatore** e registrato
 - decisioni tutte in `decisions.json`; punti aperti (landing, audit oltre DROP SCHEMA) tracciati nei loro UC
@@ -50,7 +52,7 @@ Infrastruttura validata, mai applicata:
 I gate di commit e merge sono di `new-change` e **non** sono indeboliti qui. Stampa:
 
 ```
-🛑 App <app_id> dismessa nel codice (servizio + modulo frontend + manifesto + listino + modifiche condivise disfatte; RoPA rigenerata).
+🛑 App <app_id> dismessa nel codice (servizio + modulo frontend + journey e voci di copertura + manifesto + listino + modifiche condivise disfatte; RoPA rigenerata).
    Suite: <esiti reali per area>
    Runbook degli atti irreversibili (infra/purga/DB) scritto nell'implementation-log: da eseguire DOPO il merge.
 Rivedi, poi dai il consenso esplicito al commit. Non committo, non faccio merge, non distruggo nulla senza il tuo via libera.

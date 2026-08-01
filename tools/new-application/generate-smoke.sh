@@ -61,8 +61,11 @@ ok "generazione riuscita"
 info "verifica che nessun segnaposto sia sopravvissuto"
 # Un segnaposto sopravvissuto è il fallimento più insidioso: il file esiste, sembra giusto, e
 # contiene un token che nessuno noterà finché non esplode a runtime.
+APP_UPPER="$(printf '%s' "$APP_ID" | tr '[:lower:]_' '[:upper:]-')"
 RESIDUI="$(grep -rIl '@@[A-Z0-9_]\+@@' "$WORK/services/$APP_ID" \
             "$WORK/frontend/apps/backoffice/src/modules/$APP_ID" \
+            "$WORK/frontend/apps/backoffice/e2e/$APP_ID.spec.ts" \
+            "$WORK/tools/platform-e2e/journeys/J-$APP_UPPER.spec.ts" \
             "$WORK/docs/compliance/manifests/$APP_ID.yaml" \
             "$WORK/services/core/src/main/resources/pricing/$APP_ID.yaml" 2>/dev/null)"
 if [ -n "$RESIDUI" ]; then
@@ -71,6 +74,27 @@ if [ -n "$RESIDUI" ]; then
   exit 1
 fi
 ok "nessun segnaposto residuo"
+
+# ── copertura end-to-end (UC 0094): l'app nasce col suo journey e con le sue voci di registro ──
+# Il controllo gira dal repository VERO (che ha le dipendenze installate) puntato sulla COPIA: la
+# copia esclude node_modules, e installarle solo per questo passo costerebbe più di quanto valga.
+info "verifica della copertura end-to-end dell'app generata"
+if [ ! -f "$WORK/tools/platform-e2e/journeys/J-$APP_UPPER.spec.ts" ]; then
+  fail "manca il journey di piattaforma dell'app generata: tools/platform-e2e/journeys/J-$APP_UPPER.spec.ts"
+  exit 1
+fi
+for TAG in "J-$APP_UPPER" "L2-$APP_UPPER"; do
+  if ! grep -q "^  - id: $TAG$" "$WORK/docs/testing/copertura-e2e.yaml"; then
+    fail "il registro di copertura dell'app generata non dichiara il percorso $TAG"
+    exit 1
+  fi
+done
+if ! node "$ROOT/tools/e2e-coverage/check.mjs" "$WORK"; then
+  fail "l'app generata nasce con il registro di copertura incoerente: l'area tooling sarebbe rossa."
+  fail "Correggi tools/new-application/lib/edits.mjs o i modelli in templates/platform-e2e|frontend-e2e."
+  exit 1
+fi
+ok "l'app generata nasce coperta: journey etichettato + voci di registro coerenti"
 
 info "esecuzione dell'INTERA suite dell'app generata (Postgres reale via Dev Services)"
 if ( cd "$WORK/services" && mvn -B -pl "$APP_ID" -am test ); then

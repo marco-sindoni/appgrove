@@ -50,6 +50,10 @@
     "http_port": {
       "valore": "8081",
       "token": ["@@HTTP_PORT@@"]
+    },
+    "app_upper": {
+      "valore": "FATTURE",
+      "token": ["@@APP_UPPER@@"]
     }
   },
 
@@ -62,12 +66,16 @@
       "ai soli NOMI dei file — mai al contenuto, dove genererebbe confronti falsi.",
       "Contact ↔ Customer per lo stesso motivo: le persone di cui l'app #1 tratta i dati sono i suoi",
       "`customer`, ma un'app generica non ha clienti — ha contatti. Chiamarli `customer` nel modello",
-      "consegnerebbe a ogni app nuova il vocabolario delle fatture."
+      "consegnerebbe a ogni app nuova il vocabolario delle fatture.",
+      "J-FATTURE ↔ J-QUOTA: il journey core-loop dell'app #1 porta il nome di ciò che dimostra (la",
+      "quota), non quello dell'app. Il modello genera J-<APP>, quindi per l'app #1 si chiamerebbe",
+      "J-FATTURE: la corrispondenza di ruolo dice al collaudo che il gemello di quel modello è J-QUOTA."
     ],
     "Item": "Invoice",
     "item": "invoice",
     "Contact": "Customer",
-    "contact": "customer"
+    "contact": "customer",
+    "J-FATTURE": "J-QUOTA"
   },
 
   "annotazioniPortanti": [
@@ -112,6 +120,23 @@
       "marcatore": "manifest.ts",
       "ignora": ["**/.DS_Store"],
       "controlli": ["file"]
+    },
+    {
+      "id": "platform-e2e",
+      "_commento": [
+        "Journey core-loop generato ↔ J-QUOTA, il journey core-loop dell'app #1 (UC 0094).",
+        "`soloFile` restringe il confronto a quel journey: la cartella ne contiene una dozzina, e",
+        "gli altri non hanno nulla a che vedere con lo scaffolding. Il controllo `importazioni` è",
+        "l'analogo delle dipendenze del pom per un file di test: il CORPO dei due journey deve",
+        "divergere (domini diversi), ma se J-QUOTA comincia a usare un helper nuovo della suite e",
+        "il modello no, ogni app nuova nascerà con un journey scritto col vocabolario di ieri."
+      ],
+      "titolo": "Journey di piattaforma — modello ↔ tools/platform-e2e/journeys/J-QUOTA.spec.ts",
+      "riferimento": "tools/platform-e2e/journeys",
+      "marcatore": "J-QUOTA.spec.ts",
+      "soloFile": ["J-QUOTA.spec.ts"],
+      "ignora": ["**/.DS_Store"],
+      "controlli": ["file", "importazioni"]
     }
   ]
 }

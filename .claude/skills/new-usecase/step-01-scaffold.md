@@ -48,12 +48,36 @@ Add a row to the correct phase table in `docs/usecases/README.md`:
 `| NNNN | <area-num> | <title> | <deps> | 🟡 |`
 (If the use case is brand-new and not in the catalog yet, also note it under the right phase.)
 
+## Classify it in the end-to-end coverage registry (mandatory, UC 0093/0094)
+
+**Every** use case in `docs/usecases/` must be classified in `docs/testing/copertura-e2e.yaml` — the check
+`tools/e2e-coverage` (area `tooling` of `run-tests.sh`) turns **red** on the first unclassified one. Creating the
+file and leaving the registry alone therefore breaks the suite: classify it **in the same commit**.
+
+Pick exactly one:
+
+- the use case's **interactive application surface already exists in `main`** → add its number to
+  `usecases_con_superficie`, **and** make sure at least one `percorsi` entry references it (a `da-coprire` entry with
+  `motivo` and `possiede` is a legitimate answer — an unreferenced surface is a red);
+- otherwise → add an entry under `esenzioni` with `categoria` + `motivo`:
+  - `senza-superficie` — services, infrastructure, tooling, business/legal work, style libraries (permanent);
+  - `vetrina-statica` — showcase-site pages, covered by the `site` area's post-build checks (permanent);
+  - `non-implementato` — the surface does not exist yet (a future story). **Temporary and watched**: the check
+    rejects it as soon as a `changes/*-use-case-NNNN-*` folder appears, which is when `new-change` must reclassify it.
+
+Format, categories and how to read a red: `docs/testing/README.md`. Verify before moving on:
+
+```bash
+node tools/e2e-coverage/check.mjs
+```
+
 ## STOP — scaffold review gate
 
 Print:
 ```
 🛑 Use case scaffolded: docs/usecases/<area>/NNNN-slug.md  | area: <area> | fase: <n>
-   Index updated. Confirm number/area/title before I write the detailed body.
+   Index updated. Coverage registry: <usecases_con_superficie | esenzione <categoria>>.
+   Confirm number/area/title before I write the detailed body.
 ```
 
 Wait for the developer's confirmation, then proceed to `step-02-detail.md`.

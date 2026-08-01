@@ -70,6 +70,28 @@ modelli-sorgente nascono in questa stessa change (UC 0046) come gemelli fedeli d
 esiste ancora nessuna scelta di prodotto che li tenga indietro di proposito. Una tabella corta significa
 "parità piena e voluta", ed è lo stato normale a cui tornare.
 
+## Le coppie confrontate
+
+| Coppia | Modello | Gemello nell'app #1 | Controlli |
+|---|---|---|---|
+| `backend` | `templates/service` | `services/fatture` | insieme dei file, dipendenze Maven, chiavi di `application.properties`, annotazioni portanti |
+| `frontend` | `templates/frontend-module` | `frontend/apps/backoffice/src/modules/fatture` | insieme dei file |
+| `platform-e2e` | `templates/platform-e2e` | `tools/platform-e2e/journeys/J-QUOTA.spec.ts` | insieme dei file, moduli importati |
+
+La coppia `platform-e2e` (change `0074`, UC 0094) sorveglia il **journey core-loop** che ogni app nuova
+eredita. Due particolarità, entrambe volute:
+
+- il confronto è ristretto al solo `J-QUOTA.spec.ts` (`soloFile` in `parity.config.json`): la cartella dei
+  journey ne contiene una dozzina, e gli altri non hanno nulla a che vedere con lo scaffolding —
+  pretenderli nel modello produrrebbe divergenze inventate;
+- il controllo di contenuto sono i **moduli importati**, non il corpo del test. Il corpo *deve* divergere
+  (domini diversi, asserzioni diverse); ma se `J-QUOTA` comincia a usare un helper nuovo della suite e il
+  modello no, ogni app nuova nascerà con un journey scritto col vocabolario di ieri. È lo stesso ruolo che
+  ha il confronto delle dipendenze del `pom.xml` per il servizio.
+
+La corrispondenza di nome `J-FATTURE ↔ J-QUOTA` sta fra i `dominio` della configurazione: il journey
+core-loop dell'app #1 porta il nome di ciò che dimostra (la quota), non quello dell'app.
+
 ## Come si usano gli strumenti
 
 Tutti i comandi si lanciano dalla radice del monorepo:

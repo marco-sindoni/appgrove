@@ -30,13 +30,19 @@ data, permissions/gates, test requirements, decision references.
 
 ## Instructions
 
-1. `step-01-scaffold.md` — determine the next `NNNN`, pick the area, create the file from the template, register it in the index.
-2. `step-02-detail.md` — fill the drill-down with the developer (or note it's deferred), then ask commit consent.
+1. `step-01-scaffold.md` — determine the next `NNNN`, pick the area, create the file from the template, register it in the
+   index **and classify it in the end-to-end coverage registry**.
+2. `step-02-detail.md` — fill the drill-down with the developer (or note it's deferred) — **including the mandatory
+   "Journey end-to-end di piattaforma" sub-section of §9** — then ask commit consent.
 
 ## Mandatory gates — never skip
 
 - **After scaffold (step-01): STOP for review.** Confirm number + area + title + index row with the developer before
   writing the detailed body.
+- **Coverage classification gate (step-01, UC 0093/0094).** Every use case in the catalog must appear in
+  `docs/testing/copertura-e2e.yaml` — either in `usecases_con_superficie` or among the `esenzioni` with category and
+  reason. The check `tools/e2e-coverage` (area `tooling`) goes red on the first unclassified one, so the classification
+  belongs to the same commit that creates the file. Guide: `docs/testing/README.md`.
 - **At close (step-02): STOP for commit consent.** Do not commit until the developer explicitly consents.
 - **Never invent decisions.** A use case must be consistent with the decision docs (`docs/01..14`, `CLAUDE.md`
   invariants). If a flow is unclear or admits alternatives, ask targeted questions first (like new-change's clarification gate).

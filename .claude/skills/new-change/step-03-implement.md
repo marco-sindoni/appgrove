@@ -122,6 +122,37 @@ and implement it **in this same change** (`npm run e2e` green). This is the per-
 formalised by epic 20 (UC 0093/0094): do not leave e2e needs to a later batch. "No end-to-end impact" is a
 legitimate outcome; record the assessment either way in `decisions.json`.
 
+## End-to-end coverage step (mandatory, UC 0094)
+
+The coverage registry `docs/testing/copertura-e2e.yaml` is the single map of *use case with surface → required
+journey → test that covers it*. Keeping it true is a **duty of the change that changes reality**, not a periodic
+clean-up. The sequence, every time — including changes with no frontend surface:
+
+1. **Read** the registry (and `docs/testing/README.md` for the format). Find the entries touching the area you are
+   about to change: which journeys already exercise it, which gaps are already declared.
+2. **Decide**, in one of exactly these three ways:
+   - **cover now** — write or extend the test, label it `[ID]` **at the head of the title**, and add/extend the
+     `coperto` entry with the file. A journey that grows only needs its entry's `usecases` kept honest;
+   - **defer** — entry `stato: da-coprire` with `motivo` (why it cannot be covered now) and `possiede` (the use case
+     that will unblock it). This is the deferred-decision rule of `CLAUDE.md` applied to coverage: never silence;
+   - **no impact** — the change moves nothing a browser can observe. Legitimate, and it is still an answer.
+3. **Record** the decision in `decisions.json` (in autopilot/fast: prefixed `(autopilot)`). "No end-to-end impact" is
+   a decision like the others: a change that never asked the question is the failure this step exists to prevent.
+4. **Let the check confirm**: `node tools/e2e-coverage/check.mjs` (or `./run-tests.sh tooling`). A red registry is a
+   red suite, and a red suite is no commit.
+
+Two cases deserve naming, because they are the ones a change forgets:
+
+- **A change that implements an evolutionary story** must **remove the `non-implementato` exemption** of its use case
+  and declare the path instead — surface classified (`usecases_con_superficie`) plus at least one entry, even just
+  `da-coprire`. The check already refuses the stale exemption as soon as the `changes/*-use-case-NNNN-*` folder
+  exists, so the skill's job is to **fix it**, not to notice it.
+- **A backend-only change can still move an end-to-end path** (a new subscription state, a new refusal, a new email):
+  ask the question before answering "no impact".
+
+Time budget: if a new journey pushes the platform suite past the target of UC 0090 §9, say so in the change and
+update the target with a reason. Suite time is a governed resource, not a fact to be endured.
+
 **E2E visual baseline rule (#10 F).** Never update a Playwright/visual snapshot baseline **blindly**: an unexpected visual
 diff is a signal to **investigate** (real regression vs intended UI change), not to re-record. Update a baseline only when
 the UI change is intentional and reviewed; note it in the implementation log. Prefer `aria-snapshot` as the primary net,

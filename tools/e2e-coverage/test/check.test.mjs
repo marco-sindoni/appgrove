@@ -364,3 +364,114 @@ test('use case citato da un percorso ma inesistente nel catalogo → rosso', () 
   })
   assert.match(messaggi(root), /use case 9999 non esiste in docs\/usecases\//)
 })
+
+// ── collaudo di PROCESSO (UC 0094) ───────────────────────────────────────────
+//
+// I test qui sopra verificano una regola alla volta. Questi verificano gli SCENARI del workflow:
+// le tre situazioni in cui una change o uno use case nuovo lasciano indietro il registro, e la
+// rimediazione che il processo prescrive. Sono la dimostrazione che il presidio morde davvero nei
+// punti in cui le skill sono state agganciate — e che la via d'uscita esiste ed è quella scritta.
+
+test('processo — change con superficie nuova e registro non aggiornato → rosso; con la voce → verde', () => {
+  // La change aggiunge un test di livello 2 etichettato ma non tocca il registro: copertura fantasma.
+  const rosso = repoDiProva({
+    dopo: (root) =>
+      scrivi(
+        root,
+        'frontend/apps/backoffice/e2e/nuova-schermata.spec.ts',
+        "import { test } from '@playwright/test'\ntest('[L2-NUOVA] nuova schermata', async () => {})\n",
+      ),
+  })
+  assert.ok(regole(rosso).includes('etichetta'))
+  assert.match(messaggi(rosso), /etichetta \[L2-NUOVA\] assente dal registro/)
+
+  // Stessa change, con il passo di copertura eseguito: la voce c'è e dichiara il file.
+  const verde = repoDiProva({
+    registro: (r) => {
+      r.percorsi.push({
+        id: 'L2-NUOVA',
+        titolo: 'Nuova schermata',
+        usecases: ['0001'],
+        stato: 'coperto',
+        test: [{ livello: 'l2', file: 'frontend/apps/backoffice/e2e/nuova-schermata.spec.ts' }],
+      })
+      return r
+    },
+    dopo: (root) =>
+      scrivi(
+        root,
+        'frontend/apps/backoffice/e2e/nuova-schermata.spec.ts',
+        "import { test } from '@playwright/test'\ntest('[L2-NUOVA] nuova schermata', async () => {})\n",
+      ),
+  })
+  assert.deepEqual(validate(verde), [])
+})
+
+test('processo — change con superficie nuova e test senza etichetta → rosso (il test non si aggancia a nulla)', () => {
+  const root = repoDiProva({
+    dopo: (root) =>
+      scrivi(
+        root,
+        'frontend/apps/backoffice/e2e/nuova-schermata.spec.ts',
+        "import { test } from '@playwright/test'\ntest('nuova schermata', async () => {})\n",
+      ),
+  })
+  assert.match(messaggi(root), /non porta l'etichetta del percorso/)
+})
+
+test('processo — storia evolutiva implementata e ancora esentata `non-implementato` → rosso; riclassificata → verde', () => {
+  const modificheComuni = {
+    dopo: (root) => fs.mkdirSync(path.join(root, 'changes/0074-use-case-0002-storia-evolutiva'), { recursive: true }),
+  }
+
+  const rosso = repoDiProva({
+    ...modificheComuni,
+    registro: (r) => {
+      r.esenzioni[0].categoria = 'non-implementato'
+      r.esenzioni[0].motivo = 'Storia evolutiva non ancora implementata.'
+      return r
+    },
+  })
+  assert.ok(regole(rosso).includes('esenzione'))
+  assert.match(messaggi(rosso), /la superficie ora esiste: classificala/)
+
+  // Rimedio prescritto da new-change: via l'esenzione, dentro la superficie e almeno un percorso.
+  const verde = repoDiProva({
+    ...modificheComuni,
+    registro: (r) => {
+      r.esenzioni = []
+      r.usecases_con_superficie.push('0002')
+      r.percorsi.push({
+        id: 'J-DUE',
+        titolo: 'Percorso della storia evolutiva',
+        usecases: ['0002'],
+        stato: 'da-coprire',
+        motivo: 'Superficie appena nata: il percorso arriva con la storia successiva.',
+        possiede: '0002',
+      })
+      return r
+    },
+  })
+  assert.deepEqual(validate(verde), [])
+})
+
+test('processo — use case scaffoldato e non classificato → rosso; classificato allo scaffolding → verde', () => {
+  const nuovoUseCase = (root) => scrivi(root, 'docs/usecases/01-area/0003-terzo.md', '# UC 0003\n')
+
+  const rosso = repoDiProva({ dopo: nuovoUseCase })
+  assert.ok(regole(rosso).includes('catalogo'))
+  assert.match(messaggi(rosso), /use case 0003 non classificato/)
+
+  const verde = repoDiProva({
+    dopo: nuovoUseCase,
+    registro: (r) => {
+      r.esenzioni.push({
+        usecase: '0003',
+        categoria: 'non-implementato',
+        motivo: 'Superficie non ancora esistente in main.',
+      })
+      return r
+    },
+  })
+  assert.deepEqual(validate(verde), [])
+})

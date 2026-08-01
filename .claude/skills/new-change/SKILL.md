@@ -49,6 +49,11 @@ bundled into the change commit, so `main` reflects completion only on merge. Nor
 manifest/RoPA → MAJOR/MINOR classification piloting the PP/ToS version bump); step-04 verifies the gate ran before the
 commit gate. The blocking CI check `@PersonalData`↔manifest lives in `mvn test` (UC 0030). (2) **E2E visual
 baseline** (#10 F) — never re-record a snapshot baseline blindly; investigate unexpected diffs (steps 03/04).
+(3) **End-to-end coverage registry (UC 0093/0094)** — step-03 runs the coverage step (read
+`docs/testing/copertura-e2e.yaml` → decide *cover now / defer / no impact* → update the registry) and step-04
+verifies it with `node tools/e2e-coverage/check.mjs` before the commit gate. It is part of the **Definition of
+Done**, next to `run-tests.sh` and `_INDEX.md`: an incoherent registry makes the `tooling` area red, and a red
+suite means no commit.
 
 Your job is to ensure every change is spec-driven: requirements first, then implementation,
 then log — never the other way around.
