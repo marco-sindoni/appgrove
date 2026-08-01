@@ -1,0 +1,612 @@
+<title>appgrove — Proposta UX: App catalog vs Billing</title>
+<style>
+/* ── Font (incorporati, nessuna rete) ─────────────────────────────── */
+@font-face{font-family:"Plus Jakarta Sans";font-weight:400;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@PJS400@@) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:600;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@PJS600@@) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:700;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@PJS700@@) format("woff2")}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:800;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@PJS800@@) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:400;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@JBM400@@) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-weight:700;font-style:normal;font-display:swap;src:url(data:font/woff2;base64,@@JBM700@@) format("woff2")}
+
+/* ── Token appgrove (copiati da tokens.css, UC 0019) ──────────────── */
+:root{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --accent:236 90 114; --accent-c:255 255 255;
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-pill:999px;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ── Shell ────────────────────────────────────────────────────────── */
+.shell{display:grid;grid-template-columns:258px 1fr;min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item .pill-new{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:6px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+/* ── Topbar ───────────────────────────────────────────────────────── */
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+/* ── Contenuto ────────────────────────────────────────────────────── */
+.content{padding:26px;max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;flex-direction:column;gap:3px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+
+/* note di proposta (annotazioni italiane) */
+.note{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.note svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.note b{color:rgb(var(--accent))}
+.note ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-notes="off"] .note,body[data-notes="off"] .nav-note{display:none}
+
+/* badge di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-active{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-trial{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-pending{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-cancel{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-disabled{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ── Dashboard ────────────────────────────────────────────────────── */
+.alerts{display:flex;flex-direction:column;gap:10px}
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-danger{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-warning{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.dash-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+.apps-summary{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.app-sum{padding:18px;display:flex;flex-direction:column;gap:12px}
+.app-sum-h{display:flex;align-items:center;gap:12px}
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+.app-sum-h .t{font-weight:700;font-size:15px}
+.app-sum-h .badge{margin-left:auto}
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.app-sum-actions{display:flex;gap:8px}
+.get-more{border:1.5px dashed rgb(var(--border-strong));background:rgb(var(--surface-2));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:22px;color:rgb(var(--muted));border-radius:var(--r-lg)}
+.get-more svg{width:26px;height:26px;stroke:rgb(var(--accent))}
+.glance{display:flex;flex-direction:column;gap:0}
+.glance-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.glance-row:last-child{border-bottom:none}
+.glance-row .k{color:rgb(var(--muted));font-weight:600}
+.glance-row .v{font-weight:700}
+.shortcuts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.shortcut{display:flex;align-items:center;gap:10px;padding:9.5px 12px;border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:600;font-size:13px;background:rgb(var(--surface));width:100%;text-align:left}
+.shortcut svg{width:16px;height:16px;stroke:rgb(var(--accent))}
+.shortcut:hover{background:rgb(var(--surface-2))}
+
+/* ── Catalogo ─────────────────────────────────────────────────────── */
+.catalog-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:230px;max-width:420px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{
+  width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));
+  border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;
+}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.app-card{display:flex;flex-direction:column;overflow:hidden}
+.app-card .head{height:86px;display:flex;align-items:center;justify-content:center;position:relative}
+.app-card .head .tile{width:46px;height:46px;font-size:19px;box-shadow:var(--sh-sm)}
+.app-card .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+.app-card .t-row{display:flex;align-items:center;gap:9px}
+.app-card .t-row .t{font-weight:700;font-size:15.5px}
+.app-card .t-row .badge{margin-left:auto}
+.app-card .desc{font-size:13px;color:rgb(var(--muted));flex:1}
+.app-card .foot{display:flex;align-items:center;gap:10px;margin-top:6px}
+.app-card .price{font-size:12.5px;color:rgb(var(--muted));font-weight:600;margin-left:auto}
+.app-card .price b{font-family:"JetBrains Mono",monospace;color:rgb(var(--text));font-size:13px}
+.state-hint{font-size:12px;color:rgb(var(--muted))}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding-top:4px}
+.pager .btn{padding:7px 12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+.empty{padding:44px;text-align:center;color:rgb(var(--muted))}
+.empty b{display:block;font-size:15px;color:rgb(var(--text));margin-bottom:4px}
+
+/* ── Billing ──────────────────────────────────────────────────────── */
+.sub-card{padding:18px 22px;display:flex;flex-direction:column;gap:10px}
+.sub-h{display:flex;align-items:center;gap:12px}
+.sub-h .t{font-weight:700;font-size:16px}
+.sub-h .badge{margin-left:auto}
+.sub-meta{font-size:13px;color:rgb(var(--muted))}
+.sub-meta b{color:rgb(var(--text))}
+.sub-actions{display:flex;gap:9px;margin-top:2px;flex-wrap:wrap}
+.inline-warn{
+  display:flex;gap:9px;align-items:flex-start;border-radius:var(--r-md);
+  background:rgb(var(--danger)/.08);color:rgb(var(--danger));
+  padding:10px 13px;font-size:12.5px;font-weight:600;
+}
+.inline-warn svg{width:15px;height:15px;stroke:currentColor;flex:none;margin-top:1px}
+table.pay{width:100%;border-collapse:collapse;font-size:13px}
+table.pay th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));
+}
+table.pay td{padding:11px 14px;border-bottom:1px solid rgb(var(--border))}
+table.pay tr:last-child td{border-bottom:none}
+table.pay .amt{font-family:"JetBrains Mono",monospace;font-weight:700;font-variant-numeric:tabular-nums}
+.table-wrap{overflow-x:auto}
+
+/* ── Account ──────────────────────────────────────────────────────── */
+.account-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.uuid-row{display:flex;align-items:center;gap:9px}
+.uuid-row code{
+  font-family:"JetBrains Mono",monospace;font-size:12.5px;background:rgb(var(--surface-3));
+  border-radius:var(--r-sm);padding:7px 11px;color:rgb(var(--muted));overflow-x:auto;white-space:nowrap;
+}
+.danger-zone{border-color:rgb(var(--danger)/.4)}
+
+/* footer mockup */
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .dash-grid,.account-grid{grid-template-columns:1fr}
+  .apps-summary{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+
+<div class="shell">
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">WORKSPACE</div></div>
+    </div>
+
+    <div class="nav-group">PLATFORM</div>
+    <button class="nav-item" data-nav="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-nav="catalog">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      App catalog <span class="pill-new">NUOVO</span>
+    </button>
+    <button class="nav-item" data-nav="account">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" data-nav="billing">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Billing
+    </button>
+    <button class="nav-item" data-nav="" disabled title="Fuori dal perimetro del mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.8"/><path d="M17.5 14.6c2.4.5 4 2.2 4 4.9"/></svg>
+      Members
+    </button>
+    <button class="nav-item" data-nav="" disabled title="Fuori dal perimetro del mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      My data
+    </button>
+    <button class="nav-item" data-nav="" disabled title="Fuori dal perimetro del mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="2.5" y="13" width="4" height="6" rx="2"/><rect x="17.5" y="13" width="4" height="6" rx="2"/><path d="M19.5 19a4 4 0 0 1-4 3h-2"/></svg>
+      Support
+    </button>
+
+    <div class="nav-group">YOUR APPS</div>
+    <button class="nav-item" data-nav="" disabled title="Modulo dell'app (fuori mockup)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12h8M12 8v8"/></svg>
+      Demo app
+    </button>
+    <button class="nav-item" data-nav="" disabled title="Modulo dell'app (fuori mockup)">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6V3Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+      Invoices
+    </button>
+    <p class="nav-note">Nota: Mini-CRM non compare qui — è disabilitata dalla piattaforma. Il suo stato si vede nel catalogo e in Billing, coerente ovunque.</p>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso"><span>Dashboard</span><span aria-hidden="true">›</span><b id="crumb-here">Dashboard</b></nav>
+      <div class="topbar-right">
+        <button class="chip" id="notes-toggle" aria-pressed="true" title="Mostra/nascondi le note di proposta (in italiano)">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua">EN</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro/scuro">
+          <svg id="ico-moon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="Notifiche" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="view"><!-- render JS --></main>
+    <p class="mock-foot">Mockup navigabile — dati fittizi · change 0066 · proposta “App catalog vs Billing” per il backoffice appgrove</p>
+  </div>
+</div>
+
+<script>
+/* ───────────────────────── dati finti ───────────────────────── */
+const APPS = [
+  {id:'demo',      name:'Demo app',   cat:'violet', desc:'Sample workspace app to try the platform end-to-end.',            state:'active',   plan:'Demo Pro',      price:9,  quota:{used:412,cap:1000,unit:'items / month'}},
+  {id:'invoices',  name:'Invoices',   cat:'green',  desc:'Create and send invoices, track payments and dunning.',           state:'active',   plan:'Invoices Plus', price:12, quota:{used:118,cap:200,unit:'invoices / month'}},
+  {id:'notes',     name:'Notes',      cat:'amber',  desc:'Shared notes and lightweight docs for your team.',                state:'pending',  plan:'Notes Pro',     price:8},
+  {id:'minicrm',   name:'Mini-CRM',   cat:'blue',   desc:'Contacts, deals and a simple pipeline for small teams.',          state:'disabled', plan:'Mini-CRM Team', price:15},
+  {id:'timesheets',name:'Timesheets', cat:'teal',   desc:'Track hours, approve weeks and export monthly reports.',          state:'trial',    plan:'Timesheets Solo',price:7, trialEnds:'10/08/2026'},
+  {id:'bookings',  name:'Bookings',   cat:'red',    desc:'Appointment scheduling with public booking pages.',               state:'cancel',   plan:'Bookings Pro',  price:11, ends:'31/08/2026'},
+  {id:'expenses',  name:'Expenses',   cat:'green',  desc:'Snap receipts, approve expenses and reimburse fast.',             state:'available',price:7},
+  {id:'inventory', name:'Inventory',  cat:'amber',  desc:'Stock levels, low-stock alerts and supplier lists.',              state:'available',price:12},
+  {id:'helpdesk',  name:'Helpdesk',   cat:'violet', desc:'Shared inbox and ticketing for customer support.',                state:'available',price:15},
+  {id:'newsletter',name:'Newsletter', cat:'teal',   desc:'Compose and send simple newsletters, GDPR-friendly.',             state:'available',price:9},
+  {id:'contracts', name:'Contracts',  cat:'blue',   desc:'Contract templates, e-signature and renewal reminders.',          state:'available',price:14},
+  {id:'projects',  name:'Projects',   cat:'red',    desc:'Tasks, boards and milestones for client work.',                   state:'available',price:10},
+];
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const PAGE_SIZE = 6;
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  search:svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  plus:  svg('<path d="M12 5v14M5 12h14"/>'),
+  copy:  svg('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5h10"/>'),
+  left:  svg('<path d="m14 6-6 6 6 6"/>'),
+  right: svg('<path d="m10 6 6 6-6 6"/>'),
+  shield:svg('<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/>'),
+  users: svg('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/>'),
+  card:  svg('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/>'),
+  store: svg('<path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/>'),
+  ext:   svg('<path d="M14 4h6v6"/><path d="M20 4 11 13"/><path d="M9 6H5v13h13v-4"/>'),
+};
+const BADGE = {
+  active:   `<span class="badge b-active">${I.check} Active</span>`,
+  trial:    `<span class="badge b-trial">${I.clock} Trial</span>`,
+  pending:  `<span class="badge b-pending">${I.warn} Payment pending</span>`,
+  cancel:   `<span class="badge b-cancel">${I.clock} Cancellation scheduled</span>`,
+  disabled: `<span class="badge b-disabled">${I.block} Disabled by platform</span>`,
+};
+const tile = (a,big=false) => `<span class="tile" style="background:rgb(var(${CAT[a.cat]})/.14);color:rgb(var(${CAT[a.cat]}))" aria-hidden="true">${a.name[0]}</span>`;
+const note = html => `<div class="note">${I.info}<div>${html}</div></div>`;
+const eur = n => '€' + n;
+
+/* ───────────────────────── stato ───────────────────────── */
+const state = { view:'dashboard', q:'', page:1 };
+
+/* ───────────────────────── viste ───────────────────────── */
+function vDashboard(){
+  const demo = APPS[0], inv = APPS[1];
+  const pct = a => Math.round(a.quota.used/a.quota.cap*100);
+  return `
+  ${note(`<b>Proposta — Dashboard.</b> Non più il solo identificativo del workspace (spostato in <a href="#account">Account</a>): la pagina d'atterraggio diventa una <b>panoramica operativa</b> — app attive con consumo, avvisi azionabili, scorciatoie. Usa solo dati che il backend espone già (entitlement, subscription, membri).`)}
+  <div class="page-h"><h1>Good morning, Marco</h1><p>Here’s what’s happening in the <b>acme</b> workspace.</p></div>
+  <div class="alerts">
+    <div class="alert a-danger">${I.shield} Protect your account: enable two-factor authentication.<span class="spacer"></span><button class="btn btn-ghost">Enable 2FA</button></div>
+    <div class="alert a-warning">${I.warn} Notes has a payment pending — your access may be limited soon.<span class="spacer"></span><button class="btn btn-ghost" data-nav="billing">Go to Billing</button></div>
+  </div>
+  <div class="dash-grid">
+    <section aria-label="Your apps" style="display:flex;flex-direction:column;gap:12px">
+      <div><h2 class="sec">Your apps</h2><p class="sec-sub">Apps active in this workspace.</p></div>
+      <div class="apps-summary">
+        ${[demo,inv].map(a=>`
+        <div class="card app-sum">
+          <div class="app-sum-h">${tile(a)}<span class="t">${a.name}</span>${BADGE.active}</div>
+          <div class="quota">
+            <span>${a.quota.used} of ${a.quota.cap} ${a.quota.unit}</span>
+            <span class="quota-bar"><i class="${pct(a)>80?'warn':''}" style="width:${pct(a)}%"></i></span>
+          </div>
+          <div class="app-sum-actions"><button class="btn btn-primary">Open</button><button class="btn btn-ghost" data-nav="billing">Manage plan</button></div>
+        </div>`).join('')}
+        <button class="get-more" data-nav="catalog">${I.plus}<b>Get more apps</b><span style="font-size:12.5px">Browse the catalog and activate what you need.</span></button>
+      </div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:12px" aria-label="Workspace at a glance">
+      <div class="card card-pad glance">
+        <h2 class="sec" style="padding-bottom:6px">At a glance</h2>
+        <div class="glance-row"><span class="k">Members</span><span class="v">4</span></div>
+        <div class="glance-row"><span class="k">Pending invites</span><span class="v">1</span></div>
+        <div class="glance-row"><span class="k">Active apps</span><span class="v">2</span></div>
+        <div class="glance-row"><span class="k">Next renewal</span><span class="v">31/08/2026</span></div>
+      </div>
+      <div class="shortcuts">
+        <button class="shortcut">${I.users} Invite a member</button>
+        <button class="shortcut" data-nav="billing">${I.card} Payments &amp; receipts</button>
+        <button class="shortcut" data-nav="catalog">${I.store} Browse the app catalog</button>
+      </div>
+    </aside>
+  </div>`;
+}
+
+function stateFoot(a){
+  switch(a.state){
+    case 'available': return `<button class="btn btn-primary">Subscribe</button><span class="price">from <b>${eur(a.price)}</b>/mo</span>`;
+    case 'active':    return `<button class="btn btn-ghost">Open</button><span class="price">${a.plan}</span>`;
+    case 'trial':     return `<button class="btn btn-ghost">Open</button><span class="state-hint">Trial ends ${a.trialEnds}</span>`;
+    case 'pending':   return `<button class="btn btn-primary" data-nav="billing">Fix payment</button>`;
+    case 'cancel':    return `<button class="btn btn-ghost" data-nav="billing">Undo cancellation</button><span class="state-hint">Until ${a.ends}</span>`;
+    case 'disabled':  return `<button class="btn btn-ghost">Contact support</button>`;
+  }
+}
+function vCatalog(){
+  const q = state.q.trim().toLowerCase();
+  const hits = APPS.filter(a => !q || a.name.toLowerCase().includes(q) || a.desc.toLowerCase().includes(q));
+  const pages = Math.max(1, Math.ceil(hits.length/PAGE_SIZE));
+  if(state.page>pages) state.page = pages;
+  const slice = hits.slice((state.page-1)*PAGE_SIZE, state.page*PAGE_SIZE);
+  return `
+  ${note(`<b>Proposta — App catalog.</b> Nuova voce di menu: qui si <b>scoprono e attivano</b> le app; in Billing resta solo ciò che riguarda i pagamenti. Ogni card mostra lo <b>stato reale</b> dell'app per questo workspace — inclusa <i>Disabled by platform</i> (Mini-CRM): stato oggi invisibile e incoerente tra sidebar e Billing. Ricerca e paginazione sul catalogo completo.`)}
+  <div class="page-h"><h1>App catalog</h1><p>Discover the apps available on appgrove and activate them for this workspace.</p></div>
+  <div class="catalog-tools">
+    <div class="search">${I.search}<input id="cat-q" type="search" placeholder="Search apps…" value="${state.q.replace(/"/g,'&quot;')}" aria-label="Search apps"></div>
+    <span class="result-count">${hits.length} app${hits.length===1?'':'s'}</span>
+  </div>
+  ${slice.length ? `<div class="cat-grid">
+    ${slice.map(a=>`
+    <article class="card app-card" aria-label="${a.name}">
+      <div class="head" style="background:linear-gradient(135deg,rgb(var(${CAT[a.cat]})/.16),rgb(var(${CAT[a.cat]})/.05))">${tile(a)}</div>
+      <div class="body">
+        <div class="t-row"><span class="t">${a.name}</span>${BADGE[a.state]??''}</div>
+        <p class="desc">${a.desc}</p>
+        <div class="foot">${stateFoot(a)}</div>
+      </div>
+    </article>`).join('')}
+  </div>` : `<div class="card empty"><b>No apps match your search</b>Try a different keyword, or clear the search to see the full catalog.</div>`}
+  <nav class="pager" aria-label="Pagine del catalogo">
+    <button class="btn btn-ghost" id="pg-prev" ${state.page<=1?'disabled':''}>${I.left} Previous</button>
+    <span class="info">Page ${state.page} of ${pages}</span>
+    <button class="btn btn-ghost" id="pg-next" ${state.page>=pages?'disabled':''}>Next ${I.right}</button>
+  </nav>`;
+}
+
+function vBilling(){
+  return `
+  ${note(`<b>Proposta — Billing.</b> Solo fatturazione: abbonamenti (cambio piano, disdetta, riattivazione) e <b>storico pagamenti/ricevute</b>. Il titolo “Get an app” e la griglia d'acquisto spariscono: l'attivazione vive nel <a href="#catalog">catalogo</a>. La card Mini-CRM mostra la subscription attiva <b>e</b> la disabilitazione di piattaforma: paghi, quindi lo vedi — con la spiegazione (fix tracciato in UC 0076).`)}
+  <div class="page-h"><h1>Billing</h1><p>Manage your plans, payments and receipts.</p></div>
+  <section style="display:flex;flex-direction:column;gap:12px" aria-label="Subscriptions">
+    <div><h2 class="sec">Your subscriptions</h2><p class="sec-sub">Plans currently attached to this workspace.</p></div>
+    <div class="card sub-card">
+      <div class="sub-h">${tile(APPS[0])}<span class="t">Demo app</span>${BADGE.active}</div>
+      <p class="sub-meta">Plan: <b>Demo Pro</b> · Renews on <b>31/08/2026</b> · Your plan includes: <b>1000 items / month</b></p>
+      <div class="sub-actions"><button class="btn btn-ghost">Change plan</button><button class="btn btn-ghost">Cancel</button></div>
+    </div>
+    <div class="card sub-card">
+      <div class="sub-h">${tile(APPS[1])}<span class="t">Invoices</span>${BADGE.active}</div>
+      <p class="sub-meta">Plan: <b>Invoices Plus</b> · Renews on <b>31/08/2026</b> · Your plan includes: <b>200 invoices / month</b></p>
+      <div class="sub-actions"><button class="btn btn-ghost">Change plan</button><button class="btn btn-ghost">Cancel</button></div>
+    </div>
+    <div class="card sub-card">
+      <div class="sub-h">${tile(APPS[2])}<span class="t">Notes</span>${BADGE.pending}</div>
+      <p class="sub-meta">Plan: <b>Notes Pro</b> · Payment due since <b>28/07/2026</b></p>
+      <div class="sub-actions"><button class="btn btn-primary">Update payment method</button></div>
+    </div>
+    <div class="card sub-card">
+      <div class="sub-h">${tile(APPS[3])}<span class="t">Mini-CRM</span>${BADGE.disabled}</div>
+      <div class="inline-warn">${I.warn}<span>This app has been disabled by the platform. Your subscription is <b>not</b> being charged while it’s unavailable — contact support for details.</span></div>
+      <p class="sub-meta">Plan: <b>Mini-CRM Team</b> · Up to <b>10 seats</b></p>
+      <div class="sub-actions"><button class="btn btn-ghost">Contact support</button></div>
+    </div>
+    <div class="card sub-card">
+      <div class="sub-h">${tile(APPS[5])}<span class="t">Bookings</span>${BADGE.cancel}</div>
+      <p class="sub-meta">Plan: <b>Bookings Pro</b> · Access until <b>31/08/2026</b>, then the subscription ends.</p>
+      <div class="sub-actions"><button class="btn btn-primary">Undo cancellation</button><button class="btn btn-ghost">Export data</button></div>
+    </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:12px" aria-label="Payments and receipts">
+    <div><h2 class="sec">Payments &amp; receipts</h2><p class="sec-sub">Processed by Paddle, our merchant of record. Receipts open on Paddle.</p></div>
+    <div class="card table-wrap"><table class="pay">
+      <thead><tr><th>Date</th><th>App</th><th>Description</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>31/07/2026</td><td>Demo app</td><td>Demo Pro — monthly</td><td class="amt">€9.00</td><td><span class="badge b-active">${I.check} Paid</span></td><td><a href="#" onclick="return false">Receipt ${I.ext}</a></td></tr>
+        <tr><td>31/07/2026</td><td>Invoices</td><td>Invoices Plus — monthly</td><td class="amt">€12.00</td><td><span class="badge b-active">${I.check} Paid</span></td><td><a href="#" onclick="return false">Receipt ${I.ext}</a></td></tr>
+        <tr><td>28/07/2026</td><td>Notes</td><td>Notes Pro — monthly</td><td class="amt">€8.00</td><td><span class="badge b-pending">${I.warn} Failed</span></td><td><a href="#" onclick="return false">Retry ${I.ext}</a></td></tr>
+        <tr><td>30/06/2026</td><td>Demo app</td><td>Demo Pro — monthly</td><td class="amt">€9.00</td><td><span class="badge b-active">${I.check} Paid</span></td><td><a href="#" onclick="return false">Receipt ${I.ext}</a></td></tr>
+        <tr><td>30/06/2026</td><td>Bookings</td><td>Bookings Pro — monthly</td><td class="amt">€11.00</td><td><span class="badge b-active">${I.check} Paid</span></td><td><a href="#" onclick="return false">Receipt ${I.ext}</a></td></tr>
+      </tbody>
+    </table></div>
+  </section>`;
+}
+
+function vAccount(){
+  return `
+  ${note(`<b>Proposta — Account.</b> Qui arriva il <b>Workspace ID</b> (l'identificativo tecnico prima parcheggiato in Dashboard), insieme ai dati del workspace. Il pulsante di copia serve a chi apre un ticket di supporto.`)}
+  <div class="page-h"><h1>Account</h1><p>Workspace details and identifiers.</p></div>
+  <div class="account-grid">
+    <div class="card card-pad" style="display:flex;flex-direction:column;gap:16px">
+      <h2 class="sec">Workspace</h2>
+      <div class="field"><label for="ws-name">Workspace name</label><input id="ws-name" value="acme" readonly></div>
+      <div class="field"><label>Workspace ID</label>
+        <div class="uuid-row"><code id="ws-uuid">3f9a2c71-8e5b-4d02-9c47-b61e02a4f5d8</code>
+          <button class="btn btn-ghost" id="copy-uuid" aria-label="Copy workspace ID">${I.copy} Copy</button>
+        </div>
+        <span class="state-hint">Share this ID with support when opening a ticket.</span>
+      </div>
+      <div class="field"><label>Created</label><span style="font-weight:700">12/05/2026</span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Members</h2>
+        <p class="sec-sub">4 members · 1 pending invite</p>
+        <div><button class="btn btn-ghost">${I.users} Manage members</button></div>
+      </div>
+      <div class="card card-pad danger-zone" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec" style="color:rgb(var(--danger))">Danger zone</h2>
+        <p class="sec-sub">Deleting the workspace removes all apps and data after a grace period.</p>
+        <div><button class="btn btn-danger">Delete workspace</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ───────────────────────── router/render ───────────────────────── */
+const VIEWS = { dashboard:['Dashboard',vDashboard], catalog:['App catalog',vCatalog], billing:['Billing',vBilling], account:['Account',vAccount] };
+function render(){
+  const [title, fn] = VIEWS[state.view];
+  document.getElementById('view').innerHTML = fn();
+  document.getElementById('crumb-here').textContent = title;
+  document.querySelectorAll('.nav-item[data-nav]').forEach(b=>{
+    if(b.dataset.nav) b.toggleAttribute('aria-current', false);
+    if(b.dataset.nav===state.view) b.setAttribute('aria-current','page'); else if(b.dataset.nav) b.removeAttribute('aria-current');
+  });
+  /* wiring della vista corrente */
+  const q = document.getElementById('cat-q');
+  if(q){
+    q.addEventListener('input', e=>{ state.q = e.target.value; state.page = 1; const pos=q.selectionStart; render(); const nq=document.getElementById('cat-q'); nq.focus(); nq.setSelectionRange(pos,pos); });
+  }
+  const prev=document.getElementById('pg-prev'), next=document.getElementById('pg-next');
+  if(prev) prev.addEventListener('click', ()=>{ state.page--; render(); });
+  if(next) next.addEventListener('click', ()=>{ state.page++; render(); });
+  const cu=document.getElementById('copy-uuid');
+  if(cu) cu.addEventListener('click', ()=>{ navigator.clipboard?.writeText(document.getElementById('ws-uuid').textContent); cu.innerHTML = I.check + ' Copied'; setTimeout(()=>{ cu.innerHTML = I.copy + ' Copy'; }, 1500); });
+  document.querySelectorAll('#view [data-nav]').forEach(el=> el.addEventListener('click', ()=> go(el.dataset.nav)));
+}
+function go(v){ if(!VIEWS[v]) return; state.view = v; if(v!=='catalog'){} location.hash = v; render(); window.scrollTo({top:0}); }
+window.addEventListener('hashchange', ()=>{ const v = location.hash.slice(1); if(VIEWS[v] && v!==state.view){ state.view=v; render(); } });
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b=>{ if(b.dataset.nav) b.addEventListener('click', ()=>go(b.dataset.nav)); });
+
+/* note ON/OFF */
+const nt = document.getElementById('notes-toggle');
+nt.addEventListener('click', ()=>{
+  const off = document.body.dataset.notes === 'off';
+  document.body.dataset.notes = off ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(off));
+});
+
+/* tema chiaro/scuro (rispetta il toggle del viewer: scrive data-theme sulla radice) */
+document.getElementById('theme-toggle').addEventListener('click', ()=>{
+  const root = document.documentElement;
+  const dark = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = dark ? 'light' : 'dark';
+});
+
+/* accent */
+document.querySelectorAll('[data-accent-pick]').forEach(d=> d.addEventListener('click', ()=>{
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x=>x.setAttribute('aria-pressed', String(x===d)));
+}));
+
+/* avvio */
+const first = location.hash.slice(1);
+if(VIEWS[first]) state.view = first;
+render();
+</script>

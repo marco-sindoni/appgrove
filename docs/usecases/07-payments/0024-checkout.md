@@ -85,7 +85,9 @@ passata al primo checkout (per il customer). Manifest: trattamento "billing/abbo
   e il provider backend sono i due seam pronti da sostituire.
 - **Marketplace / discovery delle app non possedute**: oggi `/billing` lista le app dal **registry build-time**
   (`MODULES`); manca una vetrina che elenchi dal **catalogo reale** le app acquistabili (incl. quelle non nel
-  bundle FE). *Follow-up* — proprietà di questo UC 0024 (o nuovo UC catalogo pubblico se cresce).
+  bundle FE). *Follow-up* — **assorbito da UC 0095** (pagina "App catalog", epica 21, proposta approvata nella
+  change `0066`): la vetrina diventa la pagina di catalogo del backoffice; questo UC resta proprietario del solo
+  flusso di checkout.
 - **Formattazione prezzo per-locale**: `formatPrice` usa `it-IT` fisso (la UI però è multilingua). Polish
   minore → UC 0024 (passare il locale corrente).
 - **Cablaggio entitlement reale del registry** (l'app appena comprata non appare in sidebar senza refresh) +

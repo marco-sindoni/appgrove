@@ -1,0 +1,94 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot, dichiarata all'invocazione — le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; approvazione requisiti, consenso al commit e al merge restano allo sviluppatore, più un gate aggiuntivo richiesto esplicitamente: revisione e approvazione dell'artefatto HTML PRIMA della scrittura delle user story."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Change ad-hoc, non use-case-originated: nessuno use case esistente copre la riprogettazione UX catalogo/billing. UC 0024 traccia nei suoi punti aperti la vetrina dal catalogo reale come follow-up ('o nuovo UC catalogo pubblico se cresce'): questa change è la proposta di progetto di quella crescita; gli use case implementativi nasceranno dalle user story prodotte qui, dopo l'approvazione dell'artefatto."
+  },
+  {
+    "id": 3,
+    "decision": "Bug di incoerenza osservato dallo sviluppatore sullo stack locale e tracciato (fuori dallo scope di questa change): con un'app disabilitata a livello piattaforma la pagina Billing mostra la subscription 'Active' senza segnalare la disabilitazione, mentre la sidebar correttamente non mostra l'app (legge /me/entitlements con la regola unica di accesso, UC 0077; il pannello legge /me/subscriptions, UC 0028). Rimando scritto nella sezione 'Punti aperti / decisioni differite' di docs/usecases/15-supporto-e-piattaforma/0076-disabilita-applicazione.md, che possiede l'esperienza utente della disabilitazione.",
+    "files": [
+      {
+        "file": "docs/usecases/15-supporto-e-piattaforma/0076-disabilita-applicazione.md",
+        "description": "Aggiunto il punto aperto sul fix della pagina Billing per app disabilitata."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Nuova Dashboard = panoramica operativa del workspace: app attive con stato e consumo quota, avvisi azionabili (pagamento in sospeso, 2FA da attivare, documenti legali pendenti), scorciatoie (catalogo, membri, fatturazione). Scartate analitiche/grafici e feed attività: userebbero dati che il backend oggi non espone. L'UUID del tenant si sposta nella pagina Account."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'artefatto è un file HTML autonomo e navigabile versionato in changes/0066-app-catalog-billing-ux-proposal/proposta-ux.html e pubblicato come Artifact per la revisione. UI simulata in inglese (lingua della UI reale), annotazioni di proposta in italiano."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Le user story, dopo l'approvazione dell'artefatto, saranno formalizzate come use case numerati nel catalogo (skill new-usecase, area 06-frontend): nel monorepo l'unità implementabile è lo use case (~1:1 con una change); una forma intermedia sarebbe un doppione da mantenere."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il catalogo mostra solo stati già esistenti nel dominio: available/active/trial/payment-pending/cancellation-scheduled/disabled-by-platform; l'ultimo incluso per sanare in prospettiva l'incoerenza tracciata in UC 0076. Ricerca e paginazione dimostrate nell'artefatto con circa 12 app fittizie (client-side)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Billing ripulita: solo abbonamenti (cambio piano, disdetta, riattivazione) e storico pagamenti/ricevute (Paddle, merchant of record). L'acquisto parte dal catalogo e riusa il flusso di checkout esistente (UC 0024): la proposta sposta l'ingresso, non riprogetta il checkout."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Fedeltà al design system reale (UC 0019) invece di un mockup generico: l'artefatto copia i token veri (neutri caldi, accent corallo commutabile, raggi, ombre) e incorpora i font di brand Plus Jakarta Sans e JetBrains Mono in base64 dai pacchetti @fontsource del repo; Material Symbols (5,3 MB) sostituito da poche icone SVG inline per tenere la pagina autonoma e leggera (162 KB).",
+    "files": [
+      {
+        "file": "changes/0066-app-catalog-billing-ux-proposal/proposta-ux.template.html",
+        "description": "Sorgente leggibile del mockup (segnaposto @@FONT@@ al posto dei base64)."
+      },
+      {
+        "file": "changes/0066-app-catalog-billing-ux-proposal/proposta-ux.html",
+        "description": "Deliverable finale autonomo (font incorporati), pubblicato come Artifact per la revisione."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Scelte di contenuto del mockup: 12 app fittizie con i 6 stati reali del dominio; Mini-CRM mostrata 'Disabled by platform' nel catalogo E in Billing (con avviso esplicativo) ma assente dalla sidebar — dimostra la coerenza che oggi manca (punto aperto UC 0076); paginazione 6 card per pagina; note di proposta in italiano attivabili col pulsante 'Note' nella topbar; navigazione ad ancore (#dashboard/#catalog/#billing/#account), tema chiaro/scuro e accent funzionanti."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Correzione della decisione 6: le user story sono formalizzate in una NUOVA epica evo 21-catalogo-app-backoffice, non nell'area base 06-frontend — la convenzione post-change-0064 riserva le aree 01–11 all'implementazione base e colloca il lavoro evolutivo nelle epiche 12+. La decisione 6 resta a verbale (append-only); vale questa."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Taglio in tre user story implementabili (~1 change ciascuna) con catena di dipendenze 0095 → 0096/0097: UC 0095 pagina App catalog (read-model catalogo per-tenant + card con 6 stati + ricerca + paginazione + ingresso al checkout esistente; assorbe il punto aperto 'vetrina real-catalog' di UC 0024); UC 0096 Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute Paddle; chiude il punto aperto Billing di UC 0076); UC 0097 Dashboard operativa (+ Workspace ID in Account). Ognuna dichiara i journey end-to-end di piattaforma (epica 20) da estendere.",
+    "files": [
+      {
+        "file": "docs/usecases/21-catalogo-app-backoffice/0095-pagina-app-catalog.md",
+        "description": "Story catalogo: card/stati/ricerca/paginazione; fonte delle descrizioni localizzate da decidere nella change (candidato pricing-as-code)."
+      },
+      {
+        "file": "docs/usecases/21-catalogo-app-backoffice/0096-billing-solo-fatturazione.md",
+        "description": "Story Billing: storico pagamenti con scelta persistenza-webhook vs lettura on-demand lasciata alla change; avviso app disabilitata."
+      },
+      {
+        "file": "docs/usecases/21-catalogo-app-backoffice/0097-dashboard-operativa.md",
+        "description": "Story Dashboard: solo dati già esposti dal backend; degradazione per-sezione sui guasti."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Registrazioni di catalogo contestuali: nuova sezione epica 21 in docs/usecases/README.md; blocco C3 (righe 21–23) in EPICS-WAVE-2.md con rinumerazione delle righe successive e vincoli di dipendenza; conteggi CLAUDE.md 94→97 (epiche 12–21); il punto aperto 'vetrina real-catalog' di UC 0024 rimanda ora a UC 0095.",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Blocco C3 dopo C2: 0095 dopo 0077 (dipendenza evo), 0096/0097 dopo 0095; 0076 soft per 0096."
+      },
+      {
+        "file": "docs/usecases/07-payments/0024-checkout.md",
+        "description": "Punto aperto vetrina assorbito da UC 0095; UC 0024 resta proprietario del solo checkout."
+      }
+    ]
+  }
+]
