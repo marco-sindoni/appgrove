@@ -1,0 +1,75 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — autopilot senza fermate di workflow (nessuna revisione dei requisiti, nessun consenso al commit), dichiarata dall'orchestratore go-fast all'invocazione. Contropartite obbligatorie: suite completa `./run-tests.sh` verde prima del commit, registro decisioni integrale, `how-to-test.md` nella cartella della change. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0076 (Disabilita applicazione, feature admin reversibile), indicato esplicitamente all'invocazione; da qui la forma del branch `0071-use-case-0076-disabilita-applicazione`. Il numero 0071 è il progressivo della cartella `changes/` (ultima esistente: 0070).",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Indice di esecuzione delle storie evo: la riga 0076 passa a 🟡 all'apertura della change e a ✅ alla chiusura. Le storie evo NON hanno riga in docs/usecases/_INDEX.md (fuori dall'ordine topologico dell'onda 1), quindi l'indice da sincronizzare è questo." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Perimetro reale della storia: metà del meccanismo esiste già (campo `app.status`, endpoint `PATCH /admin/apps/{id}` gated `platform-admin`, pulsante con dialogo nella console admin, e soprattutto l'applicazione della regola a valle in `EntitlementAccess`). La change quindi NON reintroduce l'enforcement e NON riscrive il toggle: aggiunge ciò che manca alla Definition of Done dello use case — motivazione, audit persistito e consultabile, idempotenza esplicita, copy che distingue dalla dismissione definitiva, e coerenza dell'esperienza utente sulla pagina Billing.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementAccess.java", "description": "Regola di accesso già esistente che scarta le app non `active`: consumata, non duplicata." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Nome dello stato: si mantiene l'enum esistente `active` | `inactive`, NON si rinomina in `disabled` come recita il testo dello use case. Motivo: il valore vive già nello schema del database, nei dati seminati, nel pricing-as-code e nella suite end-to-end di piattaforma (`tools/platform-e2e/global-setup.ts` usa la leva); una rinomina sarebbe una migrazione a valore funzionale nullo con rischio di rottura diffuso. La parola \"disabilitata\" resta nel copy dell'interfaccia, che è dove serve al lettore umano.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/AppStatus.java", "description": "Enum invariato: `active` | `inactive`." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'audit della transizione si persiste in una NUOVA tabella dedicata `platform.app_status_audit` (migrazione Flyway V13), non riusando tabelle esistenti: le tabelle di prova attuali sono tenant-scoped e di dominio GDPR, mentre qui il soggetto è il catalogo di piattaforma e non c'è alcun tenant. Struttura sul modello già collaudato di `gdpr_restriction_audit` (identificativo, bersaglio, azione, attore, nota, istante di esecuzione).",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V13__app_status_audit.sql", "description": "Nuova tabella con app_id, from_status, to_status, actor, reason, executed_at + indice su (app_id, executed_at)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Semantica dell'idempotenza: chiedere lo stato in cui l'app già si trova risponde 200 con la vista corrente, NON scrive `app.status` e soprattutto NON scrive alcuna riga di audit. Alternativa scartata: rispondere 409 conflitto — sarebbe stata una regressione per i chiamanti automatici (la suite end-to-end di piattaforma attiva l'app in `global-setup` senza sapere da quale stato parte). Il vincolo dello use case è \"nessun audit incoerente\": una riga di audit senza transizione è esattamente ciò che va evitato."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La motivazione è FACOLTATIVA e limitata a 512 caratteri. Facoltativa perché lo use case la descrive così e perché renderla obbligatoria romperebbe i chiamanti automatici esistenti. Trattamento prudente del testo libero: la motivazione finisce SOLO nella riga di database (conservazione 12 mesi) e non entra mai nell'evento di audit strutturato che confluisce nell'archivio a 12 mesi su oggetti cloud — stessa regola già applicata alla nota della limitazione art. 18, perché il testo libero può contenere dati personali non previsti.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AdminDtos.java", "description": "`UpdateAppStatus` guadagna il campo facoltativo `reason` con lunghezza massima 512." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Conservazione del nuovo registro: 12 mesi come le altre prove di audit nel database, applicata dal job già esistente invece che da un secondo job gemello. Il job viene però GENERALIZZATO — da `GdprAuditRetentionSweeper` (pacchetto gdpr) a `AuditRetentionSweeper` (pacchetto platform) — perché ora conserva anche una tabella che di GDPR non ha nulla: lasciare il nome GDPR su un job che spazza il catalogo di piattaforma sarebbe una bugia destinata a confondere chi legge dopo.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AuditRetentionSweeper.java", "description": "Rinominato e spostato da app.appgrove.core.gdpr.GdprAuditRetentionSweeper; spazza tre tabelle: gdpr_purge_audit, gdpr_restriction_audit, app_status_audit." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il registro delle transizioni si consulta dalla sezione App della console admin (sotto la tabella delle app), non da una pagina nuova: è l'unico posto dove l'operatore agisce sul catalogo e lo use case chiede \"vista audit coerente con l'audit di piattaforma\" — la stessa forma già adottata per il registro delle limitazioni dentro la pagina Diritti GDPR. Nuova lettura `GET /api/platform/v1/admin/apps/audit`, riservata a `platform-admin`, più recenti prima.",
+    "files": [
+      { "file": "frontend/apps/admin/src/pages/Apps.tsx", "description": "La pagina ospita tabella app + dialogo con motivazione + registro delle transizioni." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il punto aperto \"pagina Billing incoerente per app disabilitata\", annotato nello use case 0076 il 2026-08-01 e dichiarato di proprietà di questo use case, viene chiuso QUI e non rimandato alla revisione UX catalogo/billing (UC 0096): è l'esperienza utente diretta della disabilitazione, cioè il senso della storia, e senza di essa l'utente vede un abbonamento \"attivo\" per un'app che è sparita dalla barra laterale. Realizzazione: `/me/subscriptions` espone `appDisabled` e la card mostra un avviso esplicito; l'abbonamento continua a essere elencato (per disegno UC 0028 li mostra tutti).",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java", "description": "La vista dell'abbonamento porta il flag `appDisabled`, derivato dallo stato dell'app di catalogo." },
+      { "file": "frontend/apps/backoffice/src/billing/SubscriptionsPanel.tsx", "description": "Avviso \"app sospesa dalla piattaforma\" sulla card, con la rassicurazione che dati e abbonamento restano intatti." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Copertura end-to-end: la superficie frontend toccata è reale (console admin + pagina Billing del backoffice), quindi la change estende gli end-to-end Playwright di livello L2 esistenti — `frontend/apps/admin/e2e/admin.spec.ts` e `frontend/apps/backoffice/e2e/subscriptions.spec.ts` — invece di crearne di nuovi. NON si anticipa il journey end-to-end di piattaforma lato admin (browser vero contro stack vero): appartiene allo use case 0092, la storia successiva, di cui questa è prerequisito."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Restano fuori, come già scritto nei punti aperti dello use case 0076 e senza bisogno di nuovi rimandi: kill-switch all'edge (l'authorizer non legge il database), disabilitazione mirata su un singolo account, comunicazione automatica agli utenti impattati, finestra di manutenzione programmata. Nessuna di queste è matura e nessuna appartiene al perimetro della leva reversibile."
+  }
+]
