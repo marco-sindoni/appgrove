@@ -39,6 +39,7 @@ jobs:
       infra: ${{ steps.filter.outputs.infra }}
       workflows: ${{ steps.filter.outputs.workflows }}
       smoke: ${{ steps.filter.outputs.smoke }}
+      platform: ${{ steps.filter.outputs.platform }}
       site: ${{ steps.filter.outputs.site }}
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +60,12 @@ jobs:
               - 'services/**'
               - 'dev/**'
               - 'tools/smoke/**'
+              - 'run-tests.sh'
+            platform:
+              - 'services/**'
+              - 'dev/**'
+              - 'frontend/**'
+              - 'tools/platform-e2e/**'
               - 'run-tests.sh'
             site:
               - 'site/**'
@@ -208,6 +215,44 @@ jobs:
         if: always()
         run: |
           echo "### Smoke avvio: ${{ job.status }} (non bloccante — promozione a required tracciata in UC 0005)" >> "$GITHUB_STEP_SUMMARY"
+
+  # ── Suite e2e di piattaforma (UC 0090): browser vero su stack vero + Mailpit ─
+  # Job dedicato, FUORI dal gate rapido per-change: path-filtered e NON bloccante
+  # (continue-on-error) finché non dimostra stabilità — come lo smoke; la promozione
+  # a check required è tracciata nei Punti aperti di UC 0005.
+  platform:
+    needs: changes
+    if: needs.changes.outputs.platform == 'true'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Suite e2e di piattaforma (journey J-*)
+        run: ./run-tests.sh platform
+      - name: Artefatti di diagnosi (trace/screenshot/video + log servizi)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-e2e-diagnosi
+          path: |
+            tools/platform-e2e/test-results/
+            tools/platform-e2e/.run/*.log
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Esito nel summary (job non bloccante)
+        if: always()
+        run: |
+          echo "### Suite e2e piattaforma: ${{ job.status }} (non bloccante — promozione a required tracciata in UC 0005)" >> "$GITHUB_STEP_SUMMARY"
 
   # ── oasdiff: breaking change API — SEMPRE bloccante (#10 35) ───────────────
   # Confronta gli spec OpenAPI committati (base della PR ↔ head): un breaking

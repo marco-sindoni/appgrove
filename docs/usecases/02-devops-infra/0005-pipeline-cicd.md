@@ -118,6 +118,10 @@ GitHub sono tracciate in [docs/_BACKLOG.md](../../_BACKLOG.md), sezione "Attivaz
   regressione `queue-prefix` di questo UC, #10 37bis) parte **non bloccante** (`continue-on-error`): dopo un periodo
   di run stabili (indicativamente 2–3 settimane senza falsi rossi) va promosso a **required** in branch protection e
   tolto il `continue-on-error`. **Proprietario**: UC 0005 (configurazione repo, vedi anche _BACKLOG "Attivazione").
+- **Promozione del job `platform` di verify-pr a check bloccante** _(tracciato dalla change `0069-use-case-0090-…`)_ —
+  stessa parabola dello smoke qui sopra: la suite end-to-end di piattaforma (area `platform` di `run-tests.sh`,
+  UC 0090) parte **non bloccante** (`continue-on-error`) e va promossa a **required** dopo un periodo di run
+  stabili. **Proprietario**: UC 0005.
 - **Prima esecuzione live + configurazione repo GitHub** (variabile `AWS_ACCOUNT_ID`, environment `prod`, branch
   protection/check required, `INFRACOST_API_KEY`, verifica fatturazione runner ARM64 su repo privato) →
   [docs/_BACKLOG.md](../../_BACKLOG.md), "Attivazione ambienti cloud".

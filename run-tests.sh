@@ -23,6 +23,11 @@
 #                nei profili di spedizione prod/cloud, config finta, validazione config) + stack-headless.sh
 #                (Postgres+ElasticMQ veri, migrate+seed, 3 servizi in profilo dev, login end-to-end).
 #                Chiude la classe di bug "l'app non parte fuori dal profilo test" (regressione queue-prefix).
+#   • platform — tools/platform-e2e/ (UC 0090) → suite end-to-end di PIATTAFORMA: browser vero (Playwright)
+#                sui frontend costruiti davvero, contro lo stack backend VERO (Postgres+ElasticMQ+Mailpit,
+#                tutti i servizi in profilo dev su porte dedicate +12000) con email reali verificate via
+#                Mailpit. Journey indipendenti, un tenant fresco ciascuno. FUORI dal gate rapido per-change
+#                (come tooling/smoke), dentro l'esecuzione completa. [richiede Docker]
 #   • site     — site/ (Astro SSG, UC 0036)    → vitest (renderer legali/i18n + template landing via Container API,
 #                UC 0038) + `astro build` + controllo post-build (parità 5 lingue, nessun token residuo, hreflang,
 #                noindex, link interni, + landing per-app: parità 5 lingue + Open Graph, UC 0038).
@@ -32,7 +37,7 @@
 #
 # Uso:
 #   ./run-tests.sh                 # tutte le aree
-#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance | tooling | smoke
+#   ./run-tests.sh backend         # solo una/più aree: backend | frontend | infra | compliance | tooling | smoke | platform | site
 #   ./run-tests.sh frontend infra
 #   ./run-tests.sh -h
 set -uo pipefail
@@ -45,18 +50,18 @@ ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 warn() { printf '%s! %s%s\n' "$C_YEL" "$*" "$C_RESET"; }
 
-usage() { sed -n '2,22p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,42p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 # aree richieste (default: tutte)
 AREAS=()
 for a in "$@"; do
   case "$a" in
-    backend|frontend|infra|compliance|tooling|smoke|site) AREAS+=("$a") ;;
+    backend|frontend|infra|compliance|tooling|smoke|platform|site) AREAS+=("$a") ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | tooling | smoke | site)" >&2; exit 2 ;;
+    *) echo "area sconosciuta: $a (usa: backend | frontend | infra | compliance | tooling | smoke | platform | site)" >&2; exit 2 ;;
   esac
 done
-[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance tooling smoke site)
+[ ${#AREAS[@]} -eq 0 ] && AREAS=(backend frontend infra compliance tooling smoke platform site)
 
 declare -a RESULTS=()
 record() { RESULTS+=("$1|$2"); }   # area|esito(OK/FAIL/SKIP)
@@ -242,6 +247,18 @@ run_smoke() {
   "$ROOT/tools/smoke/boot-profiles.sh"   || rc=1
   "$ROOT/tools/smoke/stack-headless.sh"  || rc=1
   if [ "$rc" -eq 0 ]; then ok "smoke: ok"; record smoke OK; else fail "smoke: fallito"; record smoke FAIL; fi
+}
+
+# Suite e2e di piattaforma (UC 0090): browser vero + stack vero + Mailpit. Vedi tools/platform-e2e/README.md.
+run_platform() {
+  hdr "PLATFORM — tools/platform-e2e (browser vero su stack vero + Mailpit, journey J-*)"
+  ensure_colima
+  ensure_playwright   # stessa cache browser del frontend: install idempotente
+  if "$ROOT/tools/platform-e2e/run.sh"; then
+    ok "platform: journey verdi"; record platform OK
+  else
+    fail "platform: journey rossi (diagnosi: tools/platform-e2e/README.md)"; record platform FAIL
+  fi
 }
 
 # Vetrina Astro (UC 0036): renderer dei legali/i18n (vitest) + build statica reale

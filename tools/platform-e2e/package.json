@@ -1,0 +1,13 @@
+{
+  "name": "appgrove-platform-e2e",
+  "version": "0.1.0",
+  "description": "appgrove — suite end-to-end di piattaforma (UC 0090): browser vero contro stack backend vero + Mailpit",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "journeys": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1"
+  }
+}

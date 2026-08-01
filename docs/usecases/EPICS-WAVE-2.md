@@ -54,7 +54,7 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 14 | [0076](15-supporto-e-piattaforma/0076-disabilita-applicazione.md) | Disabilita applicazione (feature admin reversibile) | 15 | — | 0021, 0027, 0014, 0035 | 🟢 | ⬜ |
 | 15 | [0084](17-skill-e-tooling-contenuto/0084-skill-new-blog-post.md) | Skill `new-blog-post` | 17 | 0086 (soft) | 0042, 0057, 0046, 0040, 0041 | 🟢 | ⬜ |
 | **C2. Test end-to-end di piattaforma** |
-| 16 | [0090](20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md) | Fondamenta suite e2e di piattaforma (stack reale + Mailpit + primo journey) | 20 | — | 0058, 0018, 0020, 0023, 0029 | 🟢 | ⬜ |
+| 16 | [0090](20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md) | Fondamenta suite e2e di piattaforma (stack reale + Mailpit + primo journey) | 20 | — | 0058, 0018, 0020, 0023, 0029 | 🟢 | ✅ |
 | 17 | [0091](20-test-e2e-piattaforma/0091-e2e-platform-journey-utente.md) | Batteria journey e2e lato utente | 20 | 0090 | 0024, 0027, 0059, 0028, 0033, 0056 | 🟢 | ⬜ |
 | 18 | [0092](20-test-e2e-piattaforma/0092-e2e-platform-journey-admin.md) | Batteria journey e2e lato admin + guasti di piattaforma | 20 | 0090, 0076, 0077 | 0021, 0034 | 🟢 | ⬜ |
 | 19 | [0093](20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md) | Registro di copertura e2e + check meccanico | 20 | 0090, 0091, 0092 | 0045 | 🟢 | ⬜ |

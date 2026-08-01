@@ -13,18 +13,20 @@
 # Convive con lo stack dev acceso: porte alternative (1808x/19100) e DB condiviso
 # (migrate no-op, seed idempotente — gli stessi passi di app-start). I container compose
 # eventualmente avviati qui restano su (come farebbe app-start; CI è effimera comunque).
+#
+# I passi comuni (env, compose, migrate+seed, build artefatti, chiavi, avvio, readiness)
+# vivono in dev/lib/headless.sh, condivisi con la suite e2e di piattaforma (UC 0090).
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-# Scoperta servizi (UC 0046): sorgente unica di nomi/porte/ruoli. Nessun effetto collaterale.
-# shellcheck source=dev/lib/services.sh
-source "$ROOT/dev/lib/services.sh"
+# Libreria condivisa dell'avvio headless (sorge anche dev/lib/services.sh). Nessun effetto collaterale.
+# shellcheck source=dev/lib/headless.sh
+source "$ROOT/dev/lib/headless.sh"
 C_RESET=$'\033[0m'; C_GRN=$'\033[0;32m'; C_RED=$'\033[0;31m'; C_BLU=$'\033[1;36m'
 ok()   { printf '%s✓ %s%s\n' "$C_GRN" "$*" "$C_RESET"; }
 fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 step() { printf '%s▶ %s%s\n' "$C_BLU" "$*" "$C_RESET"; }
 
-BOOT_TIMEOUT="${BOOT_TIMEOUT:-120}"
 # Convive con lo stack dev acceso: ogni servizio gira sulla sua porta + 10000
 # (core 8080→18080, auth 9100→19100, …), così non collide mai con lo stack reale.
 SMOKE_PORT_OFFSET=10000
@@ -32,100 +34,49 @@ smoke_port() { printf '%s\n' "$(( $1 + SMOKE_PORT_OFFSET ))"; }
 AUTH_SVC="$(services_by_role auth | head -1)"
 AUTH_PORT="$(smoke_port "$(service_port "$AUTH_SVC")")"
 TMP_DIR="$(mktemp -d /tmp/appgrove-stack-smoke.XXXXXX)"
-PIDS=()
 cleanup() {
-  for p in "${PIDS[@]:-}"; do kill "$p" 2>/dev/null; done
+  for p in "${HEADLESS_PIDS[@]:-}"; do kill "$p" 2>/dev/null; done
   rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT
 
 # ── prerequisiti: Docker + env dev (stesse variabili di dev/.env di app-start) ─
 docker info >/dev/null 2>&1 || { fail "Docker non disponibile: lo smoke headless lo richiede."; exit 1; }
-# In CI dev/.env non esiste: lo si crea dall'esempio (stesso comportamento di ensure_env
-# in dev/lib/common.sh) PRIMA del compose, che lo legge automaticamente dalla dir dev/.
-[ -f "$ROOT/dev/.env" ] || cp "$ROOT/dev/.env.example" "$ROOT/dev/.env"
-set -a; . "$ROOT/dev/.env"; set +a
-POSTGRES_PORT="${POSTGRES_PORT:-5433}"; POSTGRES_DB="${POSTGRES_DB:-appgrove}"
-POSTGRES_USER="${POSTGRES_USER:-appgrove}"; POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-appgrove_local_dev}"
+headless_env || { fail "env dev non inizializzabile (dev/.env)"; exit 1; }
 
 # ── infra reale: Postgres + ElasticMQ dal compose dev (idempotente) ───────────
 step "Postgres + ElasticMQ (compose dev)…"
-( cd "$ROOT/dev" && docker compose up -d --wait postgres elasticmq ) \
-  || { fail "compose up postgres/elasticmq fallito"; exit 1; }
+headless_compose_up postgres elasticmq || { fail "compose up postgres/elasticmq fallito"; exit 1; }
 
 # ── migrazioni + seed: gli STESSI passi di app-start (idempotenti) ────────────
-step "Flyway migrate (dev migrate)…"
-"$ROOT/dev.sh" migrate || { fail "migrazioni fallite"; exit 1; }
-step "seed utenti (dev/seed/seed.sql, idempotente)…"
-docker exec -i "$(docker ps --format '{{.Names}}' | grep -m1 postgres)" \
-  psql -q -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$ROOT/dev/seed/seed.sql" \
-  || { fail "seed fallito"; exit 1; }
+step "Flyway migrate + seed utenti (idempotenti)…"
+headless_migrate_seed || { fail "migrazioni/seed falliti"; exit 1; }
 
 # ── artefatti con PROFILO DI BUILD dev + chiavi JWT locali ────────────────────
-# Build dedicata (-Dquarkus.profile=dev): il wiring a build-time deve essere quello
-# di sviluppo (es. payment provider = stub, non Paddle) come in `quarkus:dev` di
-# app-start — un jar impacchettato di default è "prod" a build-time e in dev
-# esploderebbe sul PaddlePaymentProvider non implementato (gated, UC 0022).
-# Nota: sovrascrive i jar in target/ — chi serve l'artefatto di spedizione
-# (boot-profiles.sh, CI deploy) fa la propria build.
-MODULES="$(discover_services | cut -f1 | paste -sd, -)"
-step "build artefatti in profilo dev (mvn package -Dquarkus.profile=dev): ${MODULES}…"
-( cd "$ROOT/services" && mvn -B -q -pl "$MODULES" -am package -DskipTests -Dquarkus.profile=dev ) \
-  || { fail "build artefatti fallita"; exit 1; }
-AUTH_KEYS="$ROOT/dev/auth"
-if [ ! -f "$AUTH_KEYS/privateKey.pem" ]; then
-  AUTH_KEYS="$TMP_DIR/auth-keys"; mkdir -p "$AUTH_KEYS"
-  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$AUTH_KEYS/privateKey.pem" 2>/dev/null
-  openssl rsa -in "$AUTH_KEYS/privateKey.pem" -pubout -out "$AUTH_KEYS/publicKey.pem" 2>/dev/null
-fi
+step "build artefatti in profilo dev (mvn package -Dquarkus.profile=dev)…"
+headless_build_artifacts || { fail "build artefatti fallita"; exit 1; }
+AUTH_KEYS="$(headless_auth_keys "$TMP_DIR")" || { fail "chiavi JWT locali non disponibili"; exit 1; }
 
-# ── avvio dei 3 servizi in profilo dev (porte alternative) ────────────────────
-JDBC="jdbc:postgresql://localhost:${POSTGRES_PORT}/${POSTGRES_DB}"
-start_service() { # <nome> <porta> [env extra...]
-  local name="$1" port="$2"; shift 2
-  local log="$TMP_DIR/$name.log"
-  env "$@" \
-      QUARKUS_DATASOURCE_JDBC_URL="$JDBC" \
-      QUARKUS_DATASOURCE_USERNAME="$POSTGRES_USER" \
-      QUARKUS_DATASOURCE_PASSWORD="$POSTGRES_PASSWORD" \
-      QUARKUS_HTTP_PORT="$port" \
-      java -Dquarkus.profile=dev -jar "$ROOT/services/$name/target/quarkus-app/quarkus-run.jar" \
-      > "$log" 2>&1 &
-  PIDS+=($!)
-}
+# ── avvio dei servizi in profilo dev (porte alternative) ──────────────────────
 step "avvio dei servizi scoperti in profilo dev (porte +$SMOKE_PORT_OFFSET)…"
 while IFS=$'\t' read -r svc app_id port schema role; do
   if [ "$role" = auth ]; then
     # auth ha bisogno delle chiavi di firma locali (le stesse che passa `dev up`).
-    start_service "$svc" "$(smoke_port "$port")" \
+    headless_start_service "$svc" "$(smoke_port "$port")" "$TMP_DIR/$svc.log" \
       AUTH_LOCAL_PRIVATE_KEY="$AUTH_KEYS/privateKey.pem" AUTH_LOCAL_PUBLIC_KEY="$AUTH_KEYS/publicKey.pem"
   else
-    start_service "$svc" "$(smoke_port "$port")"
+    headless_start_service "$svc" "$(smoke_port "$port")" "$TMP_DIR/$svc.log"
   fi
 done < <(discover_services)
 
 # ── readiness + asserzioni end-to-end ─────────────────────────────────────────
-wait_http() { # <nome> <url> <status atteso>
-  local name="$1" url="$2" expected="$3" i=0 code=""
-  while [ "$i" -lt "$BOOT_TIMEOUT" ]; do
-    code="$(curl -s -o /dev/null -w '%{http_code}' "$url" 2>/dev/null)" || true
-    [ "$code" = "$expected" ] && { ok "$name: $url → $code"; return 0; }
-    sleep 1; i=$((i + 1))
-  done
-  fail "$name: $url → atteso $expected, ottenuto '${code:-nessuna risposta}' (timeout ${BOOT_TIMEOUT}s)"
-  # diagnostica: causa radice + coda del log
-  grep -B2 -A8 "Caused by" "$TMP_DIR/$name.log" 2>/dev/null | head -30
-  tail -15 "$TMP_DIR/$name.log" 2>/dev/null
-  return 1
-}
-
-# Readiness per ruolo: auth espone il JWKS, core e le app la health readiness di Quarkus.
 rc=0
 while IFS=$'\t' read -r svc app_id port schema role; do
-  if [ "$role" = auth ]; then
-    wait_http "$svc" "http://localhost:$(smoke_port "$port")/api/auth/jwks" 200 || rc=1
+  url="$(headless_service_ready_url "$role" "$(smoke_port "$port")")"
+  if headless_wait_http "$svc" "$url" 200 "$TMP_DIR/$svc.log"; then
+    ok "$svc: $url → 200"
   else
-    wait_http "$svc" "http://localhost:$(smoke_port "$port")/q/health/ready" 200 || rc=1
+    fail "$svc: readiness fallita"; rc=1
   fi
 done < <(discover_services)
 
