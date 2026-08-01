@@ -2,7 +2,9 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '../lib/cn'
 import { Icon } from './Icon'
 
-export interface PageHeaderProps extends HTMLAttributes<HTMLElement> {
+// `title` è escluso dagli attributi HTML ereditati: l'attributo nativo omonimo (il suggerimento del
+// browser) è una stringa, mentre qui il titolo è contenuto React — vedi i titoli composti delle storie.
+export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title: ReactNode
   /** Sottotitolo sotto il titolo (13–14px, colore attenuato). */
   subtitle?: ReactNode

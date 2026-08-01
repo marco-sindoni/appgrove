@@ -131,8 +131,10 @@ perché un modello resta indietro di proposito e cosa lo riallineerebbe — è
 ## Esecuzione dei test (non negoziabile)
 
 Lo script **[run-tests.sh](run-tests.sh)** alla root è la **sorgente di verità unica** per "lanciare tutti i test automatici
-di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via npm/vitest **+ Playwright e2e L2**, browser
-auto-installato — UC 0029; la suite L3 sandbox è pre-release e resta fuori), infra (`infra/` via Terraform), compliance
+di tutti i moduli": backend (`services/*` via Maven), frontend (`frontend/` via **controllo dei tipi `tsc --noEmit`** +
+npm/vitest **+ Playwright e2e L2**, browser auto-installato — UC 0029; il controllo dei tipi è parte del cancello dalla
+change 0075, perché `vite build` traspila senza verificare i tipi; la suite L3 sandbox è pre-release e resta fuori),
+infra (`infra/` via Terraform), compliance
 (`tools/compliance` via Node — parità lingue dei manifesti dati + freshness RoPA, UC 0030, + test dello scanner segnali
 privacy `privacy-scan.mjs`, UC 0031; il check `@PersonalData`↔manifesto gira nei test backend), smoke (`tools/smoke` —
 avvio REALE degli artefatti nei profili di spedizione + stack backend headless con login vero, #10 37bis: chiude la
