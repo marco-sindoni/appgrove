@@ -110,3 +110,14 @@ _Tracciato dalla change `0029-use-case-0033-…`:_
   `GET /gdpr/exports` dei job del tenant). Miglioria differita: endpoint di elenco (o persistenza del
   riferimento lato client) quando nascerà la vista aggregata — naturale con la console di **UC 0034**
   (single pane export/recessi/eliminazioni) o come estensione minore di questo use case.
+
+## Punti aperti / decisioni differite
+
+_Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente), osservato su stack reale:_
+
+- **Il messaggio di conferma del recesso per-app può non essere mai visibile** — «Withdrawal completed: app data
+  deletion has started.» è renderizzato **dentro la riga dell'app**; appena l'elenco delle app attivate si rinfresca
+  (la subscription è stata dismessa dal recesso) la riga viene smontata e il messaggio sparisce, o non compare del
+  tutto. Con backend simulato (test L2) non si vede perché l'elenco è statico. Rimedio naturale: spostare la conferma
+  fuori dalla lista (avviso di pagina o notifica persistente). Non blocca il diritto, è un difetto di riscontro
+  all'utente. Il journey J-PRIVACY accetta come esito valido sia il messaggio sia l'app sparita dall'elenco.

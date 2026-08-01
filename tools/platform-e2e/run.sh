@@ -36,10 +36,12 @@ fail() { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET"; }
 step() { printf '%s▶ %s%s\n' "$C_BLU" "$*" "$C_RESET"; }
 
 # ── argomenti: --journey <id> → grep Playwright; il resto passa a Playwright ──
+# Con --journey si aggiunge --no-deps: altrimenti la dependency di progetto (legal-serial →
+# chromium, vedi playwright.config.ts) rieseguirebbe TUTTI i journey per rilanciarne uno solo.
 PW_ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in
-    --journey) PW_ARGS+=(--grep "$2"); shift 2 ;;
+    --journey) PW_ARGS+=(--grep "$2" --no-deps); shift 2 ;;
     *) PW_ARGS+=("$1"); shift ;;
   esac
 done
@@ -58,11 +60,17 @@ trap cleanup EXIT
 # ── 1. infra vera: Postgres + ElasticMQ + Mailpit dal compose dev ─────────────
 docker info >/dev/null 2>&1 || { fail "Docker non disponibile: la suite di piattaforma lo richiede."; exit 1; }
 headless_env || { fail "env dev non inizializzabile (dev/.env)"; exit 1; }
-step "Postgres + ElasticMQ + Mailpit (compose dev, idempotente)…"
-headless_compose_up postgres elasticmq mailpit || { fail "compose up fallito"; exit 1; }
+step "Postgres + ElasticMQ + Mailpit + MinIO (compose dev, idempotente)…"
+# MinIO serve all'export GDPR di J-PRIVACY (bucket gdpr-export, creato da minio-init): senza,
+# il job di export fallirebbe sempre (UC 0091, decisione 9 della change 0070).
+headless_compose_up postgres elasticmq mailpit minio || { fail "compose up fallito"; exit 1; }
+# minio-init è one-shot (crea il bucket ed esce): niente --wait, che fallirebbe sul container uscito.
+( cd "$ROOT/dev" && docker compose up -d minio-init ) || { fail "minio-init fallito"; exit 1; }
 MAILPIT_API="http://localhost:${MAILPIT_UI_PORT}"
 headless_wait_http mailpit "$MAILPIT_API/api/v1/info" 200 \
   || { fail "Mailpit non raggiungibile su $MAILPIT_API"; exit 1; }
+headless_wait_http minio "http://localhost:${MINIO_API_PORT:-9000}/minio/health/live" 200 \
+  || { fail "MinIO non raggiungibile su :${MINIO_API_PORT:-9000}"; exit 1; }
 
 # ── 2. migrazioni + seed (gli stessi passi di app-start, idempotenti) ─────────
 step "Flyway migrate + seed (idempotenti)…"
@@ -77,14 +85,23 @@ step "avvio dei servizi scoperti (porte +$PLATFORM_PORT_OFFSET)…"
 AUTH_SVC="$(services_by_role auth | head -1)"
 SUITE_JWKS="http://localhost:$(platform_port "$(service_port "$AUTH_SVC")")/api/auth/jwks"
 SUITE_ORIGINS="http://localhost:$BACKOFFICE_PORT,http://localhost:$ADMIN_PORT"
+# URL del core DELLA SUITE per il rest-client `core-api` delle app (proiezione entitlement,
+# UC 0046): in profilo dev punta a :8080 (core dello stack dev) — per un tenant fresco la
+# rete di sicurezza "fetch-on-miss" chiamerebbe il core sbagliato e il gate fallirebbe
+# chiuso (402 su ogni app per ogni tenant nuovo della suite).
+SUITE_CORE_URL="http://localhost:$(platform_port "$(service_port "$(services_by_role core | head -1)")")"
 while IFS=$'\t' read -r svc app_id port schema role; do
   if [ "$role" = auth ]; then
     # auth: chiavi di firma locali + link email verso il server SPA della suite + Mailpit
     # del compose (auth.app-base-url / mailer sono già proprietà per-ambiente).
+    # Il bypass dev del 2FA è DISATTIVATO per la suite (UC 0091, J-PWD esercita la challenge
+    # reale del login a due passi); la forma _DEV_ serve perché la proprietà %dev. di
+    # application.properties vince sull'ambiente non profilato (stessa ragione del CORS sotto).
     headless_start_service "$svc" "$(platform_port "$port")" "$RUN_DIR/$svc.log" \
       AUTH_LOCAL_PRIVATE_KEY="$AUTH_KEYS/privateKey.pem" AUTH_LOCAL_PUBLIC_KEY="$AUTH_KEYS/publicKey.pem" \
       AUTH_APP_BASE_URL="http://localhost:$BACKOFFICE_PORT" \
-      QUARKUS_MAILER_HOST=localhost QUARKUS_MAILER_PORT="$MAILPIT_SMTP_PORT"
+      QUARKUS_MAILER_HOST=localhost QUARKUS_MAILER_PORT="$MAILPIT_SMTP_PORT" \
+      AUTH_LOCAL_TOTP_BYPASS=false _DEV_AUTH_LOCAL_TOTP_BYPASS=false
   else
     # core/app: due override d'ambiente obbligatori per la suite —
     # 1. JWKS: in profilo dev punta all'auth dello stack dev (:9100), qui va rediretto
@@ -97,7 +114,8 @@ while IFS=$'\t' read -r svc app_id port schema role; do
     headless_start_service "$svc" "$(platform_port "$port")" "$RUN_DIR/$svc.log" \
       MP_JWT_VERIFY_PUBLICKEY_LOCATION="$SUITE_JWKS" \
       QUARKUS_HTTP_CORS_ORIGINS="$SUITE_ORIGINS" \
-      _DEV_QUARKUS_HTTP_CORS_ORIGINS="$SUITE_ORIGINS"
+      _DEV_QUARKUS_HTTP_CORS_ORIGINS="$SUITE_ORIGINS" \
+      QUARKUS_REST_CLIENT_CORE_API_URL="$SUITE_CORE_URL"
   fi
 done < <(discover_services)
 

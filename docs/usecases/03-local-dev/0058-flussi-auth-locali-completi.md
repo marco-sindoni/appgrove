@@ -75,3 +75,12 @@ _Aggiunti dalla change `0012-use-case-0017-…`: la UI auth (UC 0017) ha riscont
 - **Esporre lo stato `totpEnabled`** — nessun claim/endpoint indica se il 2FA è attivo, quindi il banner di nudge della
   shell non riflette la verità server (oggi è dismissibile lato client). Aggiungere il flag nell'id-token o un
   `GET /api/auth/me` (coordinare con `users/me` del core UC 0013).
+
+_Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente):_
+
+- **Il reset password non invalida le sessioni (refresh token)** — il provider locale usa refresh token JWT
+  **stateless** senza alcuno stato server-side (`logout` è no-op, nessuna tabella di refresh): dopo un reset il
+  vecchio refresh resta valido fino alla scadenza naturale. UC 0091 (J-PWD) si aspettava «il vecchio refresh non
+  vale più dopo il reset»: l'assert è escluso dal journey finché il provider non implementa una revoca (per es.
+  `token_version`/`credentials_updated_at` verificato al refresh, o una allowlist). In cloud va verificato anche
+  il comportamento di Cognito. Proprietario: questo UC.

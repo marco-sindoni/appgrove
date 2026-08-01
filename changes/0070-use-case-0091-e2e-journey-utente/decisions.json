@@ -1,0 +1,136 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata espressamente all'invocazione (orchestratore go-fast). Nessuna fermata di workflow: requisiti scritti e committati senza revisione, implementazione immediata, commit senza consenso ma solo a suite completa ./run-tests.sh verde. Merge e push restano al chiamante. Fermate di escalation attive."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0091 (batteria journey end-to-end lato utente): l'invocazione lo nomina esplicitamente e lo scope corrisponde a docs/usecases/20-test-e2e-piattaforma/0091-e2e-platform-journey-utente.md. Numero progressivo derivato da changes/: 0070 (ultimo esistente 0069), coincidente con l'id atteso dal chiamante. Da qui il branch change/0070-use-case-0091-e2e-journey-utente. Lo stato implementativo delle storie evo vive in docs/usecases/EPICS-WAVE-2.md (decisione della change 0065): la riga di UC 0091 passa a 🟡 all'apertura e a ✅ alla chiusura.",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Riga UC 0091 → 🟡 all'apertura della change."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) App per i journey a pagamento (J-BUY, J-MEMBERS, J-SUB, J-PRIVACY): Mini-CRM (tier team). Nel catalogo attuale non esiste alcuna combinazione app-nel-registry-frontend × tier-a-pagamento × app-attiva (fatture ha solo il tier free, demo non è nel catalogo, notes/teams sono fixture senza modulo frontend, crm è volutamente inactive dalla change 0042). Il crm viene attivato a runtime, una volta per esecuzione, con la leva admin sanzionata PATCH /api/platform/v1/admin/apps/{id} {status:active} (platform-admin del seed admin@appgrove.test, password dev universale) in un global-setup Playwright, e ripristinato inactive nel global-teardown; la sync pricing a ogni avvio della suite riporta comunque lo stato allo YAML. Non si tocca pricing/crm.yaml: è una decisione di prodotto, e UC 0091 esclude estensioni di prodotto. J-REG resta verde perché asserta sidebar ≡ entitlements dell'API, baseline freemium inclusa.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/global-setup.ts",
+        "description": "Attivazione crm via leva admin, deterministica per l'intera run."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) J-QUOTA copre la quota a consumo (flow) di fatture fino al 429 con invito all'upgrade (banner in-app e banner globale con CTA verso /billing); il ramo dello use case «upgrade di tier → la creazione riesce di nuovo» non è esercitabile su fatture (nessun tier a pagamento) e viene esercitato sulla metrica a giacenza (stock) dei posti crm dentro J-MEMBERS: posti esauriti (429) → acquisto del tier team via checkout reale → il webhook aggiorna l'entitlement → l'assegnazione riesce. Rimando scritto nei punti aperti di UC 0091: estendere J-QUOTA al ciclo completo quando fatture avrà un tier a pagamento.",
+    "files": [
+      {
+        "file": "docs/usecases/20-test-e2e-piattaforma/0091-e2e-platform-journey-utente.md",
+        "description": "Punti aperti: rimando sul ramo upgrade di J-QUOTA legato al futuro tier a pagamento di fatture."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Helper paddle(): firma HMAC-SHA256 dei webhook sintetici (header ts=<unix>;h1=hex(hmac(secret, ts+':'+body)), secret dev local-dev-paddle-webhook-secret) e invio sull'ingest reale POST /api/platform/v1/webhooks/paddle — stessa pipeline ingest → coda → consumer del prodotto; più l'acquisto programmatico via POST /api/platform/v1/checkout/apps/{slug} (l'attivazione stub emette i webhook della pipeline) con attesa a polling dell'attivazione. Scelto il webhook firmato diretto per la fine-periodo (controllo pieno su event_id/occurred_at); l'endpoint dev /dev/paddle/scenarios resta la leva dei test L1."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Helper totp(): implementazione RFC 6238 in Node (HMAC-SHA1, 6 cifre, periodo 30s, secret Base32) coerente con TotpService del servizio auth (dev.samstevens.totp, tolleranza ±1 periodo). La suite disattiva il bypass dev del 2FA per il solo servizio auth (variabili _DEV_AUTH_LOCAL_TOTP_BYPASS=false e AUTH_LOCAL_TOTP_BYPASS=false in run.sh — la forma _DEV_ serve perché la proprietà %dev. di application.properties vince sull'ambiente liscio), così J-PWD esercita la challenge reale a due passi del login; gli altri journey non ne risentono (nessun loro utente ha il 2FA attivo).",
+    "files": [
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "Override bypass 2FA per il servizio auth della suite."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) L'assert dello use case «il vecchio refresh non vale più dopo il reset» è escluso da J-PWD: il provider auth locale usa refresh token JWT stateless senza alcuno stato server-side (nessuna tabella di refresh, logout no-op, resetPassword fa solo l'upsert delle credenziali), quindi il reset non invalida le sessioni: l'assert fallirebbe contro il prodotto attuale. È un divario di prodotto dell'emulatore locale, non un problema di test: tracciato nei punti aperti di UC 0058 (invalidazione sessioni al reset) e richiamato in UC 0091. J-PWD verifica in compenso che la vecchia password non valga più (401 sul login API).",
+    "files": [
+      {
+        "file": "docs/usecases/03-local-dev/0058-flussi-auth-locali-completi.md",
+        "description": "Punti aperti: il provider locale non invalida i refresh al reset password (divario rispetto all'attesa di UC 0091)."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Leva d'ambiente di J-LEGAL: UPSERT su platform.legal_version (major+1 e versione 2.0.0 del componente terms) via docker exec psql — non esiste un endpoint dev per pubblicare una nuova versione, e la scrittura simula l'atto di pubblicazione della CI/deploy, non un'azione utente: per questo db.ts guadagna dbExec, dichiarato e riservato alle sole leve d'ambiente. Il journey è isolato in un progetto Playwright dedicato che dipende dal progetto principale (gira dopo, serializzato) perché la versione legale è globale a tutti i tenant; a fine journey la riga viene ripristinata, e in ogni caso la sync legale allo startup dei servizi riallinea la versione a ogni esecuzione della suite (idempotenza della doppia esecuzione).",
+    "files": [
+      {
+        "file": "tools/platform-e2e/playwright.config.ts",
+        "description": "Due progetti: journeys (paralleli) e legal (serializzato, dependency su journeys)."
+      },
+      {
+        "file": "tools/platform-e2e/helpers/db.ts",
+        "description": "dbExec riservato alle leve d'ambiente (pubblicazione versione legale)."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) L'orchestratore avvia anche minio e minio-init dal compose dev: senza MinIO (bucket gdpr-export) l'export GDPR fallisce sempre e J-PRIVACY non è esercitabile. L'export felice non spedisce email (la notifica è solo in-app per contratto di UC 0033) e non esistono email di piattaforma per eliminazione avviata/annullata: le email reali della batteria restano l'invito (J-MEMBERS) e il reset password (J-PWD), oltre alla verifica di J-REG.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "compose up esteso a minio e minio-init."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Criterio di riparto piattaforma/L2 (§1 di UC 0091): nessuna spec L2 rimossa. Le spec esistenti (checkout, subscriptions, fatture, crm, members, privacy, legal) sono il «percorso felice minimo» con backend simulato che il criterio consente di mantenere in entrambe le sedi, più stati difficili da produrre su stack vero (export fallito, entitlement illeggibili, route guard) che restano di competenza L2; i journey di piattaforma aggiungono ciò che l'L2 non può coprire (email reali, webhook in coda, effetti su DB, purge, 429 reale sui posti). La mappa di cosa vive dove confluisce nel registro di copertura di UC 0093."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Dettagli implementativi dei journey: (a) l'identificativo dei posti crm è il cognito_sub dell'utente — è il valore che SeatAccess confronta col subject del JWT, quindi è l'unico che rende il posto effettivo; il terzo posto usa un identificativo arbitrario (il servizio non valida l'appartenenza al tenant, comportamento attuale del prodotto); (b) J-PRIVACY crea un secondo tenant canarino e asserta che i suoi dati NON compaiano nell'archivio di export scaricato (validazione con unzip: voci platform.json e crm.json, contenuti del solo tenant richiedente); (c) timeout per-test alzato a 180s per i journey lunghi (J-MEMBERS, J-PRIVACY), retry resta 1; (d) il rilancio di un singolo journey (run.sh --journey) aggiunge --no-deps, altrimenti la dependency di progetto legal-serial→chromium rieseguirebbe tutta la batteria; (e) gli accessi da browser dei journey passano dall'helper browserLogin, che attraversa il gate legale del primo ingresso come farebbe l'utente (stessa scelta di J-REG, change 0069)."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Scoperta alla prima esecuzione reale (stessa famiglia degli override JWKS/CORS della change 0069): i servizi app (fatture, crm) configurano il rest-client `core-api` su http://localhost:8080 — il core dello STACK DEV, non quello della suite. Per un tenant fresco la proiezione entitlement locale è vuota e la rete di sicurezza fetch-on-miss (UC 0046) chiamava il core sbagliato: il gate falliva chiuso e OGNI app rispondeva 402 a OGNI tenant nuovo della suite (rosso di J-QUOTA/J-SUB/J-PRIVACY/J-MEMBERS). run.sh ora passa ai servizi non-auth QUARKUS_REST_CLIENT_CORE_API_URL puntato al core della suite (la proprietà è non profilata, quindi basta l'ambiente liscio).",
+    "files": [
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "Override QUARKUS_REST_CLIENT_CORE_API_URL verso il core della suite per i servizi non-auth."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Instabilità corretta subito (un journey instabile è un difetto, non un dettaglio): alla seconda esecuzione J-PRIVACY è passato solo al ritento perché l'attesa del messaggio «Withdrawal completed» usava il timeout predefinito di 5s, mentre il recesso per-app risponde dopo che il core ha pubblicato sulla coda di purge — sotto esecuzione parallela dei journey quella latenza supera i 5s. Corretto allargando l'attesa ESPLICITA sulla stessa condizione a 30s (la finestra già usata per le altre attese asincrone del journey), senza introdurre attese a tempo fisso e senza indebolire l'asserzione.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-PRIVACY.spec.ts",
+        "description": "Attesa esplicita a 30s sull'esito del recesso per-app."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Instabilità di J-PRIVACY risolta alla radice, non con un timeout più lungo: contro il backend vero il messaggio «Withdrawal completed» vive DENTRO la riga dell'app e viene smontato appena l'elenco delle app attivate si rinfresca (la subscription è stata dismessa dal recesso) — con backend simulato non si nota perché l'elenco è statico. Il journey attende ora la prima delle due evidenze equivalenti di successo (messaggio oppure app sparita dall'elenco) e conserva gli assert DB su purge e subscription. Il difetto di riscontro all'utente è annotato nei punti aperti di UC 0033, che lo possiede.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-PRIVACY.spec.ts",
+        "description": "Attesa sull'esito osservabile del recesso (messaggio o app non più elencata)."
+      },
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0033-self-service-gdpr.md",
+        "description": "Punti aperti: la conferma del recesso può non essere mai visibile."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Due rossi comparsi SOLO nella prima esecuzione completa di ./run-tests.sh — frontend (test dei moduli crm/fatture con richiesta MSW non gestita verso me/legal/status) e smoke (build Quarkus con NoSuchFileException su target/classes/META-INF/openapi/openapi.yaml) — non appartengono a questa change: l'albero non tocca né il frontend né i servizi, e rieseguite subito dopo da sole entrambe le aree sono verdi. Sono instabilità dipendenti dall'ordine delle aree, annotate in docs/_BACKLOG.md con sospetta causa e rimedio candidato, con owner #03 (frontend) e #07/#04 (smoke).",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Nuova sezione: instabilità osservate nell'esecuzione completa di run-tests.sh."
+      }
+    ]
+  }
+]

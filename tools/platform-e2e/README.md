@@ -18,10 +18,28 @@ nessun fornitore esterno: tutto offline e deterministico.
 ```bash
 ./run-tests.sh platform            # via l'entrypoint canonico
 tools/platform-e2e/run.sh          # diretta: tutti i journey
-tools/platform-e2e/run.sh --journey J-REG   # un solo journey (grep Playwright)
+tools/platform-e2e/run.sh --journey J-REG   # un solo journey (grep Playwright + --no-deps)
 ```
 
 Prerequisiti: Docker (Colima), Java/Maven, Node. Nessun ambiente cloud.
+
+## I journey (UC 0090 + batteria utente UC 0091)
+
+| ID | Funzionalità coperta | Note |
+|---|---|---|
+| `J-REG` | Registrazione: signup → email di verifica reale → onboarding → dashboard (+ gate legale del primo ingresso) | UC 0090 |
+| `J-BUY` | Acquisto e attivazione: catalogo → tier a pagamento → fake Paddle → webhook in coda → sidebar + modulo montato | Mini-CRM Team |
+| `J-QUOTA` | Quota a consumo (fatture): banner, tetto, 429 reale + invito upgrade | il ramo upgrade è in J-MEMBERS (dec. 4, change 0070) |
+| `J-MEMBERS` | Inviti B2B con email reale, seconda sessione browser, posti (seat) fino al 429, upgrade che sblocca, ruoli, rimozione, ultimo owner | Mini-CRM |
+| `J-SUB` | Ciclo abbonamento: downgrade programmato, disdetta, scadenza via webhook firmato, 402 + dati intatti, riattivazione | Mini-CRM Team |
+| `J-PWD` | Reset password con email reale + 2FA TOTP con challenge reale al login (bypass dev spento per l'auth della suite) | |
+| `J-PRIVACY` | Diritti GDPR: rettifica, export asincrono reale (ZIP su MinIO, download validato), recesso per-app con purge, eliminazione con grace | |
+| `J-LEGAL` | Ri-accettazione legale: nuova major via leva d'ambiente → gate bloccante, esenzione `/privacy`, accettazione registrata | progetto `legal-serial`, gira DOPO gli altri |
+
+Stato di catalogo: il **global-setup** attiva l'app `crm` (leva admin del seed platform-admin) per
+l'intera esecuzione e il teardown la ripristina `inactive` — è l'unica app del registry frontend con
+un tier a pagamento (decisione 3, change 0070). I journey ordinari girano **in parallelo** (tenant
+fresco ciascuno); `J-LEGAL` è serializzato dopo gli altri perché la versione legale è globale.
 
 **Convivenza**: i servizi girano su porta reale **+12000** (core 8080→20080, auth 9100→21100),
 le SPA su **:24173** (backoffice) e **:24174** (admin) — la suite convive con lo stack dev
@@ -40,9 +58,14 @@ su a fine corsa (come per lo smoke); i processi della suite vengono fermati.
   nuova app entra nella suite senza toccare nulla qui.
 - `helpers/` — libreria condivisa dei journey (per gli UC 0091/0092):
   - `mailbox` — attesa/lettura/estrazione link dalle email via API Mailpit (polling, timeout parlante);
-  - `db` — asserzioni leak-detector via `docker exec psql` (sole letture, query parametrizzate);
-  - `api` — `tenant()` (tenant fresco via signup+verifica email reale) e `login()` via API.
-  - `paddle()` e `totp()` arrivano coi loro primi consumatori (UC 0091/0092).
+  - `db` — asserzioni leak-detector via `docker exec psql` (sole letture; `dbExec` è riservato
+    alle **leve d'ambiente**, oggi solo la pubblicazione della versione legale di J-LEGAL);
+  - `api` — `tenant()` (tenant fresco via signup+verifica email reale), `login()`/`loginRaw()`/
+    `loginMfa()` via API, `pollUntil()` (attese su condizione), `authedFetch()`;
+  - `paddle` — acquisto programmatico via checkout reale + **webhook sintetici firmati** (HMAC
+    del contratto UC 0023) inviati all'ingest vero;
+  - `totp` — codici RFC 6238 (SHA1/6 cifre/30s) coerenti col servizio auth;
+  - `browser` — `browserLogin()` e attraversamento del gate legale del primo ingresso.
 - `journeys/` — un file per journey; il nome del file/test è l'ID (registro di copertura: UC 0093).
 
 ## Diagnosi dopo un rosso

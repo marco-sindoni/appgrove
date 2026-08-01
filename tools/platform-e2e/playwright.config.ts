@@ -19,13 +19,31 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: 1,
   reporter: 'list',
-  timeout: 120_000,
+  timeout: 180_000,
   outputDir: './test-results',
+  globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   use: {
     baseURL: process.env.PLATFORM_BACKOFFICE_URL ?? 'http://localhost:24173',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Due progetti (UC 0091, decisione 8 della change 0070): i journey ordinari girano in
+  // parallelo (tenant fresco ciascuno, nessuno stato condiviso); J-LEGAL usa una leva
+  // d'ambiente GLOBALE (bump della versione legale, vale per tutti i tenant) e quindi gira
+  // da solo, DOPO gli altri, via dependency di progetto.
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /J-LEGAL\.spec\.ts/,
+    },
+    {
+      name: 'legal-serial',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /J-LEGAL\.spec\.ts/,
+      dependencies: ['chromium'],
+    },
+  ],
 })
