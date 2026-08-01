@@ -28,6 +28,14 @@
       "perche": "Modulo frontend d'esempio: è il gemello da cui derivano i modelli del modulo backoffice."
     },
     {
+      "percorso": "tools/platform-e2e/journeys/J-QUOTA.spec.ts",
+      "perche": "Journey core-loop dell'app #1: è il gemello da cui deriva il modello del journey di piattaforma che ogni app nuova eredita (UC 0094). Se cresce qui e non nel modello, ogni app nascerà collaudata peggio."
+    },
+    {
+      "percorso": "tools/platform-e2e/helpers",
+      "perche": "Helper condivisi della suite end-to-end (tenant, browser, database, posta, pagamenti): il journey generato li usa. Un helper che cambia firma o ne sostituisce un altro cambia il pattern anche senza toccare il modello."
+    },
+    {
       "percorso": "frontend/apps/backoffice/src/registry/registry.ts",
       "perche": "Registro moduli frontend: il generatore vi registra il modulo nuovo."
     },

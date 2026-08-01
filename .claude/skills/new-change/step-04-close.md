@@ -191,6 +191,29 @@ and tell me which. I will not ask for commit consent until this is resolved.
 Then STOP and resolve it before going further. This gate is symmetric to the deferred-decisions one above:
 both exist because the thing they guard is invisible at commit time and expensive later.
 
+## Verify the end-to-end coverage registry gate (UC 0093/0094)
+
+Before the commit gate, confirm the coverage step of step-03 actually landed:
+
+```bash
+node tools/e2e-coverage/check.mjs
+```
+
+- **Exit 0** → the registry matches reality. Record the outcome in the implementation log
+  ("copertura e2e: <voce aggiunta | voce estesa | nessun impatto>") and move on.
+- **Exit ≠ 0** → registry and repository diverge. Fix the registry (or the test), never bypass:
+  `docs/testing/README.md` ("Come leggere un rosso") names the remedy for each rule.
+
+Two verifications the command cannot make for you, so make them by reading:
+
+1. the change **asked** the coverage question and the answer is in `decisions.json` — "nessun impatto end-to-end"
+   included. A change that never asked is the exact failure UC 0094 exists to prevent;
+2. if this change implements a **use case with an evolutionary story** (`changes/*-use-case-NNNN-*`), that use case is
+   no longer exempt as `non-implementato`: it is either in `usecases_con_superficie` with at least one entry, or
+   exempt for a *permanent* reason that is actually true.
+
+This gate is symmetric to the scaffold-parity one: both guard something invisible at commit time and expensive later.
+
 ## Promemoria "landing stale" (UC 0057, #14 dec.55)
 
 Before the commit gate, check whether this change may have made a **published landing stale**. A landing tells an

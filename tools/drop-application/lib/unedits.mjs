@@ -16,7 +16,7 @@
 // è già presente (evitare il doppio innesto) — le unedit tollerano l'assenza:
 // disfare due volte deve essere sicuro, innestare due volte no.
 // ─────────────────────────────────────────────────────────────────────────────
-import { EDITED_FILES } from '../../new-application/lib/edits.mjs'
+import { EDITED_FILES, coverageBlockEnd, coverageBlockStart } from '../../new-application/lib/edits.mjs'
 import { toCamelCase } from '../../new-application/lib/context.mjs'
 
 /** Toglie il modulo Maven dall'elenco dei moduli aggregati. */
@@ -148,6 +148,35 @@ export function uneditLandingsIndex(content, ctx) {
   return { content: next, changed }
 }
 
+/**
+ * Toglie dal registro di copertura end-to-end il blocco dei due percorsi dell'app
+ * (`J-<APP>` di piattaforma e `L2-<APP>` di livello 2). Inverso di `editCoverageRegistry`.
+ *
+ * Il blocco è delimitato dai due marcatori-commento che il generatore ha scritto: si rimuove da
+ * quello di apertura (con la riga vuota che lo precede, se c'è) a quello di chiusura. Nessuna
+ * interpretazione dello YAML — che qui sarebbe anche distruttiva, perché riscrivere il file con un
+ * serializzatore cancellerebbe la prosa dei commenti, che di questo registro è metà del valore.
+ */
+export function uneditCoverageRegistry(content, ctx) {
+  const start = coverageBlockStart(ctx.APP_ID)
+  const end = coverageBlockEnd(ctx.APP_ID)
+  const lines = content.split('\n')
+  const startAt = lines.findIndex((line) => line === start)
+  if (startAt < 0) return { content, changed: false }
+
+  const endAt = lines.findIndex((line, i) => i >= startAt && line === end)
+  if (endAt < 0) {
+    throw new Error(
+      `docs/testing/copertura-e2e.yaml: trovato il marcatore di apertura dei percorsi di ${ctx.APP_ID} `
+      + `ma non la chiusura \`${end.trim()}\`. Nessuna modifica applicata: correggere il file a mano.`,
+    )
+  }
+  // Include la riga vuota che il generatore antepone al blocco, se presente.
+  const from = startAt > 0 && lines[startAt - 1].trim() === '' ? startAt - 1 : startAt
+  lines.splice(from, endAt - from + 1)
+  return { content: lines.join('\n'), changed: true }
+}
+
 /** Mappa percorso → funzione inversa. Le CHIAVI devono coprire EDITED_FILES (test di parità). */
 export const UNEDITORS = {
   'services/pom.xml': uneditServicesPom,
@@ -156,6 +185,7 @@ export const UNEDITORS = {
   'services/core/src/main/resources/pricing/index.yaml': uneditPricingIndex,
   'dev/elasticmq.conf': uneditElasticMq,
   'site/src/content/landings/index.ts': uneditLandingsIndex,
+  'docs/testing/copertura-e2e.yaml': uneditCoverageRegistry,
 }
 
 /** I file condivisi da disfare, nello stesso ordine del generatore (sorgente unica). */

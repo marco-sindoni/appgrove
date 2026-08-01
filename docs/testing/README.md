@@ -97,15 +97,30 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → attivata',
 L'etichetta non disturba l'esecuzione mirata: `tools/platform-e2e/run.sh --journey J-BUY` filtra per
 espressione regolare sul titolo e continua a funzionare.
 
+## Chi tiene vero il registro (UC 0094)
+
+Il registro non si mantiene da solo, e nemmeno «quando ci si ricorda»: la manutenzione è **incorporata nelle
+skill** che governano il ciclo di vita del monorepo.
+
+| Skill | Che cosa fa, e quando |
+|---|---|
+| `new-usecase` | Allo scaffolding **classifica** lo use case nuovo (superficie o esenzione motivata); nel drill-down compila la sotto-sezione «Journey end-to-end di piattaforma» del §9 |
+| `new-change` | In implementazione esegue il **passo di copertura** (leggi → decidi → copri o rimanda → aggiorna); in chiusura verifica il registro prima del varco di commit. La risposta «nessun impatto end-to-end» è legittima, ma è una risposta e finisce in `decisions.json` |
+| `new-application` | Genera il journey di piattaforma dell'app, etichetta il test di livello 2 e scrive le due voci di registro |
+| `drop-application` | Toglie journey e voci: il round-trip torna byte per byte al punto di partenza |
+
+Il controllo meccanico resta l'ultima parola: ciò che le skill dimenticano, `run-tests.sh tooling` lo rende rosso.
+
 ## Manutenzione — chi fa cosa, e quando
 
 | Situazione | Cosa fare |
 |---|---|
 | Nuovo test end-to-end | Aggiungi l'etichetta nel titolo e, se il percorso è nuovo, la voce nel registro |
 | Test spostato o rinominato | Aggiorna il campo `file` della voce, **nello stesso commit** |
-| Nuovo use case (`new-usecase`) | Classificalo: `usecases_con_superficie` oppure `esenzioni` con categoria e motivo |
-| Nuova app (`new-application`) | Il test end-to-end generato nasce **senza etichetta**: etichettalo (`L2-<APP>`) e aggiungi la voce. Finché non lo fai, l'area `tooling` resta rossa — è voluto |
-| Storia evolutiva che viene implementata | Togli l'esenzione `non-implementato` e dichiara il percorso (anche `da-coprire`) |
+| Nuovo use case (`new-usecase`) | La skill lo classifica allo **scaffolding**: `usecases_con_superficie` oppure `esenzioni` con categoria e motivo, nello stesso commit che crea il file |
+| Nuova app (`new-application`) | Il generatore scrive **da sé** il journey `J-<APP>` (suite di piattaforma), l'etichetta `[L2-<APP>]` sul test di livello 2 e le due voci di registro. Resta da fare a una persona: sostituire gli `usecases` segnaposto con lo use case vero dell'app |
+| App dismessa (`drop-application`) | Il de-generatore toglie journey e voci: nulla da fare a mano |
+| Storia evolutiva che viene implementata | Togli l'esenzione `non-implementato` e dichiara il percorso (anche `da-coprire`) — è un passo del processo di `new-change` |
 | Buco che non puoi tappare ora | Voce `da-coprire` con `motivo` e `possiede` — mai lasciarlo implicito |
 | Percorso che non vale la pena coprire | Voce `escluso` con `motivo` che regge una revisione |
 

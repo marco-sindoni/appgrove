@@ -41,6 +41,13 @@ JWT, filtro row-level. Diritti GDPR esenti dai gate dove applicabile (#09 F31)._
 _Unit / integration (Testcontainers) / security-isolamento cross-tenant / E2E Playwright / L1-L3 pagamenti — secondo #10.
 Cosa DEVE essere verde prima del merge._
 
+### Journey end-to-end di piattaforma
+_Obbligatoria (UC 0094). Una sola delle tre risposte, esplicita — il silenzio non è ammesso:_
+- **Journey nuovo**: identificativo proposto (`J-…` utente, `A-…` amministratore, `F-…` guasto) e cosa asserisce;
+- **Estensione**: quale journey esistente cresce e con quale passo (elenco in [docs/testing/copertura-e2e.yaml](../../testing/copertura-e2e.yaml));
+- **Esenzione**: categoria (`senza-superficie` / `vetrina-statica` / `non-implementato`) e motivo.
+_La risposta va riportata nel registro di copertura: guida in [docs/testing/README.md](../../testing/README.md)._
+
 ## 10. Riferimenti & Definition of Done
 - **Decisioni**: #NN …
 - **DoD**: criteri oggettivi di completamento (funzionale + test verdi + doc/manifest aggiornati).

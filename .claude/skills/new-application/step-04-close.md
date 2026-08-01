@@ -42,6 +42,12 @@ Before closing, confirm each of these exists and is real, not a placeholder:
 - generated test suite green, including tenant isolation and the entitlement gate
 - landing draft in five languages, still `draft`
 - privacy classification (major/minor) recorded with its rationale
+- **end-to-end coverage** (UC 0094): the generator wrote `tools/platform-e2e/journeys/J-<APP>.spec.ts`, labelled
+  the level-2 spec `[L2-<APP>]` and added both entries to `docs/testing/copertura-e2e.yaml`. Two things are yours:
+  replace the placeholder `usecases` of those entries with the app's real use case number as soon as it exists, and
+  know that **the platform journey skips itself** while the pricing file is `status: inactive` (no entitlement, no
+  path to walk) — it turns real on its own when the pricing goes `active`. Run it then:
+  `tools/platform-e2e/run.sh --journey J-<APP>`
 
 ## Decision register — `decisions.json`
 

@@ -126,6 +126,18 @@ export function toCamelCase(appId) {
 }
 
 /**
+ * `demo_gen` → `DEMO-GEN`: la forma dell'identificativo dentro le **etichette dei percorsi** del
+ * registro di copertura end-to-end (UC 0093), es. `J-DEMO-GEN` e `L2-DEMO-GEN`.
+ *
+ * L'underscore diventa trattino perché il controllo accetta come identificativo di percorso solo
+ * `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`: un `J-DEMO_GEN` sarebbe rifiutato come malformato, e lo sarebbe
+ * al primo `run-tests.sh` dopo la generazione, cioè nel punto peggiore.
+ */
+export function toUpperTag(appId) {
+  return appId.toUpperCase().replace(/_/g, '-')
+}
+
+/**
  * Nature ammesse per la metrica di quota. Non è una preferenza di stile: decide COME si conta.
  * <ul>
  *   <li>`flow` — a consumo: eventi in una finestra che si azzera (es. "200 documenti al mese");</li>
@@ -169,6 +181,8 @@ export function buildContext(options) {
     APP_ID: appId,
     APP_CLASS: appClass,
     APP_CAMEL: toCamelCase(appId),
+    // Identificativo dell'app dentro le etichette del registro di copertura end-to-end (UC 0093/0094).
+    APP_UPPER: toUpperTag(appId),
     APP_NAME: options.appName ?? toDisplayName(appId),
     // Slug della bozza landing: uguale per tutte e 5 le lingue (la localizzazione
     // dello slug è una rifinitura di `finalize-landing`, UC 0057). Minuscolo [a-z0-9-].

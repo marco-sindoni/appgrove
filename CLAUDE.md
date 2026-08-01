@@ -145,6 +145,27 @@ completo. È parte del **Definition of Done** di `new-change`. Prima del commit,
 `run-tests.sh` (almeno le aree toccate) e verifica il verde — l'esecuzione per-area dei singoli comandi resta valida, ma
 `run-tests.sh` è il modo canonico per "eseguire tutto".
 
+## Registro di copertura end-to-end (non negoziabile)
+
+La mappa *use case con superficie → percorso end-to-end richiesto → test che lo copre* vive in
+[docs/testing/copertura-e2e.yaml](docs/testing/copertura-e2e.yaml), è **leggibile da un programma** e la sorveglia il
+controllo `tools/e2e-coverage` nell'area `tooling` di `run-tests.sh`: registro incoerente = suite rossa (UC 0093).
+Formato, convenzione dell'etichetta `[ID]` in testa al titolo dei test e come leggere un rosso:
+[docs/testing/README.md](docs/testing/README.md).
+
+Tenerlo vero è un dovere **della change che cambia la realtà**, non una pulizia periodica (UC 0094). Perciò:
+
+- ogni **use case nuovo** nasce classificato — superficie applicativa oppure esenzione con categoria e motivo (skill
+  `new-usecase`), e il suo drill-down dichiara i journey nella sotto-sezione dedicata di «Requisiti di test»;
+- ogni **change** si pone la domanda di copertura e risponde in uno dei tre modi ammessi — *coprire ora*, *rimandare*
+  con una voce `da-coprire` (motivo + use case proprietario), *nessun impatto* — e la risposta finisce in
+  `decisions.json`. Una change che non se l'è posta è il difetto che il registro esiste per impedire;
+- una change che implementa una **storia evolutiva** toglie l'esenzione `non-implementato` del suo use case;
+- ogni **app nuova** nasce col suo journey di piattaforma e le sue voci di registro (skill `new-application`), che la
+  skill `drop-application` rimuove.
+
+È parte del **Definition of Done** di `new-change`, accanto a `run-tests.sh` e a `_INDEX.md`.
+
 ## Documenti di decisione
 
 Legenda stato: 🔴 da definire · 🟡 in corso · 🟢 deciso

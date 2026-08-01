@@ -23,7 +23,18 @@ export const EDITED_FILES = [
   'services/core/src/main/resources/pricing/index.yaml',
   'dev/elasticmq.conf',
   'site/src/content/landings/index.ts',
+  'docs/testing/copertura-e2e.yaml',
 ]
+
+/** Marcatore di apertura del blocco che il generatore aggiunge al registro di copertura. */
+export function coverageBlockStart(appId) {
+  return `  # ── app ${appId} (voci generate da tools/new-application, UC 0094) ──`
+}
+
+/** Marcatore di chiusura dello stesso blocco: delimita ciò che il de-generatore deve togliere. */
+export function coverageBlockEnd(appId) {
+  return `  # ── fine app ${appId} ──`
+}
 
 /** Aggiunge il modulo Maven all'elenco dei moduli aggregati. */
 export function editServicesPom(content, ctx) {
@@ -209,6 +220,62 @@ export function editLandingsIndex(content, ctx) {
   return next
 }
 
+/**
+ * Dichiara i due percorsi end-to-end dell'app nel registro di copertura (UC 0093/0094): quello di
+ * **piattaforma** (`J-<APP>`, stack vero) e quello di **livello 2** (`L2-<APP>`, servizi simulati).
+ *
+ * Perché il generatore scrive nel registro invece di lasciarlo a chi genera l'app: senza queste due
+ * voci il controllo `tools/e2e-coverage` diventa rosso appena i due file di test compaiono con la
+ * loro etichetta, e l'app nascerebbe con la suite rossa. La copertura è parte dello scaffolding
+ * esattamente come il listino e il manifesto dati — con la stessa disciplina dei "DA COMPLETARE".
+ *
+ * Il blocco è delimitato da due marcatori-commento: sono ciò che permette a `drop-application` di
+ * toglierlo per intero e riportare il file byte per byte a com'era (round-trip di UC 0048).
+ */
+export function editCoverageRegistry(content, ctx) {
+  const start = coverageBlockStart(ctx.APP_ID)
+  if (content.includes(start)) {
+    throw new Error(`docs/testing/copertura-e2e.yaml dichiara già i percorsi di ${ctx.APP_ID}`)
+  }
+
+  const block = [
+    ``,
+    start,
+    `  # DA COMPLETARE: \`usecases\` cita lo use case della skill new-application (0046) e quello dei`,
+    `  # diritti/quota (0027) perché l'app nasce prima del proprio use case. Sostituirli col numero`,
+    `  # dello use case dell'app appena esiste, così il registro dice davvero chi è coperto.`,
+    `  - id: J-${ctx.APP_UPPER}`,
+    `    titolo: Core-loop dell'app ${ctx.APP_NAME} — modulo montato, tetto del piano, rifiuto reale oltre il tetto`,
+    `    usecases: ["0027", "0046"]`,
+    `    stato: coperto`,
+    `    test:`,
+    `      - livello: platform`,
+    `        file: tools/platform-e2e/journeys/J-${ctx.APP_UPPER}.spec.ts`,
+    ``,
+    `  - id: L2-${ctx.APP_UPPER}`,
+    `    titolo: Ciclo principale dell'app ${ctx.APP_NAME} a servizi simulati — elenco con banner quota, creazione, rotta non concessa`,
+    `    usecases: ["0027", "0046"]`,
+    `    stato: coperto`,
+    `    test:`,
+    `      - livello: l2`,
+    `        file: frontend/apps/backoffice/e2e/${ctx.APP_ID}.spec.ts`,
+    coverageBlockEnd(ctx.APP_ID),
+  ].join('\n')
+
+  // Il blocco va in coda alla sezione `percorsi:`, cioè subito prima del commento che introduce le
+  // `esenzioni:`. Si cerca la chiave di primo livello (colonna 0) e si risale sopra il suo blocco di
+  // commento: appendere "in fondo al file" finirebbe dentro le esenzioni, che è un'altra sezione.
+  const lines = content.split('\n')
+  const esenzioniAt = lines.findIndex((line) => /^esenzioni:/.test(line))
+  if (esenzioniAt < 0) {
+    throw new Error("docs/testing/copertura-e2e.yaml: chiave `esenzioni:` non trovata (formato cambiato?)")
+  }
+  let insertAt = esenzioniAt
+  while (insertAt > 0 && /^(#|\s*$)/.test(lines[insertAt - 1])) insertAt -= 1
+  lines.splice(insertAt, 0, ...block.split('\n'))
+  return lines.join('\n')
+}
+
 /** Mappa percorso → funzione di modifica, nell'ordine di EDITED_FILES. */
 export const EDITORS = {
   'services/pom.xml': editServicesPom,
@@ -217,4 +284,5 @@ export const EDITORS = {
   'services/core/src/main/resources/pricing/index.yaml': editPricingIndex,
   'dev/elasticmq.conf': editElasticMq,
   'site/src/content/landings/index.ts': editLandingsIndex,
+  'docs/testing/copertura-e2e.yaml': editCoverageRegistry,
 }

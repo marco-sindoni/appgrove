@@ -111,6 +111,28 @@ quello di UC 0093 (già in `tooling`).
 - **Metriche di copertura** (percentuale UC coperti, tempo suite nel tempo): cruscotto possibile ma non necessario
   al processo; differito.
 
+_Aggiunti dalla change `0074` (implementazione di questo use case):_
+
+- **Un percorso `coperto` da un test che si salta.** Il journey generato da `new-application` si salta finché il
+  listino dell'app è `status: inactive` — senza app `active` non esiste diritto d'uso, quindi non esiste percorso
+  da percorrere (regola `EntitlementAccess.granted`). La voce di registro nasce però `coperto`, perché il controllo
+  ammette solo `coperto` per un file che porta l'etichetta. È una tensione reale fra la veridicità del registro e
+  l'automatismo: l'alternativa (voce `da-coprire` + nessun file) rimanderebbe a una persona il ricordarsi di
+  scrivere il journey — cioè esattamente il difetto che questo use case elimina. Se il caso diventerà frequente
+  (più app in listino inattivo insieme), si valuterà uno stato `coperto-condizionato` nel formato del registro.
+  Possiede: **UC 0093** (formato del registro).
+- **Il journey generato non viene eseguito da nessun collaudo.** Il collaudo di livello 3 di `new-application`
+  verifica che l'app nasca col journey etichettato, con le voci di registro e col controllo di copertura verde,
+  ma **non lo esegue**: servirebbe l'intero stack (Postgres, servizi, Mailpit, browser) su una copia usa-e-getta
+  del repository, per un'app che è per costruzione inattiva. La verifica resta perciò strutturale; la prima
+  esecuzione vera è quella della persona che porta il listino ad `active`
+  (`tools/platform-e2e/run.sh --journey J-<APP>`). Possiede: **UC 0090** (fondamenta della suite).
+- **Gli `usecases` delle voci generate sono segnaposto.** Il generatore scrive `["0027", "0046"]` — diritti/quota
+  e skill di scaffolding — perché un'app nasce **prima** del proprio use case. Un commento «DA COMPLETARE» accanto
+  alla voce lo dice, ma nessun controllo lo impone: renderlo obbligatorio richiederebbe che il registro sapesse
+  quale use case appartiene a quale app, informazione che oggi non esiste in forma leggibile da un programma.
+  Possiede: **UC 0093**.
+
 _Consegna dalla change `0073-use-case-0093-…` (il registro esiste, gli agganci no):_
 
 - Artefatti su cui appoggiarsi: registro `docs/testing/copertura-e2e.yaml`, prosa e regole di manutenzione in

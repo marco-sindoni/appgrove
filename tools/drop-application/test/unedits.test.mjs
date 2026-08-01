@@ -10,10 +10,23 @@ import {
   uneditRegistry,
   uneditBackofficePackageJson,
   uneditLandingsIndex,
+  uneditCoverageRegistry,
 } from '../lib/unedits.mjs'
 import { EDITORS, EDITED_FILES } from '../../new-application/lib/edits.mjs'
 
-const CTX = { APP_ID: 'demo9', APP_CAMEL: 'demo9' }
+const CTX = { APP_ID: 'demo9', APP_CAMEL: 'demo9', APP_UPPER: 'DEMO9', APP_NAME: 'Demo9' }
+
+/** Registro di copertura minimo: le due sezioni fra cui il generatore deve inserire il blocco. */
+const REGISTRO_PULITO = [
+  'percorsi:',
+  '  - id: J-UNO',
+  '    stato: coperto',
+  '',
+  '# ── Use case senza superficie ──',
+  'esenzioni:',
+  '  - usecase: "0001"',
+  '',
+].join('\n')
 
 // ── Parità con il generatore: nessun file condiviso senza inverso ────────────
 test('UNEDITORS copre esattamente gli stessi file di EDITORS del generatore', () => {
@@ -98,6 +111,25 @@ test('landings/index.ts: unedit annulla edit (import + voce array)', () => {
   assert.equal(content, before)
 })
 
+test('copertura-e2e.yaml: unedit annulla edit (blocco dei due percorsi generati)', () => {
+  const edited = EDITORS['docs/testing/copertura-e2e.yaml'](REGISTRO_PULITO, CTX)
+  assert.ok(edited.includes('  - id: J-DEMO9'), 'deve dichiarare il percorso di piattaforma')
+  assert.ok(edited.includes('  - id: L2-DEMO9'), 'deve dichiarare il percorso di livello 2')
+  // Il blocco va DENTRO `percorsi:`, cioè prima del commento che introduce le esenzioni.
+  assert.ok(
+    edited.indexOf('J-DEMO9') < edited.indexOf('esenzioni:'),
+    'il blocco non deve finire dentro la sezione delle esenzioni',
+  )
+  const { content, changed } = uneditCoverageRegistry(edited, CTX)
+  assert.equal(changed, true)
+  assert.equal(content, REGISTRO_PULITO)
+})
+
+test('copertura-e2e.yaml: innestare due volte la stessa app è un errore, non un doppione', () => {
+  const edited = EDITORS['docs/testing/copertura-e2e.yaml'](REGISTRO_PULITO, CTX)
+  assert.throws(() => EDITORS['docs/testing/copertura-e2e.yaml'](edited, CTX), /dichiara già i percorsi di demo9/)
+})
+
 // ── Idempotenza: disfare due volte è sicuro (seconda volta = nessun cambiamento) ──
 test('tutte le unedit sono idempotenti: assenza del marcatore → changed:false', () => {
   const clean = {
@@ -109,7 +141,13 @@ test('tutte le unedit sono idempotenti: assenza del marcatore → changed:false'
     'dev/elasticmq.conf': '    queues {\n        paddle-webhooks { }\n    }\n',
     'site/src/content/landings/index.ts':
       "import type { Landing } from './types.ts'\nimport { en } from './example/en.ts'\n\nexport const LANDINGS: Landing[] = [example]\n",
+    'docs/testing/copertura-e2e.yaml': REGISTRO_PULITO,
   }
+  assert.deepEqual(
+    new Set(Object.keys(clean)),
+    new Set(Object.keys(UNEDITORS)),
+    'ogni inverso deve avere un contenuto di prova qui: un file nuovo non deve poter sfuggire alla verifica di idempotenza',
+  )
   for (const [file, content] of Object.entries(clean)) {
     const { changed } = UNEDITORS[file](content, CTX)
     assert.equal(changed, false, `${file} dovrebbe essere no-op quando l'app non è presente`)
