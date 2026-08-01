@@ -16,6 +16,14 @@ const AUTH_API = process.env.PLATFORM_AUTH_API ?? 'http://localhost:21100'
 /** Password conforme alla policy (#02 dec.19: ≥10 char, maiuscola, minuscola, cifra). */
 export const DEFAULT_PASSWORD = 'Password1!'
 
+/**
+ * Amministratore di piattaforma del seed (gruppo JWT `platform-admin`). Non ha riga credenziali,
+ * quindi entra con la password universale di sviluppo — la stessa che usa il seed dello stack dev.
+ * Unica utenza della suite che non nasce da un signup: è parte delle precondizioni (UC 0092 §3).
+ */
+export const ADMIN_EMAIL = 'admin@appgrove.test'
+export const ADMIN_PASSWORD = DEFAULT_PASSWORD
+
 export interface Tokens {
   access_token: string
   id_token: string

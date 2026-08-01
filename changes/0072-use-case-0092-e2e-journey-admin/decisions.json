@@ -69,6 +69,94 @@
   },
   {
     "id": 11,
-    "decision": "(autopilot) La pulizia finale della suite (global-teardown) verifica che ogni servizio scoperto sia di nuovo in ascolto e lo riavvia se non lo è, oltre a riportare il catalogo allo stato di riposo. È la rete di sicurezza del requisito «nessun residuo, servizi tutti su a fine batteria anche dopo F-DEGRADE»: il ripristino dentro il journey copre il caso normale, questo copre il caso in cui il journey muoia nel punto sbagliato."
+    "decision": "(autopilot) La pulizia finale della suite (global-teardown) verifica che ogni servizio scoperto sia di nuovo in ascolto e lo riavvia se non lo è, oltre a riportare il catalogo allo stato di riposo. È la rete di sicurezza del requisito «nessun residuo, servizi tutti su a fine batteria anche dopo F-DEGRADE»: il ripristino dentro il journey copre il caso normale, questo copre il caso in cui il journey muoia nel punto sbagliato.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/global-teardown.ts",
+        "description": "Prima rimette su i servizi (serve anche a poter ripristinare il catalogo, che passa dal core), poi riporta `crm` a `inactive`."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) `service-ctl.sh` distingue `spawn` (avvia e torna) da `start` (avvia e attende la readiness). Serve perché run.sh accende tutti i servizi insieme e poi li attende: con il solo `start` il costo dell'avvio diventerebbe la SOMMA dei tempi di boot invece del massimo, allungando ogni esecuzione della suite di decine di secondi senza alcun guadagno. I journey usano `start`, che è la forma sicura.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/service-ctl.sh",
+        "description": "spawn/wait/start/stop/restart/status/stop-all; il processo avviato scrive su file e non tiene aperto alcun tubo verso il chiamante (altrimenti una chiamata sincrona dall'helper resterebbe appesa)."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) L'helper TypeScript dei servizi ricava la cartella dello strumento da `PLATFORM_TOOL_DIR` (esportata da run.sh) e non da `import.meta.url`: il percorso dedotto dal modulo dipende da come il transpilatore di Playwright lo carica, che è esattamente il genere di dipendenza implicita che rende una suite fragile a un aggiornamento di libreria.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/helpers/services.ts",
+        "description": "TOOL_DIR da variabile d'ambiente, con la cartella di lavoro come ripiego."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Le credenziali dell'amministratore di piattaforma del seed vivono ora in `helpers/api.ts` (`ADMIN_EMAIL`/`ADMIN_PASSWORD`) invece che duplicate nel global-setup: sono dati del seed, non dettagli del browser, e con l'arrivo della sessione admin nei journey avrebbero avuto tre copie.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/helpers/browser.ts",
+        "description": "`adminSession()` apre un contesto browser isolato sulla console admin; l'attesa sulla navigazione admin è anche il gate di ruolo `platform-admin` (senza il ruolo si finirebbe su /forbidden)."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) A-GDPR NON asserisce il testo del messaggio d'errore che l'utente limitato riceve al nuovo tentativo di accesso: oggi è quello generico delle credenziali non valide, e se sia la postura giusta è una decisione aperta. Fissarlo in un collaudo lo trasformerebbe in un vincolo per sbaglio; il journey asserisce quindi soltanto che l'accesso è rifiutato e che la shell non si apre."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Due divergenze trovate durante l'implementazione, tracciate come punti aperti di UC 0034 (che possiede la console diritti) e NON risolte qui — sono direzione di prodotto, non collaudo: (a) la limitazione art. 18 applicata all'ACCOUNT non ha alcun effetto osservabile, perché la validità della sessione dipende solo dallo stato della riga utente; (b) l'utente limitato riceve «credenziali non valide» invece del messaggio dedicato all'utenza sospesa, che pure esiste nel catalogo dei testi.",
+    "files": [
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0034-console-diritti-gdpr.md",
+        "description": "Due voci nuove in «Punti aperti / decisioni differite»."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) F-DEGRADE osserva l'app `fatture`, non il Mini-CRM. Ragione scoperta in implementazione: ogni avvio del core rilancia la sincronizzazione del listino, che riallinea lo stato delle app allo YAML — e nello YAML il Mini-CRM è `inactive` di proposito (change 0042). Riavviando il core il Mini-CRM sparirebbe per un motivo che col guasto non c'entra nulla, rendendo il journey incomprensibile. `fatture` è attiva nel listino e ha una fascia gratuita di base: nessun acquisto serve e il riavvio non ne cambia lo stato. Conseguenza d'ordine documentata nel README: un journey che abbia bisogno del Mini-CRM va collocato PRIMA di `degrade-serial`.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/README.md",
+        "description": "Avviso esplicito: dopo degrade-serial il Mini-CRM è di nuovo disabilitato."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) A-ENTITLE confronta la matrice col menu laterale limitandosi alle app che hanno un MODULO nel frontend (`crm`, `fatture`). Il menu è «registro dei moduli ∩ diritti d'accesso» (#03 dec. 6), mentre in profilo di sviluppo il catalogo porta anche le app-fixture `notes` e `teams`, attive e con fascia gratuita: compaiono legittimamente nella matrice e altrettanto legittimamente non nel menu. Pretendere l'uguaglianza secca sarebbe un difetto del collaudo, non del prodotto."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) In A-GDPR il rientro del cliente dopo la rimozione della limitazione si osserva con un semplice ricaricamento, non con un nuovo accesso: il cookie di sessione non era stato cancellato — era il server a non onorarlo più — quindi tolta la limitazione la sessione si ripristina da sola. È la prova più stringente della reversibilità e ha corretto un primo tentativo che riprovava ad accedere e falliva perché la pagina di accesso, a sessione valida, rimanda alla shell."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Difetto della leva trovato e corretto durante il collaudo: l'elenco dei servizi emesso per lo spegnimento non terminava con un ritorno a capo, e il ciclo `read` scartava l'ultima riga — l'ultimo servizio non veniva mai fermato e restava in ascolto dopo la fine della batteria (residuo osservato: `fatture` su :20081). Oltre alla correzione, lo stop ora ha un ripiego su chi occupa la porta quando il file del processo manca: un servizio sopravvissuto a un'esecuzione precedente non viene riavviato da quella dopo (la porta è occupata), quindi senza ripiego il residuo diventerebbe permanente.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/service-ctl.sh",
+        "description": "`svc_names` stampa una riga per servizio con terminatore; `cmd_stop` ripiega su `lsof` quando il file del processo non c'è."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Regola resa esplicita da un guasto alla seconda esecuzione consecutiva: ogni valore su cui un journey cerca una riga in una tabella NON azzerata fra le corse dev'essere unico per esecuzione. Il registro delle transizioni conservava la motivazione fissa di A-CONSOLE, e alla corsa successiva la ricerca trovava due righe. Vale per le motivazioni come già per i nomi degli account (A-ENTITLE, A-GDPR): il database della suite è persistente, e la seconda esecuzione è il collaudo che lo dimostra.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/A-CONSOLE.spec.ts",
+        "description": "Motivazione con marcatore temporale."
+      }
+    ]
   }
 ]

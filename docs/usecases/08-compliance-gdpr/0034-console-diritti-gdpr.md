@@ -85,3 +85,20 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
   newsletter) e aggiungere il tipo corrispondente nella tabella della pagina admin "Diritti GDPR". Non fatto nella
   change 0052 per non anticipare lavoro di un altro use case.
 - **Retention di ticket/registri oltre lo sweeper applicativo** → rimando su UC 0035.
+- **La limitazione art. 18 sull'ACCOUNT non ha effetti osservabili dall'utente** _(rilevato dalla change
+  `0072-use-case-0092-…`, journey A-GDPR)_: applicandola al bersaglio "account" viene sospeso
+  `platform.accounts.status`, ma la validità di una sessione dipende **solo** dallo stato della riga
+  utente (`platform.users.status`, letto dal servizio di autenticazione) e la regola unica di accesso
+  guarda l'account solo per lo stato "in eliminazione". Risultato: limitare un account lascia i suoi
+  utenti pienamente operativi — la misura è registrata ma non produce nulla. Il journey applica quindi
+  la limitazione all'**utente**, che funziona. Da decidere in questo use case: se la limitazione
+  sull'account debba propagarsi ai suoi utenti (probabile intenzione dell'art. 18) oppure se il
+  bersaglio "account" vada rimosso dalla console perché fuorviante. Non deciso qui: è direzione di
+  prodotto sulla misura, non collaudo.
+- **L'utente limitato riceve "credenziali non valide" al nuovo accesso** _(rilevato dalla change
+  `0072-use-case-0092-…`)_: il servizio di autenticazione risponde 401 generico per ogni utenza non
+  attiva, quindi chi è sotto limitazione art. 18 legge «Invalid email or password.» invece del messaggio
+  dedicato che pure esiste nel catalogo dei testi (`errors.suspended`). Può essere una scelta di
+  riservatezza deliberata (non rivelare lo stato di un'utenza a chi tenta l'accesso) oppure una svista.
+  Da valutare insieme ai flussi di autenticazione (UC 0017) prima di cambiarla: è una decisione di
+  postura, non un difetto ovvio.

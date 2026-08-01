@@ -69,8 +69,10 @@ copertura fra i collaudi del frontend. Un journey che passa "quasi sempre" è un
 - L'amministratore applica la **limitazione del trattamento (art. 18)** con conferma, sull'**utente** che ha
   aperto il ticket.
 - Effetto osservabile nella sessione del cliente: alla ripresa della sessione l'accesso è **chiuso in modo
-  pulito** (si torna alla pagina di accesso) e un nuovo tentativo di accesso viene **rifiutato con il
-  messaggio dedicato all'utenza sospesa**.
+  pulito** (si torna alla pagina di accesso) e un nuovo tentativo di accesso viene **rifiutato**. Il
+  journey non fissa *quale* messaggio d'errore compaia: oggi è quello generico delle credenziali non
+  valide, e se sia la scelta giusta è una decisione di postura annotata fra i punti aperti di UC 0034 —
+  cementarla in un collaudo la trasformerebbe in un vincolo per sbaglio.
 - L'amministratore **rimuove** la limitazione: il cliente può rientrare. La reversibilità è parte della
   promessa della funzionalità e va vista, non dedotta.
 - Verifiche sul database: il **registro delle limitazioni** contiene applicazione e rimozione con l'attore;
