@@ -1,0 +1,76 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata all'invocazione dalla skill go-fast. Nessun gate di workflow (né revisione requisiti né consenso al commit); restano obbligatori la suite completa `./run-tests.sh` verde prima del commit, il registro decisioni integrale e la checklist di verifica manuale how-to-test.md. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0095 (Pagina \"App catalog\" del backoffice), epica evo 21-catalogo-app-backoffice, da cui la forma del branch 0076-use-case-0095-pagina-app-catalog. Il numero 0076 è il progressivo derivato dalla cartella changes/ (ultima presente: 0075).",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo stato di implementazione delle storie evo vive nell'ultima colonna di questa tabella (non in _INDEX.md, che copre le storie base): 0095 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Fonte della descrizione breve localizzata e della categoria: il pricing-as-code (gli YAML in services/core/src/main/resources/pricing/), come suggerito da UC 0095 §7 — \"il catalogo è codice\", quindi anche la sua parte descrittiva. Scartata l'alternativa di tenerle nei file di traduzione del frontend: il catalogo deve poter descrivere anche un'app che non ha (ancora) un modulo impacchettato, ed è esattamente il difetto che questa storia esiste per chiudere.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/PricingDefinition.java",
+        "description": "AppDef acquisisce due campi facoltativi: `category` (tinta/icona) e `descriptions` (mappa lingua → testo)."
+      },
+      {
+        "file": "services/core/src/main/resources/pricing/fatture.yaml",
+        "description": "Descrizioni nelle 5 lingue e categoria dell'app #1."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Le descrizioni NON vengono persistite nel database del catalogo né sincronizzate: il read-model le legge in-processo dalla stessa definizione pricing-as-code che alimenta la sincronizzazione. Motivo: sono contenuto di presentazione env-agnostico, non dato transazionale — persisterle costerebbe una migrazione, un ramo di sincronizzazione e i suoi test senza aggiungere nulla di funzionale, e il database del catalogo continua a contenere ciò che serve alle transazioni (fasce, prezzi, stato). Il giorno in cui il catalogo diventasse modificabile dalla console admin la decisione andrebbe rivista: rimando scritto nei punti aperti di UC 0095."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il read-model restituisce TUTTE E CINQUE le descrizioni (mappa lingua → testo) e la scelta della lingua la fa il frontend con la lingua attiva dell'interfaccia e ripiego sull'inglese. Scartata la negoziazione lato server (Accept-Language o lingua dell'utente persistita): il carico utile è di poche righe di testo, e così il cambio lingua nell'interfaccia è immediato senza dover invalidare e ricaricare i dati del catalogo."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Quali app compaiono nel catalogo: le app pubblicate (status `active`) più le app spente dalla piattaforma per cui questo account ha un abbonamento non cancellato. Un'app spenta e mai sottoscritta resta invisibile: non si fa vetrina di ciò che la piattaforma ha deciso di non vendere. La contropartita — chi paga vede lo stato \"Disabled by platform\" con la spiegazione — è proprio l'incoerenza che UC 0076 aveva tracciato come punto aperto."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La derivazione dei sei stati riusa le fonti canoniche invece di riderivarle: `SubscriptionLifecycle.Phase` per la parte abbonamento (TRIAL→trial, GRACE→payment pending, CANCELING→cancellation scheduled, ACTIVE→active, ENDED→come se non ci fosse abbonamento) ed `EntitlementAccess.granted` per il caso \"nessun abbonamento ma fascia gratuita\". Caso deciso esplicitamente: un'app con fascia gratuita e nessun abbonamento è `active`, non `available` — è già usabile e compare nel menu laterale, offrire \"Subscribe\" sarebbe una bugia."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Prezzo di partenza: il prezzo vivo più basso dell'app, a parità di importo preferendo il ciclo mensile; un'app con sole fasce gratuite non ha prezzo di partenza (campo assente) e la card mostra \"Free\" invece di \"from €0/mo\"."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Ricerca e paginazione restano lato client, dimensione pagina 6 come nel riferimento visivo approvato (change 0066). Il catalogo è un elenco piccolo e limitato (decine di app al massimo) e la ricerca deve comunque filtrare l'intero catalogo: portarle sul server ora sarebbe complessità senza beneficio. Rimando scritto nei punti aperti di UC 0095 per il giorno in cui il catalogo crescesse."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il pulsante d'acquisto è abilitato ai soli `owner`, non a `owner|admin`: il divieto vero è `@RolesAllowed(Roles.OWNER)` su CheckoutResource, e un pulsante abilitato che il backend rifiuta sarebbe peggio di un pulsante disabilitato con la spiegazione. La prosa di UC 0095 §5 dice \"chiedi a un owner/admin\": il messaggio dice \"chiedi a un owner\", coerente col gate reale. Se un domani il billing si aprisse agli admin, cambia il backend e il frontend lo segue."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) L'acquisto avviato dal catalogo NON naviga a Billing: il flusso di checkout esistente (scelta della fascia, sovrapposizione di pagamento, attesa dell'attivazione) viene estratto dalla pagina Billing in un componente condiviso e reso dentro la pagina del catalogo. Motivo: così il catalogo possiede l'ingresso all'acquisto da capo a fondo e UC 0096 potrà togliere la griglia d'acquisto da Billing senza toccare il checkout; in più la card torna sotto gli occhi dell'utente subito dopo l'attivazione, che è ciò che la storia chiede di poter osservare (available → active). La pagina Billing continua a funzionare esattamente come prima."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Rotta della pagina: `/catalog`, voce di menu \"App catalog\" nel gruppo PLATFORM subito sotto Dashboard, raggiungibile da ogni utente autenticato senza guard di entitlement (è la vetrina). L'invito \"nessuna app attiva\" del menu laterale viene ripuntato dal Billing al catalogo, che è ora il posto giusto dove scoprire le app."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): si copre ORA. Nasce il percorso di livello 2 `L2-CATALOG` (ricerca con e senza risultati, paginazione, azioni per stato, member senza azione d'acquisto, errore di lettura distinto dal catalogo vuoto) e si estende il journey di piattaforma `J-BUY` perché l'acquisto parta dal catalogo e asserisca il passaggio della card da `available` ad `active`. UC 0095 esce dalle esenzioni `non-implementato` ed entra fra gli use case con superficie.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "Nuovo percorso L2-CATALOG; \"0095\" aggiunto a J-BUY e a usecases_con_superficie; esenzione rimossa."
+      }
+    ]
+  }
+]
