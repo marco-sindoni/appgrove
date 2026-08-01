@@ -53,8 +53,16 @@ BACKOFFICE_PORT=24173
 ADMIN_PORT=24174
 
 RUN_DIR="$TOOL_DIR/.run"
+SERVICES_JSON="$RUN_DIR/services.json"
 rm -rf "$RUN_DIR"; mkdir -p "$RUN_DIR"
-cleanup() { for p in "${HEADLESS_PIDS[@]:-}"; do kill "$p" 2>/dev/null; done; }
+# Pulizia: i server statici delle SPA sono figli diretti (HEADLESS_PIDS), i servizi hanno la
+# propria leva — F-DEGRADE ne riavvia qualcuno, quindi l'elenco dei figli non basta più a
+# spegnerli tutti: si passa dal descrittore, che li conosce per costruzione (UC 0092).
+cleanup() {
+  for p in "${HEADLESS_PIDS[@]:-}"; do kill "$p" 2>/dev/null; done
+  [ -f "$SERVICES_JSON" ] && "$TOOL_DIR/service-ctl.sh" stop-all >/dev/null 2>&1
+  return 0
+}
 trap cleanup EXIT
 
 # ── 1. infra vera: Postgres + ElasticMQ + Mailpit dal compose dev ─────────────
@@ -90,18 +98,26 @@ SUITE_ORIGINS="http://localhost:$BACKOFFICE_PORT,http://localhost:$ADMIN_PORT"
 # rete di sicurezza "fetch-on-miss" chiamerebbe il core sbagliato e il gate fallirebbe
 # chiuso (402 su ogni app per ogni tenant nuovo della suite).
 SUITE_CORE_URL="http://localhost:$(platform_port "$(service_port "$(services_by_role core | head -1)")")"
-while IFS=$'\t' read -r svc app_id port schema role; do
-  if [ "$role" = auth ]; then
+
+# ── descrittore dei servizi: la RICETTA DI AVVIO, scritta una volta sola ──────
+# Da qui passano sia il primo avvio sia i riavvii di F-DEGRADE (UC 0092): la leva
+# service-ctl.sh è l'unico esecutore, così non esistono due elenchi di variabili d'ambiente
+# che col tempo divergono. Il contenuto resta derivato dalla scoperta servizi: una nuova app
+# entra da sola anche nel governo del ciclo di vita.
+json_str() { printf '"%s"' "$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"; }
+svc_env() { # <ruolo> → righe CHIAVE=valore
+  if [ "$1" = auth ]; then
     # auth: chiavi di firma locali + link email verso il server SPA della suite + Mailpit
     # del compose (auth.app-base-url / mailer sono già proprietà per-ambiente).
     # Il bypass dev del 2FA è DISATTIVATO per la suite (UC 0091, J-PWD esercita la challenge
     # reale del login a due passi); la forma _DEV_ serve perché la proprietà %dev. di
     # application.properties vince sull'ambiente non profilato (stessa ragione del CORS sotto).
-    headless_start_service "$svc" "$(platform_port "$port")" "$RUN_DIR/$svc.log" \
-      AUTH_LOCAL_PRIVATE_KEY="$AUTH_KEYS/privateKey.pem" AUTH_LOCAL_PUBLIC_KEY="$AUTH_KEYS/publicKey.pem" \
-      AUTH_APP_BASE_URL="http://localhost:$BACKOFFICE_PORT" \
-      QUARKUS_MAILER_HOST=localhost QUARKUS_MAILER_PORT="$MAILPIT_SMTP_PORT" \
-      AUTH_LOCAL_TOTP_BYPASS=false _DEV_AUTH_LOCAL_TOTP_BYPASS=false
+    printf 'AUTH_LOCAL_PRIVATE_KEY=%s\n' "$AUTH_KEYS/privateKey.pem"
+    printf 'AUTH_LOCAL_PUBLIC_KEY=%s\n' "$AUTH_KEYS/publicKey.pem"
+    printf 'AUTH_APP_BASE_URL=%s\n' "http://localhost:$BACKOFFICE_PORT"
+    printf 'QUARKUS_MAILER_HOST=%s\n' localhost
+    printf 'QUARKUS_MAILER_PORT=%s\n' "$MAILPIT_SMTP_PORT"
+    printf 'AUTH_LOCAL_TOTP_BYPASS=false\n_DEV_AUTH_LOCAL_TOTP_BYPASS=false\n'
   else
     # core/app: due override d'ambiente obbligatori per la suite —
     # 1. JWKS: in profilo dev punta all'auth dello stack dev (:9100), qui va rediretto
@@ -111,21 +127,50 @@ while IFS=$'\t' read -r svc app_id port schema role; do
     #    lista — e il browser manda Origin su tutti i metodi non-GET anche same-origin.
     #    Gli origin dei server SPA della suite vanno quindi ammessi (la forma _DEV_…
     #    sovrascrive la variante %dev. di application.properties, che vince sull'env liscia).
-    headless_start_service "$svc" "$(platform_port "$port")" "$RUN_DIR/$svc.log" \
-      MP_JWT_VERIFY_PUBLICKEY_LOCATION="$SUITE_JWKS" \
-      QUARKUS_HTTP_CORS_ORIGINS="$SUITE_ORIGINS" \
-      _DEV_QUARKUS_HTTP_CORS_ORIGINS="$SUITE_ORIGINS" \
-      QUARKUS_REST_CLIENT_CORE_API_URL="$SUITE_CORE_URL"
+    printf 'MP_JWT_VERIFY_PUBLICKEY_LOCATION=%s\n' "$SUITE_JWKS"
+    printf 'QUARKUS_HTTP_CORS_ORIGINS=%s\n' "$SUITE_ORIGINS"
+    printf '_DEV_QUARKUS_HTTP_CORS_ORIGINS=%s\n' "$SUITE_ORIGINS"
+    printf 'QUARKUS_REST_CLIENT_CORE_API_URL=%s\n' "$SUITE_CORE_URL"
   fi
+  # comuni a tutti: datasource del compose dev (gli stessi di headless_start_service)
+  printf 'QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://localhost:%s/%s\n' "$POSTGRES_PORT" "$POSTGRES_DB"
+  printf 'QUARKUS_DATASOURCE_USERNAME=%s\n' "$POSTGRES_USER"
+  printf 'QUARKUS_DATASOURCE_PASSWORD=%s\n' "$POSTGRES_PASSWORD"
+}
+{
+  printf '{'
+  sep=''
+  while IFS=$'\t' read -r svc app_id port schema role; do
+    printf '%s%s:{"appId":%s,"role":%s,"port":%s,"log":%s,"env":{' \
+      "$sep" "$(json_str "$svc")" "$(json_str "$app_id")" "$(json_str "$role")" \
+      "$(platform_port "$port")" "$(json_str "$RUN_DIR/$svc.log")"
+    esep=''
+    while IFS= read -r kv; do
+      [ -n "$kv" ] || continue
+      printf '%s%s:%s' "$esep" "$(json_str "${kv%%=*}")" "$(json_str "${kv#*=}")"
+      esep=','
+    done < <(svc_env "$role")
+    printf '}}'
+    sep=','
+  done < <(discover_services)
+  printf '}'
+} > "$SERVICES_JSON"
+
+# accensione di tutti i servizi insieme, poi attesa (come prima: il costo è il massimo dei
+# tempi di avvio, non la loro somma).
+while IFS=$'\t' read -r svc app_id port schema role; do
+  "$TOOL_DIR/service-ctl.sh" spawn "$svc" || { fail "$svc: avvio fallito"; exit 1; }
 done < <(discover_services)
 
 rc=0
 while IFS=$'\t' read -r svc app_id port schema role; do
-  url="$(headless_service_ready_url "$role" "$(platform_port "$port")")"
-  if headless_wait_http "$svc" "$url" 200 "$RUN_DIR/$svc.log"; then
+  if "$TOOL_DIR/service-ctl.sh" wait "$svc"; then
     ok "$svc: pronto su :$(platform_port "$port")"
   else
-    fail "$svc: readiness fallita"; rc=1
+    fail "$svc: readiness fallita (registro: $RUN_DIR/$svc.log)"
+    grep -B2 -A8 "Caused by" "$RUN_DIR/$svc.log" 2>/dev/null | head -30 >&2
+    tail -15 "$RUN_DIR/$svc.log" 2>/dev/null >&2
+    rc=1
   fi
 done < <(discover_services)
 [ "$rc" -eq 0 ] || exit 1
@@ -189,7 +234,8 @@ fi
 CORE_SVC="$(services_by_role core | head -1)"
 step "esecuzione journey (Playwright)…"
 ( cd "$TOOL_DIR" \
-    && PLATFORM_BACKOFFICE_URL="http://localhost:$BACKOFFICE_PORT" \
+    && PLATFORM_TOOL_DIR="$TOOL_DIR" \
+       PLATFORM_BACKOFFICE_URL="http://localhost:$BACKOFFICE_PORT" \
        PLATFORM_ADMIN_URL="http://localhost:$ADMIN_PORT" \
        PLATFORM_MAILPIT_API="$MAILPIT_API" \
        PLATFORM_AUTH_API="http://localhost:$(platform_port "$(service_port "$AUTH_SVC")")" \

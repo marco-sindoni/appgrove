@@ -29,21 +29,42 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  // Due progetti (UC 0091, decisione 8 della change 0070): i journey ordinari girano in
-  // parallelo (tenant fresco ciascuno, nessuno stato condiviso); J-LEGAL usa una leva
-  // d'ambiente GLOBALE (bump della versione legale, vale per tutti i tenant) e quindi gira
-  // da solo, DOPO gli altri, via dependency di progetto.
+  // Progetti in CATENA (UC 0091 dec. 8 della change 0070, estesa da UC 0092): i journey che
+  // toccano solo il proprio tenant girano in parallelo; quelli che muovono stato GLOBALE girano
+  // da soli, in coda, uno alla volta. La dipendenza fra progetti è l'unico meccanismo che
+  // garantisce sequenzialità stretta anche fra file diversi (`fullyParallel: false` serializza
+  // i test dentro un file, non i file fra loro).
+  //
+  //   chromium        → tutti i journey confinati al proprio tenant (in parallelo)
+  //   admin-serial    → A-CONSOLE : disabilita un'app di CATALOGO, stato globale per ogni tenant
+  //   degrade-serial  → F-DEGRADE : ferma DAVVERO un servizio condiviso
+  //   legal-serial    → J-LEGAL   : pubblica una nuova versione legale, vincolante per tutti
+  //
+  // J-LEGAL resta ultimo: la sua leva è la più invasiva e gli altri seriali partono così da un
+  // catalogo e da una versione legale intatti.
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: /J-LEGAL\.spec\.ts/,
+      testIgnore: /(J-LEGAL|A-CONSOLE|F-DEGRADE)\.spec\.ts/,
+    },
+    {
+      name: 'admin-serial',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /A-CONSOLE\.spec\.ts/,
+      dependencies: ['chromium'],
+    },
+    {
+      name: 'degrade-serial',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /F-DEGRADE\.spec\.ts/,
+      dependencies: ['admin-serial'],
     },
     {
       name: 'legal-serial',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /J-LEGAL\.spec\.ts/,
-      dependencies: ['chromium'],
+      dependencies: ['degrade-serial'],
     },
   ],
 })

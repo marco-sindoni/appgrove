@@ -8,12 +8,9 @@
  * Eseguito una volta, PRIMA di ogni journey: così J-REG (sidebar ≡ entitlements, baseline
  * freemium inclusa) vede uno stato stabile e nessun journey osserva il catalogo cambiare in volo.
  */
-import { login } from './helpers/api'
+import { ADMIN_EMAIL, ADMIN_PASSWORD, login } from './helpers/api'
 
 const CORE_API = process.env.PLATFORM_CORE_API ?? 'http://localhost:20080'
-/** Platform-admin del seed (gruppo JWT `platform-admin`) + password dev universale. */
-const ADMIN_EMAIL = 'admin@appgrove.test'
-const ADMIN_PASSWORD = 'Password1!'
 
 async function setAppStatus(slug: string, status: string): Promise<void> {
   const tokens = await login(ADMIN_EMAIL, ADMIN_PASSWORD)

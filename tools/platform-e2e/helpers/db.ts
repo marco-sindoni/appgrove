@@ -33,10 +33,18 @@ export function dbRows(sql: string, params: string[] = []): string[][] {
 
 /**
  * Esecuzione di una scrittura SQL come **leva d'ambiente** — NON per costruire stato dei journey
- * (quello nasce sempre dal browser o dalle API, come per un utente). Unico uso sanzionato:
- * la pubblicazione di una nuova versione dei documenti legali in J-LEGAL (UC 0091), che simula
- * l'atto di deploy della CI (upsert su platform.legal_version) — non esiste un'azione utente
- * né un endpoint dev equivalente. Ogni nuovo uso va motivato nel registro decisioni della change.
+ * (quello nasce sempre dal browser o dalle API, come per un utente). Usi **sanzionati**, uno per
+ * riga, ciascuno motivato nel registro decisioni della change che l'ha introdotto:
+ *
+ * 1. **J-LEGAL** (UC 0091) — pubblicazione di una nuova versione dei documenti legali
+ *    (`platform.legal_version`): simula l'atto di deploy della CI; non esiste un'azione utente né
+ *    un endpoint di sviluppo equivalente.
+ * 2. **F-DEGRADE** (UC 0092) — sospensione della riga utente del proprio tenant usa-e-getta, per
+ *    invalidare la sessione **dal lato server**: nessuna azione utente la produce, e le uniche vie
+ *    di prodotto che ci arrivano (rimozione del membro, limitazione art. 18) appartengono ad altri
+ *    journey — usarle qui sarebbe duplicazione, non copertura.
+ *
+ * Ogni nuovo uso va aggiunto a questo elenco e motivato: la lista corta è il presidio.
  */
 export function dbExec(sql: string, params: string[] = []): void {
   dbRows(sql, params)
