@@ -609,3 +609,20 @@ pezzo oggi porta quell'evento fino al cliente.
 la guardia di rotta è solo uno strato di comodità. L'effetto è una voce di menu che porta a un errore invece che a un'app.
 **Owner**: da decidere fra #03 (frontend) e #08 (observability/piattaforma); diventerà uno use case quando la capacità sarà
 richiesta da più consumatori. Effort: medio/grande.
+
+## Instabilità osservate nell'esecuzione COMPLETA di `run-tests.sh` (change `0070`, 2026-08-01)
+
+Due aree sono risultate rosse **solo** nella corsa completa `./run-tests.sh` e verdi rieseguite da sole subito dopo
+(`./run-tests.sh frontend smoke`), su un albero che non tocca né il frontend né i servizi. Vanno indagate: una suite
+che dipende dall'ordine delle aree erode la fiducia nel comando unico.
+
+- **frontend** — `src/modules/crm/crm.test.tsx` e `src/modules/fatture/fatture.test.tsx` falliscono con «Unable to find
+  an element with the text: Mario Rossi» preceduti da `[MSW] Error: intercepted a request without a matching request
+  handler: GET /api/platform/v1/me/legal/status`. Sospetto: il gate legale (UC 0056) emette una richiesta non prevista
+  dai gestori di quei test di modulo e, sotto carico, la sua risposta mancata ritarda/annulla il rendering. Rimedio
+  candidato: aggiungere il gestore `me/legal/status` al set condiviso dei test di modulo. Owner: #03 (frontend).
+- **smoke** — `build artefatti fallita` con
+  `NoSuchFileException: services/core/target/classes/META-INF/openapi/openapi.yaml` durante `quarkus:build`. Sospetto:
+  interferenza con l'area `backend` eseguita prima (lo schema OpenAPI è rigenerato in `src/main/resources` dai test e
+  copiato in `target/classes`). Rimedio candidato: build dello smoke su target pulito o esclusione del file dalla
+  copia. Owner: #07 (DevOps/CI) con #04.

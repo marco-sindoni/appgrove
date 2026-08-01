@@ -124,6 +124,14 @@ chiude con l'assert leak-detector sul `tenant_id` (#10 dec. 13).
 
 ## Punti aperti / decisioni differite
 
+- **Ramo «upgrade → la creazione riesce di nuovo» di J-QUOTA su `fatture`** (change `0070`): non esercitabile —
+  il catalogo di `fatture` ha il solo tier free e i journey testano l'esistente senza estendere il prodotto. Il
+  ciclo completo quota→429→upgrade→sblocco è coperto sulla metrica a giacenza (posti) del crm dentro J-MEMBERS.
+  Quando `fatture` avrà un tier a pagamento (decisione di pricing, skill `pricing-change`), estendere J-QUOTA al
+  ciclo completo sulla metrica a consumo. Proprietario: questo UC.
+- **Invalidazione delle sessioni al reset password** (change `0070`): l'assert di J-PWD «il vecchio refresh non
+  vale più» è escluso perché il provider auth locale non invalida i refresh (JWT stateless senza revoca) — divario
+  tracciato nei punti aperti di UC 0058, che lo possiede.
 - **Journey di localizzazione end-to-end** (interfaccia + email nella stessa lingua per le 5 lingue): rimandato —
   la parità cataloghi è già coperta da unit (i18n) e L2; un journey per lingua quintuplicherebbe il tempo. Se ne
   riparla quando UC 0060 (localizzazione UI app) matura; il registro di UC 0093 lo elenca come `da-coprire`.

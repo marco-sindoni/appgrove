@@ -149,7 +149,9 @@ browser come li vede l'utente. Le utenze sintetiche hanno i ruoli minimi necessa
 - **Helper `paddle()` e `totp()`** (change `0069`): differiti ai loro **primi consumatori** — `paddle()` (fake
   overlay + webhook sintetici firmati di UC 0023) a UC 0091, `totp()` (codici 2FA a tempo) a UC 0091/0092. Un
   helper non esercitato da alcun journey sarebbe codice morto non collaudato; la libreria `helpers/` (mailbox,
-  db, tenant, login) è già in uso da J-REG.
+  db, tenant, login) è già in uso da J-REG. **Chiuso dalla change `0070` (UC 0091)**: `paddle` (checkout
+  programmatico + webhook sintetici firmati) e `totp` (codici RFC 6238) sono consegnati coi loro primi
+  consumatori (J-BUY/J-SUB/J-MEMBERS/J-PRIVACY e J-PWD).
 - **Baseline freemium e stato "senza app attive"** (change `0069`): l'attesa del flusso principale (passo 4,
   «sidebar senza app attive») è **superata dal prodotto reale** — la baseline freemium (UC 0027) rende ogni
   tenant nuovo entitled alle app con tier gratuito (es. `fatture`). J-REG asserta l'invariante vero: la sidebar

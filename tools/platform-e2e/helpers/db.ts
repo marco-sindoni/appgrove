@@ -31,6 +31,17 @@ export function dbRows(sql: string, params: string[] = []): string[][] {
     .map((l) => l.split('\t'))
 }
 
+/**
+ * Esecuzione di una scrittura SQL come **leva d'ambiente** — NON per costruire stato dei journey
+ * (quello nasce sempre dal browser o dalle API, come per un utente). Unico uso sanzionato:
+ * la pubblicazione di una nuova versione dei documenti legali in J-LEGAL (UC 0091), che simula
+ * l'atto di deploy della CI (upsert su platform.legal_version) — non esiste un'azione utente
+ * né un endpoint dev equivalente. Ogni nuovo uso va motivato nel registro decisioni della change.
+ */
+export function dbExec(sql: string, params: string[] = []): void {
+  dbRows(sql, params)
+}
+
 /** Come dbRows ma pretende UNA sola riga (con messaggio parlante in caso contrario). */
 export function dbRow(sql: string, params: string[] = []): string[] {
   const rows = dbRows(sql, params)

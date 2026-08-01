@@ -6,8 +6,8 @@
  * sessione come precondizione: passano dalle stesse API pubbliche dell'auth (signup +
  * email di verifica vera da Mailpit + verify), mai da scritture dirette sul database.
  *
- * Gli helper `paddle()` (fake overlay + webhook sintetici firmati, UC 0023) e `totp()`
- * (codici 2FA a tempo) arrivano coi loro primi consumatori: UC 0091/0092.
+ * Gli helper `paddle` (checkout programmatico + webhook sintetici firmati, UC 0023) e `totp`
+ * (codici 2FA a tempo) vivono nei moduli omonimi (primi consumatori: UC 0091).
  */
 import { waitForEmail, extractLink } from './mailbox'
 
@@ -76,7 +76,59 @@ export async function tenant(tag = 'tenant'): Promise<Tenant> {
   }
 }
 
-/** Accesso via API (provider locale; in profilo dev il 2FA è bypassato — #02 dec.18). */
+/**
+ * Accesso via API. Nella suite il bypass dev del 2FA è DISATTIVATO (run.sh): per un utente col
+ * 2FA attivo la risposta è la challenge, non i token — quei casi usano loginRaw()/loginMfa().
+ */
 export async function login(email: string, password: string): Promise<Tokens> {
   return postJson<Tokens>('/api/auth/login', { email, password })
+}
+
+/** Risposta di login "grezza": o i token, o la challenge del secondo fattore. */
+export type LoginRaw = Tokens | { mfa_required: true; challenge_token: string }
+
+export async function loginRaw(email: string, password: string): Promise<LoginRaw> {
+  return postJson<LoginRaw>('/api/auth/login', { email, password })
+}
+
+/** Secondo passo del login con 2FA: challenge + codice a tempo → token. */
+export async function loginMfa(challengeToken: string, code: string): Promise<Tokens> {
+  return postJson<Tokens>('/api/auth/login/2fa', { challenge_token: challengeToken, code })
+}
+
+/**
+ * Attesa a polling su condizione (mai sleep ciechi nei journey): ritenta `check` ogni 500ms
+ * fino a `timeoutMs`, poi fallisce col messaggio parlante fornito dal chiamante.
+ */
+export async function pollUntil(
+  check: () => Promise<boolean> | boolean,
+  opts: { timeoutMs?: number; message: string; intervalMs?: number },
+): Promise<void> {
+  const timeoutMs = opts.timeoutMs ?? 30_000
+  const intervalMs = opts.intervalMs ?? 500
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    if (await check()) return
+    if (Date.now() > deadline) {
+      throw new Error(`${opts.message} (attesa scaduta dopo ${Math.round(timeoutMs / 1000)}s)`)
+    }
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+}
+
+/** Fetch autenticata verso una API della suite (Bearer access token). */
+export async function authedFetch(
+  base: string,
+  path: string,
+  tokens: Tokens,
+  init: { method?: string; body?: unknown } = {},
+): Promise<Response> {
+  return fetch(`${base}${path}`, {
+    method: init.method ?? (init.body !== undefined ? 'POST' : 'GET'),
+    headers: {
+      authorization: `Bearer ${tokens.access_token}`,
+      ...(init.body !== undefined ? { 'content-type': 'application/json' } : {}),
+    },
+    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+  })
 }
