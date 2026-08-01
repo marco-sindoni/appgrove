@@ -146,3 +146,13 @@ browser come li vede l'utente. Le utenze sintetiche hanno i ruoli minimi necessa
 - **Tempo simulato** (scadenze abbonamento, grace GDPR): la leva per "far passare il tempo" nei journey (webhook
   sintetici di stato vs orologio manipolabile nei servizi in profilo dev) è decisa in UC 0091, che ne è il primo
   consumatore.
+- **Helper `paddle()` e `totp()`** (change `0069`): differiti ai loro **primi consumatori** — `paddle()` (fake
+  overlay + webhook sintetici firmati di UC 0023) a UC 0091, `totp()` (codici 2FA a tempo) a UC 0091/0092. Un
+  helper non esercitato da alcun journey sarebbe codice morto non collaudato; la libreria `helpers/` (mailbox,
+  db, tenant, login) è già in uso da J-REG.
+- **Baseline freemium e stato "senza app attive"** (change `0069`): l'attesa del flusso principale (passo 4,
+  «sidebar senza app attive») è **superata dal prodotto reale** — la baseline freemium (UC 0027) rende ogni
+  tenant nuovo entitled alle app con tier gratuito (es. `fatture`). J-REG asserta l'invariante vero: la sidebar
+  mostra **esattamente** gli entitlement riportati dal core per quel tenant. I journey figli (UC 0091/0092)
+  devono partire dalla stessa premessa, non dallo stato vuoto. Inoltre il **gate di accettazione legali**
+  (UC 0056) compare al primo accesso di ogni tenant nuovo: è parte del percorso di registrazione reale.

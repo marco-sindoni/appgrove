@@ -1,0 +1,4 @@
+# artefatti di esecuzione della suite (trace/screenshot/video Playwright + log dei servizi)
+test-results/
+playwright-report/
+.run/
