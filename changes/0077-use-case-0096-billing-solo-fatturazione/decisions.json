@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata all'invocazione dalla skill go-fast. Nessun gate di workflow (né revisione requisiti né consenso al commit); restano obbligatori la suite completa `./run-tests.sh` verde prima del commit, il registro decisioni integrale e la checklist di verifica manuale how-to-test.md. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0096 (Billing solo-fatturazione: abbonamenti + storico pagamenti/ricevute), epica evo 21-catalogo-app-backoffice, da cui la forma del branch 0077-use-case-0096-billing-solo-fatturazione. Il numero 0077 è il progressivo derivato dalla cartella changes/ (ultima presente: 0076).",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo stato di implementazione delle storie evo vive nell'ultima colonna di questa tabella (non in _INDEX.md, che copre le storie base): 0096 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Fonte tecnica dello storico pagamenti: PERSISTENZA delle transazioni alimentata dalla pipeline webhook (UC 0025), non lettura on-demand dal fornitore. Tre ragioni concrete: (a) il requisito di completezza chiede TUTTE le transazioni del conto, anche le fallite, e la pipeline le riceve già tutte; (b) la lettura on-demand richiederebbe un `paddle_customer_id` che è nullo finché non si è comprato qualcosa, e metterebbe una chiamata di rete verso l'esterno dentro il percorso di rendering di una pagina — un fornitore lento renderebbe lenta la pagina; (c) la pipeline è già idempotente, ordinata e collaudata: aggiungere una scrittura dentro la stessa transazione costa poco e non introduce un secondo modo di sbagliare. Contropartita accettata: lo storico riflette ciò che il webhook ci ha raccontato, quindi un evento perso è un buco — ma un evento perso è già oggi un abbonamento sbagliato, quindi non è un rischio nuovo.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V14__billing_transaction.sql",
+        "description": "Nuova tabella tenant-scoped platform.billing_transaction, unicità sul riferimento della transazione del fornitore."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionWriter.java",
+        "description": "La transazione si scrive NELLA STESSA transazione di database in cui l'evento si applica all'abbonamento: o entrambe o nessuna."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Contratto: nuova lettura `GET /api/platform/v1/me/payments`, senza alcun parametro (il conto viene solo dal token verificato), ristretta ai ruoli `owner` e `admin`. Motivo del gate: UC 0096 §2 assegna esplicitamente pagamenti e ricevute a owner/admin e lascia al member il solo accesso alla pagina; gli importi pagati dal workspace non sono informazione di cui un member abbia bisogno. La sezione non compare affatto per un member — meglio nasconderla che mostrarla rotta.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/PaymentsResource.java",
+        "description": "@RolesAllowed({owner, admin}); nessun parametro di conto."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Sorte del flusso di acquisto in Billing: la griglia delle app acquistabili (costruita dai moduli impacchettati nel frontend) viene RIMOSSA insieme al titolo \"Get an app\", ma il componente di checkout resta montato in Billing per il solo caso della RIATTIVAZIONE di un abbonamento scaduto. Motivo: riattivare non è scoprire — è un'azione self-service di UC 0028 che parte da una card di abbonamento già presente in pagina, e mandarla nel catalogo costringerebbe l'utente a cercare l'app che sta già guardando.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/Billing.tsx",
+        "description": "Via AppPicker e i suoi testi; restano il pannello abbonamenti, il nuovo pannello pagamenti e il checkout per la sola riattivazione."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Punto aperto ereditato da UC 0095 (nessuna via all'acquisto dalla vetrina per un'app freemium): RISOLTO qui, come UC 0095 chiedeva. La vetrina dichiara un campo nuovo `upgradeAvailable`, vero quando la card è `active` SENZA abbonamento (accesso dalla fascia gratuita di baseline) e l'app ha almeno un prezzo vivo: in quel caso la card offre, accanto ad \"Apri\", un'azione secondaria che apre lo stesso flusso di acquisto già ospitato dal catalogo. Scartata l'alternativa di rimandare a Billing: per un'app freemium senza abbonamento in Billing non c'è nulla da cambiare — non esiste una card di abbonamento — quindi il rimando sarebbe finito nel vuoto. Per un'app `active` CON abbonamento il campo resta falso: lì il cambio di piano vive in Billing e c'è davvero.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogReadModel.java",
+        "description": "upgradeAvailable derivato da (nessun abbonamento) ∧ (esiste un prezzo di partenza): entrambe le informazioni erano già calcolate, nessuna lettura in più."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/catalog/AppCatalogPage.tsx",
+        "description": "Azione secondaria di passaggio a un piano a pagamento sulla card active freemium, riservata a chi può comprare (owner)."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il simulatore locale del fornitore porta i dati economici veri: gli eventi `transaction.*` includono importo, valuta, ciclo, riferimento della transazione e collegamento alla ricevuta, risolti dal listino della fascia in gioco; e il percorso felice di attivazione emette, dopo l'attivazione, anche un `transaction.completed`. Senza questo lo storico in locale sarebbe sempre vuoto e la pagina non sarebbe verificabile a mano né collaudabile da un percorso end-to-end reale. Il calcolo dell'importo dal listino sta nello stub (dev/test) e non nel consumer: in produzione l'importo è un dato che arriva dal fornitore, e il backend non deve mai inventarlo.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/StubScenarioEmitter.java",
+        "description": "Dati economici negli eventi di transazione e pagamento riuscito nel percorso felice."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Diritti dell'interessato: la nuova tabella entra sia nell'ESPORTAZIONE dei dati del conto sia nella CANCELLAZIONE fisica alla chiusura del conto. La cancellazione non è opinabile (una tabella tenant-scoped che sopravvive alla purga è un difetto); l'esportazione è una scelta: uno storico di pagamenti è esattamente ciò che una persona si aspetta di ritrovare in una richiesta di accesso, e la tabella ha un filtro per conto pulito. Nessuna annotazione di dato personale e nessuna voce di manifesto: coerente con `subscription`, sono dati commerciali riferiti al conto senza identificatori diretti — l'unico identificatore verso il fornitore (`accounts.paddle_customer_id`) è già classificato a manifesto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "billing_transaction esportata e cancellata (prima di subscription, per l'ordine delle chiavi esterne)."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): si copre ORA. Nasce il percorso di livello 2 `L2-BILLING` (pagina senza elementi di vetrina, storico con pagamento fallito e riga senza ricevuta, stato vuoto con rimando al catalogo, guasto della sola sezione pagamenti, card di app sospesa dalla piattaforma) e si estende il percorso di piattaforma `J-BUY` perché, dopo l'acquisto vero, la transazione compaia davvero nello storico di Billing. UC 0096 esce dalle esenzioni `non-implementato` ed entra fra gli use case con superficie."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) L'avviso «app sospesa dalla piattaforma» sulla card di abbonamento NON viene riscritto: esiste già dalla change 0071 (badge «Sospesa» + spiegazione «abbonamento valido, dati intatti»), quindi il punto aperto di UC 0076 che UC 0096 doveva chiudere è già chiuso. Si aggiunge solo l'azione «Contatta l'assistenza» prevista dal riferimento visivo approvato, che dà una via d'uscita a chi legge l'avviso. Deliberatamente NON si scrive che l'abbonamento «non viene addebitato durante la sospensione», come suggerirebbe il mockup: UC 0076 lascia esplicitamente fuori la gestione commerciale, quindi sarebbe una promessa che il prodotto non mantiene. La domanda — se una sospensione di piattaforma debba sospendere l'addebito — è di prodotto e prezzo, non dell'agente: tracciata nei punti aperti di UC 0076."
+  }
+]
