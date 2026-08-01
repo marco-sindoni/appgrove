@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata espressamente dal chiamante (skill go-fast). Nessuna fermata di workflow: requisiti scritti e committati senza revisione, implementazione immediata, commit senza consenso ma solo a suite completa ./run-tests.sh verde. Merge e push restano al chiamante. Fermate di escalation attive."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0090 (fondamenta suite end-to-end di piattaforma): l'invocazione lo nomina esplicitamente e lo scope corrisponde a docs/usecases/20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md. Numero progressivo derivato da changes/: 0069 (ultimo esistente 0068). Da qui il branch change/0069-use-case-0090-e2e-platform-fondamenta.",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Lo stato implementativo delle storie evo vive nell'indice dell'onda 2 (decisione della change 0065), non in docs/usecases/_INDEX.md: la riga 16 (UC 0090) passa a 🟡 all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Le SPA vengono servite contro lo stack della suite da un server statico Node in sola libreria standard (nessuna dipendenza npm) che serve i dist/ costruiti, espone un config.json di suite (authBaseUrl/coreBaseUrl = origin del server stesso) e inoltra le rotte /api/* derivate dalla scoperta servizi (dev/lib/services.sh) — è l'opzione raccomandata dallo stesso use case nei punti aperti: il riuso di Caddy porterebbe la fragilità TLS//etc/hosts che lo smoke headless ha volutamente evitato. Nessuna modifica al build delle SPA: la configurazione runtime è già un file esterno (public/config.json) rimpiazzato dal server della suite.",
+    "files": [
+      { "file": "tools/platform-e2e/serve-spa.mjs", "description": "Server statico + inoltro API della suite (stdlib Node, zero dipendenze)." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Le funzioni comuni fra tools/smoke/stack-headless.sh e il nuovo orchestratore (env dev, compose up idempotente, migrate+seed, build artefatti in profilo dev, chiavi JWT locali, avvio servizio jar, attesa readiness HTTP) sono estratte nella libreria condivisa dev/lib/headless.sh, accanto a services.sh che entrambi già sorgono. Lo smoke è rifattorizzato per usarla SENZA cambiare comportamento (stesso offset +10000, stesse asserzioni): l'area smoke resta un collaudo indipendente.",
+    "files": [
+      { "file": "dev/lib/headless.sh", "description": "Nuova libreria condivisa dell'avvio headless dello stack (smoke + platform e2e)." },
+      { "file": "tools/smoke/stack-headless.sh", "description": "Rifattorizzato sulla libreria condivisa, comportamento invariato." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Porte della suite di piattaforma: offset +12000 sulle porte reali dei servizi (core 8080→20080, auth 9100→21100, …), diverso dal +10000 dello smoke, così suite, smoke e stack dev possono convivere sulla stessa macchina. SPA servite su porte fisse dedicate: backoffice 24173, admin 24174. Mailpit è quello del compose dev (porte da dev/.env, default SMTP 1025 / API HTTP 8025): la suite lo avvia idempotentemente insieme a Postgres ed ElasticMQ."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) I link nelle email della suite puntano al server SPA della suite: l'orchestratore passa al servizio auth AUTH_APP_BASE_URL=http://localhost:24173 (la proprietà auth.app-base-url è già pensata per essere iniettata per ambiente) e QUARKUS_MAILER_HOST/PORT verso il Mailpit del compose. Così il click sul link estratto dall'email atterra sulla pagina /verify della SPA servita dalla suite, senza toccare configurazione di produzione."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Helper condivisi implementati in questa change: mailbox (API HTTP Mailpit: attesa a polling con timeout parlante, lettura corpo, estrazione link), db (query/assert via docker exec psql sul container Postgres del compose — nessuna dipendenza npm 'pg': stessa tecnica del seed dello smoke), tenant (creazione programmatica di un tenant fresco via API signup+verify, riusando mailbox) e login (accesso via API). Gli helper paddle() e totp() elencati dallo use case sono DIFFERITI ai loro primi consumatori (UC 0091 per paddle/tempo simulato, UC 0091/0092 per totp): un helper non esercitato da alcun journey sarebbe codice morto non collaudato. Rimando scritto nei punti aperti di UC 0090.",
+    "files": [
+      { "file": "docs/usecases/20-test-e2e-piattaforma/0090-e2e-platform-fondamenta.md", "description": "Punti aperti: aggiunto il rimando esplicito paddle()/totp() → UC 0091/0092." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) CI: la suite gira come job dedicato 'platform' in verify-pr.yml, path-filtered (services/, dev/, frontend/, tools/platform-e2e/, run-tests.sh) e NON bloccante (continue-on-error), esattamente come lo smoke alla sua introduzione: fuori dal gate rapido per-change, dentro l'esecuzione completa ./run-tests.sh. La promozione a check required quando avrà dimostrato stabilità è tracciata negli stessi punti aperti di UC 0005 dove è tracciata quella dello smoke.",
+    "files": [
+      { "file": ".github/workflows/verify-pr.yml", "description": "Nuovo job platform (path-filter + continue-on-error), speculare al job smoke." },
+      { "file": "docs/usecases/02-devops-infra/0005-pipeline-cicd.md", "description": "Punti aperti: promozione del job platform a check required, accanto a quella dello smoke." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Anti-flakiness da requisito: ritenti Playwright = 1 (il ritento che passa è comunque segnalato dal reporter come 'flaky'), nessuna attesa a tempo fisso (polling su API Mailpit, stati UI, DB), fallimenti parlanti (l'attesa email scade con il messaggio 'email di verifica non ricevuta in Mailpit entro Ns', mai un timeout anonimo). Idempotenza fra esecuzioni: runId unico per run → email sintetiche uniche (e2e+<runId>@test.appgrove.local) e tenant sempre nuovi, nessuna pulizia richiesta fra due esecuzioni consecutive."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Valutazione end-to-end L2 (frontend/apps/*/e2e): nessun impatto — la change non tocca pagine, routing, shell né moduli delle SPA; aggiunge una suite di collaudo esterna (tools/platform-e2e) che consuma i frontend costruiti così come sono. Nessuna spec L2 da aggiungere o estendere."
+  }
+]
