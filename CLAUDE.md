@@ -158,10 +158,10 @@ Catalogo unico di specifiche implementative dettagliate, organizzato **per area 
 **numerazione assoluta a 4 cifre** (`NNNN`): indice per area → [docs/usecases/README.md](docs/usecases/README.md) ·
 **ordine di esecuzione + stato implementazione** → [docs/usecases/_INDEX.md](docs/usecases/_INDEX.md) (sync da `new-change`) ·
 template → [docs/usecases/_TEMPLATE.md](docs/usecases/_TEMPLATE.md). Aree **base** `01-business-legal … 11-apps`;
-**epiche evolutive (evo)** `12-ready-for-ai-mcp … 20-test-e2e-piattaforma` (lavoro post-base: epiche 12–19 formalizzate dal backlog, change `0064`; epica 20 = suite end-to-end di piattaforma + processo di copertura).
+**epiche evolutive (evo)** `12-ready-for-ai-mcp … 21-catalogo-app-backoffice` (lavoro post-base: epiche 12–19 formalizzate dal backlog, change `0064`; epica 20 = suite end-to-end di piattaforma + processo di copertura; epica 21 = catalogo app & UX backoffice, change `0066`).
 - Creazione/numerazione/scaffolding: skill **`new-usecase`**; implementazione: **`new-change`** (folder
   `NNNN-use-case-YYYY-…` quando nasce da uno use case).
-- Catalogo: **60 use case base** (0001–0060) + **34 storie evo** (0061–0094, epiche 12–20: 29 dalla change `0064`, 5 dell'epica 20 test e2e) = **94** in tutto.
+- Catalogo: **60 use case base** (0001–0060) + **37 storie evo** (0061–0097, epiche 12–21: 29 dalla change `0064`, 5 dell'epica 20 test e2e, 3 dell'epica 21 catalogo/UX) = **97** in tutto.
   Le evo hanno drill-down scritto (🟢) ma **fuori dall'ordine topologico** finché non maturano. Esempio migrato:
   [0017 — Flussi auth](docs/usecases/05-auth/0017-flussi-auth.md) (UC1–UC10). 0055–0057
   aggiunti dopo la revisione di copertura requisiti→use case (infra condivisa per-env, ri-accettazione legali runtime, skill

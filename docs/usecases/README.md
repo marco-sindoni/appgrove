@@ -212,6 +212,13 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | [0093](20-test-e2e-piattaforma/0093-e2e-platform-registro-copertura.md) | Registro di copertura e2e leggibile da programma (UC ↔ journey ↔ test) + check meccanico in area `tooling` | 0090, 0091, 0092, 0045 | 🟢 |
 | [0094](20-test-e2e-piattaforma/0094-e2e-platform-workflow-skill.md) | Integrazione nel workflow delle skill: `new-usecase`/`new-change`/`new-application` identificano e registrano i journey a ogni change | 0093, 0044, 0045, 0046 | 🟢 |
 
+### 21-catalogo-app-backoffice — Catalogo app & UX backoffice (proposta approvata nella change `0066`)
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0095](21-catalogo-app-backoffice/0095-pagina-app-catalog.md) | Pagina "App catalog" (read-model catalogo per-tenant, card con stati, ricerca, paginazione → checkout) | 0020, 0022, 0024, 0026, 0077 | 🟢 |
+| [0096](21-catalogo-app-backoffice/0096-billing-solo-fatturazione.md) | Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute; avviso app disabilitata) | 0095, 0028, 0025, 0026, 0077, 0076 | 🟢 |
+| [0097](21-catalogo-app-backoffice/0097-dashboard-operativa.md) | Dashboard operativa del workspace (+ Workspace ID in Account) | 0095, 0027, 0028, 0059, 0056, 0077 | 🟢 |
+
 ---
 **Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0060** appesi col prossimo `NNNN`
 libero (ID stabili, non riflettono l'area). Le **epiche evolutive** (aree `12`+) continuano la stessa sequenza globale da

@@ -144,3 +144,10 @@ modifica infrastrutturale; la dismissione definitiva (→ UC 0048 via skill `dro
   (email, banner) è una scelta di prodotto da fare separatamente; qui si registra solo l'audit interno.
 - **Programmazione/finestra**: disabilitazione pianificata (manutenzione programmata con finestra oraria) non è coperta;
   eventuale evoluzione.
+- **Fix — pagina Billing incoerente per app disabilitata** (osservato 2026-08-01 sullo stack locale): con un'app
+  disabilitata a livello piattaforma, la pagina Billing del backoffice mostra la subscription "Active" senza alcun
+  segnale, mentre la sidebar — correttamente — non mostra l'app (regola unica di accesso, UC 0077). Il pannello legge
+  `/me/subscriptions` (per disegno mostra tutte le subscription, UC 0028): giusto continuare a mostrarla, ma va
+  affiancato lo stato "app disabilitata dalla piattaforma" (badge/avviso con spiegazione). Possiede il punto questo
+  use case (è l'esperienza utente della disabilitazione); da implementare con la sua change o con la revisione UX
+  catalogo/billing se arriva prima.
