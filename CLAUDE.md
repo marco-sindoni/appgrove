@@ -63,10 +63,12 @@ Dettaglio operativo nella skill [`new-change`](.claude/skills/new-change/SKILL.m
 
 ## Modalità autopilot delle skill di change (non negoziabile nei suoi limiti)
 
-`new-change` — e quindi anche le skill che vi si appoggiano, come `new-application` — può girare in due modalità:
-**classica** (lo sviluppatore risponde a ogni domanda) o **autopilot** (l'agente risponde al posto suo). La modalità
+`new-change` — e quindi anche le skill che vi si appoggiano, come `new-application` — può girare in tre modalità:
+**classica** (autopilot `off`: lo sviluppatore risponde a ogni domanda), **autopilot** (`on`: l'agente risponde al
+posto suo, i tre gate restano umani) o **fast** (autopilot senza gate di workflow — vedi sotto). La modalità
 si dichiara all'invocazione; se non è dichiarata, la skill la chiede **come primissima azione**, con una domanda a
-scelta secca.
+scelta secca. La modalità fast **non si desume mai**: gira solo se dichiarata espressamente (o quando `new-change`
+è invocata dalla skill **`go-fast`**, che lavora sempre in fast).
 
 In autopilot valgono questi principi, vincolanti:
 
@@ -83,6 +85,18 @@ Limiti invalicabili: l'autopilot **risponde alle domande, non rimuove i presidi*
 sviluppatore, sempre — la **rilettura e approvazione dei requisiti**, il consenso al **commit** e quello al **merge**.
 In autopilot i requisiti sono il frutto delle risposte dell'agente: proprio per questo vanno riletti prima che si scriva
 una riga di codice. L'autopilot cambia *chi risponde alle domande*, mai *chi approva la change*.
+
+**Deroga sanzionata — modalità `fast`.** In fast è **lo sviluppatore stesso** che, dichiarandola all'invocazione,
+rinuncia in anticipo ai tre gate di workflow: i requisiti si scrivono e committano ma l'implementazione parte subito;
+il commit avviene senza consenso; il merge non è compito di `new-change` (lo fa il chiamante — tipicamente `go-fast`,
+che poi pusha). Le contropartite sono obbligatorie e non riducibili: **suite completa verde** (`./run-tests.sh` senza
+parametri) prima di ogni commit, **registro `decisions.json` integrale**, **tag di backup remoto** `<change-id>-backup`
+creato su `main` prima di ogni story (nel ciclo `go-fast`) e **`how-to-test.md`** nella cartella della change con la
+checklist di verifica manuale. Le **fermate di escalation restano attive anche in fast** (direzione di prodotto,
+prezzi/quote, dati personali ambigui, effetti irreversibili o verso l'esterno): fast toglie l'attesa ai gate, mai i
+presidi di sicurezza né la visibilità (i riepiloghi dei gate vengono comunque stampati). La skill **`go-fast`**
+orchestra l'implementazione in sequenza di più story (o un'epica intera) con questo schema: tag di backup → `new-change`
+fast → `how-to-test.md` → commit+merge+push → story successiva; si ferma al primo guasto non recuperabile.
 
 L'autopilot inoltre **si ferma e chiede** quando la domanda non è sua:
 direzione di prodotto, prezzi e quote, classificazioni su dati personali materialmente ambigue (categorie particolari,

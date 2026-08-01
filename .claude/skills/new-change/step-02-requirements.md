@@ -157,7 +157,7 @@ git add changes/NNNN-brief-description/requirements.md changes/NNNN-brief-descri
 git commit -m "chore(change/NNNN): write requirements"
 ```
 
-## MANDATORY STOP — requirements review gate (both modes, no exception)
+## MANDATORY STOP — requirements review gate (classic and autopilot; waived in fast)
 
 After committing, **STOP. Do not start implementing.** Requirements must be reviewed and
 explicitly approved by the developer before any implementation begins.
@@ -165,6 +165,12 @@ explicitly approved by the developer before any implementation begins.
 **Autopilot does not change this gate.** It is never auto-approved: in autopilot the requirements are the
 product of *your* answers, which is precisely why the developer always re-reads them before any code is
 written. Answering the questions and approving the result are two different things.
+
+**Fast mode is the sanctioned exception** (see `SKILL.md`, "Fast mode"): the developer waived this gate by
+declaring fast at invocation. Still write and commit `requirements.md` and `decisions.json` exactly as above,
+still print the autopilot transparency block below (visibility is not waived — only the waiting is), then
+**proceed immediately to step-03** without stopping. The clarification gate is self-served as in autopilot;
+only the escalation cases stop a fast run.
 
 Print (classic mode):
 ```
