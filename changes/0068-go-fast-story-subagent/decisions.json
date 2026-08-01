@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata dallo sviluppatore all'invocazione (\"new-change autopilot mode fast\"). Nessun gate di workflow; suite completa ./run-tests.sh verde obbligatoria prima del commit; il merge resta allo sviluppatore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Change ad-hoc, non legata a uno use case: nessun file in docs/usecases/ cita la skill go-fast (nata anch'essa da una change ad-hoc, la 0067). Da qui la forma del branch 0068-go-fast-story-subagent, senza segmento use-case."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ogni story del ciclo go-fast viene implementata da un sub-agente a contesto vergine lanciato con lo strumento Agent, tipo general-purpose (tutti gli strumenti: deve poter invocare la skill new-change, usare Bash, scrivere file), in esecuzione sincrona: il ciclo è sequenziale e la story successiva parte solo a merge avvenuto. Motivo: il contesto della sessione principale cresce solo di un rapporto per story invece che di un'implementazione intera, eliminando il rischio di compattazione a metà lavoro segnalato dallo sviluppatore.",
+    "files": [
+      { "file": ".claude/skills/go-fast/SKILL.md", "description": "Lo Step 3 del ciclo delega l'implementazione della story a un sub-agente invece di eseguirla nel contesto principale." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Ripartizione dei compiti: l'orchestratore (sessione principale) tiene solo coordinamento leggero — risoluzione e ordinamento della lista, clean start, calcolo del change id, tag di backup remoto, verifica post-story, merge, push, rapporto finale. Il sub-agente esegue new-change in modalità fast E scrive/committa how-to-test.md sul branch della change: ha il contesto vivo dell'implementazione, l'orchestratore no."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il sub-agente ritorna un rapporto strutturato con campi fissi (esito successo/guasto/escalation, change id, branch, esito suite, numero decisioni registrate, percorso di how-to-test.md, rimandi tracciati, dettaglio del guasto o della domanda di escalation): è l'unico contenuto che rientra nel contesto dell'orchestratore, poche righe per story."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Gestione delle escalation nel sub-agente: non potendo dialogare con lo sviluppatore, nei casi di escalation (direzione di prodotto, prezzi, dati personali ambigui, effetti irreversibili) il sub-agente si astiene dal commit, lascia il branch com'è e ritorna esito escalation con la domanda; l'orchestratore ferma il ciclo e riporta la domanda allo sviluppatore. Coerente col design esistente: l'escalation fermava già il ciclo."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Verifica dell'orchestratore prima del merge: leggera e deterministica — il branch della change esiste, i quattro artefatti sono presenti (requirements.md, implementation-log.md, decisions.json, how-to-test.md), l'albero di lavoro è pulito. La suite NON viene ri-eseguita dall'orchestratore: l'ha già eseguita il sub-agente dentro new-change fast, ri-eseguirla raddoppierebbe i tempi; il tag di backup remoto resta la rete di salvezza."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Coerenza del change id: lo calcola l'orchestratore (gli serve per il tag di backup, creato prima di lanciare il sub-agente) e lo passa nel prompt del sub-agente, che lo usa e ne verifica la corrispondenza col numero che new-change deriva da changes/; una discrepanza è un guasto che ferma il ciclo."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La prima esecuzione della suite completa era rossa in backend e tooling per cause ambientali estranee alla change (porta 8081 occupata da un processo Quarkus dev di fatture rimasto acceso; demone Docker di colima morto durante la corsa): nessuna modifica a codice o test, solo ripristino dell'ambiente (./app-stop.sh + riavvio di colima, dati preservati) e ri-esecuzione integrale, chiusa con tutte e 7 le aree verdi."
+  }
+]
