@@ -5,7 +5,7 @@
 **Completata**: 2026-08-01
 **Modalità**: **fast** (autopilot senza gate di workflow, dichiarata all'invocazione dalla skill `go-fast`) —
 le risposte alle domande di approfondimento e ogni scelta tecnica sono dell'agente e sono tracciate in
-[decisions.json](decisions.json) (24 voci, tutte marcate `(autopilot)` tranne la prima).
+[decisions.json](decisions.json) (25 voci, tutte marcate `(autopilot)` tranne la prima).
 
 ## File modificati
 
@@ -43,6 +43,7 @@ le risposte alle domande di approfondimento e ogni scelta tecnica sono dell'agen
 | `docs/usecases/21-catalogo-app-backoffice/0096-*.md` | Modificato (punti aperti) |
 | `docs/usecases/21-catalogo-app-backoffice/0095-*.md` | Modificato (punto aperto chiuso) |
 | `docs/usecases/15-supporto-e-piattaforma/0076-*.md` | Modificato (punto aperto sull'addebito) |
+| `dev/seed/seed-subscriptions.sql` (+ `dev/seed/README.md`) | Modificato (storico pagamenti nel seed locale) |
 | `docs/_BACKLOG.md` · `docs/_PARITA-SCAFFOLD.md` · `docs/usecases/EPICS-WAVE-2.md` | Modificato |
 
 ## Cosa è stato fatto
@@ -84,6 +85,10 @@ completo e strutturato in [decisions.json](decisions.json)):
 - **Nessun importo inventato dal backend**: un evento di transazione senza importo o valuta non produce
   alcuna riga. In una pagina di fatturazione un numero finto è peggio di un dato mancante.
 - **Copertura end-to-end**: coperta ora — nuovo percorso `L2-BILLING` e `J-BUY` esteso fino allo storico.
+- **Il seed locale porta quattro pagamenti deterministici**, coerenti con i suoi abbonamenti (due riusciti
+  con ricevuta, uno fallito e senza ricevuta — che è anche il motivo del `past_due` di Notes — e uno di un
+  abbonamento poi disdetto): senza, la sezione sarebbe vuota su ogni account locale e non osservabile senza
+  fare prima un acquisto.
 
 **Due guasti trovati e corretti in corsa**, entrambi dalla suite completa e non dai test mirati:
 

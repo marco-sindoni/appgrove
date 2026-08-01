@@ -190,5 +190,19 @@
   {
     "id": 24,
     "decision": "(autopilot) Esito della suite COMPLETA `./run-tests.sh` (backend, frontend, infra, compliance, tooling, smoke, platform, site): VERDE. Due guasti trovati e corretti lungo la strada, entrambi conseguenza reale della change e non aggiustamenti di comodo: l'orologio non monotòno del simulatore (decisione 20) e il conteggio degli step di esportazione GDPR, salito da 6 a 7 con l'aggiunta dello storico pagamenti — il test è stato aggiornato al numero vero, non alleggerito."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Il seed locale acquisisce quattro transazioni deterministiche, coerenti con gli abbonamenti che già contiene: senza, la sezione «Payments & receipts» sarebbe vuota su ogni account locale e la pagina non sarebbe osservabile senza prima fare un acquisto. Le righe sono scelte per esercitare a occhio i casi che contano: due pagamenti riusciti con ricevuta (Acme→Teams), uno FALLITO e SENZA ricevuta (Acme→Notes — è anche il motivo per cui quell'abbonamento è `past_due`, quindi il seed diventa più coerente di prima) e un pagamento di un abbonamento poi disdetto (Bob→Teams), che dimostra che lo storico sopravvive alla disdetta. Restano fuori dal seed le transazioni prodotte dallo stub durante un acquisto vero: quelle nascono dalla pipeline, ed è giusto che il collaudo end-to-end le crei da sé.",
+    "files": [
+      {
+        "file": "dev/seed/seed-subscriptions.sql",
+        "description": "Blocco billing_transaction idempotente e deterministico, accanto alle subscription da cui dipende."
+      },
+      {
+        "file": "dev/seed/README.md",
+        "description": "Tabella dello storico pagamenti del seed, con il perché di ogni riga."
+      }
+    ]
   }
 ]

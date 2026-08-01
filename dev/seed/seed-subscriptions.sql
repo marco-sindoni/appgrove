@@ -28,3 +28,22 @@ ON CONFLICT (id) DO UPDATE SET
   current_period_end = EXCLUDED.current_period_end, cancel_at = EXCLUDED.cancel_at,
   trial_end = EXCLUDED.trial_end, paddle_subscription_id = EXCLUDED.paddle_subscription_id,
   updated_at = EXCLUDED.updated_at;
+
+-- ── billing_transaction: storico pagamenti della pagina Billing (UC 0096) ─────
+-- Perché sta nel seed: senza queste righe la sezione "Payments & receipts" sarebbe vuota su ogni
+-- account locale, e la pagina non sarebbe osservabile senza prima fare un acquisto. Le righe sono
+-- coerenti con gli abbonamenti qui sopra: Acme paga Teams da due mesi; il pagamento di Notes è
+-- FALLITO (ed è per questo che quell'abbonamento è `past_due`, con la sua riga senza ricevuta —
+-- il caso "ricevuta non disponibile"); Bob ha pagato Teams prima di disdire, e lo storico glielo
+-- ricorda anche adesso che l'abbonamento non c'è più.
+--  Acme→teams  paid ×2  · Acme→notes  failed (senza ricevuta)  · Bob→teams  paid
+INSERT INTO platform.billing_transaction (id, tenant_id, app_id, app_tier_id, paddle_transaction_id, status, amount, currency, billing_cycle, receipt_url, billed_at, created_at, updated_at, created_by) VALUES
+  ('11000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '1c4ea96d-bc57-3109-9c83-0933a3553779', 'e075f588-c33b-35c5-af41-285c1d006f8e', 'txn_seed_acme_teams_06', 'paid',   1900, 'EUR', 'monthly', 'https://sandbox-my.paddle.com/receipts/seed-acme-teams-06', '2024-06-01T09:12:00Z', '2024-06-01T09:12:00Z', '2024-06-01T09:12:00Z', 'seed'),
+  ('11000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', '1c4ea96d-bc57-3109-9c83-0933a3553779', 'e075f588-c33b-35c5-af41-285c1d006f8e', 'txn_seed_acme_teams_05', 'paid',   1900, 'EUR', 'monthly', 'https://sandbox-my.paddle.com/receipts/seed-acme-teams-05', '2024-05-01T09:12:00Z', '2024-05-01T09:12:00Z', '2024-05-01T09:12:00Z', 'seed'),
+  ('11000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'e8b95b18-4b67-3943-aa28-5544c737f9eb', '491687be-df2b-344c-b99d-8c3a601fa7c5', 'txn_seed_acme_notes_06', 'failed',  900, 'EUR', 'monthly', NULL,                                                        '2024-06-02T04:30:00Z', '2024-06-02T04:30:00Z', '2024-06-02T04:30:00Z', 'seed'),
+  ('11000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000002', '1c4ea96d-bc57-3109-9c83-0933a3553779', 'e075f588-c33b-35c5-af41-285c1d006f8e', 'txn_seed_bob_teams_05',  'paid',   1900, 'EUR', 'monthly', 'https://sandbox-my.paddle.com/receipts/seed-bob-teams-05',  '2024-05-01T11:45:00Z', '2024-05-01T11:45:00Z', '2024-05-01T11:45:00Z', 'seed')
+ON CONFLICT (id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id, app_id = EXCLUDED.app_id, app_tier_id = EXCLUDED.app_tier_id,
+  paddle_transaction_id = EXCLUDED.paddle_transaction_id, status = EXCLUDED.status,
+  amount = EXCLUDED.amount, currency = EXCLUDED.currency, billing_cycle = EXCLUDED.billing_cycle,
+  receipt_url = EXCLUDED.receipt_url, billed_at = EXCLUDED.billed_at, updated_at = EXCLUDED.updated_at;
