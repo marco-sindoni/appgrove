@@ -19,5 +19,8 @@ export const crmManifest: ModuleManifest = {
     { id: 'contacts', label: t.sectionContacts, route: '', icon: 'contacts' },
     { id: 'members', label: t.sectionMembers, route: 'members', icon: 'group' },
   ],
+  // Quota principale dell'app, per la barra di consumo della Dashboard (UC 0097). Il modulo non è
+  // ancora migrato all'i18n della shell: l'etichetta è già localizzata, come le altre sue stringhe.
+  quota: { path: '/api/crm/v1/quota', unitLabel: t.quotaUnit },
   component: lazy(() => import('./CrmModule')),
 }

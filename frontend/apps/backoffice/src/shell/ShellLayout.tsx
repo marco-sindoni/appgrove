@@ -4,7 +4,6 @@ import { ShellProvider } from '../registry/ShellContext'
 import { EnforcementBanner } from '../billing/EnforcementBanner'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
-import { TwoFaNudge } from './TwoFaNudge'
 import { LegalGate, LegalNoticeBanner } from './legal/LegalGate'
 
 /** Chrome permanente: sidebar (drawer su mobile) + topbar + area contenuti (`Outlet`). Responsive (#03 dec.12). */
@@ -37,7 +36,9 @@ export function ShellLayout() {
             <Topbar onOpenSidebar={() => setDrawerOpen(true)} />
             <EnforcementBanner />
             <LegalNoticeBanner />
-            <TwoFaNudge />
+            {/* L'invito ad attivare il secondo fattore non è più qui: è un avviso della Dashboard
+                (UC 0097), dove è vero — legge lo stato reale — e dove non si può chiudere finché il
+                problema c'è. Un banner cieco e dimenticabile diceva la stessa cosa peggio. */}
             <main className="flex-1 overflow-y-auto">
               <div className="mx-auto w-full max-w-[1180px] px-[34px] pb-[60px] pt-[30px]">
                 <Outlet />

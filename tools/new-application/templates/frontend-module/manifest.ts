@@ -20,5 +20,8 @@ export const @@APP_CAMEL@@Manifest: ModuleManifest = {
   accentToken: '@@ACCENT@@',
   sections: [{ id: 'items', label: '@@APP_ID@@:sectionItems', route: '', icon: '@@ICON@@' }],
   resources: @@APP_CAMEL@@Resources,
+  // Quota principale dell'app, per la barra di consumo della Dashboard (UC 0097): l'uso corrente lo
+  // conosce solo il servizio dell'app, quindi la Dashboard va a leggerlo là.
+  quota: { path: '/api/@@APP_ID@@/v1/quota', unitLabel: '@@APP_ID@@:quotaUnit' },
   component: lazy(() => import('./@@APP_CLASS@@Module')),
 }

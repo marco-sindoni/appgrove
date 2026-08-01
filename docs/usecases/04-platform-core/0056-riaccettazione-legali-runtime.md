@@ -95,3 +95,12 @@ Schema `platform`: **`legal_version`** (componente/major/effective_date — dato
   inclusa nella change 0056 (banner non bloccante), ma il **preavviso email 30gg** e la finestra di opposizione per un
   nuovo sub-processor richiedono il **canale email/notifiche esterne** (territorio UC 0039) e una macchina a stati
   dedicata → **differito**. *Owner*: UC 0056.
+
+- **Gli aggiornamenti MINORI non si possono "prendere in carico"** (da change `0078-use-case-0097-…`): il banner non
+  bloccante degli aggiornamenti minori si può solo **chiudere**, e la chiusura vive nella memoria della pagina: nessuna
+  presa visione viene registrata sul server, quindi `notices` resta pieno per sempre e il banner ricompare a ogni
+  ricaricamento. Manca la schermata «rivedi i documenti aggiornati» che permetta di leggerli e registrare la presa
+  visione con `POST /me/legal/acceptance` — il contratto server esiste già, è l'interfaccia che manca. *Perché
+  differito*: la change 0078 possiede il cruscotto, non il flusso legale; per la stessa ragione ha deciso di **non**
+  duplicare l'avviso legale fra gli avvisi della Dashboard, che sarebbe stato un secondo posto dove dire la stessa cosa
+  senza poterci fare nulla. *Owner*: UC 0056.

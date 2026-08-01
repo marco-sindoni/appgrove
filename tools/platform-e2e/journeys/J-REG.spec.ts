@@ -67,6 +67,20 @@ test('[J-REG] signup → email verificata davvero → onboarding → dashboard �
 
   await expect(page.getByText('Platform')).toBeVisible()
 
+  // ── 4-bis. la Dashboard è una PANORAMICA OPERATIVA (UC 0097) ────────────────
+  // Fino alla change 0078 questa pagina mostrava soltanto il codice tecnico del workspace. Ora
+  // saluta, nomina il workspace e riassume ciò che c'è dentro: si asserta su stack vero, perché è
+  // la prima cosa che un utente registrato vede.
+  await expect(page.getByRole('heading', { name: /^Welcome back/, level: 1 })).toBeVisible()
+  await expect(
+    page.getByText(`Here’s what’s happening in the ${workspaceName} workspace.`),
+  ).toBeVisible()
+  const glance = page.getByRole('complementary', { name: 'Workspace at a glance' })
+  await expect(glance.getByText('Members')).toBeVisible()
+  await expect(glance.getByText('Pending invites')).toBeVisible()
+  await expect(glance.getByText('Active apps')).toBeVisible()
+  await expect(glance.getByRole('button', { name: 'Browse the catalog' })).toBeVisible()
+
   // Sidebar "Your apps": per un tenant NUOVO gli entitlement sono la sola baseline
   // freemium (UC 0027: le app con un tier senza prezzo — es. `fatture` dal catalogo seed).
   // Non si cabla il catalogo nel test: si chiede al core la verità per QUESTO tenant
@@ -113,6 +127,16 @@ test('[J-REG] signup → email verificata davvero → onboarding → dashboard �
   // altri tenant) e il tenant appena nato contiene SOLO il suo owner.
   expect(dbRows(`select tenant_id from platform.users where lower(email) = lower($1)`, [email])).toHaveLength(1)
   expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [tenantId])[0]).toBe('1')
+
+  // ── 6. l'identificativo del workspace è in Account, non in Dashboard (UC 0097) ──
+  // Confronto con il valore VERO letto dal database: prova che il codice mostrato è quello del
+  // tenant e che la Dashboard non lo espone più.
+  await expect(page.getByText(tenantId)).toHaveCount(0)
+  await page.getByRole('link', { name: 'Account' }).click()
+  const content = page.getByRole('main')
+  await expect(content.getByRole('heading', { name: 'Workspace' })).toBeVisible()
+  await expect(content.getByText(tenantId)).toBeVisible()
+  await expect(content.getByRole('button', { name: 'Copy workspace ID' })).toBeVisible()
 })
 
 test('[J-REG-API] tenant() programmatico — helper pronto per gli UC 0091/0092', async () => {

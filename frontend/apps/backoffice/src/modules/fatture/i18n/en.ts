@@ -50,6 +50,8 @@ export const en = {
 
   // Quota
   quotaLabel: 'Invoices this month',
+  // Unità consumata, per la barra della Dashboard (UC 0097): "3 of 20 invoices".
+  quotaUnit: 'invoices',
   quotaReached: 'You have reached your plan’s monthly limit.',
   quotaUpgrade: 'Upgrade your plan',
 

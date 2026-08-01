@@ -12,6 +12,7 @@ import app.appgrove.auth.AuthDtos.SignupRequest;
 import app.appgrove.auth.AuthDtos.SignupResponse;
 import app.appgrove.auth.AuthDtos.TokenResponse;
 import app.appgrove.auth.AuthDtos.TwoFaCodeRequest;
+import app.appgrove.auth.AuthDtos.TwoFaStatusResponse;
 import app.appgrove.auth.AuthDtos.VerifiedResponse;
 import app.appgrove.auth.AuthDtos.VerifyRequest;
 import app.appgrove.auth.IdentityProvider.Enrollment;
@@ -202,6 +203,17 @@ public class AuthResource {
     public Response verify2fa(@HeaderParam("Authorization") String authorization, @Valid TwoFaCodeRequest body) {
         provider().confirmTotpEnrollment(bearerToken(authorization), jwt.getSubject(), body.code());
         return Response.noContent().build();
+    }
+
+    /**
+     * Stato del secondo fattore dell'utente del token (UC 0097): serve al prodotto per invitare ad
+     * attivarlo <b>solo</b> chi non l'ha già fatto. Soggetto dal token verificato, mai dal client.
+     */
+    @GET
+    @Path("/2fa/status")
+    @Authenticated
+    public TwoFaStatusResponse twoFaStatus(@HeaderParam("Authorization") String authorization) {
+        return new TwoFaStatusResponse(provider().totpEnabled(bearerToken(authorization), jwt.getSubject()));
     }
 
     // ── helper ─────────────────────────────────────────────────────────────

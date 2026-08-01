@@ -32,13 +32,14 @@ usecases_con_superficie:
   - "0077" # Provider entitlement reale (menu laterale e matrice)
   - "0095" # Pagina "App catalog" del backoffice (vetrina, stati, ricerca, paginazione)
   - "0096" # Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute)
+  - "0097" # Dashboard operativa del workspace (+ Workspace ID in Account)
 
 # ── I percorsi ────────────────────────────────────────────────────────────────
 percorsi:
   # ---- Suite di piattaforma (stack reale + browser vero + Mailpit) -----------
   - id: J-REG
-    titolo: Registrazione — iscrizione, verifica email reale, primo ingresso, cruscotto
-    usecases: ["0017", "0020", "0056", "0058"]
+    titolo: Registrazione — iscrizione, verifica email reale, primo ingresso, cruscotto operativo, identificativo del workspace in Account
+    usecases: ["0017", "0020", "0056", "0058", "0097"]
     stato: coperto
     test:
       - livello: platform
@@ -180,6 +181,14 @@ percorsi:
     test:
       - livello: l2
         file: frontend/apps/backoffice/e2e/billing.spec.ts
+
+  - id: L2-DASHBOARD
+    titolo: Cruscotto operativo — panoramica con app in uso e barra di consumo, avvisi in ordine di gravità, workspace vuoto verso il catalogo, guasto di una sola fonte, identificativo del workspace in Account
+    usecases: ["0097", "0027"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/dashboard.spec.ts
 
   - id: L2-SUB
     titolo: Abbonamenti dal backoffice — riduzione programmata, avviso di quota con invito a passare di fascia, app disabilitata dalla piattaforma
@@ -601,6 +610,3 @@ esenzioni:
   - usecase: "0094"
     categoria: senza-superficie
     motivo: Integrazione della copertura nel workflow delle skill — strumento di processo.
-  - usecase: "0097"
-    categoria: non-implementato
-    motivo: Cruscotto operativo dello spazio di lavoro — non ancora implementato.

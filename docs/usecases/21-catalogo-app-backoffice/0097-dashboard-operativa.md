@@ -77,3 +77,31 @@ solo pagina).
 - **Decisioni**: change 0066; UC 0077 (pattern stati); #03 (frontend).
 - **DoD**: nuova Dashboard in locale; UUID solo in Account; degradazione per-sezione dimostrata nei test; i18n 5
   lingue; test verdi delle aree toccate; indici aggiornati dalla change.
+
+## Punti aperti / decisioni differite
+
+Aperti dalla change `0078` (implementazione di questo use case).
+
+- **Una lettura di quota per ogni app in uso.** Il consumo lo conosce solo il servizio dell'app, quindi la Dashboard
+  interroga `GET /api/<app>/v1/quota` una volta per card. Con le due app di oggi il costo è nullo; con un workspace che
+  ne usasse una decina la pagina d'atterraggio aprirebbe dieci connessioni. Il giorno in cui capiterà, la via è una
+  lettura riassuntiva unica — che però richiede al core di interpellare tutte le app, cosa che oggi non fa da nessuna
+  parte. *Perché differito*: nessun problema reale con il catalogo attuale, e la soluzione introdurrebbe un modo nuovo di
+  far parlare i servizi fra loro. *Owner*: UC 0097, insieme a UC 0027 (quote).
+
+- **Un'app attiva senza modulo impacchettato nel frontend non ha barra e ha un "Open" che non porta da nessuna parte.**
+  La griglia nasce dalla vetrina del catalogo (che conosce tutte le app), mentre il modulo da montare vive nel pacchetto
+  del frontend: un'app venduta ma non ancora impacchettata comparirebbe con una card senza consumo e con un pulsante
+  verso una rotta che non monta nulla. Oggi non può accadere (le app del catalogo sono le stesse del registro dei
+  moduli), ma la coppia non è imposta da nulla. Vale identicamente per la vetrina (UC 0095). *Perché differito*: è la
+  stessa domanda — chi garantisce che catalogo e moduli restino allineati — che nasce con la prima app venduta senza
+  modulo. *Owner*: UC 0095/0097, con UC 0046 (scaffolding).
+
+- **Il saluto non conosce l'ora del giorno.** Il riferimento visivo approvato (change 0066) dice "Good morning"; la
+  pagina dice "Welcome back", che è vero a qualunque ora e in tutte e cinque le lingue senza dover indovinare il fuso
+  orario dell'utente. Se si vorrà il saluto per fascia oraria servirà decidere da dove viene l'ora (browser o profilo) e
+  come si traduce in cinque lingue. *Owner*: UC 0097.
+
+- **Avviso legale non duplicato.** Gli avvisi della Dashboard sono due, non tre: gli aggiornamenti legali minori hanno
+  già il loro avviso nel guscio (UC 0056) e ripeterli qui avrebbe detto la stessa cosa due volte con meno strumenti. Il
+  vero limite — che una presa visione non si può registrare — è tracciato nei punti aperti di **UC 0056**.

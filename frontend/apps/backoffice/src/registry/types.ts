@@ -17,6 +17,25 @@ export interface ModuleSection {
 }
 
 /**
+ * Descrittore **facoltativo** della quota principale di un'app (UC 0097): dove leggerla e come si
+ * chiama ciò che si consuma. Serve alla Dashboard per la barra "usato / limite" della card dell'app.
+ *
+ * <p>Vive nel manifest e non in un read-model di piattaforma perché **l'uso corrente lo conosce solo il
+ * servizio dell'app**: il core non lo sa e non deve interpellare le app per saperlo. Un modulo che non
+ * dichiara il descrittore semplicemente non mostra la barra — nessun errore, nessuna barra inventata.
+ */
+export interface ModuleQuota {
+  /** Percorso della lettura di quota esposta dal servizio dell'app, es. `/api/fatture/v1/quota`. */
+  path: string
+  /**
+   * Nome di ciò che si consuma ("invoices", "seats", …), mostrato accanto ai numeri. Vale la stessa
+   * convenzione di `ModuleSection.label`: chiave i18n del modulo, oppure stringa già localizzata per i
+   * moduli non ancora migrati all'i18n (`t()` restituisce invariata una chiave che non conosce).
+   */
+  unitLabel: string
+}
+
+/**
  * Manifest co-locato di un modulo app (#01 dec.10/11, #03 dec.6): identità, sezioni sidebar,
  * metadata, e il componente React **lazy** che la shell monta via contratto Context.
  */
@@ -38,6 +57,8 @@ export interface ModuleManifest {
    * ancora migrati all'i18n (restano con stringhe italiane cablate).
    */
   resources?: Partial<Record<Language, Record<string, unknown>>>
+  /** Quota principale dell'app, per la barra di consumo della Dashboard (UC 0097). Facoltativa. */
+  quota?: ModuleQuota
   component: LazyExoticComponent<ComponentType>
 }
 

@@ -35,6 +35,11 @@ class TwoFactorTest {
         String password = "Password1!";
         String access = Flows.register(mailbox, email, password);
 
+        // prima dell'iscrizione lo stato è "non attivo": è ciò che la Dashboard usa per invitare
+        // ad attivarlo (UC 0097), e deve dire la verità.
+        given().header("Authorization", "Bearer " + access)
+                .when().get("/api/auth/2fa/status").then().statusCode(200).body("enabled", is(false));
+
         // enroll → segreto
         String secret = given().header("Authorization", "Bearer " + access)
                 .when().post("/api/auth/2fa/enroll")
@@ -45,6 +50,10 @@ class TwoFactorTest {
         given().header("Authorization", "Bearer " + access).contentType(ContentType.JSON)
                 .body(Map.of("code", Flows.totpCode(secret)))
                 .when().post("/api/auth/2fa/verify").then().statusCode(204);
+
+        // dopo la conferma lo stato passa ad "attivo": un'iscrizione avviata e mai confermata non conta
+        given().header("Authorization", "Bearer " + access)
+                .when().get("/api/auth/2fa/status").then().statusCode(200).body("enabled", is(true));
 
         // login ora risponde con challenge (bypass off nei test), niente token
         String challenge = given().contentType(ContentType.JSON).body(Map.of("email", email, "password", password))
@@ -65,5 +74,10 @@ class TwoFactorTest {
     @Test
     void enrollRequiresAccessToken() {
         given().when().post("/api/auth/2fa/enroll").then().statusCode(401);
+    }
+
+    @Test
+    void statusRequiresAccessToken() {
+        given().when().get("/api/auth/2fa/status").then().statusCode(401);
     }
 }

@@ -51,6 +51,7 @@ export const fr: FattureMessages = {
 
   // Quota
   quotaLabel: 'Factures ce mois-ci',
+  quotaUnit: 'factures',
   quotaReached: 'Vous avez atteint la limite mensuelle de votre forfait.',
   quotaUpgrade: 'Passez à un forfait supérieur',
 

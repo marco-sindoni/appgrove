@@ -49,14 +49,14 @@ test('[L2-LEGAL] gate legale: major pendente → schermata bloccante → accetta
   // schermata bloccante (default UI language = EN)
   await expect(page.getByText('Updated legal documents')).toBeVisible()
   // l'app non è ancora accessibile
-  await expect(page.getByText('Your apps')).toHaveCount(0)
+  await expect(page.getByRole('navigation', { name: 'Platform' }).getByText('Your apps')).toHaveCount(0)
 
   // spunta l'accettazione dei Termini e continua
   await page.getByRole('checkbox').first().check()
   await page.getByRole('button', { name: 'Continue' }).click()
 
   // sbloccato: la shell è visibile
-  await expect(page.getByText('Your apps')).toBeVisible()
+  await expect(page.getByRole('navigation', { name: 'Platform' }).getByText('Your apps')).toBeVisible()
 })
 
 test('[L2-LEGAL] diritti GDPR esenti: la pagina "I miei dati" è raggiungibile col blocco pendente', async ({ page }) => {

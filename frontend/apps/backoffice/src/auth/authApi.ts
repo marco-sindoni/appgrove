@@ -204,3 +204,16 @@ export async function enroll2fa(authBaseUrl: string, accessToken: string): Promi
 export async function verify2fa(authBaseUrl: string, accessToken: string, code: string): Promise<void> {
   await post(authBaseUrl, '/2fa/verify', { code }, accessToken)
 }
+
+/**
+ * `GET /api/auth/2fa/status` (Bearer) → vero se il secondo fattore è **attivo** per l'utente in
+ * sessione. È il segnale che permette al prodotto di invitare ad attivarlo **solo** chi non l'ha
+ * ancora fatto (UC 0097): prima di questa lettura l'invito era cieco e si limitava a farsi chiudere.
+ */
+export async function twoFaStatus(authBaseUrl: string, accessToken: string): Promise<boolean> {
+  const res = await authFetch(`${authBaseUrl}/api/auth/2fa/status`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  const json = (await res.json()) as { enabled?: boolean }
+  return json.enabled === true
+}

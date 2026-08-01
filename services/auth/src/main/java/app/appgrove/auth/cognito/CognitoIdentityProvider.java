@@ -314,6 +314,13 @@ public class CognitoIdentityProvider implements IdentityProvider {
     }
 
     @Override
+    public boolean totpEnabled(String bearerToken, String sub) {
+        // `userMFASettingList` elenca i fattori CONFERMATI: un'iscrizione avviata e mai confermata non
+        // vi compare, che è esattamente la semantica che la lettura promette.
+        return !client().getUser(b -> b.accessToken(bearerToken)).userMFASettingList().isEmpty();
+    }
+
+    @Override
     public Optional<String> jwks() {
         return Optional.empty(); // in cloud i servizi validano sul JWKS Cognito (issuer del pool)
     }

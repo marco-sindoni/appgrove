@@ -82,6 +82,16 @@ public interface IdentityProvider {
 
     void confirmTotpEnrollment(String bearerToken, String sub, String code);
 
+    /**
+     * Vero se l'utente del token ha il secondo fattore <b>attivo</b> (iscrizione confermata), falso
+     * altrimenti — anche quando l'iscrizione è stata avviata ma mai confermata.
+     *
+     * <p>Esiste perché il prodotto deve poter <b>dire la verità</b> sullo stato del secondo fattore
+     * (UC 0097): un invito ad attivarlo mostrato a chi l'ha già attivo è peggio di nessun invito.
+     * È una sola lettura: non avvia, non conferma e non disattiva nulla.
+     */
+    boolean totpEnabled(String bearerToken, String sub);
+
     /** JWKS locale (solo provider Local: in cloud i servizi validano sul JWKS Cognito). */
     Optional<String> jwks();
 }

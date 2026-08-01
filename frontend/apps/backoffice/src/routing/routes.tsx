@@ -1,7 +1,7 @@
 import type { RouteObject } from 'react-router-dom'
 import { ShellLayout } from '../shell/ShellLayout'
 import { ProtectedRoute, AppModuleHost, requireAuth, requireAnyRole } from './guards'
-import { Dashboard } from '../pages/Dashboard'
+import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { Account } from '../pages/Account'
 import { Billing } from '../pages/Billing'
 import { AppCatalogPage } from '../pages/catalog/AppCatalogPage'
@@ -38,7 +38,7 @@ export const routes: RouteObject[] = [
       {
         element: <ShellLayout />,
         children: [
-          { index: true, element: <Dashboard /> },
+          { index: true, element: <DashboardPage /> },
           // Vetrina (UC 0095): nessun guard di entitlement — vedere che cosa esiste non richiede diritti.
           { path: 'catalog', element: <AppCatalogPage /> },
           { path: 'account', element: <Account /> },

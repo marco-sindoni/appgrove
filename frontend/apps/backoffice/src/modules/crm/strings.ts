@@ -74,6 +74,8 @@ export const t = {
 
   // Quota (banner posti)
   quotaLabel: 'Posti',
+  // Unità consumata, per la barra della Dashboard (UC 0097): "2 di 5 posti".
+  quotaUnit: 'posti',
   quotaReached: 'Posti esauriti. Revoca un posto oppure passa a un piano superiore.',
   quotaUpgrade: 'Passa a un piano superiore',
 

@@ -51,6 +51,7 @@ export const es: @@APP_CLASS@@Messages = {
 
   // Quota
   quotaLabel: '@@QUOTA_LABEL@@',
+  quotaUnit: '@@QUOTA_UNIT@@',
   quotaReached: '@@QUOTA_REACHED@@',
   quotaUpgrade: 'Cambia a un plan superior',
 
