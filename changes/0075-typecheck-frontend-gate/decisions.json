@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione. Nessun gate di workflow (niente revisione requisiti, niente consenso al commit); in contropartita valgono suite completa `./run-tests.sh` verde prima del commit, registro decisioni integrale e `how-to-test.md` nella cartella della change. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change NON nasce da uno use case del catalogo: è una change tecnica di qualità del cancello di test. Verificato che le storie dell'epica 20 (0090–0094, test end-to-end) riguardano la copertura end-to-end, non il controllo statico dei tipi. Da qui la forma del branch senza segmento `use-case`: `change/0075-typecheck-frontend-gate`. Nessuna riga di `docs/usecases/_INDEX.md` da aggiornare."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Numero di change 0075 derivato dalla cartella `changes/` (ultima presente: 0074-use-case-0094-copertura-e2e-workflow-skill), coincidente con l'id assegnato all'invocazione: nessun disallineamento."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Ordine dei lavori: prima si azzerano i due errori di tipo esistenti, poi si aggancia il controllo dei tipi al cancello. L'ordine inverso farebbe nascere il cancello rosso, cioè inutilizzabile: nessun commit potrebbe passare finché gli errori non fossero corretti, e la suite completa richiesta dalla modalità fast non potrebbe mai essere verde."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Errore TS2430 su PageHeader: si esclude l'attributo nativo `title` dagli attributi HTML ereditati invece di declassare la proprietà a stringa. Il titolo come contenuto React è voluto (le storie Storybook e i mockup prevedono titoli composti) e declassarlo a stringa sarebbe una regressione dell'interfaccia pubblica del design system; escludere l'attributo omonimo non toglie nulla ai consumatori, che oggi non usano il suggerimento nativo del browser su questo componente. Alternativa scartata: rinominare la proprietà (rottura di tutti i sette usi esistenti senza alcun beneficio).",
+    "files": [
+      { "file": "frontend/packages/design-system/src/components/PageHeader.tsx", "description": "L'interfaccia delle proprietà eredita gli attributi HTML meno `title`, così la proprietà del componente resta contenuto React." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Errore TS2550 su privacy.spec.ts: si rimuove la causa (la configurazione del compilatore ferma a una libreria standard che non conosce il metodo `.at()` degli array) e non il sintomo. Riscrivere la riga con un accesso per indice nasconderebbe il problema e lo lascerebbe pronto a ripresentarsi al prossimo uso di un metodo moderno."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il controllo dei tipi si aggancia all'area frontend di `run-tests.sh` DOPO la costruzione dei pacchetti-libreria (le applicazioni risolvono i tipi dei pacchetti condivisi dal loro `dist/`, quindi un `dist/` assente farebbe fallire il controllo per la ragione sbagliata) e PRIMA di vitest e degli end-to-end, così che l'esito arrivi in fretta. Un fallimento marca l'area come rossa ma non interrompe le suite successive, coerentemente con la regola di `run-tests.sh` \"esegue tutte le aree, non si ferma al primo errore\".",
+    "files": [
+      { "file": "run-tests.sh", "description": "Nella funzione run_frontend il controllo dei tipi è un passo fra la build dei pacchetti e vitest; contribuisce all'esito dell'area tramite la stessa variabile di accumulo degli altri passi." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il controllo dei tipi si aggancia anche alla verifica di integrazione continua (`.github/workflows/verify-pr.yml`, lavoro `frontend`), condizionato al filtro di percorso `frontend` esattamente come il passo vitest: un cancello che esiste solo sulla macchina dello sviluppatore non protegge il ramo principale, e chi apre una richiesta di unione non è tenuto a eseguire la suite completa in locale. Costo aggiuntivo trascurabile (`tsc --noEmit` su sette progetti, poche decine di secondi) rispetto agli end-to-end già presenti nello stesso lavoro."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Non si scrive un test automatico che verifichi che `run-tests.sh` chiami il controllo dei tipi (un \"test del cancello\"). Nel monorepo non esiste alcuna infrastruttura di collaudo dello script e introdurla per un solo passo sarebbe sproporzionato; la rimozione accidentale del passo è coperta dalla revisione delle richieste di unione e dal fatto che lo stesso passo esiste in due posti indipendenti (script locale e integrazione continua). La verifica che il cancello diventi davvero rosso è un controllo manuale documentato in `how-to-test.md`."
+  }
+]
