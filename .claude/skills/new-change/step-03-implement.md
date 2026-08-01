@@ -69,6 +69,10 @@ principles from `SKILL.md`: complete *this* task fully, do not start the next on
 cross-reference in the owning use case (or `docs/_BACKLOG.md`) everything you deliberately left out. Design
 choices you would have raised as questions are stated in prose, decided by you, and recorded (see below).
 
+**Fast mode.** Identical to autopilot during implementation — the requirements were not human-reviewed, so be
+even stricter about staying inside their written scope: anything not covered by `requirements.md` is either
+skipped and tracked, or (escalation cases) stops the run. No mid-implementation questions to the developer.
+
 ## Record technical decisions in `decisions.json` — while you take them
 
 `changes/NNNN-*/decisions.json` is the machine-readable register that lets a future development agent understand
@@ -110,6 +114,13 @@ is sourced only from the JWT). Run the suite of **each area touched**:
 A cross-area change must keep **all** touched suites green. If the change touches **only**
 Markdown/skills/prompts/config/docs (no executable code), tests are not applicable — record that,
 with the reason, in the implementation log.
+
+**Frontend end-to-end detection (Playwright L2).** If the change touches **frontend surface** (pages,
+routing, shell, modules, entitlement/billing flows), explicitly assess whether the new/changed behaviour
+needs end-to-end coverage — a new spec or an extension of an existing one under `frontend/apps/*/e2e/` —
+and implement it **in this same change** (`npm run e2e` green). This is the per-change coverage growth
+formalised by epic 20 (UC 0093/0094): do not leave e2e needs to a later batch. "No end-to-end impact" is a
+legitimate outcome; record the assessment either way in `decisions.json`.
 
 **E2E visual baseline rule (#10 F).** Never update a Playwright/visual snapshot baseline **blindly**: an unexpected visual
 diff is a signal to **investigate** (real regression vs intended UI change), not to re-record. Update a baseline only when

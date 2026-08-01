@@ -2,28 +2,32 @@
 
 All commands run at the monorepo root `/Users/msindoni/Projects/appgrove`.
 
-## FIRST ACTION — settle the execution mode (classic vs autopilot)
+## FIRST ACTION — settle the execution mode (classic vs autopilot vs fast)
 
 Before the change number, before the description, before anything else.
 
 **1. Was the mode declared at invocation?** Autopilot counts as declared if the invocation says so plainly —
-`/new-change autopilot`, "in autopilot", "modalità autopilot", "autopilota", "rispondi tu alle domande". If so,
-acknowledge it in one line and skip the question.
+`/new-change autopilot`, "in autopilot", "modalità autopilot", "autopilota", "rispondi tu alle domande".
+**Fast** counts as declared only if the invocation says so plainly — `/new-change fast`, "modalità fast",
+"autopilot fast" — or when this skill is invoked by the **`go-fast`** skill (which always runs it in fast
+mode). Fast is **never inferred** from anything softer. If a mode was declared, acknowledge it in one line
+and skip the question.
 
 **2. If it was not declared, ask it immediately** with a single `AskUserQuestion` prompt (the one deliberate
 exception to the "no multiple-choice wizard" rule — it is a mode switch, not a design question):
 
 - header: `Modalità`
-- question: `Come vuoi condurre questa change: in autopilot (rispondo io alle domande di approfondimento e le accetto per tuo conto) o in modalità classica (rispondi tu a ogni domanda, come finora)?`
+- question: `Come vuoi condurre questa change: in autopilot (rispondo io alle domande di approfondimento e le accetto per tuo conto), in modalità classica (rispondi tu a ogni domanda, come finora), o in modalità fast (autopilot senza alcun gate di workflow: niente revisione requisiti né consenso al commit; suite completa verde obbligatoria prima del commit)?`
 - option A — `Autopilot`: `Rispondo io alle domande seguendo l'opzione raccomandata, massimizzo il lavoro fatto in questo task senza anticipare quello successivo, e traccio come rimandi negli use case ciò che resta da fare. Ogni scelta finisce in decisions.json. I tre gate restano tuoi: rilettura e approvazione dei requisiti, consenso al commit, consenso al merge.`
 - option B — `Classica (come finora)`: `Ti faccio le domande una alla volta, in prosa, e aspetto la tua risposta prima di procedere.`
+- option C — `Fast`: `Come autopilot, ma senza fermate di workflow: scrivo e committo i requisiti e proseguo subito; a fine implementazione eseguo TUTTA la suite (./run-tests.sh senza parametri) e committo solo a suite verde, senza chiederti consenso. Il merge resta fuori (al chiamante o a te). Restano attive le fermate di escalation (prodotto, prezzi, dati personali ambigui, effetti irreversibili).`
 - `multiSelect: false`
 
 Do **not** guess the mode and do **not** proceed without it. Once settled, follow the corresponding rules in
 `SKILL.md` ("Execution mode") for the whole change: the mode does not change mid-run unless the developer says so
 (if they do, record the switch as a decision).
 
-State the outcome in one line, e.g. `▶︎ Modalità: autopilot — rispondo io alle domande e traccio ogni scelta in decisions.json.`
+State the outcome in one line, e.g. `▶︎ Modalità: fast — nessun gate di workflow; suite completa e registro decisioni obbligatori.`
 
 ## Determine next change number
 
@@ -139,7 +143,7 @@ to ✅. For a **normal** change (no `YYYY`), skip this.
 ## Output
 
 ```json
-{ "change_id": "NNNN-brief-description", "branch": "change/NNNN-brief-description", "mode": "autopilot | classic", "areas": ["frontend", "services/notes", "infra"] }
+{ "change_id": "NNNN-brief-description", "branch": "change/NNNN-brief-description", "mode": "autopilot | classic | fast", "areas": ["frontend", "services/notes", "infra"] }
 ```
 
 Confirm to developer (one line):

@@ -26,5 +26,69 @@
   {
     "id": 7,
     "decision": "(autopilot) Il tag di backup è creato sul commit di main precedente all'avvio della change (nome <change-id>-backup, es. 0068-use-case-0095-…-backup) e pushato su origin prima di invocare new-change: punto di ripristino remoto sicuro per la modalità fast."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La modalità fast non si desume mai da formulazioni morbide: gira solo se dichiarata espressamente all'invocazione ('/new-change fast', 'modalità fast', 'autopilot fast') o quando new-change è invocata da go-fast. La domanda di modalità di step-01 offre ora tre opzioni; in fast la domanda non scatta per costruzione.",
+    "files": [
+      {
+        "file": ".claude/skills/new-change/step-01-init.md",
+        "description": "Domanda di modalità a tre opzioni; fast riconosciuta solo se dichiarata; output mode esteso a fast."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) In fast la visibilità dei gate resta anche se cade l'attesa: i blocchi di trasparenza dei gate (riepilogo requisiti, riepilogo commit) vengono comunque stampati — fast rimuove le fermate, non le informazioni con cui lo sviluppatore ricostruisce a posteriori cosa è stato deciso.",
+    "files": [
+      {
+        "file": ".claude/skills/new-change/step-02-requirements.md",
+        "description": "Gate requisiti: in fast si stampa il blocco di trasparenza e si prosegue subito."
+      },
+      {
+        "file": ".claude/skills/new-change/step-04-close.md",
+        "description": "Gate commit: in fast si stampa il riepilogo e si committa solo a suite completa verde; sezione merge saltata (al chiamante)."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) La suite completa in fast gira anche per change di soli documenti (nessuna esenzione docs-only): senza revisione umana del diff, la suite intera è un'assicurazione a basso costo contro effetti collaterali inattesi.",
+    "files": [
+      {
+        "file": ".claude/skills/new-change/step-04-close.md",
+        "description": "Fast: ./run-tests.sh senza parametri sempre, mai commit su rosso, mai indebolire un test per farlo passare."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La rilevazione dei test end-to-end Playwright (L2) per le change con superficie frontend è scritta come istruzione operativa permanente di new-change (step-03 e SKILL.md), valida in tutte le modalità, anticipando la direzione di UC 0093/0094 (epica 20): la copertura cresce a ogni change, non a lotti; 'nessun impatto end-to-end' è una risposta legittima ma va registrata.",
+    "files": [
+      {
+        "file": ".claude/skills/new-change/step-03-implement.md",
+        "description": "Nuovo paragrafo 'Frontend end-to-end detection (Playwright L2)'."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) go-fast: se una story richiesta ha dipendenze non implementate e non incluse nel lotto, la skill non riordina il mondo in silenzio ma chiede allo sviluppatore (includere il prerequisito, saltare la story, o procedere comunque) — è una domanda di perimetro, non di design, quindi ammessa anche nel flusso veloce. Il ripristino da tag di backup è stampato come comandi ma MAI eseguito dalla skill (git reset --hard e push --force-with-lease restano atti dello sviluppatore).",
+    "files": [
+      {
+        "file": ".claude/skills/go-fast/SKILL.md",
+        "description": "Skill orchestratrice completa: input/domanda in chat, risoluzione epica→story con ordine onda 2, filtri ✅/🟠, ciclo tag→fast→how-to-test→merge+push, arresto al primo guasto, rapporto finale."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) CLAUDE.md aggiornato: la sezione autopilot passa a tre modalità con la 'deroga sanzionata' fast — la rinuncia ai gate è un atto esplicito dello sviluppatore all'invocazione, con contropartite obbligatorie (suite completa, registro integrale, tag di backup remoto, how-to-test.md) e fermate di escalation intatte.",
+    "files": [
+      {
+        "file": "CLAUDE.md",
+        "description": "Sezione 'Modalità autopilot delle skill di change': tre valori + deroga fast + skill go-fast."
+      }
+    ]
   }
 ]

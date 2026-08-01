@@ -7,13 +7,17 @@ description: >
   every area touched (infra/frontend/services), writes
   changes/NNNN-*/implementation-log.md plus the machine-readable decision register
   changes/NNNN-*/decisions.json, and proposes the merge. Runs in classic mode
-  (the developer answers every question) or in autopilot mode (the agent answers on
-  the developer's behalf, following the recommended option). Leaves the branch open
-  for the Platform Engineer decision.
+  (the developer answers every question), in autopilot mode (the agent answers on
+  the developer's behalf, following the recommended option), or in fast mode
+  (autopilot with the workflow gates waived by the developer: no requirements
+  review stop, no commit consent, full ./run-tests.sh green before committing;
+  merge is left to the caller — typically the go-fast skill). Leaves the branch
+  open for the Platform Engineer decision (classic/autopilot).
 triggers:
   - /new-change
   - /change
   - /new-change autopilot
+  - /new-change fast
 tier: tier1
 stack_aware: true
 ---
@@ -51,8 +55,8 @@ then log — never the other way around.
 
 ## Instructions
 
-1. `step-01-init.md` — **settle the execution mode (classic vs autopilot)**, determine change number, create branch,
-   seed `decisions.json`, note the areas in scope
+1. `step-01-init.md` — **settle the execution mode (classic vs autopilot vs fast)**, determine change number, create
+   branch, seed `decisions.json`, note the areas in scope
 2. `step-02-requirements.md` — write requirements.md with the developer
 3. `step-03-implement.md` — guide implementation **and add/update tests**
 4. `step-04-close.md` — run the suite of every touched area, write implementation-log.md, close `decisions.json`,
@@ -107,20 +111,25 @@ code looks the way it does* without re-reading a chat that no longer exists. It 
 step-01, appended at step-02 and step-03, verified for completeness and coherence with `implementation-log.md`
 at step-04, and committed with the change.
 
-## Execution mode — classic or autopilot
+## Execution mode — classic, autopilot or fast
 
-The skill runs in one of two modes, settled **before anything else** at step-01:
+The skill runs in one of three modes, settled **before anything else** at step-01:
 
-- **Classic** — the mode used so far: the developer answers every clarification, requirements and design
-  question, in the dialogue style described below.
-- **Autopilot** — the agent **answers the questions in the developer's place** and proceeds, recording each
-  answer as an autopilot decision in `decisions.json`.
+- **Classic** (autopilot `off`) — the mode used so far: the developer answers every clarification,
+  requirements and design question, in the dialogue style described below.
+- **Autopilot** (autopilot `on`) — the agent **answers the questions in the developer's place** and proceeds,
+  recording each answer as an autopilot decision in `decisions.json`. The three workflow gates stay human.
+- **Fast** (autopilot `fast`) — autopilot **without any workflow stop**: no clarification questions to the
+  developer, no requirements review stop, no commit consent stop. See "Fast mode" below for the exact
+  behaviour and its mandatory counterweights.
 
 **Declaring the mode.** Autopilot can be requested directly at invocation (`/new-change autopilot …`, or
-anything that plainly says "in autopilot" / "modalità autopilot"). If the invocation does **not** state a
-mode, step-01 asks it **immediately, as its very first action**, using an `AskUserQuestion` prompt (this is
-the one deliberate exception to the "no compact multiple-choice wizard" rule below — it is a mode switch,
-not a design question).
+anything that plainly says "in autopilot" / "modalità autopilot"). Fast is requested with `/new-change fast`,
+"modalità fast", "autopilot fast" — or by the **`go-fast`** skill, which always invokes this skill in fast
+mode. If the invocation does **not** state a mode, step-01 asks it **immediately, as its very first action**,
+using an `AskUserQuestion` prompt with the three options (this is the one deliberate exception to the
+"no compact multiple-choice wizard" rule below — it is a mode switch, not a design question). Fast is
+**never** inferred: it runs only when plainly declared.
 
 **How autopilot answers** — these principles are binding, and every answer must be defensible against them:
 
@@ -149,11 +158,29 @@ mandatory gates. All three stay **human**, always:
 
 Autopilot changes *who answers the questions*, never *who approves the change*.
 
-**Escalation — when autopilot must stop and ask anyway.** Autopilot yields to the developer, in prose, when
-a question is genuinely not the agent's to answer: product/business direction, money (pricing, quotas, cost
-commitments), legal or personal-data classification that is materially ambiguous (art. 9 data, a new legal
-basis, a new sub-processor), anything irreversible or outward-facing, or any point where you cannot form an
-honest recommendation. Say that autopilot is deferring, ask the question, and record the answer normally.
+**Fast mode — the one sanctioned exception.** In fast mode the developer **waives the three workflow gates at
+invocation**: declaring fast *is* the approval act, given up front instead of at each gate. Concretely:
+
+- `requirements.md` is still written and committed (the change stays spec-driven) but implementation starts
+  **immediately**, with no review stop;
+- at close, the change is **committed without asking** — but **only after the FULL test suite is green**:
+  `./run-tests.sh` **with no arguments** (every area, not just the touched ones) is the non-regression proof
+  that replaces the human eye. **Never commit on a red suite**: fix, or stop and report;
+- **merge and push are NOT fast mode's job**: the branch is left committed for the caller — the `go-fast`
+  skill inside its loop, or the developer when fast is used standalone;
+- the decision register is even more important, not less: **every** choice lands in `decisions.json`
+  (prefix `(autopilot)`; the fast mode itself is recorded in decision 1) — it is the only trace the
+  developer will review after the fact;
+- the transparency summaries normally printed at the gates are **still printed** (requirements summary,
+  commit summary) — fast removes the *waiting*, not the *visibility*.
+
+**Escalation — when autopilot must stop and ask anyway (all modes, fast included).** Autopilot yields to the
+developer, in prose, when a question is genuinely not the agent's to answer: product/business direction,
+money (pricing, quotas, cost commitments), legal or personal-data classification that is materially ambiguous
+(art. 9 data, a new legal basis, a new sub-processor), anything irreversible or outward-facing beyond the
+sanctioned commit/merge flow, or any point where you cannot form an honest recommendation. Say that autopilot
+is deferring, ask the question, and record the answer normally. **Fast mode removes the workflow gates, never
+these safety stops**: a fast run that hits an escalation case stops exactly like autopilot would.
 
 ## Mandatory gates — never skip
 
@@ -161,11 +188,14 @@ honest recommendation. Say that autopilot is deferring, ask the question, and re
   unclear, doubtful, or admit alternatives, ask targeted questions and settle the decisions
   before writing `requirements.md`. Skip only when everything is already clear.
 - **After requirements (step-02): STOP for review.** Do not implement until the developer
-  explicitly approves `requirements.md`. *(Never auto-approved — autopilot stops here exactly like classic mode.)*
+  explicitly approves `requirements.md`. *(Never auto-approved in classic/autopilot. In **fast** mode this
+  gate is waived by the developer's declaration at invocation — see "Fast mode".)*
 - **At close (step-04): STOP for commit consent.** When implementation is done, do not commit
-  until the developer explicitly consents.
+  until the developer explicitly consents. *(In **fast** mode: waived — commit happens only after the full
+  `./run-tests.sh` suite is green.)*
 - **After committing (step-04): STOP for merge consent.** Leave the branch unmerged and never
-  merge to the default branch without the developer's separate explicit go-ahead.
+  merge to the default branch without the developer's separate explicit go-ahead. *(In **fast** mode the
+  merge is simply not this skill's job: the branch is handed to the caller — `go-fast` or the developer.)*
 - **Throughout (steps 01-04): decision-register gate.** Every settled question and every relevant technical
   choice is appended to `changes/NNNN-*/decisions.json` **when it is taken**, in both modes. step-04 refuses
   to ask for commit consent if the register is missing, empty, or inconsistent with `implementation-log.md`.
@@ -184,8 +214,10 @@ design choices) — the rules below apply in full.
 
 **In autopilot mode** the same reasoning still happens and is still shown: you state the question, the options
 and your recommendation in prose, then **answer it yourself**, record the answer in `decisions.json` and move
-on. You stop and wait only in the escalation cases listed above. **One deliberate exception in both modes**:
-the mode question at step-01 uses `AskUserQuestion`, because it is a mode switch, not a design question.
+on. You stop and wait only in the escalation cases listed above. **Fast mode** behaves like autopilot here —
+same visible reasoning, same register — and stops **only** for the escalation cases. **One deliberate
+exception in all modes**: the mode question at step-01 uses `AskUserQuestion`, because it is a mode switch,
+not a design question (in fast the question never fires — fast must be declared).
 
 The classic-mode rules:
 
@@ -215,6 +247,16 @@ If a change touches **executable code**, step-03 adds/updates tests covering the
 any "Test Requirements" in `requirements.md`; the suite of **every touched area** must be green
 before the commit gate. If a change touches only Markdown/skills/prompts/config/docs, tests are
 not applicable — say so (with the reason) in the implementation log.
+
+**Frontend end-to-end detection.** A change that touches **frontend surface** (pages, routing, shell, modules)
+must also assess whether the behaviour needs **Playwright end-to-end coverage (L2)** — new spec or extension
+of an existing one in `frontend/apps/*/e2e/` — and implement it in the same change (direction formalised by
+UC 0093/0094, epic 20: coverage grows with every change, not in batches). "No end-to-end impact" is a
+legitimate answer; record it in `decisions.json`.
+
+**Fast mode suite.** In fast mode the close step runs the **entire** canonical suite — `./run-tests.sh`
+with **no arguments** — regardless of the areas touched: with no human gate, the full-suite green is the
+non-regression evidence. Commit only on green.
 
 ## appgrove invariants — respect them in every change
 

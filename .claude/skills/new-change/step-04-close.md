@@ -34,6 +34,13 @@ If the change touched executable code, the relevant suites must include the test
 step-03. If any suite fails, fix it before the commit gate. If the change touched no executable
 code, no suite run is required — note that in the log.
 
+**Fast mode: full suite, no exceptions.** In fast mode run the **entire canonical suite** instead of the
+per-area commands — `./run-tests.sh` with **no arguments** — regardless of the areas touched (docs-only fast
+changes included: the suite is cheap insurance when nobody reviewed the diff). The full-suite green is the
+non-regression evidence that replaces the human gates. If any area is red: fix and re-run; if it cannot be
+fixed within the change's scope, **STOP the run and report** — never commit on red, never weaken a test to
+pass.
+
 **E2E visual baseline rule (#10 F).** For frontend/E2E suites with visual snapshots: an unexpected visual diff is
 **investigated**, not silently re-recorded. Update a baseline only for an intentional, reviewed UI change, and record that
 update (and why) in the implementation log. Never `--update-snapshots` blindly to make a red suite green.
@@ -204,11 +211,18 @@ note it in the implementation log's "Note per il revisore" and tell the develope
 A **draft** landing (`status: 'draft'`) is not stale — it is not online yet. Only `published` landings trigger the
 reminder. `finalize-landing` is re-runnable on a published landing exactly for this (UC 0057 DoD #4).
 
-## MANDATORY STOP — commit consent gate
+## MANDATORY STOP — commit consent gate (classic and autopilot; waived in fast)
 
 Do **not** commit yet. Summarize what will be committed (the changed files, the `implementation-log.md` and the
 `decisions.json`) and ask the developer's explicit consent to commit. **This gate is never auto-approved — not
 even in autopilot**: it is where the developer sees what the agent decided, and that is precisely the point.
+
+**Fast mode**: the developer waived this gate at invocation. Print the same summary block below (visibility is
+not waived), then — **provided the full `./run-tests.sh` suite is green and every verification above passed**
+(privacy gate, decision register, deferred decisions, scaffold parity) — run the commit commands directly,
+without stopping. Then skip the merge gate section entirely: in fast mode the branch is left committed and
+**unmerged** for the caller (`go-fast`, which merges and pushes in its loop, or the developer). End the fast
+run by reporting: branch name, suite outcome, decision count, and that the branch awaits merge by the caller.
 
 Print:
 ```
