@@ -5,6 +5,7 @@ import app.appgrove.core.billing.SubscriptionDtos.MySubscriptionsView;
 import app.appgrove.core.billing.SubscriptionDtos.SubscriptionView;
 import app.appgrove.core.catalog.App;
 import app.appgrove.core.catalog.AppRepository;
+import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.catalog.AppTier;
 import app.appgrove.core.catalog.AppTierRepository;
 import app.appgrove.core.platform.Account;
@@ -89,7 +90,11 @@ public class SubscriptionReadModel {
                     canCancel,
                     canResume,
                     canReactivate,
-                    portalAvailable));
+                    portalAvailable,
+                    // UC 0076: l'app messa in pausa dalla piattaforma resta elencata (per disegno il
+                    // portale mostra anche gli abbonamenti senza accesso) ma va detto perché non è
+                    // raggiungibile, altrimenti il pannello contraddice la barra laterale.
+                    app.getStatus() != AppStatus.active));
         }
         return new MySubscriptionsView(views);
     }

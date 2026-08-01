@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { Button } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 
@@ -15,6 +15,7 @@ export function ConfirmDialog({
   busy = false,
   onConfirm,
   onCancel,
+  children,
 }: {
   title: string
   body: string
@@ -23,6 +24,8 @@ export function ConfirmDialog({
   busy?: boolean
   onConfirm: () => void
   onCancel: () => void
+  /** Contenuto aggiuntivo fra il testo e i pulsanti (spiegazioni, campi — es. la motivazione, UC 0076). */
+  children?: ReactNode
 }) {
   const { t } = useTranslation()
   const titleId = useId()
@@ -48,7 +51,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={bodyId}
-        className="w-full max-w-sm rounded-lg bg-surface p-6 shadow-lg"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-surface p-6 shadow-lg"
       >
         <h2 id={titleId} className="text-lg font-semibold text-fg">
           {title}
@@ -56,6 +59,7 @@ export function ConfirmDialog({
         <p id={bodyId} className="mt-2 text-sm text-fg-muted">
           {body}
         </p>
+        {children && <div className="mt-4 space-y-3">{children}</div>}
         <div className="mt-6 flex justify-end gap-3">
           <Button type="button" variant="ghost" onClick={onCancel} disabled={busy}>
             {t('common.cancel')}

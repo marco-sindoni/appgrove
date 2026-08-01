@@ -116,6 +116,15 @@ Probabilmente merita un **documento dedicato** (nuova area, es. `13-compliance-p
   Definire i **periodi di retention** per categoria. Eventuali obblighi fiscali → in capo a **Paddle (MoR)**.
 - **Privacy Policy & Terms and Conditions**: tenuto conto che **Paddle è Merchant of Record** (gestisce
   tax/fatturazione, ma privacy/T&C del servizio restano a noi) — border con [09-pagamenti](09-pagamenti.md).
+- **Tabelle di prova (audit) nel database: dichiararle o no nel manifesto?** (sollevato 2026-08-01, change `0071`/UC 0076).
+  Le tre tabelle `platform.gdpr_purge_audit`, `platform.gdpr_restriction_audit` e — da questa change —
+  `platform.app_status_audit` conservano l'identificativo opaco dell'**operatore** che ha agito (più, sulle prime due,
+  il tenant bersaglio) per 12 mesi. Oggi **nessuna** ha una voce dedicata in `docs/compliance/manifests/platform.yaml`:
+  sono considerate coperte dalla voce generica `logs.structured` (audit/sicurezza, legittimo interesse, 12 mesi), che
+  però parla di CloudWatch e archivio su oggetti cloud, non di righe di database. Da decidere in una revisione di
+  compliance: o si dichiara esplicitamente una voce "prove di audit nel database", o si estende il testo di
+  `logs.structured` perché le comprenda in modo inequivocabile. Non urgente (nessun dato di utente finale, nessuna
+  nuova finalità né base giuridica) ma va chiuso prima della revisione legale pre-go-live.
 
 ## Strategia di attivazione ambienti "a fasi" (cost-min) — richiesto 2026-06-20 — DISCUTERE PRESTO
 **Vincolo trasversale su tutto il DevOps**: nessuna accensione di infrastruttura "early" che aumenti i costi.

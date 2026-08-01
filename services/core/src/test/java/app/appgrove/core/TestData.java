@@ -51,6 +51,17 @@ public class TestData {
                 id, slug, slug, "single_user", "active", OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Forza lo stato di un'app di catalogo ({@code active} | {@code inactive}) — leva di UC 0076. */
+    public void appStatus(UUID appId, String status) {
+        exec("update platform.app set status = ?, updated_at = ? where id = ?",
+                status, OffsetDateTime.now(), appId);
+    }
+
+    /** Stato corrente di un'app di catalogo. */
+    public String appStatus(UUID appId) {
+        return queryString("select status from platform.app where id = ?", appId);
+    }
+
     /** Crea un tier di un'app (FK di subscription.app_tier_id); idempotente. */
     public void appTier(UUID id, UUID appId, String key) {
         exec("insert into platform.app_tier(id,app_id,key,name,trial_days,created_at,updated_at)"
@@ -210,6 +221,23 @@ public class TestData {
     /** Righe totali in una tabella di audit per tenant (per lo sweeper retention audit). */
     public int auditRowCount(String table, String tenantId) {
         return queryInt("select count(*) from " + table + " where tenant_id = ?", tenantId);
+    }
+
+    // ── Registro transizioni di stato app (UC 0076) ──────────────────────────────────
+
+    /**
+     * Inserisce una riga nel registro delle transizioni di stato app con {@code executed_at} dato
+     * (per lo sweeper di conservazione). La tabella NON è tenant-scoped: il catalogo è di piattaforma.
+     */
+    public void appStatusAudit(UUID appId, String fromStatus, String toStatus, OffsetDateTime executedAt) {
+        exec("insert into platform.app_status_audit"
+                        + "(id,app_id,from_status,to_status,actor,reason,executed_at) values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), appId, fromStatus, toStatus, "admin", null, executedAt);
+    }
+
+    /** Righe del registro transizioni per una data app. */
+    public int appStatusAuditCount(UUID appId) {
+        return queryInt("select count(*) from platform.app_status_audit where app_id = ?", appId);
     }
 
     private java.time.Instant queryInstant(String sql, Object... params) {

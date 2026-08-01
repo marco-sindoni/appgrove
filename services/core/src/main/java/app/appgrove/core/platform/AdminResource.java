@@ -1,13 +1,14 @@
 package app.appgrove.core.platform;
 
-import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.core.platform.AdminDtos.AccountDetailView;
 import app.appgrove.core.platform.AdminDtos.AdminAccountView;
 import app.appgrove.core.platform.AdminDtos.AdminUserView;
+import app.appgrove.core.platform.AdminDtos.AppStatusAuditView;
 import app.appgrove.core.platform.AdminDtos.AppView;
 import app.appgrove.core.billing.EntitlementAccess;
 import app.appgrove.core.billing.SubscriptionStatus;
 import app.appgrove.core.catalog.AppStatus;
+import app.appgrove.core.catalog.AppStatusService;
 import app.appgrove.core.platform.AdminDtos.BillingRow;
 import app.appgrove.core.platform.AdminDtos.EntitlementCell;
 import app.appgrove.core.platform.AdminDtos.OverviewView;
@@ -15,7 +16,6 @@ import app.appgrove.core.platform.AdminDtos.UpdateAppStatus;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -27,10 +27,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import org.jboss.logging.Logger;
 
 /**
  * Console admin (UC 0021): superficie **cross-tenant** read-only riservata a {@code platform-admin}.
@@ -46,9 +43,6 @@ import org.jboss.logging.Logger;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AdminResource {
 
-    private static final Logger LOG = Logger.getLogger(AdminResource.class);
-    private static final Set<String> APP_STATUSES = Set.of("active", "inactive");
-
     @Inject
     EntityManager em;
 
@@ -56,7 +50,7 @@ public class AdminResource {
     CallerContext caller;
 
     @Inject
-    AuditLogger audit;
+    AppStatusService appStatus;
 
     @GET
     @Path("/overview")
@@ -160,34 +154,44 @@ public class AdminResource {
                 .toList();
     }
 
+    /**
+     * Disabilita/riabilita un'app (UC 0076): unico write della console. Idempotente — chiedere lo stato
+     * corrente risponde 200 senza scrivere né sporcare il registro. La regola a valle (l'app non
+     * {@code active} sparisce dagli entitlement) è già di UC 0027/0077 e non viene qui duplicata.
+     */
     @PATCH
     @Path("/apps/{id}")
-    @Transactional
     public AppView setAppStatus(@PathParam("id") UUID id, @Valid UpdateAppStatus body) {
-        if (!APP_STATUSES.contains(body.status())) {
+        AppStatus target;
+        try {
+            target = AppStatus.valueOf(body.status());
+        } catch (IllegalArgumentException e) {
             throw new BadRequestException("Stato app non valido: " + body.status());
         }
-        int updated = em.createNativeQuery(
-                "update platform.app set status = :status, updated_at = now(), updated_by = :actor "
-                        + "where id = :id and deleted_at is null")
-                .setParameter("status", body.status())
-                .setParameter("actor", caller.subject())
-                .setParameter("id", id)
-                .executeUpdate();
-        if (updated == 0) {
+        AppStatusService.Result result = appStatus.setStatus(id, target, body.reason(), caller.subject());
+        if (result == null) {
             throw new NotFoundException("App non trovata");
         }
-        // logging strutturato dell'azione admin (invariante #4): app_id + attore + esito
-        LOG.infof("admin.disable-app app_id=%s status=%s actor=%s", id, body.status(), caller.subject());
-        // evento audit (UC 0006): il toggle di stato app cambia l'entitlement effettivo (gate 2)
-        audit.success("admin.app.status-changed", Map.of(
-                "app_id", id.toString(),
-                "status", body.status(),
-                "actor", caller.subject()));
-        List<Object[]> r = rows(
-                "select id, slug, name, user_model, status from platform.app where id = :id", "id", id);
-        Object[] a = r.get(0);
-        return new AppView((UUID) a[0], str(a[1]), str(a[2]), str(a[3]), str(a[4]));
+        return new AppView(
+                result.appId(), result.slug(), result.name(), result.userModel(), result.status().name());
+    }
+
+    /** Registro delle transizioni di stato delle app (UC 0076): chi, quando, quale app, perché. */
+    @GET
+    @Path("/apps/audit")
+    public List<AppStatusAuditView> appStatusAudit() {
+        return appStatus.auditTrail().stream()
+                .map(e -> new AppStatusAuditView(
+                        e.id(),
+                        e.appId(),
+                        e.appSlug(),
+                        e.appName(),
+                        e.fromStatus().name(),
+                        e.toStatus().name(),
+                        e.actor(),
+                        e.reason(),
+                        e.executedAt()))
+                .toList();
     }
 
     // ── helper ───────────────────────────────────────────────────────────────

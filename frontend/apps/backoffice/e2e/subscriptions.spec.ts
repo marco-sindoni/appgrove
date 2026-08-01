@@ -115,3 +115,43 @@ test('enforcement: 429 quota → banner azionabile con CTA upgrade', async ({ pa
   await expect(page.getByRole('alert').getByText('Plan limit reached')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Upgrade' })).toBeVisible()
 })
+
+test('app disabilitata dalla piattaforma: l’abbonamento resta ma l’avviso spiega perché', async ({
+  page,
+}) => {
+  await mockSession(page)
+  // Il read-model marca l'app come sospesa a livello piattaforma (UC 0076): l'abbonamento resta
+  // elencato e "attivo", ma la barra laterale non mostra l'app — senza avviso sarebbe una contraddizione.
+  await page.route('**/api/platform/v1/me/subscriptions', (route, request) => {
+    if (request.method() !== 'GET') return route.fallback()
+    return route.fulfill({
+      json: {
+        subscriptions: [
+          {
+            appSlug: 'demo',
+            appName: 'Demo app',
+            status: 'active',
+            tierKey: 'pro',
+            tierName: 'Pro',
+            currentPeriodEnd: '2027-01-01T00:00:00Z',
+            phase: 'ACTIVE',
+            limits: {},
+            canUpgrade: false,
+            canDowngrade: false,
+            canCancel: true,
+            canResume: false,
+            canReactivate: false,
+            portalAvailable: false,
+            appDisabled: true,
+          },
+        ],
+      },
+    })
+  })
+
+  await page.goto('/billing')
+  await expect(page.getByRole('heading', { name: 'Your subscriptions' })).toBeVisible()
+  await expect(page.getByText('Suspended', { exact: true })).toBeVisible()
+  await expect(page.getByText('App suspended by the platform')).toBeVisible()
+  await expect(page.getByText(/Your subscription stays valid and your data is untouched/)).toBeVisible()
+})

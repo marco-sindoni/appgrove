@@ -328,6 +328,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/admin/apps/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** App Status Audit */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AppStatusAuditView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/admin/apps/{id}": {
         parameters: {
             query?: never;
@@ -2961,6 +3011,17 @@ export interface components {
             tenantId?: string;
             tenantName?: string;
         };
+        AppStatusAuditView: {
+            id?: components["schemas"]["UUID"];
+            appId?: components["schemas"]["UUID"];
+            appSlug?: string;
+            appName?: string;
+            fromStatus?: string;
+            toStatus?: string;
+            actor?: string;
+            reason?: string;
+            executedAt?: components["schemas"]["Instant"];
+        };
         AppTiersView: {
             appId?: components["schemas"]["UUID"];
             slug?: string;
@@ -3261,6 +3322,7 @@ export interface components {
             canResume?: boolean;
             canReactivate?: boolean;
             portalAvailable?: boolean;
+            appDisabled?: boolean;
         };
         /** @enum {string} */
         TargetKind: "account" | "user";
@@ -3307,6 +3369,7 @@ export interface components {
         };
         UpdateAppStatus: {
             status: string;
+            reason?: string;
         };
         UpdateMe: {
             displayName: string;
