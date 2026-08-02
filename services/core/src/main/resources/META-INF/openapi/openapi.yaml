@@ -829,6 +829,15 @@ components:
           type: boolean
         appDisabled:
           type: boolean
+        usage:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        blockedTiers:
+          type: object
+          additionalProperties:
+            type: string
     TargetKind:
       type: string
       enum:

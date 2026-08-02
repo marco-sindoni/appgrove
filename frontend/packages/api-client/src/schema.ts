@@ -3465,6 +3465,12 @@ export interface components {
             canReactivate?: boolean;
             portalAvailable?: boolean;
             appDisabled?: boolean;
+            usage?: {
+                [key: string]: number;
+            };
+            blockedTiers?: {
+                [key: string]: string;
+            };
         };
         /** @enum {string} */
         TargetKind: "account" | "user";

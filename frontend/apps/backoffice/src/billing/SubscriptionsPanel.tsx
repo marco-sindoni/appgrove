@@ -1,16 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
-import { useAppTiers } from './checkoutApi'
+import { ConfirmDialog } from '../pages/members/ConfirmDialog'
+import { ChangePlanDialog } from './ChangePlanDialog'
 import {
+  useCanManageBilling,
   useCancelSubscription,
-  useChangeTier,
   useMySubscriptions,
   usePortalSession,
   useResumeSubscription,
 } from './subscriptionsApi'
-import { limitDescriptors, statusLine } from './subscriptionsView'
+import {
+  formatDate,
+  isStillPending,
+  limitDescriptors,
+  quotaUsages,
+  snapshotOf,
+  statusLine,
+  type PendingSnapshot,
+} from './subscriptionsView'
 
 type Subscription = NonNullable<
   NonNullable<ReturnType<typeof useMySubscriptions>['data']>['subscriptions']
@@ -28,13 +37,30 @@ const PHASE_TONE: Record<string, 'success' | 'warning' | 'neutral'> = {
 }
 
 /**
- * Pannello self-service (UC 0028): elenca gli abbonamenti del tenant (anche non-attivi) con status/piano/
- * cambio schedulato, limiti del piano, azioni (upgrade/downgrade/disdici/riattiva), pulsante portal Paddle,
- * e — a subscription scaduta — riattiva + CTA diritti GDPR. Legge il read-model dedicato `/me/subscriptions`.
+ * Sezione "Abbonamenti" del backoffice (UC 0028, completata da UC 0067): una card per app con stato,
+ * piano, fine periodo, cambio già programmato, **consumo della quota**, avvisi di pagamento in ritardo e
+ * di scadenza, e le azioni self-service — cambia piano, disdici, riattiva, gestisci pagamento e fatture.
+ *
+ * Vive dentro la pagina Fatturazione (UC 0096), che è la pagina di sola fatturazione: scoprire e comprare
+ * le app è un'altra cosa e sta nel catalogo.
  */
 export function SubscriptionsPanel({ onReactivate }: { onReactivate: (appSlug: string) => void }) {
   const { t } = useTranslation()
-  const query = useMySubscriptions()
+  // Comandi inviati e non ancora riflessi dal read-model: finché ce n'è uno la lista si rilegge da sola.
+  const [pending, setPending] = useState<Record<string, PendingSnapshot>>({})
+  const query = useMySubscriptions(Object.keys(pending).length > 0)
+  const subscriptions = query.data?.subscriptions
+
+  useEffect(() => {
+    if (!subscriptions) return
+    setPending((current) => {
+      const next: Record<string, PendingSnapshot> = {}
+      for (const [slug, snap] of Object.entries(current)) {
+        if (isStillPending(snap, subscriptions.find((s) => s.appSlug === slug))) next[slug] = snap
+      }
+      return Object.keys(next).length === Object.keys(current).length ? current : next
+    })
+  }, [subscriptions])
 
   return (
     <section className="space-y-4" aria-label={t('subscriptions.title')}>
@@ -43,20 +69,52 @@ export function SubscriptionsPanel({ onReactivate }: { onReactivate: (appSlug: s
         <p className="text-sm text-fg-muted">{t('subscriptions.subtitle')}</p>
       </header>
 
-      {query.isLoading && <p className="text-sm text-fg-muted">{t('states.loading')}</p>}
+      {query.isLoading && <SubscriptionsSkeleton />}
       {query.isError && (
-        <p role="alert" className="text-sm text-danger">
-          {t('states.error')}
-        </p>
+        <div role="alert" className="space-y-3 rounded-md border border-danger/40 bg-danger/10 p-4">
+          <p className="text-sm text-danger">{t('states.error')}</p>
+          <Button size="sm" variant="secondary" onClick={() => void query.refetch()}>
+            {t('states.retry')}
+          </Button>
+        </div>
       )}
-      {query.data && query.data.subscriptions?.length === 0 && <EmptyState />}
+      {query.data && subscriptions?.length === 0 && <EmptyState />}
 
       <div className="grid gap-4">
-        {query.data?.subscriptions?.map((sub) => (
-          <SubscriptionCard key={sub.appSlug} sub={sub} onReactivate={onReactivate} />
+        {subscriptions?.map((sub) => (
+          <SubscriptionCard
+            key={sub.appSlug}
+            sub={sub}
+            updating={!!pending[sub.appSlug ?? '']}
+            onCommandSent={() =>
+              setPending((current) => ({ ...current, [sub.appSlug ?? '']: snapshotOf(sub) }))
+            }
+            onReactivate={onReactivate}
+          />
         ))}
       </div>
     </section>
+  )
+}
+
+/**
+ * Scheletro di caricamento: due card grigie con la forma di quelle vere. Una riga "Caricamento…" al posto
+ * di una lista fa saltare il contenuto quando arriva; questo no.
+ */
+function SubscriptionsSkeleton() {
+  const { t } = useTranslation()
+  return (
+    <div role="status" aria-label={t('states.loading')} className="grid gap-4">
+      {[0, 1].map((i) => (
+        <Card key={i}>
+          <CardContent className="space-y-3">
+            <div className="h-5 w-1/3 animate-pulse rounded bg-surface-3" />
+            <div className="h-4 w-1/2 animate-pulse rounded bg-surface-3" />
+            <div className="h-2 w-full animate-pulse rounded bg-surface-3" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   )
 }
 
@@ -81,23 +139,41 @@ function EmptyState() {
 
 function SubscriptionCard({
   sub,
+  updating,
+  onCommandSent,
   onReactivate,
 }: {
   sub: Subscription
+  updating: boolean
+  onCommandSent: () => void
   onReactivate: (appSlug: string) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const appSlug = sub.appSlug ?? ''
   const [choosing, setChoosing] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const canManage = useCanManageBilling()
 
   const cancel = useCancelSubscription(appSlug)
   const resume = useResumeSubscription(appSlug)
   const portal = usePortalSession()
 
-  const status = statusLine(sub)
+  const status = statusLine(sub, i18n.language)
   const limits = limitDescriptors(sub.limits)
+  const quotas = quotaUsages(sub.limits, sub.usage)
   const busy = cancel.isPending || resume.isPending
+  // Il ritardo di pagamento è uno stato del fornitore, non una fase: la fase resta "attiva" perché
+  // l'accesso c'è ancora (finestra di tolleranza), ed è proprio per questo che va detto a parole.
+  const pastDue = sub.status === 'past_due'
+  const ended = sub.phase === 'ENDED'
+
+  const openPortal = () =>
+    portal.mutate(undefined, {
+      onSuccess: (res) => {
+        if (res.url) window.open(res.url, '_blank', 'noopener')
+      },
+    })
 
   return (
     <Card>
@@ -122,14 +198,72 @@ function SubscriptionCard({
             <p className="mt-1 text-sm text-fg-muted">{t('subscriptions.appDisabledBody')}</p>
           </div>
         )}
+
+        {/*
+          Pagamento in ritardo: l'accesso resta per la finestra di tolleranza gestita dal fornitore, ma
+          l'unica azione utile — aggiornare la carta — è nel portale, quindi l'avviso ci porta.
+        */}
+        {pastDue && (
+          <div role="alert" className="rounded-md border border-warning/40 bg-warning/10 p-3">
+            <p className="text-sm font-medium text-fg">{t('subscriptions.dunningTitle')}</p>
+            <p className="mt-1 text-sm text-fg-muted">{t('subscriptions.dunningBody')}</p>
+            {sub.portalAvailable && (
+              <Button
+                size="sm"
+                className="mt-2"
+                disabled={portal.isPending || !canManage}
+                onClick={openPortal}
+              >
+                {t('subscriptions.dunningCta')}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/*
+          Abbonamento scaduto: i diritti sui dati personali non dipendono dall'abbonamento e restano
+          esercitabili sempre (#09 F31) — vanno offerti qui, accanto alla riattivazione, non nascosti.
+        */}
+        {ended && (
+          <div role="status" className="rounded-md border border-line bg-surface-2 p-3">
+            <p className="text-sm font-medium text-fg">{t('subscriptions.expiredTitle')}</p>
+            <p className="mt-1 text-sm text-fg-muted">{t('subscriptions.expiredBody')}</p>
+          </div>
+        )}
+
         {sub.tierKey && (
           <p className="text-sm text-fg">
             {t('subscriptions.tier')}: <span className="font-medium">{sub.tierName ?? sub.tierKey}</span>
           </p>
         )}
-        {status && (
-          <p className="text-sm text-fg-muted">{t(status.key as TKey, status.params)}</p>
-        )}
+        {status && <p className="text-sm text-fg-muted">{t(status.key as TKey, status.params)}</p>}
+
+        {/* Consumo misurato: "8 su 10 posti" con la barra, e un avviso quando ci si avvicina al tetto. */}
+        {quotas.map((quota) => (
+          <div key={quota.metric} className="space-y-1">
+            <p className="text-sm text-fg-muted">
+              {t('subscriptions.quotaUsage', {
+                used: quota.used,
+                cap: quota.cap,
+                metric: quota.metric,
+              })}
+            </p>
+            <div className="h-2 w-full overflow-hidden rounded bg-surface-3">
+              <div
+                className={`h-full ${quota.level === 'ok' ? 'bg-accent' : quota.level === 'warn' ? 'bg-warning' : 'bg-danger'}`}
+                style={{ width: `${Math.round(quota.ratio * 100)}%` }}
+              />
+            </div>
+            {quota.level !== 'ok' && (
+              <p role="status" className="text-sm text-warning">
+                {t(quota.level === 'full' ? 'subscriptions.quotaFull' : 'subscriptions.quotaWarn', {
+                  metric: quota.metric,
+                })}
+              </p>
+            )}
+          </div>
+        ))}
+
         {limits.length > 0 && (
           <div className="text-sm text-fg-muted">
             <span className="font-medium text-fg">{t('subscriptions.planLimits')}:</span>{' '}
@@ -142,23 +276,34 @@ function SubscriptionCard({
           </div>
         )}
 
+        {/*
+          Comando inviato ma non ancora riconciliato: la riga la scrive il webhook, non la richiesta. Fino
+          ad allora si dice "in aggiornamento" invece di mostrare un successo che il dato non conferma.
+        */}
+        {updating && (
+          <p role="status" className="text-sm text-fg-muted">
+            {t('subscriptions.updating')}
+          </p>
+        )}
+
         {(cancel.isError || resume.isError || portal.isError) && (
           <p role="alert" className="text-sm text-danger">
             {t('subscriptions.actionError')}
           </p>
         )}
 
-        {choosing && (
-          <TierChooser
-            appSlug={appSlug}
-            currentTierKey={sub.tierKey ?? null}
-            onDone={() => setChoosing(false)}
-          />
+        {!canManage && (sub.canUpgrade || sub.canDowngrade || sub.canCancel || sub.canResume) && (
+          <p className="text-sm text-fg-muted">{t('subscriptions.ownerOnly')}</p>
         )}
 
         <div className="flex flex-wrap gap-2">
-          {(sub.canUpgrade || sub.canDowngrade) && !choosing && (
-            <Button size="sm" variant="secondary" onClick={() => setChoosing(true)}>
+          {(sub.canUpgrade || sub.canDowngrade) && (
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canManage || updating}
+              onClick={() => setChoosing(true)}
+            >
               {t('subscriptions.changePlan')}
             </Button>
           )}
@@ -166,21 +311,23 @@ function SubscriptionCard({
             <Button
               size="sm"
               variant="ghost"
-              disabled={busy}
-              onClick={() => {
-                if (window.confirm(t('subscriptions.confirmCancel'))) cancel.mutate()
-              }}
+              disabled={busy || !canManage || updating}
+              onClick={() => setConfirmingCancel(true)}
             >
               {t('subscriptions.cancel')}
             </Button>
           )}
           {sub.canResume && (
-            <Button size="sm" disabled={busy} onClick={() => resume.mutate()}>
+            <Button
+              size="sm"
+              disabled={busy || !canManage || updating}
+              onClick={() => resume.mutate(undefined, { onSuccess: onCommandSent })}
+            >
               {t('subscriptions.resume')}
             </Button>
           )}
           {sub.canReactivate && (
-            <Button size="sm" onClick={() => onReactivate(appSlug)}>
+            <Button size="sm" disabled={!canManage} onClick={() => onReactivate(appSlug)}>
               {t('subscriptions.reactivate')}
             </Button>
           )}
@@ -188,14 +335,8 @@ function SubscriptionCard({
             <Button
               size="sm"
               variant="secondary"
-              disabled={portal.isPending}
-              onClick={() =>
-                portal.mutate(undefined, {
-                  onSuccess: (res) => {
-                    if (res.url) window.open(res.url, '_blank', 'noopener')
-                  },
-                })
-              }
+              disabled={portal.isPending || !canManage}
+              onClick={openPortal}
             >
               {t('subscriptions.manage')}
             </Button>
@@ -211,65 +352,44 @@ function SubscriptionCard({
               {t('subscriptions.contactSupport')}
             </Button>
           )}
-          {sub.phase === 'ENDED' && (
+          {ended && (
             <Button size="sm" variant="ghost" onClick={() => navigate('/privacy')}>
               {t('subscriptions.gdpr')}
             </Button>
           )}
         </div>
       </CardContent>
-    </Card>
-  )
-}
 
-/** Scelta del tier di destinazione per il cambio piano (upgrade/downgrade deciso server-side). */
-function TierChooser({
-  appSlug,
-  currentTierKey,
-  onDone,
-}: {
-  appSlug: string
-  currentTierKey: string | null
-  onDone: () => void
-}) {
-  const { t } = useTranslation()
-  const tiers = useAppTiers(appSlug)
-  const change = useChangeTier(appSlug)
-
-  return (
-    <div className="rounded-md border border-line p-3">
-      {tiers.isLoading && <p className="text-sm text-fg-muted">{t('states.loading')}</p>}
-      <div className="flex flex-wrap gap-2">
-        {tiers.data?.tiers
-          ?.filter((tier) => tier.key !== currentTierKey)
-          .map((tier) => (
-            <Button
-              key={tier.tierId}
-              size="sm"
-              variant="secondary"
-              disabled={change.isPending}
-              onClick={() => {
-                if (!tier.key) return
-                if (window.confirm(t('subscriptions.confirmChange'))) {
-                  change.mutate(
-                    { targetTierKey: tier.key, billingCycle: 'monthly' },
-                    { onSuccess: onDone },
-                  )
-                }
-              }}
-            >
-              {tier.name}
-            </Button>
-          ))}
-        <Button size="sm" variant="ghost" onClick={onDone}>
-          {t('checkout.back')}
-        </Button>
-      </div>
-      {change.isError && (
-        <p role="alert" className="mt-2 text-sm text-danger">
-          {t('subscriptions.blockedTitle')}
-        </p>
+      {choosing && (
+        <ChangePlanDialog
+          appSlug={appSlug}
+          currentTierKey={sub.tierKey ?? null}
+          currentPeriodEnd={sub.currentPeriodEnd ?? null}
+          blockedTiers={sub.blockedTiers}
+          onClose={() => setChoosing(false)}
+          onSent={onCommandSent}
+        />
       )}
-    </div>
+
+      {confirmingCancel && (
+        <ConfirmDialog
+          title={t('subscriptions.confirmCancelTitle')}
+          body={t('subscriptions.confirmCancelBody', {
+            date: formatDate(sub.currentPeriodEnd, i18n.language),
+          })}
+          confirmLabel={t('subscriptions.confirmAction')}
+          busy={cancel.isPending}
+          onConfirm={() =>
+            cancel.mutate(undefined, {
+              onSuccess: () => {
+                onCommandSent()
+                setConfirmingCancel(false)
+              },
+            })
+          }
+          onCancel={() => setConfirmingCancel(false)}
+        />
+      )}
+    </Card>
   )
 }

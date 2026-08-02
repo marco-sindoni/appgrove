@@ -413,8 +413,6 @@ export const de: Resources = {
     resume: 'Kündigung rückgängig machen',
     reactivate: 'Reaktivieren',
     gdpr: 'Ihre Daten exportieren / löschen',
-    confirmCancel: 'Dieses Abonnement kündigen? Der Zugriff bleibt bis zum Ende des Zeitraums bestehen.',
-    confirmChange: 'Den Tarifwechsel bestätigen?',
     planLimits: 'Ihr Tarif umfasst',
     limitFlow: '{{cap}} {{metric}} / {{window}}',
     limitStock: 'bis zu {{cap}} {{metric}}',
@@ -437,6 +435,34 @@ export const de: Resources = {
     blockedTitle: 'Downgrade nicht möglich',
     emptyCta: 'Zum App-Katalog',
     contactSupport: 'Support kontaktieren',
+    // Sezione "Abbonamenti" completa (UC 0067): consumo, avvisi, finestra di cambio piano, conferme.
+    quotaUsage: '{{used}} von {{cap}} {{metric}} genutzt',
+    quotaWarn: 'Sie nähern sich dem Tariflimit für {{metric}}. Erwägen Sie einen höheren Tarif.',
+    quotaFull: 'Tariflimit für {{metric}} erreicht. Wechseln Sie zu einem höheren Tarif, um fortzufahren.',
+    dunningTitle: 'Zahlung überfällig',
+    dunningBody:
+      'Wir konnten Ihre Zahlungsmethode nicht belasten. Der Zugriff bleibt für eine kurze Kulanzfrist bestehen: Aktualisieren Sie Ihre Karte, um ihn nicht zu verlieren.',
+    dunningCta: 'Zahlungsmethode aktualisieren',
+    expiredTitle: 'Abonnement abgelaufen',
+    expiredBody:
+      'Ihre Daten sind weiterhin vorhanden. Sie können jederzeit reaktivieren oder sie exportieren und löschen: Diese Rechte hängen nie von einem aktiven Abonnement ab.',
+    updating: 'Aktualisierung läuft — wir warten auf die Bestätigung des Zahlungsanbieters.',
+    ownerOnly: 'Nur die Inhaberin oder der Inhaber des Workspace kann die Abrechnung ändern.',
+    billingCycle: 'Abrechnungszeitraum',
+    currentPlan: 'Aktueller Tarif',
+    recommended: 'Empfohlen',
+    choosePlan: 'Auswählen',
+    freePlan: 'Kostenlos',
+    confirmAction: 'Bestätigen',
+    confirmUpgradeTitle: 'Zu einem höheren Tarif wechseln',
+    confirmUpgradeBody:
+      'Sie wechseln zu „{{tier}}“. Die Änderung gilt sofort und die anteilige Differenz für den Rest des laufenden Zeitraums wird berechnet.',
+    confirmDowngradeTitle: 'Zu einem niedrigeren Tarif wechseln',
+    confirmDowngradeBody:
+      'Sie wechseln ab {{date}} zu „{{tier}}“. Bis dahin ändert sich nichts und Ihr aktueller Tarif bleibt bestehen. Keine Rückerstattung.',
+    confirmCancelTitle: 'Abonnement kündigen',
+    confirmCancelBody:
+      'Das Abonnement wird zum Ende des laufenden Zeitraums gekündigt: Der Zugriff bleibt bis zum {{date}} bestehen, und bis dahin können Sie die Kündigung rückgängig machen.',
   },
   // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
   payments: {

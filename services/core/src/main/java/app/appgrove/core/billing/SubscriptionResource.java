@@ -1,6 +1,5 @@
 package app.appgrove.core.billing;
 
-import app.appgrove.commons.entitlement.MetricLimit;
 import app.appgrove.commons.web.ProblemDetail;
 import app.appgrove.core.billing.SubscriptionDtos.ChangeTierRequest;
 import app.appgrove.core.billing.SubscriptionDtos.ChangeTierResult;
@@ -123,8 +122,8 @@ public class SubscriptionResource {
             effectiveAt = null;
         } else {
             // downgrade: gate stock (E23) + scheduling a fine periodo (resta sul tier corrente fin lì).
-            TierChangePolicy.Decision decision =
-                    TierChangePolicy.evaluateDowngrade(targetLimits(targetTier), currentUsage(appSlug));
+            TierChangePolicy.Decision decision = TierChangePolicy.evaluateDowngrade(
+                    TierChangePolicy.limitsOf(targetTier.getLimits()), currentUsage(appSlug));
             if (decision.blocked()) {
                 throw blocked(decision.remediation());
             }
@@ -224,17 +223,6 @@ public class SubscriptionResource {
                 .filter(p -> p.getBillingCycle() == cycle)
                 .findFirst()
                 .orElseGet(() -> all.isEmpty() ? null : all.get(0));
-    }
-
-    private Map<String, MetricLimit> targetLimits(AppTier tier) {
-        if (tier.getLimits() == null || tier.getLimits().get("metric") == null) {
-            return Map.of();
-        }
-        Map<String, Object> raw = tier.getLimits();
-        long cap = raw.get("cap") instanceof Number n ? n.longValue() : -1L;
-        String nature = raw.get("type") != null ? raw.get("type").toString() : null;
-        String window = raw.get("window") != null ? raw.get("window").toString() : null;
-        return Map.of(raw.get("metric").toString(), new MetricLimit(cap, nature, window));
     }
 
     /**

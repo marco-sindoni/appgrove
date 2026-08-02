@@ -10,7 +10,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 versione: 1
-aggiornato: 2026-08-01
+aggiornato: 2026-08-02
 
 # ── Use case la cui superficie applicativa interattiva ESISTE OGGI in main ────
 # Elenco autorevole (non desunto dalla prosa dei drill-down: il controllo dev'essere deterministico).
@@ -28,6 +28,7 @@ usecases_con_superficie:
   - "0056" # Ri-accettazione ToU/PP a runtime (schermata bloccante)
   - "0059" # Gestione membri & inviti (UI backoffice)
   - "0060" # Localizzazione UI delle app alle 5 lingue
+  - "0067" # Gestione abbonamento self-service (sezione "Abbonamenti" completa)
   - "0076" # Disabilita applicazione (leva admin, effetti sul cliente)
   - "0077" # Provider entitlement reale (menu laterale e matrice)
   - "0095" # Pagina "App catalog" del backoffice (vetrina, stati, ricerca, paginazione)
@@ -191,8 +192,8 @@ percorsi:
         file: frontend/apps/backoffice/e2e/dashboard.spec.ts
 
   - id: L2-SUB
-    titolo: Abbonamenti dal backoffice — riduzione programmata, avviso di quota con invito a passare di fascia, app disabilitata dalla piattaforma
-    usecases: ["0027", "0028", "0076"]
+    titolo: Abbonamenti dal backoffice — consumo della quota, cambio piano con prezzi e piani non ammissibili, conferme esplicite, disdetta e riattivazione, pagamento in ritardo, scadenza, app disabilitata dalla piattaforma
+    usecases: ["0027", "0028", "0067", "0076"]
     stato: coperto
     test:
       - livello: l2
@@ -532,9 +533,6 @@ esenzioni:
   - usecase: "0066"
     categoria: non-implementato
     motivo: Industrializzazione del canale per assistenti AI nello scaffolding — non ancora implementata.
-  - usecase: "0067"
-    categoria: non-implementato
-    motivo: Pagina "Abbonamenti" self-service del backoffice — non ancora implementata.
   - usecase: "0068"
     categoria: non-implementato
     motivo: Sospensione e ripresa dell'abbonamento self-service — non ancora implementata.

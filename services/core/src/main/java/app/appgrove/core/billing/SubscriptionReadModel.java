@@ -14,8 +14,10 @@ import app.appgrove.core.platform.CallerContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Read-model dedicato del portale cliente (UC 0028): elenca <b>tutte</b> le subscription del tenant corrente
@@ -43,12 +45,16 @@ public class SubscriptionReadModel {
     AccountRepository accounts;
 
     @Inject
+    AppUsageStore usage;
+
+    @Inject
     CallerContext caller;
 
-    /** Tutte le subscription del tenant del JWT, con fase/cambio schedulato/limiti/flag. */
+    /** Tutte le subscription del tenant del JWT, con fase/cambio schedulato/limiti/uso/flag. */
     public MySubscriptionsView forCurrentTenant() {
         Account account = accounts.findById(caller.tenantId());
         boolean portalAvailable = account != null && account.getPaddleCustomerId() != null;
+        String tenantId = caller.tenantId().toString();
 
         List<SubscriptionView> views = new ArrayList<>();
         for (Subscription sub : subscriptions.listAll()) {
@@ -70,6 +76,8 @@ public class SubscriptionReadModel {
                     && sub.getCancelAt() == null;
             boolean canResume = phase == SubscriptionLifecycle.Phase.CANCELING;
             boolean canReactivate = phase == SubscriptionLifecycle.Phase.ENDED;
+
+            Map<String, Long> currentUsage = usage.usageFor(app.getSlug(), tenantId);
 
             views.add(new SubscriptionView(
                     app.getSlug(),
@@ -94,24 +102,39 @@ public class SubscriptionReadModel {
                     // UC 0076: l'app messa in pausa dalla piattaforma resta elencata (per disegno il
                     // portale mostra anche gli abbonamenti senza accesso) ma va detto perché non è
                     // raggiungibile, altrimenti il pannello contraddice la barra laterale.
-                    app.getStatus() != AppStatus.active));
+                    app.getStatus() != AppStatus.active,
+                    currentUsage,
+                    blockedTiers(sub.getAppId(), currentUsage)));
         }
         return new MySubscriptionsView(views);
     }
 
     /** Converte {@code app_tier.limits} ({@code {metric, cap, type, window}}) in {@code metric → MetricLimit}. */
     private Map<String, MetricLimit> limitsOf(AppTier tier) {
-        if (tier == null || tier.getLimits() == null) {
-            return Map.of();
+        return tier == null ? Map.of() : TierChangePolicy.limitsOf(tier.getLimits());
+    }
+
+    /**
+     * Piani dell'app che la regola di riduzione rifiuterebbe adesso, {@code chiave piano → spiegazione}.
+     *
+     * <p>La finestra "cambia piano" deve poter disabilitare un piano troppo piccolo <b>prima</b> del clic,
+     * spiegando il perché (UC 0067 §5): senza questo, l'unica via è lasciarlo cliccabile e mostrare l'errore
+     * 409 dopo. Il giudizio resta di {@link TierChangePolicy}, la stessa che rifiuta il comando — così i due
+     * lati non possono dare risposte diverse. Non si filtra per direzione: un piano con capienza sufficiente
+     * non è mai bloccato, quindi valutarli tutti è corretto e più semplice del ricalcolare i prezzi qui.
+     */
+    private Map<String, String> blockedTiers(UUID appId, Map<String, Long> currentUsage) {
+        if (currentUsage.isEmpty()) {
+            return Map.of(); // nessuna giacenza nota → nulla da proteggere
         }
-        Map<String, Object> raw = tier.getLimits();
-        Object metric = raw.get("metric");
-        if (metric == null) {
-            return Map.of();
+        Map<String, String> blocked = new LinkedHashMap<>();
+        for (AppTier tier : tiers.listByApp(appId)) {
+            TierChangePolicy.Decision decision =
+                    TierChangePolicy.evaluateDowngrade(TierChangePolicy.limitsOf(tier.getLimits()), currentUsage);
+            if (decision.blocked()) {
+                blocked.put(tier.getKey(), decision.remediation());
+            }
         }
-        long cap = raw.get("cap") instanceof Number n ? n.longValue() : -1L;
-        String nature = raw.get("type") != null ? raw.get("type").toString() : null;
-        String window = raw.get("window") != null ? raw.get("window").toString() : null;
-        return Map.of(metric.toString(), new MetricLimit(cap, nature, window));
+        return blocked;
     }
 }

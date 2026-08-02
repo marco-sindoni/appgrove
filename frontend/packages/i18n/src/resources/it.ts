@@ -413,8 +413,6 @@ export const it: Resources = {
     resume: 'Annulla disdetta',
     reactivate: 'Riattiva',
     gdpr: 'Esporta / elimina i tuoi dati',
-    confirmCancel: 'Vuoi disdire? L’accesso resta fino a fine periodo.',
-    confirmChange: 'Confermi il cambio di piano?',
     planLimits: 'Il tuo piano include',
     limitFlow: '{{cap}} {{metric}} / {{window}}',
     limitStock: 'fino a {{cap}} {{metric}}',
@@ -437,6 +435,34 @@ export const it: Resources = {
     blockedTitle: 'Downgrade non possibile',
     emptyCta: 'Vai al catalogo delle app',
     contactSupport: 'Contatta il supporto',
+    // Sezione "Abbonamenti" completa (UC 0067): consumo, avvisi, finestra di cambio piano, conferme.
+    quotaUsage: '{{used}} su {{cap}} {{metric}} in uso',
+    quotaWarn: 'Sei vicino al limite del piano per {{metric}}. Valuta il passaggio a un piano superiore.',
+    quotaFull: 'Limite del piano raggiunto per {{metric}}. Passa a un piano superiore per continuare.',
+    dunningTitle: 'Pagamento in ritardo',
+    dunningBody:
+      'Non siamo riusciti ad addebitare il tuo metodo di pagamento. L’accesso resta attivo per un breve periodo di tolleranza: aggiorna la carta per non perderlo.',
+    dunningCta: 'Aggiorna il metodo di pagamento',
+    expiredTitle: 'Abbonamento scaduto',
+    expiredBody:
+      'I tuoi dati sono ancora qui. Puoi riattivare quando vuoi, oppure esportarli ed eliminarli: questi diritti non dipendono mai da un abbonamento attivo.',
+    updating: 'Aggiornamento in corso — attendiamo la conferma dal fornitore di pagamento.',
+    ownerOnly: 'Solo il titolare del workspace può modificare la fatturazione.',
+    billingCycle: 'Ciclo di fatturazione',
+    currentPlan: 'Piano attuale',
+    recommended: 'Consigliato',
+    choosePlan: 'Scegli',
+    freePlan: 'Gratuito',
+    confirmAction: 'Conferma',
+    confirmUpgradeTitle: 'Passa a un piano superiore',
+    confirmUpgradeBody:
+      'Stai passando a “{{tier}}”. Il cambio è immediato e ti viene addebitata la differenza proporzionale per il resto del periodo in corso.',
+    confirmDowngradeTitle: 'Passa a un piano inferiore',
+    confirmDowngradeBody:
+      'Passi a “{{tier}}” dal {{date}}. Fino ad allora non cambia nulla e resti sul piano attuale. Nessun rimborso.',
+    confirmCancelTitle: 'Disdici l’abbonamento',
+    confirmCancelBody:
+      'L’abbonamento viene disdetto a fine periodo: l’accesso resta fino al {{date}} e fino ad allora puoi annullare la disdetta.',
   },
   // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
   payments: {

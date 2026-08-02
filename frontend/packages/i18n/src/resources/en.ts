@@ -413,8 +413,6 @@ export const en = {
     resume: 'Undo cancellation',
     reactivate: 'Reactivate',
     gdpr: 'Export / delete your data',
-    confirmCancel: 'Cancel this subscription? Access stays until the period ends.',
-    confirmChange: 'Confirm the plan change?',
     planLimits: 'Your plan includes',
     limitFlow: '{{cap}} {{metric}} / {{window}}',
     limitStock: 'up to {{cap}} {{metric}}',
@@ -437,6 +435,34 @@ export const en = {
     blockedTitle: 'Downgrade not possible',
     emptyCta: 'Browse the app catalog',
     contactSupport: 'Contact support',
+    // Sezione "Abbonamenti" completa (UC 0067): consumo, avvisi, finestra di cambio piano, conferme.
+    quotaUsage: '{{used}} of {{cap}} {{metric}} used',
+    quotaWarn: 'You are close to your plan limit for {{metric}}. Consider moving to a higher plan.',
+    quotaFull: 'Plan limit reached for {{metric}}. Move to a higher plan to keep going.',
+    dunningTitle: 'Payment overdue',
+    dunningBody:
+      'We couldn’t charge your payment method. Access stays on for a short grace period: update your card to avoid losing it.',
+    dunningCta: 'Update payment method',
+    expiredTitle: 'Subscription expired',
+    expiredBody:
+      'Your data is still here. You can reactivate at any time, or export and delete it — those rights never depend on an active subscription.',
+    updating: 'Update in progress — waiting for confirmation from the payment provider.',
+    ownerOnly: 'Only the workspace owner can change billing.',
+    billingCycle: 'Billing cycle',
+    currentPlan: 'Current plan',
+    recommended: 'Recommended',
+    choosePlan: 'Choose',
+    freePlan: 'Free',
+    confirmAction: 'Confirm',
+    confirmUpgradeTitle: 'Move to a higher plan',
+    confirmUpgradeBody:
+      'You are moving to “{{tier}}”. The change applies right away and you are charged the prorated difference for the rest of the current period.',
+    confirmDowngradeTitle: 'Move to a lower plan',
+    confirmDowngradeBody:
+      'You are moving to “{{tier}}” from {{date}}. Until then nothing changes and you stay on your current plan. No refund is issued.',
+    confirmCancelTitle: 'Cancel subscription',
+    confirmCancelBody:
+      'The subscription is cancelled at the end of the current period: access stays until {{date}}, and you can undo the cancellation before then.',
   },
   // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
   payments: {
