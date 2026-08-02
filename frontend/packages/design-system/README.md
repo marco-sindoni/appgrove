@@ -13,7 +13,9 @@ controllo anti-drift descritto più sotto (UC 0019 per il design system, UC 0086
 | Lettura dei token **da un programma** | `src/tokens/tokens.mjs` | chi non compila CSS |
 | Caratteri e icone, ospitati in casa | `src/styles/fonts.css` | tutti |
 | Disegno del **logo** | `src/brand/logo.mjs` | componente React e generatori |
-| Stile delle **illustrazioni** | [`ILLUSTRAZIONI.md`](ILLUSTRAZIONI.md) | chi produce artwork (UC 0087) |
+| **Derivati** del logo (icone, anteprima social) | `src/brand/assets.mjs` + `scripts/brand-assets.mjs` | vetrina e due SPA, come file statici |
+| Stile delle **illustrazioni** | [`ILLUSTRAZIONI.md`](ILLUSTRAZIONI.md) | chi produce artwork |
+| **Illustrazioni** condivise (React) | `src/illustrations/*` | le due SPA |
 | Primitivi React | `src/components/*` | le due SPA |
 
 `tokens.css` è la **sorgente**: tutto il resto ne discende, nulla la duplica. Il preset Tailwind mappa le
@@ -59,10 +61,60 @@ il controllo anti-drift verifica che ognuno corrisponda a un token vero.
 
 ## Il logo
 
-Il disegno vive in `src/brand/logo.mjs` e da nessun'altra parte. Il componente React `<Logo />` ne usa i
-tracciati; chi ha bisogno di una stringa SVG (immagine social, favicon, anteprime) chiama `logoMarkSvg()` o
-`logoLockupSvg()` passando i colori letti dai token. L'artwork attuale è un **segnaposto on-brand**: UC 0087 lo
-sostituirà toccando quel file soltanto, e ogni consumatore lo seguirà da solo.
+Il disegno vive in `src/brand/logo.mjs` e da nessun'altra parte: una **foglia dentro una piastrella ad angoli
+morbidi**, costruita con archi di cerchio. Il componente React `<Logo />` ne usa i tracciati; chi ha bisogno di
+una stringa SVG (immagine social, icone, anteprime) chiama `logoMarkSvg()` o `logoLockupSvg()` passando i colori
+letti dai token.
+
+Il segno ha **tre letture**, non tre disegni (UC 0087):
+
+| Lettura | Quando | Come si ottiene |
+|---|---|---|
+| completa | dimensioni normali (≥ 22 px) | è il comportamento predefinito |
+| compatta | spazi piccoli: icona della scheda, elenchi fitti | automatica sotto la soglia, o `compact: true` |
+| monocroma | sfondi difficili: fotografie, aree colorate, stampa a un colore | `mono: '<colore>'` (React: `<Logo mono />`) |
+
+Sotto i 22 px cade la nervatura: a quella dimensione un tratto da 1.7 unità è meno di un pixel e sporca invece
+di descrivere. La soglia è dichiarata (`LOGO_COMPACT_BELOW`), non sparsa nel codice.
+
+## I derivati — icone e anteprima social
+
+I browser non vogliono «il disegno», vogliono **un file**. Quei file non si disegnano a mano: sono funzioni del
+disegno, generate da uno script.
+
+```bash
+cd frontend/packages/design-system && npm run brand:assets
+```
+
+| File generato | Dove | A cosa serve |
+|---|---|---|
+| `favicon.svg` | `site/public/`, `frontend/apps/{backoffice,admin}/public/` | icona della scheda del browser (disegno compatto) |
+| `icon.svg` | `site/public/` | icona applicativa quadrata, pensata anche per il ritaglio |
+| `apple-touch-icon.png` (180×180) | `site/public/` | icona da schermata iniziale su iOS, che non accetta il vettore |
+| `og-appgrove.svg` / `.png` (1200×630) | `site/public/` | anteprima social **di piattaforma** della vetrina |
+
+Gli SVG sono sorvegliati: il collaudo `tools/design-tokens/test/brand-assets.test.mjs` li rigenera e li confronta
+con quelli committati. Se l'artwork cambia e nessuno rilancia lo script, la suite diventa **rossa** — è il modo
+in cui la fonte unica resta unica. I due PNG richiedono la libreria di rasterizzazione (presente nel sito e in
+`tools/finalize-landing`, non fra le dipendenze di questo pacchetto) e sono verificati solo su presenza e
+dimensioni.
+
+Le **landing per-app** non usano l'anteprima di piattaforma: hanno la propria, generata da `finalize-landing` col
+colore della loro categoria — e anch'essa disegna il mark da qui.
+
+## Le illustrazioni
+
+Le regole di stile stanno in [`ILLUSTRAZIONI.md`](ILLUSTRAZIONI.md); le figure riusabili dalle applicazioni React
+stanno in `src/illustrations/` e si usano come qualunque altro componente:
+
+```tsx
+import { EmptyIllustration, NotFoundIllustration } from '@appgrove/design-system'
+
+<EmptyIllustration className="mx-auto max-w-[200px]" />
+```
+
+Sono decorative (`aria-hidden`), non contengono testo e dipingono **solo** con classi-token: la stessa figura vale
+in chiaro e in scuro, senza una seconda versione.
 
 ## Anti-drift — perché la fonte unica regge nel tempo
 

@@ -9,6 +9,7 @@ import {
   hex,
   colorHexes,
 } from '../../../frontend/packages/design-system/src/tokens/tokens.mjs'
+import { LOGO_PATHS } from '../../../frontend/packages/design-system/src/brand/logo.mjs'
 
 test('ogSvg è un SVG 1200×630 col nome app e il colore-categoria', () => {
   const svg = ogSvg({ appName: 'Note Pro', tagline: 'Prendi appunti in pochi clic', accent: 'cat-violet' })
@@ -69,8 +70,14 @@ test('ogSvg non contiene nessun colore fuori dal brand kit', () => {
 
 test('ogSvg porta il mark del logo del pacchetto, non un disegno suo', () => {
   const svg = ogSvg({ appName: 'Esempio', tagline: 'x', accent: 'cat-blue' })
-  // il tracciato della foglia è definito una volta sola, in frontend/.../brand/logo.mjs
-  assert.ok(svg.includes('M22 9c0 6.5-3.8 11-9.5 11'), 'contiene il tracciato del mark condiviso')
+  // I tracciati si CHIEDONO al pacchetto, non si ricopiano qui: un tracciato scritto a mano
+  // nel test è una seconda copia del disegno, cioè il difetto che il brand kit combatte —
+  // e infatti l'artwork definitivo (UC 0087) lo aveva già reso falso.
+  const attesi = LOGO_PATHS.filter((p) => p.detail === 'always')
+  assert.ok(attesi.length > 0, 'il pacchetto deve dichiarare almeno un tracciato')
+  for (const p of attesi) {
+    assert.ok(svg.includes(p.d), `contiene il tracciato del mark condiviso: ${p.d.slice(0, 24)}…`)
+  }
 })
 
 test('renderOgImage produce un PNG valido 1200×630', async () => {

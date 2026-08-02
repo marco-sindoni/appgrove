@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Badge, Button, Card, Icon, Input, cn } from '@appgrove/design-system'
+import { Badge, Button, Card, EmptyIllustration, Icon, Input, cn } from '@appgrove/design-system'
 import { useTranslation, type Language } from '@appgrove/i18n'
 import { useAuthStore } from '../../auth/authStore'
 import { CheckoutFlow } from '../../billing/CheckoutFlow'
@@ -113,6 +113,9 @@ export function AppCatalogPage() {
         {items.length === 0 ? (
           <Card>
             <div className="space-y-2 px-6 py-11 text-center">
+              {/* Figura on-brand degli stati vuoti (UC 0087): decorativa — la ricerca
+                  senza esiti è già raccontata dal testo qui sotto. */}
+              <EmptyIllustration className="mx-auto mb-4 max-w-[200px]" />
               <p className="text-[15px] font-semibold text-fg">{t('catalog.empty')}</p>
               <p className="text-sm text-fg-muted">{t('catalog.emptyHint')}</p>
               <Button

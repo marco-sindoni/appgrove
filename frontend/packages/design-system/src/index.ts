@@ -30,6 +30,19 @@ export {
 } from './components/Table'
 export { PageHeader, type PageHeaderProps } from './components/PageHeader'
 
+// Illustrazioni on-brand (UC 0087): figure decorative che seguono i token, quindi tema
+// chiaro/scuro e accento, senza essere ridisegnate. Regole in ILLUSTRAZIONI.md.
+export {
+  Illustration,
+  ILLUSTRATION_VIEWBOX,
+  type IllustrationProps,
+} from './illustrations/Illustration'
+export { EmptyIllustration, type EmptyIllustrationProps } from './illustrations/EmptyIllustration'
+export {
+  NotFoundIllustration,
+  type NotFoundIllustrationProps,
+} from './illustrations/NotFoundIllustration'
+
 export {
   ThemeProvider,
   useTheme,

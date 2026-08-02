@@ -3,7 +3,7 @@
 **Area**: 18-brand-e-design-system · **Fase**: evo · **Stato**: 🟢 scritto (evo, da implementare)
 **Dipendenze**: UC 0019 (design system & brand kit), UC 0086 (pacchetto brand kit / token condiviso), UC 0037 (homepage vetrina)
 **Fonte**: R20 (Tabella residui _INDEX.md) · docs/_BACKLOG.md §"Brand kit & design system (#14 F)"
-**Ultimo aggiornamento**: 2026-07-26
+**Ultimo aggiornamento**: 2026-08-02 (implementato dalla change 0081)
 
 ## 1. Obiettivo / Scope
 Produrre gli **artwork grafici finali** dell'identità appgrove: il **logo definitivo** (a partire dal concept già scelto,
@@ -102,11 +102,43 @@ non applicabile.
   3. La resa in chiaro e scuro è verificata su vetrina/homepage e SPA.
   4. Ogni artwork generato con AI è stato selezionato e rifinito da una persona e rispetta lo stile del brand kit.
 
+## Stato dopo l'implementazione (change 0081)
+L'artwork definitivo ha sostituito il segnaposto **nella sua unica sede**, `frontend/packages/design-system/src/brand/logo.mjs`:
+una **foglia dentro una piastrella ad angoli morbidi**, costruita con archi di cerchio, con tre letture dello stesso segno —
+completa, **compatta** sotto i 22 px (cade la nervatura, che a quella dimensione è meno di un pixel) e **monocroma** per gli
+sfondi difficili. Componente React, immagine social per-app e ogni consumatore futuro lo seguono da soli.
+
+I **derivati** non si disegnano più a mano: `src/brand/assets.mjs` li descrive come funzioni del disegno e
+`npm run brand:assets` li scrive (icona della scheda per vetrina e due applicazioni web, icona applicativa, icona da
+schermata iniziale iOS, **anteprima social di piattaforma** — che prima semplicemente non esisteva). Un collaudo in
+`tools/design-tokens` rigenera i vettoriali e li confronta con quelli committati: artwork cambiato e file non rigenerati
+= suite rossa.
+
+Le **illustrazioni** riusabili sono ora due, in formato React dentro il brand kit (`src/illustrations/`), sulla cornice
+comune `<Illustration>` e sul riquadro compatto 240×160 fissato nella nota di stile: figura degli **stati vuoti** (usata
+nel catalogo app) e figura della **pagina non trovata** (usata dalle due applicazioni web). Le cinque figure della vetrina
+restano dove sono, già in stile.
+
+**Per chi verrà dopo**: aggiungere una figura significa scrivere il solo disegno dentro `<Illustration name="…">` e
+usare esclusivamente classi-token; aggiungere un consumatore di icone significa aggiungere **una riga** a `svgAssets()`
+e rigenerare — mai copiare un file.
+
 ## Punti aperti / decisioni differite
 - **Quantità e soggetti delle illustrazioni**: quali pagine future oltre alla homepage meritino davvero un'illustrazione —
   scelta di prodotto/contenuto da fare pagina per pagina; *differito perché:* dipende dalle pagine effettivamente in
   produzione; *possiede:* questo UC insieme ai singoli use case delle pagine.
 - **Marchio registrato / tutela del logo**: se e quando avviare una registrazione del marchio è una decisione legale/di
   business fuori scope tecnico; *possiede:* la revisione legale pre-go-live.
-- **Provenienza e licenza degli strumenti AI** usati per generare gli artwork: annotare quale strumento e con quali termini,
-  per evitare sorprese di licenza; da tracciare al momento della produzione effettiva.
+- **Provenienza e licenza degli strumenti AI** usati per generare gli artwork: *risolto per l'artwork attuale* — logo e
+  illustrazioni sono **geometria scritta a mano** (archi di cerchio e rettangoli con i raggi del brand), senza alcun
+  elemento generato da modelli di immagini né materiale di terzi: nessun vincolo di licenza da tracciare. Se in futuro si
+  ricorrerà alla generazione assistita, quella nota andrà scritta allora.
+- **Manifesto per l'installazione su telefono** (`manifest.webmanifest` con icone a 192/512 punti, nome e colore di
+  avvio): l'icona applicativa esiste già come `icon.svg`, ma il manifesto è una decisione di prodotto — se il backoffice
+  debba comportarsi come un'applicazione installabile — con effetti su navigazione e aggiornamenti; *differito perché:*
+  non appartiene all'artwork; *possiede:* uno use case di superficie del backoffice, da aprire quando la domanda si porrà.
+- **Anteprima social per lingua**: quella di piattaforma è deliberatamente **neutra rispetto alla lingua** (solo marchio e
+  payoff) per servire tutte e cinque le lingue con un file solo. Se un domani si volesse una frase tradotta nell'immagine,
+  servirebbero cinque file e la loro generazione per lingua; *possiede:* UC 0038 (Open Graph della vetrina).
+- **Illustrazione dedicata agli stati di errore di rete/permesso**: oggi quelle schermate usano solo testo; una terza
+  figura sarebbe coerente ma non è richiesta da nessuna schermata esistente — «poche e coerenti» viene prima.

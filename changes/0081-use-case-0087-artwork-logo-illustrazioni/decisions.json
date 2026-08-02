@@ -1,0 +1,128 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata espressamente all'invocazione. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata, i tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge) sono rinunciati in anticipo dallo sviluppatore; restano obbligatori la suite completa `./run-tests.sh` verde prima del commit, il registro integrale delle decisioni e il file `how-to-test.md`. Merge e push non sono compito di questa change."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0087 (artwork logo finale + illustrazioni on-brand), storia evolutiva dell'epica 18. Da qui la forma del branch `change/0081-use-case-0087-artwork-logo-illustrazioni`. Il numero 0081 è il progressivo di `changes/` (l'ultima cartella è 0080) e non ha relazione col numero dello use case.",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Indice delle storie evolutive: UC 0087 passa da ⬜ a ✅ alla chiusura della change (le storie evo non stanno nell'ordine topologico di _INDEX.md)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Forma del logo definitivo: la 'foglia dentro piastrella ad angoli morbidi' già decisa a livello di direzione è stata portata alla forma finale come GEOMETRIA PURA — corpo della foglia costruito con due archi di cerchio simmetrici rispetto alla diagonale, fra le punte (7.6, 24.4) e (24.4, 7.6), più una nervatura che parte dalla punta bassa e si ferma ai due terzi. Nessun punto piazzato a occhio: la sola leva sulla forma è il raggio degli archi. Il raggio 13 è stato scelto confrontando visivamente 15 (troppo affilata, sembra una lente), 13 e 11.5 (troppo gonfia, sembra un cerchio) — la scelta estetica è dell'autopilot, come previsto dal mandato, e resta dentro il concept già approvato.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/brand/logo.mjs", "description": "Sostituito il segnaposto di UC 0086 con l'artwork definitivo; i tracciati restano dichiarati per ruolo colore (accent/contrast), quindi il tema chiaro/scuro continua a funzionare senza un secondo disegno." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il segno ha tre LETTURE, non tre disegni: completa (foglia + nervatura), compatta (sola foglia) e monocroma (un colore solo, piastrella a contorno). La lettura compatta scatta automaticamente sotto i 22 px perché a quella dimensione un tratto da 1.7 unità del riquadro è meno di un pixel e sporca invece di descrivere; la soglia è una costante dichiarata (`LOGO_COMPACT_BELOW`), non un numero sparso. La monocromia risponde al requisito 'logo su sfondi difficili' dello use case (§5) senza introdurre un secondo artwork da mantenere. Alternativa scartata: disegnare tre file separati — è esattamente il tipo di copia che UC 0086 ha appena eliminato.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/brand/logo.mjs", "description": "`logoPathsFor(size)`, opzioni `compact` e `mono` di `logoMarkSvg`/`logoLockupSvg`; ogni tracciato dichiara `detail: always | full`." },
+      { "file": "frontend/packages/design-system/src/components/Logo.tsx", "description": "Il componente React sceglie il livello di dettaglio dalla dimensione e offre la proprietà `mono` (che dipinge con `currentColor`)." },
+      { "file": "frontend/packages/design-system/src/brand/logo.d.mts", "description": "Dichiarazioni di tipo allineate alla nuova interfaccia (il modulo è JavaScript puro perché lo importano anche strumenti fuori dal workspace TypeScript)." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) I derivati del logo (icone e anteprima social) sono FUNZIONI del disegno, non file disegnati a mano: un nuovo modulo li descrive e uno script del pacchetto li scrive. Motivo: un file statico ricopiato è la stessa classe di difetto che UC 0086 ha combattuto sui colori — funziona, non rompe niente, e diverge in silenzio appena l'artwork cambia. Aggiungere un consumatore significa aggiungere una riga a `svgAssets()`, mai copiare un file.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/brand/assets.mjs", "description": "Icona della scheda (disegno compatto), icona applicativa quadrata, anteprima social di piattaforma; colori sempre letti dai token, mai scritti a mano." },
+      { "file": "frontend/packages/design-system/scripts/brand-assets.mjs", "description": "`npm run brand:assets`: scrive gli artefatti nei tre consumatori. La libreria di rasterizzazione viene cercata dove il monorepo già ce l'ha (site, tools/finalize-landing) perché i moduli ES non leggono NODE_PATH." },
+      { "file": "frontend/packages/design-system/package.json", "description": "Nuovo script `brand:assets` e nuova esportazione `./brand-assets.js`." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Formati: tutto vettoriale tranne i due casi in cui la destinazione non lo accetta — l'icona da schermata iniziale di iOS e l'anteprima social, che sono PNG generati dalla stessa sorgente vettoriale. È la regola n.1 della nota di stile applicata alla lettera. L'icona applicativa ha il fondo pieno fino ai bordi (gli angoli li arrotonda il sistema operativo) e il segno nel 72% centrale, così nessun ritaglio circolare lo mangia.",
+    "files": [
+      { "file": "site/public/apple-touch-icon.png", "description": "180×180, generato; unico raster dell'icona." },
+      { "file": "site/public/og-appgrove.png", "description": "1200×630, anteprima social di piattaforma; l'SVG sorgente è committato accanto." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il collaudo anti-divergenza dei derivati vive in `tools/design-tokens` (area `tooling`) e non fra i test del pacchetto. Due motivi: (a) non è un test di unità ma un controllo sul repository vero — 'i file committati corrispondono ancora al disegno?' — cioè lo stesso mestiere di `check.mjs`; (b) i moduli del brand kit leggono i token dal disco e l'esecutore di test del frontend serve i moduli via HTTP, per cui `import.meta.url` non è un percorso di file e la lettura fallisce (limite già documentato in `tokens.mjs`). Scartata l'alternativa di rendere `tokensCssPath()` tollerante: avrebbe indebolito la fonte unica per far posto a un esecutore di test.",
+    "files": [
+      { "file": "tools/design-tokens/test/brand-assets.test.mjs", "description": "Rigenera i vettoriali e li confronta con i file committati; verifica colori dentro la palette, disegno compatto nell'icona della scheda, rapporto 1.91:1 dell'anteprima e dimensioni reali dei PNG lette dall'intestazione del file (nessuna libreria di rasterizzazione richiesta dalla suite)." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'anteprima social di piattaforma diventa il valore PREDEFINITO della vetrina, con tre casi distinti apposta: proprietà non passata → anteprima di piattaforma (home, legali, blog); stringa → quella (landing pubblicate, col colore della loro categoria); `null` esplicito → nessuna immagine, ed è voluto (bozze di landing non ancora rifinite). Prima di questa change nessuna pagina della vetrina aveva un'anteprima: condividerne un indirizzo mostrava un rettangolo vuoto. L'immagine è deliberatamente neutra rispetto alla lingua (solo marchio e payoff) perché il sito ne parla cinque e un file solo deve servirle tutte.",
+    "files": [
+      { "file": "site/src/layouts/BaseLayout.astro", "description": "Icone del marchio nella testa della pagina, anteprima social predefinita, e il mark accanto al nome nell'intestazione (che prima era solo testo)." },
+      { "file": "site/src/components/Logo.astro", "description": "Rende il logo per la vetrina leggendo i tracciati dal brand kit e dipingendoli con le classi-token: nessuna duplicazione del disegno fuori da `logo.mjs`." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Illustrazioni: le cinque figure della vetrina restano dove sono (sono già nello stile e riscriverle non porterebbe nulla). Si aggiungono DUE figure sole, in formato React dentro il brand kit, perché le applicazioni web non ne avevano nessuna e non potevano usare quelle Astro. Soggetti scelti sui bisogni reali già presenti nel prodotto — stato vuoto e pagina non trovata — e non su una lista di figure desiderabili: la regola della nota di stile è 'poche e coerenti', non 'una per pagina'.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/illustrations/Illustration.tsx", "description": "Cornice comune (pannello di fondo, classi, marcatura decorativa): chi disegna una figura nuova scrive solo il proprio disegno, così la seconda e la terza non divergono per distrazione." },
+      { "file": "frontend/packages/design-system/src/illustrations/EmptyIllustration.tsx", "description": "Stato vuoto: contenitore aperto e tessera in arrivo. Lo stato vuoto non è un errore, è un inizio — l'accento sta sull'elemento che sta per entrare." },
+      { "file": "frontend/packages/design-system/src/illustrations/NotFoundIllustration.tsx", "description": "Pagina non trovata: griglia di tessere con un posto vuoto marcato in accento. Dice 'qui non c'è niente' senza dire 'hai sbagliato', e senza testo (le lingue sono cinque)." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il logo NON entra dentro un'illustrazione: la prima stesura della figura degli stati vuoti conteneva la foglia del marchio ricopiata a mano nella tessera, ed è stata sostituita da una tessera generica. Una figura che contiene il marchio ne diventa una copia, e le copie divergono — è la regola che tutto il brand kit esiste per far rispettare. La regola è stata scritta nella nota di stile perché non si ripresenti.",
+    "files": [
+      { "file": "frontend/packages/design-system/ILLUSTRAZIONI.md", "description": "Sezione «Il logo non è un'illustrazione» estesa col corollario operativo." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Le figure compatte delle applicazioni web usano il riquadro di disegno 240×160, fissato nella nota di stile accanto al 480×340 delle figure di sezione della vetrina: stesso rapporto 3:2, quindi lo stesso occhio. Un terzo riquadro va discusso, non inventato — è così che due figure smettono di sembrare della stessa mano.",
+    "files": [
+      { "file": "frontend/packages/design-system/ILLUSTRAZIONI.md", "description": "Regola 3 dell'impianto riscritta con i due riquadri ammessi e la tabella di dove vivono le figure." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Punti d'uso delle illustrazioni scelti fra quelli che esistono già, per non inventare superficie: pagina «non trovato» del backoffice e della console di amministrazione, stato vuoto della ricerca nel catalogo delle app. Le figure sono decorative (`aria-hidden`) e si affiancano al testo esistente senza sostituirlo, quindi nessun selettore dei test esistenti cambia significato.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/NotFound.tsx", "description": "Figura della pagina non trovata sopra il codice 404." },
+      { "file": "frontend/apps/admin/src/pages/NotFound.tsx", "description": "Stessa figura, stessa collocazione." },
+      { "file": "frontend/apps/backoffice/src/pages/catalog/AppCatalogPage.tsx", "description": "Figura dello stato vuoto quando la ricerca non ha esiti." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Copertura end-to-end: NESSUN impatto sul registro. UC 0087 resta classificato `senza-superficie` — le figure sono decorative e nascoste alle tecnologie assistive, il logo è cornice: non aprono alcun percorso utente e un collaudo a browser non aggiungerebbe informazione. Il motivo dell'esenzione è stato riformulato per dire dove sta il presidio VERO (confronto dei derivati col disegno unico, anti-drift dei colori). Nessuna voce `da-coprire` aperta.",
+    "files": [
+      { "file": "docs/testing/copertura-e2e.yaml", "description": "Motivo dell'esenzione di UC 0087 riscritto; il controllo `tools/e2e-coverage` resta verde." }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Provenienza degli artwork: logo e illustrazioni sono geometria scritta a mano (archi di cerchio, rettangoli con i raggi del brand), senza alcun elemento generato da modelli di immagini né materiale di terzi. Il punto aperto dello use case sulla licenza degli strumenti di generazione si chiude così per l'artwork attuale, e resta aperto solo per un'eventuale produzione assistita futura.",
+    "files": [
+      { "file": "docs/usecases/18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md", "description": "Punto aperto aggiornato con la risposta e il suo ambito." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Rimandi tracciati nello use case 0087, non implementati qui perché fuori ambito: (a) manifesto per l'installazione su telefono — l'icona esiste già, ma decidere se il backoffice debba comportarsi da applicazione installabile è una scelta di prodotto con effetti su navigazione e aggiornamenti, e appartiene a uno use case di superficie del backoffice; (b) anteprima social per lingua — servirebbero cinque file generati per lingua, e la decisione appartiene a UC 0038 (Open Graph della vetrina); (c) terza illustrazione per gli stati di errore di rete/permesso — nessuna schermata esistente la richiede, e «poche e coerenti» viene prima.",
+    "files": [
+      { "file": "docs/usecases/18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md", "description": "Sezione «Punti aperti / decisioni differite» estesa con i tre rimandi e il loro proprietario." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il collaudo dell'immagine social per-app conteneva il tracciato del logo RICOPIATO come stringa letterale, e l'artwork nuovo lo ha fatto diventare rosso — dimostrando il difetto che denunciava. Riparato chiedendo i tracciati al pacchetto (`LOGO_PATHS`) invece di riscriverli: da ora il test resta vero a ogni evoluzione dell'artwork, e continua a cogliere il caso che gli importa (il generatore che si ridisegna un mark suo).",
+    "files": [
+      { "file": "tools/finalize-landing/test/og-image.test.mjs", "description": "Verifica che l'immagine social contenga i tracciati dichiarati dal pacchetto, non una loro copia." }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) `run-tests.sh` non cambia struttura: nessun modulo nuovo e nessun comando d'area nuovo — i collaudi aggiunti stanno dentro aree già eseguite (`tooling` per i derivati, `frontend` per le illustrazioni). Aggiornata solo la descrizione dell'area `tooling`, perché chi legge il cancello sappia che ora sorveglia anche i derivati del logo.",
+    "files": [
+      { "file": "run-tests.sh", "description": "Commento di intestazione dell'area tooling esteso ai derivati del logo." }
+    ]
+  }
+]

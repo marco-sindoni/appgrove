@@ -24,10 +24,15 @@
     "./logo.js": {
       "types": "./src/brand/logo.d.mts",
       "import": "./src/brand/logo.mjs"
+    },
+    "./brand-assets.js": {
+      "types": "./src/brand/assets.d.mts",
+      "import": "./src/brand/assets.mjs"
     }
   },
   "scripts": {
     "prepare": "npm run build",
+    "brand:assets": "node scripts/brand-assets.mjs",
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

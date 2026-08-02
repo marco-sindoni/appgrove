@@ -1,5 +1,10 @@
 # Illustrazioni del sito vetrina
 
+> **La nota di stile autorevole è ora nel brand kit**:
+> [`frontend/packages/design-system/ILLUSTRAZIONI.md`](../../../../frontend/packages/design-system/ILLUSTRAZIONI.md)
+> (UC 0086/0087). Questo documento resta la guida pratica *del sito*; le figure riusabili anche dalle
+> applicazioni web (stati vuoti, pagina non trovata) vivono invece nel pacchetto condiviso, in formato React.
+
 Illustrazioni vettoriali **on-brand** del sito (introdotte nella change `0048-use-case-0038-…`, UC 0037).
 **Direttiva dello sviluppatore**: usare **questo stesso stile** per arricchire le **pagine future** del sito quando
 sono "solo testo". (Il template landing per-app, UC 0038, resta invece **screenshot-first**: lì l'immagine primaria è
