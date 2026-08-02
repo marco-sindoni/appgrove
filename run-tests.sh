@@ -11,7 +11,7 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage (UC 0046/0048/0047/0057/0093) →
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage + tools/design-tokens (UC 0046/0048/0047/0057/0093/0086) →
 #                collaudo delle skill `new-application`, `drop-application`, `pricing-change` e `finalize-landing`,
 #                più il controllo del registro di copertura end-to-end:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
@@ -24,6 +24,9 @@
 #                (5) e2e-coverage (UC 0093) — il registro docs/testing/copertura-e2e.yaml deve rispecchiare i
 #                test end-to-end realmente presenti (etichette [J-*] nei titoli) e classificare OGNI use case
 #                del catalogo: coglie la mappa di copertura che invecchia in silenzio.
+#                (6) design-tokens (UC 0086) — anti-drift del brand kit: nessun consumatore (SPA, vetrina,
+#                landing, email, generatore dell'immagine social) può scrivere a mano un colore che non sia un
+#                token del design system; coglie la divergenza ESTETICA silenziosa, che nessun altro test vede.
 #                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
 #                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
@@ -259,6 +262,11 @@ run_tooling() {
   fi
   ( cd "$ROOT/tools/e2e-coverage" && npm test )          || rc=1
   ( cd "$ROOT/tools/e2e-coverage" && npm run check )     || rc=1
+  # (7) anti-drift del brand kit (UC 0086): test dello strumento su cartelle di prova +
+  # controllo sui consumatori VERI — nessun colore scritto a mano fuori dalla fonte unica
+  # dei token. Coglie la divergenza estetica silenziosa (nessun altro test la vede).
+  ( cd "$ROOT/tools/design-tokens" && npm test )         || rc=1
+  ( cd "$ROOT/tools/design-tokens" && npm run check )    || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

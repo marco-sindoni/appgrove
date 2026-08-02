@@ -1,14 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // tools/finalize-landing/lib/branding.mjs — costanti condivise dell'helper.
 //
-// Piccole costanti ricopiate oltre il confine dello strumento (stesso schema di
-// tools/compliance e site/scripts/postbuild-check.mjs): le 5 lingue, gli slug
-// riservati (allineati a site/src/lib/landings.ts) e i colori-categoria del design
-// system (allineati a frontend/packages/design-system/src/tokens/tokens.css). Un
-// import cross-pacchetto verso `site/` o il design system sarebbe fragile (TypeScript
-// non caricabile da Node puro); duplicare qualche costante stabile è la scelta meno
-// rischiosa.
+// Le 5 lingue e gli slug riservati restano ricopiati oltre il confine dello strumento
+// (stesso schema di tools/compliance e site/scripts/postbuild-check.mjs): stanno in
+// sorgenti TypeScript, che Node puro non carica.
+//
+// I COLORI invece no: dalla change 0080 (UC 0086) arrivano dal brand kit, letti dai
+// token veri tramite `@appgrove/design-system/tokens.js` — un modulo JavaScript puro
+// nato apposta perché i consumatori non-CSS non debbano più ricopiarli. Prima erano
+// duplicati qui in esadecimale, ed è così che nasce la divergenza silenziosa.
 // ─────────────────────────────────────────────────────────────────────────────
+import { colorHexes, hex } from '../../../frontend/packages/design-system/src/tokens/tokens.mjs'
 
 /** Le 5 lingue del sito vetrina (UC 0036). EN è la sorgente marketing. */
 export const LOCALES = ['en', 'it', 'fr', 'es', 'de']
@@ -34,22 +36,32 @@ export const RESERVED_SLUGS = new Set([
 export const DRAFT_SENTINEL = 'DA RIFINIRE'
 
 /**
- * Colori-categoria del design system (UC 0019), da `--ag-cat-*` (terne RGB in
- * tokens.css) a esadecimale. Servono all'immagine Open Graph on-brand: ogni app
- * ha il colore della sua categoria. Default: cat-blue.
+ * Colori-categoria del design system, LETTI dai token (`--ag-cat-*` in tokens.css):
+ * ogni app ha il colore della sua categoria nell'immagine Open Graph. Default: cat-blue.
+ * Nessun valore è scritto qui — se un colore-categoria cambia nel brand kit, cambia qui
+ * da solo.
  */
-export const ACCENT_HEX = {
-  'cat-blue': '#5b8def',
-  'cat-violet': '#8a76f0',
-  'cat-green': '#3aae73',
-  'cat-amber': '#dd9b34',
-  'cat-red': '#e3654f',
-  'cat-teal': '#1fb6a6',
-}
+export const ACCENT_HEX = Object.fromEntries(
+  Object.entries(colorHexes()).filter(([name]) => name.startsWith('cat-')),
+)
 
 /** Esadecimale del token colore-categoria (o del default cat-blue se sconosciuto). */
 export function accentHex(token) {
   return ACCENT_HEX[token] ?? ACCENT_HEX['cat-blue']
+}
+
+/**
+ * Palette dell'immagine Open Graph, dal brand kit. L'anteprima social è scura — un
+ * rettangolo scuro risalta nelle bacheche dei social — ma scura NEI NEUTRI CALDI di
+ * appgrove: prima di UC 0086 questo generatore disegnava su un blu-navy freddo che nella
+ * palette non è mai esistito, e nessun test se ne accorgeva.
+ */
+export const OG_PALETTE = {
+  bgFrom: hex('bg', { theme: 'dark' }),
+  bgTo: hex('surface-3', { theme: 'dark' }),
+  text: hex('text', { theme: 'dark' }),
+  textMuted: hex('text-muted', { theme: 'dark' }),
+  markContrast: hex('accent-contrast'),
 }
 
 /** Dimensioni canoniche dell'immagine Open Graph (rapporto 1.91:1, standard social). */

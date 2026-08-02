@@ -1,0 +1,11 @@
+{
+  "name": "appgrove-design-tokens",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Controllo anti-drift del brand kit (UC 0086): verifica che i consumatori del design system non scrivano colori a mano fuori dalla fonte unica dei token.",
+  "type": "module",
+  "scripts": {
+    "check": "node check.mjs",
+    "test": "node --test"
+  }
+}

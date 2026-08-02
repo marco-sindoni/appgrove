@@ -8,12 +8,17 @@
 //
 // Perché un template SVG rasterizzato e non una cattura di pagina: l'anteprima social
 // è un artefatto grafico stabile e on-brand, non uno screenshot dell'app (quello è la
-// figura dell'hero, catturata a parte da screenshot.mjs). L'SVG usa i token del design
-// system ed è coerente con lo stile illustrazioni del sito (memo di stile del progetto).
+// figura dell'hero, catturata a parte da screenshot.mjs).
+//
+// Dalla change 0080 (UC 0086) i colori arrivano DAVVERO dai token: il fondo usa i neutri
+// scuri e caldi del brand e il logo è quello del pacchetto, disegnato in un solo posto.
+// Prima il commento diceva «usa i token del design system» mentre il fondo era un
+// blu-navy freddo inesistente nella palette — il classico drift che nessun test coglie.
 // La rasterizzazione usa `sharp` (già dipendenza del sito via Astro).
 // ─────────────────────────────────────────────────────────────────────────────
 import sharp from 'sharp'
-import { OG_WIDTH, OG_HEIGHT, accentHex } from './branding.mjs'
+import { logoMarkSvg } from '../../../frontend/packages/design-system/src/brand/logo.mjs'
+import { OG_WIDTH, OG_HEIGHT, OG_PALETTE, accentHex } from './branding.mjs'
 
 /** Escapa i caratteri speciali XML nel testo che finisce dentro l'SVG. */
 export function escapeXml(text) {
@@ -55,6 +60,7 @@ export function wrap(text, maxChars, maxLines) {
  */
 export function ogSvg({ appName, tagline, accent = 'cat-blue' }) {
   const color = accentHex(accent)
+  const { bgFrom, bgTo, text, textMuted, markContrast } = OG_PALETTE
   const titleLines = wrap(appName, 22, 2)
   const taglineLines = wrap(tagline ?? '', 46, 3)
 
@@ -66,21 +72,30 @@ export function ogSvg({ appName, tagline, accent = 'cat-blue' }) {
     .map((line, i) => `<tspan x="90" y="${430 + i * 44}">${escapeXml(line)}</tspan>`)
     .join('')
 
+  // Il mark del logo viene dal brand kit (un solo disegno per tutto il progetto): qui è
+  // dipinto col colore-categoria dell'app, così l'anteprima resta riconoscibile e insieme
+  // distinta per app. UC 0087 sostituirà l'artwork e questa immagine lo seguirà da sola.
+  const mark = logoMarkSvg({ size: 44, accent: color, contrast: markContrast })
+    .replace(/^<svg[^>]*>/, '')
+    .replace(/<\/svg>$/, '')
+
+  const font = 'Plus Jakarta Sans, Helvetica, Arial, sans-serif'
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${OG_WIDTH}" height="${OG_HEIGHT}" viewBox="0 0 ${OG_WIDTH} ${OG_HEIGHT}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b1020"/>
-      <stop offset="1" stop-color="#141a30"/>
+      <stop offset="0" stop-color="${bgFrom}"/>
+      <stop offset="1" stop-color="${bgTo}"/>
     </linearGradient>
   </defs>
   <rect width="${OG_WIDTH}" height="${OG_HEIGHT}" fill="url(#bg)"/>
   <rect x="0" y="0" width="16" height="${OG_HEIGHT}" fill="${color}"/>
   <circle cx="1050" cy="150" r="220" fill="${color}" opacity="0.14"/>
-  <text x="90" y="150" font-family="Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="0.5">appgrove</text>
-  <text x="90" y="150" font-family="Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-size="34" font-weight="700" fill="${color}" opacity="0"> </text>
-  <text font-family="Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-size="82" font-weight="800" fill="#ffffff">${titleTspans}</text>
-  <text font-family="Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-size="34" font-weight="500" fill="#c7cfe2">${taglineTspans}</text>
-  <text x="90" y="590" font-family="Plus Jakarta Sans, Helvetica, Arial, sans-serif" font-size="26" font-weight="600" fill="${color}">all-EU · GDPR-first</text>
+  <g transform="translate(90 108) scale(1.375)">${mark}</g>
+  <text x="148" y="140" font-family="${font}" font-size="34" font-weight="800" fill="${text}" letter-spacing="-0.5">appgrove</text>
+  <text font-family="${font}" font-size="82" font-weight="800" fill="${text}">${titleTspans}</text>
+  <text font-family="${font}" font-size="34" font-weight="500" fill="${textMuted}">${taglineTspans}</text>
+  <text x="90" y="590" font-family="${font}" font-size="26" font-weight="600" fill="${color}">all-EU · GDPR-first</text>
 </svg>`
 }
 

@@ -19,7 +19,12 @@
     },
     "./preset": "./tailwind-preset.js",
     "./tokens.css": "./src/tokens/tokens.css",
-    "./fonts.css": "./src/styles/fonts.css"
+    "./fonts.css": "./src/styles/fonts.css",
+    "./tokens.js": "./src/tokens/tokens.mjs",
+    "./logo.js": {
+      "types": "./src/brand/logo.d.mts",
+      "import": "./src/brand/logo.mjs"
+    }
   },
   "scripts": {
     "prepare": "npm run build",

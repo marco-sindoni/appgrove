@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata espressamente dall'orchestratore go-fast. Nessun gate di workflow (niente revisione requisiti, niente consenso al commit); contropartite obbligatorie: suite completa ./run-tests.sh verde prima del commit, registro decisioni integrale, how-to-test.md nella cartella della change. Merge e push restano fuori: spettano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0086 «Brand kit / token condiviso (fonte unica)», epica evolutiva 18. Da qui la forma del branch 0080-use-case-0086-brand-kit-token. Il numero 0080 è il progressivo di changes/ (ultima esistente: 0079).",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Indice delle storie evolutive: lo use case 0086 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura (le storie evo non sono in docs/usecases/_INDEX.md, che copre l'ordine topologico della base)." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Ricognizione preliminare: il pacchetto condiviso frontend/packages/design-system ESISTE già (UC 0019) e i tre consumatori che compilano CSS — SPA backoffice, SPA admin, sito vetrina Astro con dentro le landing generate — usano già il preset Tailwind e i token CSS, senza un solo colore scritto a mano nelle loro sorgenti. Il grosso del DoD «fonte unica» era quindi già soddisfatto. Di conseguenza questa change NON riscrive il pacchetto da capo: chiude il divario residuo, cioè (a) i token non leggibili da un programma, (b) il drift già presente nei consumatori non-CSS, (c) il logo non consumabile fuori da React, (d) la nota di stile illustrazioni assente, (e) l'assenza di un presidio anti-drift. Ridefinire ciò che già funziona sarebbe stato lavoro distruttivo senza valore."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Drift accertato prima di decidere, non supposto: quattro punti reali. (1) tools/finalize-landing/lib/branding.mjs ricopia i sei colori-categoria in esadecimale, con un commento che ammette esplicitamente la duplicazione. (2) tools/finalize-landing/lib/og-image.mjs dichiara di usare «i token del design system» ma disegna l'immagine social su fondo blu-navy freddo (#0b1020, #141a30, #c7cfe2), colori che nella palette appgrove non esistono: i neutri del brand sono caldi. (3) shared/email-templates/layout.html usa la scala di grigi FREDDI zinc di Tailwind (#f4f4f5, #e4e4e7, #18181b, #3f3f46, #71717a) più il corallo #ec5a72 ricopiato a mano. (4) frontend/packages/design-system/src/theme/theme.ts ricopia gli esadecimali dei quattro accenti. È esattamente il «rischio di divergenza» descritto al §5 dello use case: nessun test diventava rosso."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Forma della lettura programmatica dei token: il modulo Node LEGGE tokens.css a runtime e ne estrae le dichiarazioni, invece di generare il CSS da una sorgente JavaScript. Alternativa scartata: sorgente JS/JSON con CSS generato — avrebbe richiesto un passo di rigenerazione e un controllo che il generato non sia stantìo, cioè un secondo artefatto da tenere allineato. Leggendo il file vero non può esistere divergenza per costruzione, e tokens.css resta l'unica sorgente. Il formato di tokens.css è regolare (una dichiarazione «--ag-nome: valore» per riga, raggruppata per blocco), quindi la lettura è robusta e sta in poche decine di righe senza dipendenze.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/tokens/tokens.mjs", "description": "Lettore programmatico dei token: JavaScript puro senza dipendenze (lo importano anche strumenti fuori dal workspace frontend). Espone readTokens/hex/colorHexes/allBrandHexes risolti per tema e accento. Il percorso del file sorgente è risolto PIGRAMENTE perché il solo import non fallisca dove import.meta.url non è un percorso su disco (esecutori di test che servono i moduli via HTTP)." },
+      { "file": "frontend/packages/design-system/package.json", "description": "Nuovi export del pacchetto: ./tokens.js (lettore programmatico) e ./logo.js (disegno del logo, con le sue dichiarazioni di tipo)." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il disegno del logo è stato estratto dal componente React in un modulo JavaScript puro condiviso, e Logo.tsx ora ne consuma i tracciati invece di ridefinirli. Alternativa scartata: generare file .svg statici chiaro/scuro accanto al componente — sarebbero stati una SECONDA copia del disegno, da tenere allineata a mano, cioè il problema che questo use case esiste per eliminare. Con un modulo che produce l'SVG su richiesta a partire dai colori passati dal chiamante, il disegno resta uno solo e ogni consumatore (React, generatore dell'immagine social, futuri favicon) ottiene la variante che gli serve. I colori NON sono cablati nel modulo: chi compila CSS passa i riferimenti alle variabili, chi non lo fa passa gli esadecimali letti dai token.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/brand/logo.mjs", "description": "Unico posto in cui esiste il disegno del logo. UC 0087 sostituirà l'artwork intervenendo solo qui: è la ragione per cui è stato isolato adesso, prima che quel lavoro cominci." },
+      { "file": "frontend/packages/design-system/src/brand/logo.d.mts", "description": "Dichiarazioni di tipo del modulo JavaScript, così i consumatori TypeScript (Logo.tsx, le SPA) restano tipati senza attivare allowJs nel pacchetto." },
+      { "file": "frontend/packages/design-system/src/components/Logo.tsx", "description": "Non contiene più il disegno: importa tracciati, riquadro e raggio dal modulo condiviso e vi applica i colori dai token." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Drift sanato nel layout delle email: i neutri erano la scala di grigi FREDDI di un'altra libreria (zinc di Tailwind) mentre i neutri appgrove sono caldi. Sostituiti con i token veri (bg, border, text, text-muted) e allineati anche i raggi alla scala del brand. La gerarchia del testo passa da tre a due livelli (text per titoli e marchio, text-muted per corpo, ripieghi e piè di pagina) perché il terzo livello del brand (text-faint) su fondo bianco ha un contrasto insufficiente per del testo: fra rispettare la gerarchia originale e rispettare la leggibilità si è scelta la leggibilità. Il carattere del brand è stato messo in testa alla lista dei ripieghi. I valori restano necessariamente cotti (i client di posta non leggono le variabili CSS): li sorveglia il controllo anti-drift.",
+    "files": [
+      { "file": "shared/email-templates/layout.html", "description": "Sfondo #f4f4f5→#f4f4f1, bordi #e4e4e7→#e9e7e1, testo #18181b→#262420, corpo e piè di pagina #3f3f46/#71717a→#6e6b63; raggi 12px→11px e 8px→9px; corallo #ec5a72 confermato (è il token accent)." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Drift sanato nell'immagine di anteprima social: il generatore dichiarava in un commento di usare «i token del design system» mentre disegnava su un fondo blu-navy freddo (#0b1020→#141a30) con testo secondario #c7cfe2, colori che nella palette appgrove non sono mai esistiti. Ridisegnata sui neutri SCURI E CALDI del brand (bg e surface-3 del tema scuro, testo e testo attenuato del tema scuro) e completata col mark del logo del pacchetto, dipinto nel colore-categoria dell'app. Resta un'immagine scura per scelta — un rettangolo scuro risalta nelle bacheche dei social — ma scura nei colori giusti.",
+      "files": [
+      { "file": "tools/finalize-landing/lib/branding.mjs", "description": "ACCENT_HEX non ricopia più i sei colori-categoria: li deriva da colorHexes() del brand kit. Aggiunta OG_PALETTE, anch'essa letta dai token." },
+      { "file": "tools/finalize-landing/lib/og-image.mjs", "description": "Fondo, testi e mark presi dal brand kit; nessun colore cablato resta nel modulo." },
+      { "file": "tools/finalize-landing/test/og-image.test.mjs", "description": "Quattro test nuovi: i colori-categoria coincidono con i token, la palette dell'anteprima è quella scura calda, l'SVG non contiene NESSUN colore fuori dal brand, e il mark è quello condiviso." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il punto aperto dello use case 0086 sul «meccanismo anti-drift automatico» (se realizzarlo qui o come strumento a sé) è stato RISOLTO implementandolo dentro questa change, come strumento tools/design-tokens agganciato all'area tooling di run-tests.sh. Motivo: senza presidio, la fonte unica appena costruita si sfalda alla prima ricopiatura e nessun test se ne accorge — e il drift trovato durante questa change (dodici colori fuori palette in email e anteprima social) dimostra che non è un rischio teorico. Lo strumento guarda SOLO i valori cotti, non quelli presi da variabile o classe Tailwind: quelli vengono dal pacchetto per costruzione.",
+    "files": [
+      { "file": "tools/design-tokens/lib.mjs", "description": "Rilevatore: radici sorvegliate dichiarate con il motivo, esclusioni ed eccezioni dichiarate con il motivo, estrazione dei colori per esteso (esadecimale e rgb con numeri veri), confronto con l'insieme dei colori del brand." },
+      { "file": "tools/design-tokens/check.mjs", "description": "Controllo sul repository vero. Il messaggio di errore indica le riparazioni GIUSTE (usare il token, o aggiungerlo alla fonte unica) e dichiara le eccezioni ultima risorsa: un controllo che si zittisce facilmente non è un presidio." },
+      { "file": "tools/design-tokens/test/scan.test.mjs", "description": "Collauda il verificatore su cartelle di prova: deve trovare il colore inventato E assolvere quello del brand, ignorare dipendenze ed esiti di compilazione, non confondere rgb(var(--ag-…)) con un colore cotto." },
+      { "file": "run-tests.sh", "description": "Area tooling: aggiunti test e controllo di design-tokens come punto (7), con l'intestazione dell'area aggiornata." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Le due copie di valori che NON si possono eliminare sono state rese sorvegliate invece che tollerate. ACCENT_COLORS in theme.ts ricopia gli esadecimali dei quattro accenti perché i pallini del selettore girano nel browser, che non può leggere il filesystem: un test verifica ora che coincidano con i token. I colori nelle email sono cotti perché i client di posta non hanno le variabili CSS: li verifica il controllo anti-drift. Principio adottato: dove la duplicazione è inevitabile, deve almeno essere impossibile che diverga in silenzio.",
+    "files": [
+      { "file": "frontend/packages/design-system/src/tokens/tokens.test.ts", "description": "Test del lettore (temi, accenti, colori-categoria, errori su nomi sconosciuti) più il test anti-drift di ACCENT_COLORS. Gira in ambiente Node, non nel browser simulato, perché il modulo legge dal disco." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La nota di stile delle illustrazioni è stata scritta CODIFICANDO lo stile già in uso nelle illustrazioni del sito vetrina (riquadro 480×340, pannello di fondo rx=20 in surface-2 con bordo line, colori solo da classi del preset, accento parsimonioso come punto focale, tratti tondi 1.5–4, figure decorative con aria-hidden), non inventandone uno nuovo. Motivo: lo use case la vuole come riferimento per UC 0087, e un riferimento che contraddicesse le figure esistenti creerebbe due dialetti visivi invece di uno. Aggiunto anche cosa evitare (persone e mascotte, tridimensionalità, testo dentro l'SVG — il sito è in cinque lingue).",
+    "files": [
+      { "file": "frontend/packages/design-system/ILLUSTRAZIONI.md", "description": "Nota di stile richiesta dal punto 4 del Definition of Done; dichiara che il logo attuale è un segnaposto e che UC 0087 lo sostituisce toccando solo src/brand/logo.mjs." },
+      { "file": "frontend/packages/design-system/README.md", "description": "Documentazione della fonte unica: dove vive la verità, come la consuma chi compila CSS e chi non lo fa, perché le email sono il caso limite, come funziona l'anti-drift e il runbook per cambiare un token." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Copertura end-to-end: NESSUN IMPATTO sul registro docs/testing/copertura-e2e.yaml. Lo use case 0086 vi è già classificato «senza-superficie» («pacchetto condiviso di token di marca — libreria, nessun percorso utente proprio») e la classificazione resta vera dopo l'implementazione: la change non aggiunge pagine né flussi, cambia i valori con cui le superfici esistenti sono dipinte. La verifica di ciò che questa change produce è coperta da test unitari e dal controllo anti-drift, più la verifica visiva descritta in how-to-test.md."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Lavoro deliberatamente NON fatto e tracciato come rimando nello use case che lo possiede: (a) l'artwork definitivo del logo e la produzione delle illustrazioni restano a UC 0087, che ora trova il brand kit pronto — disegno isolato in un file solo e nota di stile scritta; (b) i file .svg statici del logo su disco (per un favicon o un allegato email) non sono stati creati, perché sarebbero copie del disegno: se serviranno, li materializzerà chi ne ha bisogno chiamando la funzione, e la valutazione appartiene a UC 0087; (c) il versionamento del pacchetto resta il punto aperto già annotato nello use case, invariato."
+  }
+]
