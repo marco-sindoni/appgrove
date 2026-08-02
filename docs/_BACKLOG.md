@@ -597,6 +597,14 @@ in `services/core` (gemello compatto). I *testi* restano single-source (bene), s
 Da estrarre in `services/commons` un unico renderer (con set di lingue parametrizzabile) usato da entrambi i servizi.
 Non fatto nella change 0052 per non rifattorizzare `services/auth` fuori dallo scope di UC 0039. Effort: piccolo/medio.
 
+> **✅ CHIUSO (change `0079`, UC 0085).** Il renderer unico vive in `services/commons`
+> (`app.appgrove.commons.email.EmailTemplateRenderer`) con il set di lingue come parametro
+> (`EmailLocales`); `services/auth` e `services/core` lo usano attraverso adattatori sottili che
+> dichiarano solo le proprie lingue. Parità verificata carattere per carattere su 37 casi resi prima
+> e dopo la rifattorizzazione. **Resta fuori**, per impossibilità tecnica: il Custom Message Lambda in
+> Python rende la stessa cartella con gli stessi due passaggi ma in un altro linguaggio — se la logica
+> di resa fra Java e Python divergesse, il tema appartiene a UC 0018.
+
 ## Canale di notifica dal server al browser (sollevato 2026-07-30)
 
 Sollevato dalla change `0065-use-case-0077-…` (provider entitlement reale). Il menu del backoffice si aggiorna quando gli

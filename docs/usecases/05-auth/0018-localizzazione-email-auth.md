@@ -104,3 +104,20 @@ _Aggiornamento dalla change `0040-use-case-0018-…` — punti aperti NUOVI:_
 - **Lingua modificabile dall'utente.** La colonna `locale` si valorizza alla registrazione e non è più modificabile
   da nessuna interfaccia. Renderla persistente dal selettore in topbar ed esporla nelle impostazioni utente è
   tracciato in **UC 0020**, che possiede quella parte di interfaccia.
+
+_Tracciati dalla change `0079-use-case-0085-…` (unificazione dei renderer email in `services/commons`):_
+
+- **Divergenza fra la resa Java e quella Python.** Da UC 0085 la logica di resa Java è **una sola**
+  (`app.appgrove.commons.email.EmailTemplateRenderer` in `services/commons`), usata sia dal servizio di
+  autenticazione sia dal core. Resta però una **seconda implementazione degli stessi due passaggi** — risoluzione
+  delle stringhe della lingua e riempimento dell'impaginazione — nel Custom Message Lambda in Python
+  (`infra/modules/platform_shared/lambda/custom_message`): unificarla con il codice Java non è possibile, sono due
+  linguaggi. Le due possono divergere in silenzio (un escape corretto da una parte e non dall'altra). Oggi il presidio
+  è indiretto: entrambe leggono la stessa cartella `shared/email-templates` e il test di parità fra le lingue vive in
+  `services/commons`. Se la resa dovesse divergere davvero, serve un collaudo che confronti gli output dei due
+  programmi sugli stessi casi. **Proprietario**: UC 0018.
+- **Dove vivono i template nell'artefatto.** Ogni servizio che spedisce email copia `shared/email-templates` nel
+  proprio classpath con un passo del suo `pom.xml`; `services/commons` — che ora ospita il renderer — li copia solo
+  nelle risorse di test. L'alternativa (spedirli dentro il jar di `commons` e togliere i due passi) toglierebbe una
+  duplicazione ma cambia la composizione degli artefatti spediti; era fuori dallo scope di UC 0085, che dichiarava
+  quei `pom.xml` invariati. **Proprietario**: UC 0018.

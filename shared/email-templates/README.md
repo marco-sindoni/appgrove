@@ -5,8 +5,13 @@ programmi diversi**, ed è il motivo per cui esiste:
 
 | Consumatore | Come li ottiene | Quali email rende |
 |---|---|---|
-| `services/auth` (Java) | copiati dentro l'artefatto a build time (`maven-resources-plugin` → `email-templates/`) | tutte, in locale; l'invito anche in cloud |
+| `services/auth` (Java) | copiati dentro l'artefatto a build time (`maven-resources-plugin` → `email-templates/`) | verifica, reimpostazione, invito — tutte in locale; l'invito anche in cloud |
+| `services/core` (Java) | idem, stesso passo nel proprio `pom.xml` | conferma iscrizione newsletter (UC 0039) |
 | Custom Message Lambda (Python) | inseriti nell'archivio della Lambda da Terraform (`custom_message.tf`) | verifica e reimpostazione password, in cloud |
+
+I due consumatori Java rendono i testi con lo **stesso codice**: il renderer unico
+`app.appgrove.commons.email.EmailTemplateRenderer` in `services/commons` (UC 0085), che riceve da ciascun servizio
+l'insieme di lingue che quel servizio copre. Restano due programmi diversi solo perché la Lambda è in Python.
 
 **Non duplicare questi testi altrove.** Se un testo cambia qui, cambia in entrambi i percorsi senza altri interventi.
 
@@ -40,4 +45,4 @@ chiaro**, mai dentro una codifica. È il motivo per cui il collegamento usa due 
 ## Parità fra lingue
 
 `en.json` e `it.json` devono avere **le stesse chiavi** e **gli stessi segnaposto in ogni stringa**. È verificato da un
-test automatico (`services/auth`, `EmailTemplatesParityTest`): è la rete che impedisce la divergenza fra lingue.
+test automatico (`services/commons`, `EmailCatalogParityTest`): è la rete che impedisce la divergenza fra lingue.

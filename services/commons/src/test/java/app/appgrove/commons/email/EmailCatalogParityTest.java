@@ -1,4 +1,4 @@
-package app.appgrove.auth;
+package app.appgrove.commons.email;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -23,11 +23,16 @@ import org.junit.jupiter.api.Test;
  * un'email monca — e siccome i testi sono resi da <b>due programmi diversi</b> (il servizio Java e
  * la Lambda Python), il difetto può manifestarsi solo in cloud.
  *
- * <p>Verifica anche che i file siano davvero <b>nell'artefatto</b>: se la copia da
+ * <p>Verifica anche che i file siano davvero <b>leggibili dal classpath</b>: se la copia da
  * {@code shared/email-templates} configurata nel {@code pom.xml} smettesse di funzionare, questo
  * test fallirebbe qui invece che all'avvio in produzione.
+ *
+ * <p>Vive in {@code services/commons} da UC 0085, insieme al renderer unico: i cataloghi sono la
+ * materia prima di quel renderer, e il controllo di parità vale per tutti i servizi che spediscono
+ * email, non per uno solo. Che i template finiscano davvero nell'artefatto di ciascun servizio
+ * resta verificato dai test di resa di quel servizio, che li caricano per davvero.
  */
-class EmailTemplatesParityTest {
+class EmailCatalogParityTest {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{\\{([a-zA-Z][a-zA-Z0-9_]*)}}");
 
@@ -96,7 +101,7 @@ class EmailTemplatesParityTest {
     }
 
     private static String resource(String path) {
-        try (InputStream in = EmailTemplatesParityTest.class.getClassLoader().getResourceAsStream(path)) {
+        try (InputStream in = EmailCatalogParityTest.class.getClassLoader().getResourceAsStream(path)) {
             assertNotNull(in, "risorsa assente dall'artefatto: " + path
                     + " — controlla la copia da shared/email-templates nel pom.xml");
             return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
