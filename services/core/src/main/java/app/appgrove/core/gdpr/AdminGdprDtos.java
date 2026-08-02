@@ -1,16 +1,17 @@
 package app.appgrove.core.gdpr;
 
-import app.appgrove.core.support.TicketAuthor;
-import app.appgrove.core.support.TicketPriority;
-import app.appgrove.core.support.TicketStatus;
-import app.appgrove.core.support.TicketType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** DTO della console "Diritti GDPR" (UC 0034): aggregazione + ticket admin + limitazione art. 18. */
+/**
+ * DTO della console "Diritti GDPR" (UC 0034): aggregazione delle richieste + limitazione art. 18.
+ *
+ * <p>I DTO dei ticket sono usciti da qui con UC 0075 e stanno in {@code TicketDtos}, accanto al
+ * proprio dominio: la console dei diritti li <b>aggrega</b>, non li possiede.
+ */
 public final class AdminGdprDtos {
 
     private AdminGdprDtos() {}
@@ -40,27 +41,6 @@ public final class AdminGdprDtos {
     /** Dettaglio export: job + item per-servizio + puntatore all'oggetto S3 (chiave + console). */
     public record ExportDetailView(
             RequestView request, List<ExportItemView> items, String zipKey, String s3ConsoleUrl) {}
-
-    public record AdminTicketView(
-            UUID id,
-            String tenantId,
-            String accountName,
-            TicketType type,
-            String subject,
-            TicketPriority priority,
-            TicketStatus status,
-            Instant dueAt,
-            UUID exportJobId,
-            Instant closedAt,
-            Instant createdAt,
-            String logsUrl) {}
-
-    public record AdminMessageView(UUID id, TicketAuthor author, String body, Instant createdAt) {}
-
-    public record AdminTicketDetailView(AdminTicketView ticket, List<AdminMessageView> thread) {}
-
-    /** Cambio stato/priorità del ticket (l'admin non edita mai il contenuto: ops sicure, #13 L75). */
-    public record UpdateTicket(@NotNull TicketStatus status, @NotNull TicketPriority priority) {}
 
     /** Applicazione della limitazione art. 18 a un account o a un singolo utente. */
     public record ApplyRestriction(

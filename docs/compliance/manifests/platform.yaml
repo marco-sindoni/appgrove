@@ -232,8 +232,18 @@ entries:
       it: Utenti che aprono richieste di supporto o di esercizio dei diritti
       en: Users opening support or data-rights requests
     data_category:
-      it: Contenuto libero (oggetto della richiesta di supporto/privacy)
-      en: Free-form content (subject of the support/privacy request)
+      it: >-
+        Contenuto libero (oggetto della richiesta di supporto/privacy). Essendo scritto dall'utente
+        può contenere, sulle istanze privacy, riferimenti a categorie particolari (art. 9): il testo
+        non viene mai profilato, ma un riconoscitore deterministico di parole-spia contrassegna la
+        richiesta per attenzione umana e ne alza la priorità (UC 0075). Il contrassegno è un
+        booleano operativo: NON registra quale categoria sarebbe stata riconosciuta.
+      en: >-
+        Free-form content (subject of the support/privacy request). Being user-written it may
+        contain, on data-rights requests, references to special categories (art. 9): the text is
+        never profiled, but a deterministic keyword screening flags the request for human attention
+        and raises its priority (UC 0075). The flag is an operational boolean: it does NOT record
+        which category was recognised.
     purpose:
       it: "Gestione delle richieste di supporto e di esercizio dei diritti (ticketing in-house, #13 D21)"
       en: "Handling support and data-rights requests (in-house ticketing, #13 D21)"
@@ -254,8 +264,17 @@ entries:
       it: Utenti che scrivono nel thread di un ticket di supporto
       en: Users writing in a support-ticket thread
     data_category:
-      it: Contenuto libero (testo dei messaggi del thread di supporto)
-      en: Free-form content (support-thread message text)
+      it: >-
+        Contenuto libero (testo dei messaggi della conversazione di supporto). Vale la stessa nota
+        dell'oggetto: possibile presenza di categorie particolari (art. 9) nel testo scritto
+        dall'utente, con contrassegno operativo per attenzione umana e nessuna categoria registrata
+        (UC 0075). Il contenuto della conversazione non viaggia mai per email: le notifiche
+        rimandano alla pagina.
+      en: >-
+        Free-form content (support-thread message text). Same note as the subject: user-written text
+        may contain special categories (art. 9), with an operational flag for human attention and no
+        category recorded (UC 0075). Thread content never travels by email: notifications link back
+        to the page.
     purpose:
       it: "Gestione delle richieste di supporto e di esercizio dei diritti (ticketing in-house, #13 D21)"
       en: "Handling support and data-rights requests (in-house ticketing, #13 D21)"

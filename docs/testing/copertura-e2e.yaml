@@ -30,6 +30,7 @@ usecases_con_superficie:
   - "0060" # Localizzazione UI delle app alle 5 lingue
   - "0067" # Gestione abbonamento self-service (sezione "Abbonamenti" completa)
   - "0071" # Riconciliazione netto/revenue (vista admin lordo → commissioni → netto → accredito)
+  - "0075" # Ticketing nativo in-house (pagina Supporto del cliente + sezione Ticket della console)
   - "0076" # Disabilita applicazione (leva admin, effetti sul cliente)
   - "0077" # Provider entitlement reale (menu laterale e matrice)
   - "0095" # Pagina "App catalog" del backoffice (vetrina, stati, ricerca, paginazione)
@@ -241,8 +242,10 @@ percorsi:
         file: frontend/apps/backoffice/e2e/legal.spec.ts
 
   - id: L2-SUPPORT
-    titolo: Supporto — apertura di una richiesta di privacy e risposta nella conversazione
-    usecases: ["0034"]
+    titolo: >-
+      Supporto — apertura di una richiesta di privacy, termine di legge detto a parole, nota sugli allegati
+      non supportati e risposta nella conversazione
+    usecases: ["0034", "0075"]
     stato: coperto
     test:
       - livello: l2
@@ -265,12 +268,22 @@ percorsi:
         file: frontend/apps/admin/e2e/riconciliazione.spec.ts
 
   - id: L2-ADMIN-GDPR
-    titolo: Console admin "Diritti GDPR" — aggregazione, richiesta, risposta, limitazione del trattamento
+    titolo: Console admin "Diritti GDPR" — aggregazione, dettaglio export, limitazione del trattamento
     usecases: ["0034"]
     stato: coperto
     test:
       - livello: l2
         file: frontend/apps/admin/e2e/gdpr.spec.ts
+
+  - id: L2-ADMIN-TICKETS
+    titolo: >-
+      Console admin "Ticket" — coda cross-account con scadenze e contrassegno da rivedere, filtro per
+      priorità, risposta che mette in attesa dell'utente, chiusura sotto conferma
+    usecases: ["0021", "0075"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/admin/e2e/tickets.spec.ts
 
   # ---- Livello 3 (ambiente di prova del fornitore di pagamento) --------------
   - id: L3-CHECKOUT
@@ -347,14 +360,14 @@ percorsi:
     possiede: "0060"
 
   - id: J-SUPPORT-TICKETING
-    titolo: Assistenza con il sistema di richieste nativo — apertura, presa in carico, conversazione, chiusura
-    usecases: ["0034"]
-    stato: da-coprire
-    motivo: >-
-      Il flusso di assistenza odierno è quello minimo nato con la console dei diritti; il sistema di richieste
-      nativo lo sostituirà. Quando arriverà, A-GDPR e L2-SUPPORT andranno aggiornati e questo percorso preso
-      in carico.
-    possiede: "0075"
+    titolo: >-
+      Assistenza con il sistema di richieste nativo — apertura ed email di conferma, coda della piattaforma,
+      risposta, replica del cliente, chiusura, con escalation delle categorie particolari
+    usecases: ["0034", "0075"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-SUPPORT-TICKETING.spec.ts
 
   # ---- Esclusioni motivate --------------------------------------------------
   - id: F-DEGRADE-TELEMETRY
@@ -560,9 +573,6 @@ esenzioni:
   - usecase: "0074"
     categoria: non-implementato
     motivo: Rubrica utenti fra applicazioni e pagina "Membri" ripensata — non ancora implementata.
-  - usecase: "0075"
-    categoria: non-implementato
-    motivo: Sistema di richieste di assistenza nativo — non ancora implementato (percorso J-SUPPORT-TICKETING già dichiarato da coprire).
   - usecase: "0078"
     categoria: senza-superficie
     motivo: Uscita del servizio email dalla modalità di prova — operazione presso il fornitore cloud.

@@ -33,6 +33,38 @@
       "actionLabel": "Conferma l'iscrizione",
       "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
       "footer": "Se non hai richiesto tu questa iscrizione, puoi ignorare questo messaggio: senza conferma non riceverai la newsletter."
+    },
+    "ticket-opened": {
+      "subject": "Abbiamo ricevuto la tua richiesta: {{ticketSubject}}",
+      "heading": "Abbiamo ricevuto la tua richiesta",
+      "intro": "La tua richiesta «{{ticketSubject}}» è stata registrata ed è in carico all'assistenza. Ti rispondiamo appena possibile.",
+      "actionLabel": "Apri le tue richieste",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Puoi seguire la conversazione e rispondere dalla pagina Supporto del tuo spazio di lavoro. Non rispondere a questo messaggio."
+    },
+    "ticket-opened-privacy": {
+      "subject": "Abbiamo ricevuto la tua istanza sui dati: {{ticketSubject}}",
+      "heading": "Abbiamo ricevuto la tua istanza sui dati",
+      "intro": "La tua richiesta «{{ticketSubject}}» è stata registrata come istanza di esercizio dei diritti. Per legge dobbiamo risponderti entro un mese: il nostro termine è il {{dueDate}}.",
+      "actionLabel": "Apri le tue richieste",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Puoi seguire la conversazione e rispondere dalla pagina Supporto del tuo spazio di lavoro. Non rispondere a questo messaggio."
+    },
+    "ticket-updated": {
+      "subject": "Aggiornamento sulla tua richiesta: {{ticketSubject}}",
+      "heading": "C'è un aggiornamento sulla tua richiesta",
+      "intro": "La tua richiesta «{{ticketSubject}}» è stata aggiornata dall'assistenza. Aprila per leggere la risposta e replicare se ti serve.",
+      "actionLabel": "Apri la richiesta",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Il contenuto della conversazione resta nel tuo spazio di lavoro, non viaggia mai per email. Non rispondere a questo messaggio."
+    },
+    "ticket-inbox": {
+      "subject": "[{{ticketType}}] {{ticketSubject}}",
+      "heading": "Nuova attività su una richiesta di assistenza",
+      "intro": "Richiesta {{ticketId}} — conto {{tenantId}}, tipo {{ticketType}}, stato {{ticketStatus}}. Apri la console di amministrazione per leggere il filo e rispondere.",
+      "actionLabel": "Apri la console di amministrazione",
+      "fallback": "Se il pulsante non funziona, copia questo indirizzo nel browser:",
+      "footer": "Avviso automatico del sistema di assistenza di appgrove."
     }
   }
 }

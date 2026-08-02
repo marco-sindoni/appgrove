@@ -16,8 +16,9 @@ const idToken = jwt({ sub: 'u1', email: 'owner@acme.test', name: 'Owner' })
 const tokenBody = { access_token: accessToken, id_token: idToken, token_type: 'Bearer' }
 
 /**
- * Ticketing lato utente (UC 0034): SPA autenticata come owner con lo stato ticket mockato in
- * memoria — apertura ticket, lista, thread con risposta.
+ * Ticketing lato utente (UC 0034 · UC 0075): SPA autenticata come owner con lo stato ticket finto
+ * in memoria — apertura di una richiesta, elenco, filo con risposta, avviso del termine di legge e
+ * nota sugli allegati non supportati.
  */
 async function mockAuthed(page: Page) {
   let tickets: Array<Record<string, unknown>> = []
@@ -41,6 +42,7 @@ async function mockAuthed(page: Page) {
         subject: body.subject,
         priority: 'normal',
         status: 'open',
+        source: 'form',
         dueAt: body.type === 'privacy' ? '2026-08-03T10:00:00Z' : null,
         createdAt: '2026-07-04T10:00:00Z',
       }
@@ -72,14 +74,18 @@ test('[L2-SUPPORT] supporto: apri un ticket privacy e rispondi nel thread', asyn
   await page.getByRole('link', { name: 'Support' }).click()
   await expect(page.getByRole('heading', { name: 'Support', level: 1 })).toBeVisible()
 
+  // gli allegati sono esclusi da questa versione e l'interfaccia lo dice prima che l'utente provi
+  await expect(page.getByText(/Attachments are not supported yet/)).toBeVisible()
+
   await page.getByLabel('Type').selectOption('privacy')
   await page.getByLabel('Subject').fill('Richiesta art. 18')
   await page.getByLabel('Message').fill('Chiedo la limitazione del trattamento.')
   await page.getByRole('button', { name: 'Open ticket' }).click()
 
-  // dettaglio: thread con il primo messaggio e scadenza legale
+  // dettaglio: filo con il primo messaggio, scadenza legale e termine detto a parole
   await expect(page.getByText('Chiedo la limitazione del trattamento.')).toBeVisible()
   await expect(page.getByText(/Due by/)).toBeVisible()
+  await expect(page.getByText(/by law we reply within one month/)).toBeVisible()
 
   // risposta nel thread
   await page.getByLabel('Reply').fill('Aggiungo un dettaglio.')

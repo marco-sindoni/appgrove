@@ -94,6 +94,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
     reconciliation: t('admin.nav.reconciliation'),
     apps: t('admin.nav.apps'),
     gdpr: t('admin.nav.gdpr'),
+    tickets: t('admin.nav.tickets'),
   }
   const crumb = segment ? (pageLabel[segment] ?? segment) : t('admin.nav.overview')
 

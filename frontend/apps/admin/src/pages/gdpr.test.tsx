@@ -3,9 +3,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse } from 'msw'
-import { Route, Routes } from 'react-router-dom'
 import { GdprRights } from './GdprRights'
-import { GdprTicketDetail } from './GdprTicketDetail'
 import { useAuthStore } from '../auth/authStore'
 import { renderWithProviders, fakeAccessToken } from '../test/utils'
 
@@ -42,30 +40,11 @@ const REQUESTS = [
   },
 ]
 
-let ticket: Record<string, unknown>
-let thread: Array<Record<string, unknown>>
-let replies: string[]
 let restrictionCalls: Array<Record<string, unknown>>
 let restrictions: { active: Array<Record<string, unknown>>; auditTrail: Array<Record<string, unknown>> }
 
 const server = setupServer(
   http.get('http://localhost/api/platform/v1/admin/gdpr/requests', () => HttpResponse.json(REQUESTS)),
-  http.get('http://localhost/api/platform/v1/admin/gdpr/tickets', () => HttpResponse.json([ticket])),
-  http.get('http://localhost/api/platform/v1/admin/gdpr/tickets/:id', () =>
-    HttpResponse.json({ ticket, thread }),
-  ),
-  http.post('http://localhost/api/platform/v1/admin/gdpr/tickets/:id/messages', async ({ request }) => {
-    const body = (await request.json()) as { body: string }
-    replies.push(body.body)
-    const message = { id: `m-${thread.length + 1}`, author: 'admin', body: body.body, createdAt: '2026-07-04T12:00:00Z' }
-    thread = [...thread, message]
-    return HttpResponse.json(message, { status: 201 })
-  }),
-  http.patch('http://localhost/api/platform/v1/admin/gdpr/tickets/:id', async ({ request }) => {
-    const body = (await request.json()) as { status: string; priority: string }
-    ticket = { ...ticket, status: body.status, priority: body.priority }
-    return HttpResponse.json(ticket)
-  }),
   http.get('http://localhost/api/platform/v1/admin/gdpr/restrictions', () =>
     HttpResponse.json(restrictions),
   ),
@@ -107,22 +86,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 beforeEach(() => {
-  ticket = {
-    id: 't-1',
-    tenantId: 'a-1',
-    accountName: 'Acme',
-    type: 'privacy',
-    subject: 'Export fallito',
-    priority: 'high',
-    status: 'open',
-    dueAt: '2026-08-02T10:00:00Z',
-    exportJobId: 'job-1',
-    createdAt: '2026-07-03T10:00:00Z',
-  }
-  thread = [
-    { id: 'm-1', author: 'system', body: 'Export fallito: errore X', createdAt: '2026-07-03T10:00:00Z' },
-  ]
-  replies = []
   restrictionCalls = []
   restrictions = { active: [], auditTrail: [] }
   useAuthStore
@@ -170,24 +133,4 @@ describe('Console Diritti GDPR (UC 0034)', () => {
     })
   })
 
-  it('dettaglio ticket: thread, risposta admin e cambio stato', async () => {
-    renderWithProviders(
-      <Routes>
-        <Route path="/gdpr/tickets/:id" element={<GdprTicketDetail />} />
-      </Routes>,
-      { route: '/gdpr/tickets/t-1' },
-    )
-    const user = userEvent.setup()
-
-    expect(await screen.findByText('Export fallito: errore X')).toBeInTheDocument()
-
-    await user.type(screen.getByLabelText('Reply to the user'), 'Ci stiamo lavorando')
-    await user.click(screen.getByRole('button', { name: 'Send reply' }))
-    expect(await screen.findByText('Ci stiamo lavorando')).toBeInTheDocument()
-    expect(replies).toEqual(['Ci stiamo lavorando'])
-
-    await user.selectOptions(screen.getByLabelText('Status'), 'resolved')
-    await user.click(screen.getByRole('button', { name: 'Update' }))
-    expect(await screen.findByText(/resolved/)).toBeInTheDocument()
-  })
 })

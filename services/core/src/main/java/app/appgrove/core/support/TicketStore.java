@@ -34,9 +34,11 @@ public class TicketStore {
             String tenantId,
             String accountName,
             TicketType type,
+            TicketSource source,
             String subject,
             TicketPriority priority,
             TicketStatus status,
+            boolean flaggedForReview,
             Instant dueAt,
             UUID exportJobId,
             Instant closedAt,
@@ -50,11 +52,20 @@ public class TicketStore {
     @Inject
     AgroalDataSource ds;
 
-    /** Ticket cross-tenant, filtri opzionali su tipo/stato, più recenti prima. */
-    public List<TicketRow> list(TicketType type, TicketStatus status) {
+    /**
+     * Coda dei ticket cross-tenant per la console di amministrazione, con filtri opzionali su
+     * tipo, stato e priorità (UC 0075).
+     *
+     * <p>L'ordinamento è la parte che conta: prima ciò che aspetta la piattaforma e ha una scadenza
+     * legale, dalla più vicina; poi il resto per data di apertura decrescente; ultimo ciò che è già
+     * risolto o chiuso. Sta in SQL e non nel browser di proposito — la coda dev'essere giusta anche
+     * letta dall'API, ed è l'unica cosa che impedisce di mancare il termine di un mese.
+     */
+    public List<TicketRow> list(TicketType type, TicketStatus status, TicketPriority priority) {
         StringBuilder sql = new StringBuilder("""
-                select t.id, t.tenant_id, a.name, t.type, t.subject, t.priority, t.status,
-                       t.due_at, t.export_job_id, t.closed_at, t.created_by, t.created_at, t.updated_at
+                select t.id, t.tenant_id, a.name, t.type, t.source, t.subject, t.priority, t.status,
+                       t.flagged_for_review, t.due_at, t.export_job_id, t.closed_at, t.created_by,
+                       t.created_at, t.updated_at
                 from platform.support_ticket t
                 left join platform.accounts a on a.id::text = t.tenant_id
                 where t.deleted_at is null
@@ -68,7 +79,16 @@ public class TicketStore {
             sql.append(" and t.status = ?");
             params.add(status.name());
         }
-        sql.append(" order by t.created_at desc");
+        if (priority != null) {
+            sql.append(" and t.priority = ?");
+            params.add(priority.name());
+        }
+        sql.append("""
+                 order by case when t.status in ('resolved', 'closed') then 1 else 0 end,
+                          case when t.due_at is null then 1 else 0 end,
+                          t.due_at asc,
+                          t.created_at desc
+                """);
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
             for (int i = 0; i < params.size(); i++) {
                 ps.setObject(i + 1, params.get(i));
@@ -89,8 +109,9 @@ public class TicketStore {
     public Optional<TicketRow> find(UUID id) {
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement("""
-                        select t.id, t.tenant_id, a.name, t.type, t.subject, t.priority, t.status,
-                               t.due_at, t.export_job_id, t.closed_at, t.created_by, t.created_at, t.updated_at
+                        select t.id, t.tenant_id, a.name, t.type, t.source, t.subject, t.priority,
+                               t.status, t.flagged_for_review, t.due_at, t.export_job_id, t.closed_at,
+                               t.created_by, t.created_at, t.updated_at
                         from platform.support_ticket t
                         left join platform.accounts a on a.id::text = t.tenant_id
                         where t.id = ? and t.deleted_at is null
@@ -201,23 +222,24 @@ public class TicketStore {
             int inserted;
             try (PreparedStatement ps = c.prepareStatement("""
                     insert into platform.support_ticket
-                      (id, tenant_id, type, subject, priority, status, due_at, export_job_id,
+                      (id, tenant_id, type, source, subject, priority, status, due_at, export_job_id,
                        created_at, updated_at, created_by)
-                    select ?,?,?,?,?,?,?,?,?,?,?
+                    select ?,?,?,?,?,?,?,?,?,?,?,?
                     where not exists (select 1 from platform.support_ticket where export_job_id = ?)
                     """)) {
                 ps.setObject(1, ticketId);
                 ps.setString(2, tenantId);
                 ps.setString(3, TicketType.privacy.name());
-                ps.setString(4, "Export GDPR fallito" + (appId == null ? "" : " (app " + appId + ")"));
-                ps.setString(5, TicketPriority.high.name());
-                ps.setString(6, TicketStatus.open.name());
-                ps.setTimestamp(7, Timestamp.from(now.plus(SupportTicket.PRIVACY_SLA)));
-                ps.setObject(8, jobId);
-                ps.setTimestamp(9, Timestamp.from(now));
+                ps.setString(4, TicketSource.event.name());
+                ps.setString(5, "Export GDPR fallito" + (appId == null ? "" : " (app " + appId + ")"));
+                ps.setString(6, TicketPriority.high.name());
+                ps.setString(7, TicketStatus.open.name());
+                ps.setTimestamp(8, Timestamp.from(now.plus(SupportTicket.PRIVACY_SLA)));
+                ps.setObject(9, jobId);
                 ps.setTimestamp(10, Timestamp.from(now));
-                ps.setString(11, requester);
-                ps.setObject(12, jobId);
+                ps.setTimestamp(11, Timestamp.from(now));
+                ps.setString(12, requester);
+                ps.setObject(13, jobId);
                 inserted = ps.executeUpdate();
             }
             if (inserted == 0) {
@@ -282,15 +304,17 @@ public class TicketStore {
                 rs.getString(2),
                 rs.getString(3),
                 TicketType.valueOf(rs.getString(4)),
-                rs.getString(5),
-                TicketPriority.valueOf(rs.getString(6)),
-                TicketStatus.valueOf(rs.getString(7)),
-                instant(rs.getTimestamp(8)),
-                (UUID) rs.getObject(9),
+                TicketSource.valueOf(rs.getString(5)),
+                rs.getString(6),
+                TicketPriority.valueOf(rs.getString(7)),
+                TicketStatus.valueOf(rs.getString(8)),
+                rs.getBoolean(9),
                 instant(rs.getTimestamp(10)),
-                rs.getString(11),
+                (UUID) rs.getObject(11),
                 instant(rs.getTimestamp(12)),
-                instant(rs.getTimestamp(13)));
+                rs.getString(13),
+                instant(rs.getTimestamp(14)),
+                instant(rs.getTimestamp(15)));
     }
 
     private static Instant instant(Timestamp ts) {

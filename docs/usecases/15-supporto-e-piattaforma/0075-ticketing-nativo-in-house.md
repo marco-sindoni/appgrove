@@ -157,8 +157,24 @@ Due superfici, entrambe descritte perché questo use case porta interfaccia sia 
 
 - **Allegati**: esclusi da questa versione; se servissero (schermate del cliente, documenti a corredo di un'istanza
   privacy), progettare caricamento sicuro, antivirus e retention dedicata. Possiede questo punto l'epica 15.
-- **Instradamento email in ingresso**: i dettagli della ricezione SES → Lambda (verifica del dominio, associazione
-  mittente ↔ utente, gestione dello spam) vanno definiti in implementazione insieme a UC 0018.
+  *(Confermato escluso nella change `0084`; l'interfaccia lo dice esplicitamente all'utente accanto alla casella del
+  messaggio, così nessuno prova ad aggirare la mancanza incollando un documento nel testo.)*
+- **Instradamento email in ingresso** — **rimandato dalla change `0084`**: la ricezione su `privacy@`/`support@`
+  (SES → funzione Lambda → ticket) non è stata implementata. Perché: dipende dall'uscita di SES dalla modalità di
+  prova e dalla verifica del dominio (UC 0018 / UC 0078), non è collaudabile in locale e ha effetti verso l'esterno.
+  Cosa esiste già: la colonna `source` del ticket ammette il valore `email`, così il giorno in cui la ricezione
+  arriva non servirà una migrazione. Restano da definire, insieme a UC 0018: verifica del dominio, associazione
+  mittente ↔ utente noto, comportamento quando il mittente non è associabile a nessun conto, difesa dallo spam.
+  Possiede questo punto UC 0075 stesso.
+- **Riconoscitore delle categorie particolari — manutenzione dell'elenco di parole-spia** (introdotto dalla change
+  `0084`): il riconoscimento è deterministico, a radici di parole italiane e inglesi, e ammette per scelta i falsi
+  positivi. Se l'assistenza dovesse ricevere richieste in altre lingue, l'elenco va esteso; se i falsi positivi
+  diventassero fastidiosi, la leva è restringere le radici, mai introdurre un servizio esterno di analisi del testo
+  (sarebbe un responsabile del trattamento in più su contenuto delicato). Possiede questo punto UC 0075.
+- **Termine di legge: promemoria automatico** — oggi la scadenza è **visibile** (evidenza in coda, ordinamento per
+  scadenza, avviso «in scadenza» a una settimana) ma **nessuno la ricorda attivamente**: se l'operatore non guarda la
+  coda, il termine può passare. Un promemoria (email o allarme) è lavoro di osservabilità/notifiche, non di questa
+  storia. Possiede questo punto l'epica 15.
 - **Retention fine dei ticket privacy**: la conservazione del contenuto (specie categorie particolari) va fissata con la
   revisione legale pre-go-live e allineata al job di purga (UC 0035); qui si vincola solo il principio di minimizzazione.
 - **Confine con la Console "Diritti GDPR"**: decidere se le istanze formali di esercizio dei diritti nascano sempre come

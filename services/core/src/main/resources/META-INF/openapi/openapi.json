@@ -132,6 +132,9 @@
           "type" : {
             "$ref" : "#/components/schemas/TicketType"
           },
+          "source" : {
+            "$ref" : "#/components/schemas/TicketSource"
+          },
           "subject" : {
             "type" : "string"
           },
@@ -140,6 +143,9 @@
           },
           "status" : {
             "$ref" : "#/components/schemas/TicketStatus"
+          },
+          "flaggedForReview" : {
+            "type" : "boolean"
           },
           "dueAt" : {
             "$ref" : "#/components/schemas/Instant"
@@ -1386,9 +1392,13 @@
         "type" : "string",
         "enum" : [ "low", "normal", "high" ]
       },
+      "TicketSource" : {
+        "type" : "string",
+        "enum" : [ "form", "event", "email" ]
+      },
       "TicketStatus" : {
         "type" : "string",
-        "enum" : [ "open", "in_progress", "resolved", "closed" ]
+        "enum" : [ "open", "in_progress", "waiting_user", "resolved", "closed" ]
       },
       "TicketType" : {
         "type" : "string",
@@ -1402,6 +1412,9 @@
           },
           "type" : {
             "$ref" : "#/components/schemas/TicketType"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/TicketSource"
           },
           "subject" : {
             "type" : "string"
@@ -2121,175 +2134,6 @@
         } ]
       }
     },
-    "/api/platform/v1/admin/gdpr/tickets" : {
-      "get" : {
-        "parameters" : [ {
-          "name" : "status",
-          "in" : "query",
-          "schema" : {
-            "$ref" : "#/components/schemas/TicketStatus"
-          }
-        }, {
-          "name" : "type",
-          "in" : "query",
-          "schema" : {
-            "$ref" : "#/components/schemas/TicketType"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/AdminTicketView"
-                  }
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          }
-        },
-        "summary" : "Ticket List",
-        "tags" : [ "Admin Gdpr Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "platform-admin" ]
-        } ]
-      }
-    },
-    "/api/platform/v1/admin/gdpr/tickets/{id}" : {
-      "patch" : {
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/UpdateTicket"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/AdminTicketView"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          }
-        },
-        "summary" : "Update",
-        "tags" : [ "Admin Gdpr Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "platform-admin" ]
-        } ]
-      },
-      "get" : {
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/AdminTicketDetailView"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          }
-        },
-        "summary" : "Ticket",
-        "tags" : [ "Admin Gdpr Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "platform-admin" ]
-        } ]
-      }
-    },
-    "/api/platform/v1/admin/gdpr/tickets/{id}/messages" : {
-      "post" : {
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "$ref" : "#/components/schemas/UUID"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PostMessage"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/AdminMessageView"
-                }
-              }
-            }
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          },
-          "403" : {
-            "description" : "Not Allowed"
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Reply",
-        "tags" : [ "Admin Gdpr Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "platform-admin" ]
-        } ]
-      }
-    },
     "/api/platform/v1/admin/overview" : {
       "get" : {
         "responses" : {
@@ -2339,6 +2183,181 @@
         },
         "summary" : "Reconciliation",
         "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/tickets" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "priority",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/TicketPriority"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/TicketStatus"
+          }
+        }, {
+          "name" : "type",
+          "in" : "query",
+          "schema" : {
+            "$ref" : "#/components/schemas/TicketType"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminTicketView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Admin Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/tickets/{id}" : {
+      "patch" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateTicket"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminTicketView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Update",
+        "tags" : [ "Admin Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      },
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminTicketDetailView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Get",
+        "tags" : [ "Admin Ticket Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/tickets/{id}/messages" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PostMessage"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminMessageView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Reply",
+        "tags" : [ "Admin Ticket Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "platform-admin" ]
         } ]

@@ -94,13 +94,16 @@ class AutoTicketOnExportFailureTest {
         given().header("Authorization",
                         "Bearer " + TestTokens.withTenant("a0000000-0000-4000-8000-000000000003",
                                 "owner", "platform-admin"))
-                .when().get("/api/platform/v1/admin/gdpr/tickets?type=privacy")
+                .when().get("/api/platform/v1/admin/tickets?type=privacy")
                 .then().statusCode(200)
                 .body("findAll { it.exportJobId == '" + jobId + "' }.size()",
                         org.hamcrest.Matchers.equalTo(1))
                 .body("findAll { it.exportJobId == '" + jobId + "' }.priority",
                         org.hamcrest.Matchers.hasItem("high"))
                 .body("findAll { it.exportJobId == '" + jobId + "' }.dueAt",
-                        org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.notNullValue()));
+                        org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.notNullValue()))
+                // provenienza: nato da un evento di sistema, non dal modulo dell'applicazione (UC 0075)
+                .body("findAll { it.exportJobId == '" + jobId + "' }.source",
+                        org.hamcrest.Matchers.hasItem("event"));
     }
 }

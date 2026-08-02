@@ -61,10 +61,12 @@ test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta 
     [t.tenantId],
   )
   expect(zipKey).not.toBe('')
-  // Ticket privacy: presente nell'aggregazione delle richieste…
-  await expect(ownRows.filter({ hasText: 'Privacy ticket' }).first()).toBeVisible()
-  // …e nell'elenco dei ticket, da cui si apre il dettaglio.
-  await admin.getByRole('link', { name: subject }).click()
+  // Ticket privacy: presente nell'aggregazione delle richieste, da cui si apre il dettaglio nella
+  // sezione «Ticket» (UC 0075: la gestione delle richieste ha una casa propria, la console dei
+  // diritti la aggrega e vi rimanda — il collegamento fra le due è parte di ciò che si collauda).
+  const ticketRow = ownRows.filter({ hasText: 'Privacy ticket' }).first()
+  await expect(ticketRow).toBeVisible()
+  await ticketRow.getByRole('link', { name: 'Detail' }).click()
   await expect(admin.getByRole('heading', { name: new RegExp(subject) })).toBeVisible()
 
   // ── 3. l'operatore risponde nel filo; il cliente vede la risposta ───────────
@@ -82,7 +84,7 @@ test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta 
     `select id from platform.users where lower(email) = lower($1) and deleted_at is null`,
     [t.email],
   )
-  await admin.getByRole('link', { name: '← GDPR rights' }).click()
+  await admin.getByRole('link', { name: 'GDPR rights' }).click()
   await admin.getByLabel('Target', { exact: true }).selectOption('user')
   await admin.getByLabel('Target ID (UUID)').fill(userId)
   await admin.getByLabel('Note (optional)').fill(`Limitazione richiesta dall'interessato — ${run}`)

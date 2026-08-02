@@ -13,7 +13,8 @@ import { Billing } from '../pages/Billing'
 import { Reconciliation } from '../pages/Reconciliation'
 import { Apps } from '../pages/Apps'
 import { GdprRights } from '../pages/GdprRights'
-import { GdprTicketDetail } from '../pages/GdprTicketDetail'
+import { Tickets } from '../pages/Tickets'
+import { TicketDetail } from '../pages/TicketDetail'
 import { GdprExportDetail } from '../pages/GdprExportDetail'
 
 /**
@@ -38,7 +39,8 @@ export const routes: RouteObject[] = [
           { path: 'reconciliation', element: <Reconciliation /> },
           { path: 'apps', element: <Apps /> },
           { path: 'gdpr', element: <GdprRights /> },
-          { path: 'gdpr/tickets/:id', element: <GdprTicketDetail /> },
+          { path: 'tickets', element: <Tickets /> },
+          { path: 'tickets/:id', element: <TicketDetail /> },
           { path: 'gdpr/exports/:id', element: <GdprExportDetail /> },
         ],
       },

@@ -92,6 +92,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
         <GroupLabel>Governance</GroupLabel>
         <NavItem to="/gdpr" icon="verified_user" label={t('admin.nav.gdpr')} onNavigate={onNavigate} />
+        <NavItem to="/tickets" icon="support_agent" label={t('admin.nav.tickets')} onNavigate={onNavigate} />
       </div>
 
       <div className="border-t border-line p-3">

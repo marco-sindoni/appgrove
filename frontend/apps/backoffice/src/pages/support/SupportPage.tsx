@@ -90,6 +90,9 @@ function OpenTicketSection({ onOpened }: { onOpened: (id: string) => void }) {
               className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm"
               {...register('message', { required: true })}
             />
+            {/* Allegati esclusi da questa versione (UC 0075): dirlo qui evita che qualcuno incolli
+                un documento personale nel testo per aggirare la mancanza. */}
+            <p className="mt-1 text-xs text-fg-muted">{t('support.noAttachments')}</p>
           </div>
           <Button type="submit" size="sm" disabled={open.isPending}>
             {t('support.submit')}
@@ -184,10 +187,24 @@ function TicketDetail({ id, onBack }: { id: string; onBack: () => void }) {
           onRetry={() => void detail.refetch()}
         >
           {ticket && (
-            <p className="text-sm text-fg-muted">
-              {statusLabel(ticket.status)} · {typeLabel(ticket)}
-              {ticket.dueAt ? ` · ${t('support.colDue')}: ${fmtDate(ticket.dueAt)}` : ''}
-            </p>
+            <>
+              <p className="text-sm text-fg-muted">
+                {statusLabel(ticket.status)} · {typeLabel(ticket)}
+                {ticket.dueAt ? ` · ${t('support.colDue')}: ${fmtDate(ticket.dueAt)}` : ''}
+              </p>
+              {/* Il termine di legge è la promessa più importante che facciamo su un'istanza
+                  privacy: va detta a parole, non lasciata a una data in una colonna (UC 0075). */}
+              {ticket.type === 'privacy' && ticket.dueAt && (
+                <p className="text-sm text-fg">
+                  {t('support.privacyDeadline', { date: fmtDate(ticket.dueAt) })}
+                </p>
+              )}
+              {ticket.status === 'waiting_user' && (
+                <p role="status" className="text-sm font-medium text-fg">
+                  {t('support.waitingHint')}
+                </p>
+              )}
+            </>
           )}
           <section aria-label={t('support.threadHeading')} className="space-y-3">
             {(detail.data?.thread ?? []).map((message) => (
@@ -244,6 +261,8 @@ function useTicketLabels() {
         return t('support.status.open')
       case 'in_progress':
         return t('support.status.in_progress')
+      case 'waiting_user':
+        return t('support.status.waiting_user')
       case 'resolved':
         return t('support.status.resolved')
       case 'closed':

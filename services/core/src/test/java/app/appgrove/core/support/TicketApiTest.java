@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,10 +21,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * API ticket lato utente (UC 0034 §9, #13 D21): apertura (privacy → scadenza legale 1 mese),
- * thread, riapertura su risposta a un ticket risolto, 409 su chiuso; <b>security</b>: isolamento
- * tenant (i ticket altrui sono un 404), member ammesso, anonimo respinto; notifica alla casella
- * di supporto best-effort (MockMailbox).
+ * API ticket lato utente (UC 0034 §9 · UC 0075 §9): apertura (privacy → scadenza legale 1 mese,
+ * provenienza {@code form}, conferma via email a chi apre), filo di conversazione, riapertura su
+ * risposta a un ticket risolto o in attesa dell'utente, 409 su chiuso, promozione a priorità alta
+ * quando entrano in gioco categorie particolari; <b>sicurezza</b>: isolamento fra conti (i ticket
+ * altrui sono un 404), member ammesso, anonimo respinto; notifica alla casella di assistenza
+ * best-effort (MockMailbox).
  */
 @QuarkusTest
 class TicketApiTest {
@@ -104,7 +107,7 @@ class TicketApiTest {
                                 "owner", "platform-admin"))
                 .contentType(ContentType.JSON)
                 .body(Map.of("status", "resolved", "priority", "normal"))
-                .when().patch("/api/platform/v1/admin/gdpr/tickets/" + id)
+                .when().patch("/api/platform/v1/admin/tickets/" + id)
                 .then().statusCode(200);
         given().header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
@@ -146,5 +149,103 @@ class TicketApiTest {
     @Test
     void anonymousIsRejected() {
         given().when().get(PATH).then().statusCode(401);
+    }
+
+    /** Provenienza registrata alla nascita: dal modulo dell'applicazione è {@code form} (UC 0075). */
+    @Test
+    void ticketOpenedFromTheAppRecordsFormAsItsSource() {
+        String id = given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_A, "owner"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("type", "support", "subject", "Provenienza", "message", "Aperto dal modulo"))
+                .when().post(PATH)
+                .then().statusCode(201)
+                .body("source", equalTo("form"))
+                .extract().path("id");
+        assertEquals("form", data.ticketSource(UUID.fromString(id)));
+    }
+
+    /**
+     * Categorie particolari (art. 9, UC 0075 §5): il testo che le tocca fa nascere il ticket a
+     * priorità alta e contrassegnato per attenzione umana; il testo ordinario no. È la rete che
+     * impedisce a una richiesta delicata di restare in fondo alla coda.
+     */
+    @Test
+    void specialCategoryContentRaisesPriorityAndFlagsForReview() {
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_A, "owner"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("type", "privacy", "subject", "Richiesta di cancellazione",
+                        "message", "Vi ho mandato il referto della mia malattia: cancellatelo."))
+                .when().post(PATH)
+                .then().statusCode(201)
+                .body("priority", equalTo("high"));
+
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_A, "owner"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("type", "support", "subject", "Fattura sbagliata",
+                        "message", "Il totale della fattura di marzo non torna."))
+                .when().post(PATH)
+                .then().statusCode(201)
+                .body("priority", equalTo("normal"));
+    }
+
+    /**
+     * Chi apre una richiesta riceve conferma, nella <b>propria lingua</b>; sull'istanza privacy la
+     * conferma dice il termine di legge e la data.
+     */
+    @Test
+    void openingATicketConfirmsByEmailAndStatesTheLegalDeadlineForPrivacy() {
+        data.userWithLocale(TENANT_A, TestTokens.subjectFor(TENANT_A),
+                "apre-ticket-a@example.test", "owner", "it");
+        mailbox.clear();
+
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_A, "owner"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("type", "privacy", "subject", "Voglio i miei dati",
+                        "message", "Chiedo copia dei dati che trattate."))
+                .when().post(PATH)
+                .then().statusCode(201);
+
+        var confirmations = mailbox.getMailsSentTo("apre-ticket-a@example.test");
+        assertFalse(confirmations.isEmpty(), "chi apre un ticket deve ricevere la conferma");
+        String text = confirmations.get(0).getText();
+        assertTrue(text.contains("Voglio i miei dati"), "la conferma deve riportare l'oggetto: " + text);
+        assertTrue(text.contains("un mese"), "la conferma privacy deve dire il termine di legge: " + text);
+    }
+
+    /**
+     * Il ciclo di vita completo del rimpallo (UC 0075 §4): risposta della piattaforma → in attesa
+     * dell'utente; replica dell'utente → di nuovo aperto.
+     */
+    @Test
+    void userReplyBringsAWaitingTicketBackToOpen() {
+        String token = TestTokens.withTenant(TENANT_A, "owner");
+        String id = given().header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("type", "support", "subject", "Rimpallo", "message", "Domanda"))
+                .when().post(PATH)
+                .then().statusCode(201)
+                .extract().path("id");
+
+        String adminToken = TestTokens.withTenant(
+                "a0000000-0000-4000-8000-000000000003", "owner", "platform-admin");
+        given().header("Authorization", "Bearer " + adminToken)
+                .contentType(ContentType.JSON)
+                .body(Map.of("body", "Ti serve altro?"))
+                .when().post("/api/platform/v1/admin/tickets/" + id + "/messages")
+                .then().statusCode(201);
+        given().header("Authorization", "Bearer " + token)
+                .when().get(PATH + "/" + id)
+                .then().statusCode(200)
+                .body("ticket.status", equalTo("waiting_user"));
+
+        given().header("Authorization", "Bearer " + token)
+                .contentType(ContentType.JSON)
+                .body(Map.of("body", "Sì, mi serve ancora aiuto"))
+                .when().post(PATH + "/" + id + "/messages")
+                .then().statusCode(201);
+        given().header("Authorization", "Bearer " + token)
+                .when().get(PATH + "/" + id)
+                .then().statusCode(200)
+                .body("ticket.status", equalTo("open"));
     }
 }
