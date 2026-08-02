@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dall'orchestratore (skill go-fast). Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata, i tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge) sono rinunciati in anticipo dallo sviluppatore; restano obbligatori la suite completa verde prima del commit, il registro decisioni integrale e il file how-to-test.md. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0075 (Ticketing nativo in-house), area 15-supporto-e-piattaforma. Da qui la forma del branch NNNN-use-case-0075-…; il numero progressivo 0084 deriva da changes/ (ultima cartella: 0083).",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "Lo use case 0075 passa a 🟡 in corso all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Il ticketing in-house NON nasce da zero: la versione minima (entità support_ticket + thread, API utente, API admin dentro la console Diritti GDPR, pagina Supporto del backoffice, auto-ticket su export fallito, retention 24 mesi) è già in main dalla change 0030 (UC 0034). La change 0084 implementa quindi il DELTA della storia 0075 rispetto a quella base, senza riscrivere ciò che funziona: stato waiting_user, provenienza del ticket, segnalazione per attenzione umana su categorie particolari, console admin «Ticket» autonoma con coda cross-account filtrabile e ordinata per scadenza, notifiche email attraverso il renderer unificato di services/commons. Riscrivere da capo avrebbe distrutto lavoro corretto e la sua copertura di test."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) docs/usecases/_INDEX.md NON viene toccato: lo use case 0075 è una storia evolutiva e le storie evo non compaiono nella tabella di esecuzione topologica dell'indice (solo nella tabella dei residui, come riga di origine R6, e nel catalogo README.md con stato di scrittura 🟢). Verificato sul precedente immediato: le change 0082 (UC 0067) e 0083 (UC 0071), entrambe storie evo, non hanno toccato _INDEX.md. Coerenza col precedente, invece di introdurre una convenzione nuova in una change di prodotto."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Semantica dello stato nuovo waiting_user: la risposta della piattaforma porta il ticket in waiting_user (la palla è al cliente), la replica del cliente lo riporta in open (la palla torna alla piattaforma). La transizione precedente — la risposta dell'admin portava il ticket in in_progress solo se era open — viene sostituita: in_progress resta disponibile come stato scelto a mano dall'operatore per «ci sto lavorando», mentre waiting_user è la sola transizione automatica della risposta. Alternativa scartata: lasciare in_progress come transizione automatica e usare waiting_user solo a mano — avrebbe reso lo stato nuovo decorativo e non avrebbe risolto il problema che 0075 pone (distinguere a colpo d'occhio chi aspetta chi).",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/support/TicketStatus.java", "description": "Aggiunto waiting_user; isTerminal resta vero solo per resolved e closed (la retention decorre da lì)." },
+      { "file": "services/core/src/main/java/app/appgrove/core/support/TicketResource.java", "description": "La replica del cliente riporta in open sia da waiting_user sia da resolved." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Provenienza del ticket come colonna source con tre valori: form (modulo dell'applicazione), event (evento di sistema, oggi solo l'esportazione fallita) ed email (predisposto, non ancora prodotto da nessuno). Le righe già esistenti si migrano deducendo la provenienza da export_job_id. Alternativa scartata: dedurre la provenienza a ogni lettura da export_job_id — avrebbe funzionato oggi e sarebbe diventata falsa al primo innesco nuovo.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V16__support_ticket_source_review.sql", "description": "Colonne source e flagged_for_review, migrazione delle righe esistenti, indice della coda per scadenza." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Segnalazione delle categorie particolari (articolo 9) implementata come colonna booleana flagged_for_review — «questo ticket va guardato da un essere umano» — e NON come campo che registri quale categoria particolare sarebbe stata riconosciuta. Il riconoscitore è deterministico, a parole-spia italiane e inglesi, e produce due effetti: priorità high e contrassegno. La scelta è di minimizzazione: registrare l'inferenza «questa persona ha parlato di salute» significherebbe creare un dato di categoria particolare derivato là dove prima c'era solo testo libero. Classificazione privacy MINOR: nessuna nuova categoria, finalità, base giuridica o responsabile esterno — le due colonne nuove sono metadati operativi non personali e non entrano nel manifesto dati.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/support/SpecialCategoryScreening.java", "description": "Riconoscitore deterministico delle parole-spia; nessuna inferenza persistita oltre al booleano." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Gli endpoint di amministrazione dei ticket si spostano da /api/platform/v1/admin/gdpr/tickets a /api/platform/v1/admin/tickets, in una risorsa dedicata AdminTicketResource nel package support. Motivo: 0075 chiede una sezione «Ticket» autonoma nella console, e il percorso .../gdpr/... raccontava una falsità (i ticket di supporto generico non c'entrano con i diritti GDPR); erano lì perché il ticketing è nato come strumento della console privacy. L'aggregazione dei ticket privacy dentro la Console Diritti GDPR resta e punta alla nuova sezione. Rottura di contratto interna e accettata: nessun consumatore fuori dal monorepo.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/support/AdminTicketResource.java", "description": "Nuova risorsa: coda cross-account con filtri tipo/stato/priorità, dettaglio, risposta, cambio stato e priorità." },
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/AdminGdprResource.java", "description": "Perde gli endpoint dei ticket; conserva l'aggregazione delle richieste che include i ticket privacy." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Ordinamento della coda di amministrazione: prima i ticket ancora aperti con una scadenza, dal più urgente; poi il resto per data di apertura decrescente. I ticket chiusi/risolti scendono in fondo. È il comportamento che 0075 chiede («i privacy più urgenti in cima») espresso come ordinamento stabile in SQL, non come riordino nel browser: la coda deve essere giusta anche letta dall'API."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il tipo di ticket resta support (non viene rinominato in generic come la prosa della storia lascerebbe intendere): rinominare significherebbe migrare i dati esistenti, cambiare il contratto dell'API e ritradurre tutte le interfacce per un sinonimo. Le etichette visibili all'utente dicono già «Supporto»/«Support»."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Le email del ticketing passano al renderer unificato di services/commons (UC 0085) con tre messaggi nuovi nella sorgente unica shared/email-templates, in italiano e inglese: ticket-opened (conferma a chi apre), ticket-updated (risposta o cambio stato dalla piattaforma) e ticket-inbox (avviso alla casella di assistenza). Prima erano stringhe concatenate a mano dentro TicketNotifier, in italiano soltanto e senza impaginazione. La lingua è quella dell'utente destinatario (colonna users.locale, ripiego sull'inglese come per la newsletter); la casella di assistenza riceve in italiano. Novità funzionale richiesta dalla storia: chi apre un ticket ora riceve una conferma, prima non arrivava nulla. L'invio resta best-effort: gli errori sono registrati e inghiottiti.",
+    "files": [
+      { "file": "shared/email-templates/it.json", "description": "Tre messaggi nuovi del ticketing." },
+      { "file": "services/core/src/main/java/app/appgrove/core/support/TicketNotifier.java", "description": "Riscritto sul renderer unificato; lingua ed email del destinatario lette insieme in una sola interrogazione." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) La ricezione delle email in ingresso su privacy@ e support@ (SES → funzione Lambda → ticket) resta FUORI da questa change: dipende dall'uscita di SES dalla modalità di prova e dalla verifica del dominio (UC 0018/0078), non è collaudabile in locale e ha effetti verso l'esterno. Il valore email della colonna source resta predisposto perché il giorno in cui arriva non serva una migrazione. Rimando scritto nei punti aperti di docs/usecases/15-supporto-e-piattaforma/0075-ticketing-nativo-in-house.md.",
+    "files": [
+      { "file": "docs/usecases/15-supporto-e-piattaforma/0075-ticketing-nativo-in-house.md", "description": "Punti aperti aggiornati: la ricezione email in ingresso è esplicitamente rimandata, con il motivo e le dipendenze." }
+    ]
+  }
+]
