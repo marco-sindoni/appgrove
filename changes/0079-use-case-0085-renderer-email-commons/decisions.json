@@ -1,0 +1,48 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata espressamente all'invocazione. L'agente risponde a tutte le domande di approfondimento seguendo l'opzione raccomandata; i tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge) sono rinunciati in anticipo dallo sviluppatore. Contropartite obbligatorie: suite completa ./run-tests.sh verde prima del commit, registro decisioni integrale, how-to-test.md nella cartella della change. Merge e push restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0085 (unificazione dei renderer email in services/commons), indicato esplicitamente all'invocazione: da qui la forma del branch 0079-use-case-0085-renderer-email-commons. Il numero 0079 è il progressivo di changes/ (l'ultima presente è 0078) e coincide con quello assegnato dall'orchestratore.",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Lo use case 0085 è una storia evolutiva: il suo stato vive qui (indice di esecuzione dell'onda 2), non nella tabella topologica di _INDEX.md. Passa a 🟡 all'apertura della change e a ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Confronto riga per riga delle due copie prima di unificare (richiesto dallo use case, §5): le implementazioni sono identiche in tutto — stesso schema dei segnaposto, stessi cinque buchi dell'impaginazione, stesso escape, stessa guardia, stessa lettura delle risorse — con tre sole differenze reali. (a) Il tipo di errore sul messaggio sconosciuto: auth lancia IllegalArgumentException, core IllegalStateException. (b) Auth espone una resa generica per chiave di messaggio, il core una resa fissa sul solo newsletter-confirm. (c) Il set di lingue è dichiarato in due punti diversi (Locales.SUPPORTED in auth, una lista privata nel core) ma coincide oggi: inglese e italiano con ripiego sull'inglese. Nessuna divergenza di comportamento visibile all'utente: la resa è identica."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Per il tipo di errore sul messaggio sconosciuto si adotta IllegalArgumentException (il comportamento di auth), perché una chiave inesistente è un argomento sbagliato del chiamante, non uno stato incoerente del programma; è anche il comportamento già coperto da un test in auth. Per il core il cambiamento è invisibile: la chiave è una costante e il chiamante (NewsletterMailer) cattura comunque RuntimeException in modo indulgente, così che un'email non spedita non faccia fallire l'iscrizione."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Forma del renderer condiviso: una classe semplice, non gestita dal contenitore di iniezione, che carica i template nel proprio costruttore e riceve il set di lingue come parametro. In alternativa si sarebbe potuto farne un bean applicativo configurato da proprietà, ma il set di lingue è una scelta del servizio (auth ha le sue, la newsletter le proprie) e un bean unico costringerebbe a un'unica copertura linguistica — esattamente il vincolo che lo use case chiede di evitare. Ogni servizio conserva quindi il proprio bean sottile che costruisce il renderer con il set che gli serve: i punti di iniezione e i chiamanti esistenti non cambiano.",
+    "files": [
+      { "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailTemplateRenderer.java", "description": "Renderer unico: classe semplice costruita con un set di lingue, carica impaginazione e cataloghi dal classpath del servizio che la usa." },
+      { "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailLocales.java", "description": "Set di lingue parametrizzabile (lingue ammesse + lingua di ripiego) con la normalizzazione delle forme comuni; unica sede dell'algoritmo, prima duplicato in tre punti." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Collocazione: package app.appgrove.commons.email, accanto alle altre aree di commons (tenancy, privacy, entitlement, web, gdpr). Nomi: EmailTemplateRenderer per il renderer, EmailLocales per il set di lingue, EmailTemplateRenderer.Rendered per il risultato (oggetto, corpo testuale, corpo grafico). Chiude il punto aperto dello use case 0085 «dove collocare esattamente il renderer in commons»."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) I file `pom.xml` di auth e core, che copiano shared/email-templates nell'artefatto, restano invariati (lo use case li dichiara fuori scope). In commons si aggiunge la sola copia verso le risorse di TEST: serve perché i test del renderer condiviso trovino impaginazione e cataloghi, e non immette una terza copia dei template negli artefatti spediti. Si è scartata l'alternativa più radicale — spostare la copia dentro il jar di commons e toglierla dai due servizi — perché tocca la spedizione degli artefatti, esce dallo scope dichiarato e va valutata a parte.",
+    "files": [
+      { "file": "services/commons/pom.xml", "description": "Copia di shared/email-templates nelle risorse di test (fase generate-test-resources): solo collaudo, non finisce nell'artefatto." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La parità byte-a-byte richiesta dallo use case si verifica come collaudo eseguito DENTRO la change (cattura dell'output dei due renderer attuali prima del cambiamento, confronto con l'output del renderer condiviso dopo), non come test permanente con file di riferimento committati. Motivo: file di riferimento congelati legherebbero la suite ai testi delle email, che possono cambiare legittimamente — sarebbero rossi ogni volta che si corregge una frase, senza segnalare un difetto vero. La resa resta protetta in modo permanente dai test di comportamento (lingue, sostituzioni, escape, guardia) e dal test di parità fra le lingue dei cataloghi."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Copertura end-to-end (registro docs/testing/copertura-e2e.yaml): NESSUN IMPATTO. Lo use case 0085 è già registrato come esente in categoria «senza-superficie» (rifattorizzazione di servizio, nessuna superficie interattiva); la change non introduce pagine, rotte o comportamenti visibili all'utente, quindi il registro non cambia. Nessun percorso Playwright da aggiungere o estendere."
+  }
+]
