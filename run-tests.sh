@@ -11,9 +11,9 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage + tools/design-tokens (UC 0046/0048/0047/0057/0093/0086) →
-#                collaudo delle skill `new-application`, `drop-application`, `pricing-change` e `finalize-landing`,
-#                più il controllo del registro di copertura end-to-end:
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage + tools/design-tokens + tools/new-blog-post (UC 0046/0048/0047/0057/0093/0086/0084) →
+#                collaudo delle skill `new-application`, `drop-application`, `pricing-change`, `finalize-landing`
+#                e `new-blog-post`, più il controllo del registro di copertura end-to-end:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
 #                (i modelli restano indietro pur continuando a funzionare); (2) collaudo di LIVELLO 3 — genera
 #                davvero un'app in una copia usa-e-getta e ne esegue l'INTERA suite, cogliendo la divergenza
@@ -29,6 +29,11 @@
 #                token del design system; coglie la divergenza ESTETICA silenziosa, che nessun altro test vede.
 #                Include i DERIVATI del logo (icone, anteprima social): i file committati devono coincidere con
 #                la generazione dal disegno unico — artwork ritoccato senza `npm run brand:assets` = rosso;
+#                (7) new-blog-post (UC 0084) — generatore dei post del blog: validazione che rifiuta PRIMA di
+#                scrivere, scaffolding dei 5 file-lingua + entry nel registro + agganci pilastro↔cluster,
+#                simmetria genera→rimuovi, e ALLARME DI DERIVA fra i tipi del blog (UC 0042) e i campi che il
+#                generatore scrive — contratto evoluto senza riallineamento = rosso, invece di uno scaffolding
+#                che continua a produrre post di forma vecchia;
 #                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
 #                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati
@@ -269,6 +274,9 @@ run_tooling() {
   # dei token. Coglie la divergenza estetica silenziosa (nessun altro test la vede).
   ( cd "$ROOT/tools/design-tokens" && npm test )         || rc=1
   ( cd "$ROOT/tools/design-tokens" && npm run check )    || rc=1
+  # (8) skill new-blog-post (UC 0084): scaffolding dei post del blog + allarme di deriva sul contratto
+  # dei contenuti di UC 0042. Nessuna dipendenza npm: solo Node e il filesystem.
+  ( cd "$ROOT/tools/new-blog-post" && npm test )         || rc=1
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

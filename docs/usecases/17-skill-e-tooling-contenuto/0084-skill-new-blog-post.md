@@ -3,7 +3,7 @@
 **Area**: 17-skill-e-tooling-contenuto · **Fase**: evo · **Stato**: 🟢 scritto (evo, da implementare)
 **Dipendenze**: UC 0042 (blog/risorse del sito vetrina), UC 0057 (skill finalize-landing, per il modello di skill), UC 0046 (skill new-application, per il modello di skill), UC 0040 (ottimizzazione per i motori di ricerca), UC 0041 (ottimizzazione per gli assistenti di intelligenza artificiale)
 **Fonte**: R1 (Tabella residui in docs/usecases/_INDEX.md); docs/_BACKLOG.md §"Skill Claude Code da creare" (new-blog-post)
-**Ultimo aggiornamento**: 2026-07-26
+**Ultimo aggiornamento**: 2026-08-02 (implementato dalla change 0085)
 
 ## 1. Obiettivo / Scope
 
@@ -129,11 +129,54 @@ Genera **contenuti** del sito vetrina (file TypeScript tipizzati dei post) e agg
   3. La skill chiude con `astro build` verde + controllo post-build e apre la change via `new-change`.
   4. Le scelte sono registrate in `decisions.json` (in autopilot, marcate `(autopilot)`).
 
+## Stato dopo l'implementazione (change 0085)
+
+La skill esiste in `.claude/skills/new-blog-post/` (file principale + quattro passi) e la sua metà meccanica in
+`tools/new-blog-post/`, provata da 55 test nell'area `tooling` di `run-tests.sh`.
+
+Il **contratto fra le due metà** è un file di specifica in formato JSON: il co-pilota scrive lì il contenuto
+editoriale nelle 5 lingue, il generatore lo valida e lo materializza. La divisione è netta e voluta — la copy è
+sempre del co-pilota, la scrittura dei file è sempre dello strumento. Comandi: `list` (la mappa dei pilastri su
+cui si sceglie dove collocare il pezzo), `check` (validazione a secco), `scaffold` (generazione), `remove`
+(inverso esatto).
+
+Tre proprietà che valeva la pena costruire:
+
+- **rifiuto pulito prima di scrivere** — lingua mancante, stringa vuota, traduzione con una sezione in meno
+  della sorgente inglese, slug malformato/riservato/già usato, chiave occupata, pilastro inesistente o del tipo
+  sbagliato, app senza landing pubblicata: la specifica viene respinta e il repository non viene toccato;
+- **scrittura transazionale** — se qualcosa fallisce a metà si torna indietro, invece di lasciare una cartella
+  creata e un registro non aggiornato;
+- **simmetria** — `scaffold` seguito da `remove` riporta i file identici byte a byte (verificato sia sulle
+  cartelle di prova sia sul repository vero). È ciò che rende sicuro il ripristino quando il build del sito
+  diventa rosso dopo la generazione.
+
+Le due **fermate** previste dallo use case sono scritte nella skill e valgono in ogni modalità, autopilot e
+fast comprese: aprire un **nuovo pilastro** (è una linea editoriale, quindi direzione di prodotto) e
+l'**approvazione della copy** prima di generare (è pubblicazione verso l'esterno).
+
+Il punto aperto sul contratto consumato da UC 0042 è ora presidiato da un test: `test/contract.test.mjs` legge
+`site/src/content/blog/types.ts`, `site/src/lib/blog.ts` e `site/src/lib/i18n.ts` e confronta campi, slug
+riservati e lingue con ciò che il generatore scrive davvero. Contratto evoluto senza riallineamento = suite
+rossa, invece di uno scaffolding che continua a produrre post di forma vecchia senza che nulla diventi rosso.
+
 ## Punti aperti / decisioni differite
 
 - **Contratto consumato da UC 0042**: il registro (`site/src/content/blog/index.ts`), i tipi (`types.ts`:
   `BlogPost`, `PostLocaleContent`, `PostKind`, `clusterKeys`/`pillarKey`) e la validazione (`site/src/lib/blog.ts`)
   sono ciò che questa skill deve consumare; se il contratto evolve, il generatore va riallineato.
+  **Presidiato dalla change 0085** con l'allarme di deriva descritto sopra: resta comunque un lavoro da fare a
+  mano quando il rosso si presenta (riallineare `lib/render.mjs` e `lib/spec.mjs`, non allargare gli elenchi
+  del test).
+- **Nessun articolo vero scritto dalla change 0085**: scegliere tema e taglio di un pezzo pubblicato è
+  direzione editoriale, non lavoro di piattaforma — è uno dei casi in cui l'autopilot si ferma e chiede. La
+  change ha costruito e collaudato lo strumento (anche generando un articolo usa-e-getta nel repository vero,
+  passando l'area `site`, e poi rimuovendolo). Il **primo articolo scritto con la skill** è lavoro editoriale
+  del founder, da fare invocando `/new-blog-post`.
+- **Contenuti del blog che invecchiano**: un articolo che cita una funzionalità o un prezzo eredita la scadenza
+  di quell'affermazione. Oggi non esiste nessun controllo di freschezza sui post (esiste per il RoPA, UC 0030);
+  la skill si limita a chiedere di annotarlo nel registro delle decisioni della change. Se il blog cresce,
+  serve un presidio vero — **da valutare in UC 0042**, che possiede il motore del blog.
 - **Set di pilastri come scelta di prodotto**: aprire un nuovo pilastro apre una linea editoriale; in autopilot la
   skill deve fermarsi e chiedere invece di deciderlo da sola. Da annotare in `decisions.json` all'implementazione.
 - **Seed dei collegamenti interni**: la mappa articolo→landing dipende da quali app hanno una landing pubblicata; se

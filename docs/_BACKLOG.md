@@ -436,7 +436,12 @@ Registro canonico anche in `changes/0014-use-case-0021-…/requirements.md`. Ite
   4) **conferma definitiva** digitando una **frase casuale generata dalla skill** (es. "oggi la temperatura esterna è gradevole").
   Rispetta le safety di [06-infra-iac](06-infra-iac.md) §K (in prod: valutare snapshot finale del DB prima del drop).
   Distinta da "disabilita applicazione" (reversibile, runtime). Dettaglio in memoria `skills-backlog`.
-- **`new-blog-post`** (richiesto 2026-07-26, durante la change `0061-use-case-0042-…` che costruisce il motore blog) —
+- ✅ **`new-blog-post`** — **FATTA** dalla change `0085-use-case-0084-…` (2026-08-02): skill in
+  `.claude/skills/new-blog-post/` + generatore deterministico `tools/new-blog-post/` (comandi `list`, `check`,
+  `scaffold`, `remove`), collaudato nell'area `tooling` di `run-tests.sh`. Il testo che segue è la richiesta
+  originale, tenuta per storia. Dettaglio dell'esito nello use case
+  [0084](usecases/17-skill-e-tooling-contenuto/0084-skill-new-blog-post.md).
+  (richiesto 2026-07-26, durante la change `0061-use-case-0042-…` che costruisce il motore blog) —
   co-pilota per **aggiungere un articolo al blog/risorse** del sito vetrina (UC [0042](usecases/09-marketing-site/0042-blog-risorse.md)),
   gemello di `finalize-landing`/`new-application`: **generatore deterministico** (`tools/new-blog-post`) per la parte
   meccanica (scaffold dei 5 file-lingua `site/src/content/blog/<slug>/{en,it,fr,es,de}.ts` + `index.ts`, entry nel
