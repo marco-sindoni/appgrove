@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata, i tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge) sono rinunciati in anticipo dallo sviluppatore; restano obbligatori il registro decisioni integrale, la suite completa ./run-tests.sh verde prima del commit e il file how-to-test.md. Merge e push restano fuori: sono del chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0084 (skill new-blog-post), indicato esplicitamente all'invocazione e corrispondente allo scope di docs/usecases/17-skill-e-tooling-contenuto/0084-skill-new-blog-post.md. Da qui la forma del branch 0085-use-case-0084-…; il numero progressivo 0085 è il successivo di changes/0084-… ed è coerente con l'identificativo assegnato dal chiamante.",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo use case 0084 (riga 15 dell'ordine evo) passa a ✅ alla chiusura della change; le storie evo non sono nella tabella di esecuzione di _INDEX.md ma in questo registro delle epiche."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Come il co-pilota passa la copy delle 5 lingue alla parte meccanica: tramite un FILE DI SPECIFICA in formato JSON (`--spec`), non tramite argomenti da riga di comando né lasciando che il modello scriva direttamente i file TypeScript. Le alternative erano (a) argomenti da riga di comando — impraticabile per un articolo intero in cinque lingue; (b) il co-pilota scrive i file TypeScript e lo strumento cabla solo il registro — rimetterebbe la parte fragile e ripetitiva (resa dei file, escape delle stringhe, entry del registro) nelle mani di un modello linguistico, cioè esattamente ciò che il generatore deve togliere di mezzo. Con la specifica JSON la parte meccanica è tutta collaudata e il rifiuto avviene PRIMA di toccare il disco."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Divisione delle responsabilità di validazione: la validazione AUTOREVOLE resta in site/src/lib/blog.ts (UC 0042), coperta dai test dell'area `site`; il generatore fa solo una validazione PREVENTIVA sui fatti che gli servono per non corrompere il registro (forma completa nelle 5 lingue, nessuna stringa vuota, data ISO, slug ben formati/non riservati/non in conflitto, chiave libera, pilastro esistente e del tipo giusto, appId con landing pubblicata). Non si duplicano le regole di UC 0042 in un secondo padrone: si controlla solo ciò che serve al rifiuto pulito prima della scrittura, che lo use case chiede esplicitamente.",
+    "files": [
+      {
+        "file": "tools/new-blog-post/lib/spec.mjs",
+        "description": "Validazione preventiva della specifica: forma, stringhe, data, slug; separata dai controlli che richiedono di leggere il registro reale."
+      },
+      {
+        "file": "site/src/lib/blog.ts",
+        "description": "Resta la fonte di verità della validazione del registro blog; il generatore non la duplica né la sostituisce."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Atomicità della scrittura: tutti i controlli girano prima di qualunque scrittura, poi le modifiche avvengono in un solo passaggio con ripristino in caso di errore a metà strada (i file creati vengono cancellati, quelli modificati riscritti col contenuto originale tenuto in memoria). È la contropartita del requisito 'rieseguire su uno slug esistente non corrompe il registro': il rifiuto deve lasciare il repository identico byte a byte, ed è verificato da un test.",
+    "files": [
+      {
+        "file": "tools/new-blog-post/lib/apply.mjs",
+        "description": "Applicazione transazionale delle scritture con ripristino su errore."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) La specifica ammette PIÙ post in una sola esecuzione (array `posts`), processati in ordine. È così che si soddisfa il caso 'nuovo pilastro assente' dello use case: pilastro e primo articolo cluster nascono nella stessa esecuzione, già agganciati fra loro, invece di lasciare un pilastro senza cluster fra due comandi separati."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Lo strumento offre anche l'INVERSO (comando `remove`) oltre alla generazione. Motivo: dà al co-pilota un ripristino pulito quando il build del sito diventa rosso dopo la generazione (lo use case prevede il caso), e rende possibile il collaudo andata-ritorno genera→rimuovi che deve riportare i file identici — la stessa forma di garanzia già adottata per il de-generatore di drop-application (UC 0048)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Presidio contro la deriva del contratto (punto aperto esplicito dello use case 0084): un test legge i tipi del blog (site/src/content/blog/types.ts) ed estrae i campi dichiarati da PostLocaleContent e BlogPost, confrontandoli con quelli che il generatore scrive davvero. Se UC 0042 aggiunge o rinomina un campo senza riallineare il generatore, la suite diventa rossa invece di lasciare uno scaffolding che continua a produrre post di forma vecchia — è la stessa idea del collaudo di parità dei modelli di new-application.",
+    "files": [
+      {
+        "file": "tools/new-blog-post/test/contract.test.mjs",
+        "description": "Allarme di deriva fra i tipi di UC 0042 e i campi resi dal generatore."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Questa change NON scrive un articolo vero del blog. Scegliere tema e taglio di un pezzo pubblicato è direzione editoriale e di marketing, cioè un caso di fermata dell'autopilot, non lavoro di piattaforma; inoltre lo use case 0084 include lo strumento e la skill, non il contenuto. Collaudo e prova manuale girano su cartelle di prova usa-e-getta. Rimando tracciato nello use case 0084."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): NESSUN IMPATTO. Lo use case 0084 è già classificato `senza-superficie` nel registro docs/testing/copertura-e2e.yaml («strumento di processo») e l'implementazione conferma quella classificazione — la change non introduce nessuna pagina, rotta o interazione da browser. Il presidio adatto è altrove ed è quello che questa change costruisce: i test dello strumento nell'area `tooling` più l'area `site` (vitest + astro build + controllo post-build) sui contenuti generati."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Brand kit / token condiviso (UC 0086, dipendenza soft): non si reintroduce nessuno stile proprio. Il generatore scrive SOLO contenuto testuale tipizzato; colori, tipografia e resa del post restano del template del blog di UC 0042, che consuma la fonte unica dei token. Di conseguenza il controllo anti-drift di tools/design-tokens non ha nulla da sorvegliare qui, e la skill lo dichiara esplicitamente per evitare che una futura rifinitura grafica finisca nel generatore."
+  }
+]
