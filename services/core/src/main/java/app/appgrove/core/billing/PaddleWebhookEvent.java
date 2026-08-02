@@ -3,6 +3,8 @@ package app.appgrove.core.billing;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -46,7 +48,8 @@ public record PaddleWebhookEvent(
         Instant scheduledChangeAt,
         String paddleSubscriptionId,
         String paddleCustomerId,
-        TransactionData transaction) {
+        TransactionData transaction,
+        PayoutData payout) {
 
     /**
      * Dati economici di una transazione (UC 0096): quanto, in che valuta, con quale ricevuta. Vengono dal
@@ -58,6 +61,8 @@ public record PaddleWebhookEvent(
      * @param billingCycle etichetta del ciclo ({@code monthly}/{@code annual}), da mostrare così com'è
      * @param receiptUrl ricevuta del fornitore; {@code null} quando non è ancora disponibile
      * @param billedAt istante dell'addebito; se assente vale l'{@code occurred_at} dell'evento
+     * @param fee commissione trattenuta dal fornitore in unità minori, se il payload la dichiara;
+     *     {@code null} quando non c'è → il netto viene stimato e marcato come tale (UC 0071)
      */
     public record TransactionData(
             String paddleTransactionId,
@@ -65,11 +70,36 @@ public record PaddleWebhookEvent(
             String currency,
             String billingCycle,
             String receiptUrl,
-            Instant billedAt) {}
+            Instant billedAt,
+            Integer fee) {}
+
+    /**
+     * Accredito periodico del fornitore (UC 0071): il denaro che arriva davvero sul conto, con il dettaglio
+     * delle transazioni che lo compongono. Non ha un conto cliente: un accredito raccoglie transazioni di
+     * più clienti, ed è un dato economico della piattaforma.
+     *
+     * @param paddlePayoutId riferimento dell'accredito presso il fornitore (chiave di idempotenza)
+     * @param amount importo accreditato in unità minori (può essere negativo se gli storni prevalgono)
+     * @param paidAt data dell'accredito; se assente vale l'{@code occurred_at} dell'evento
+     * @param lines dettaglio per transazione; può essere vuoto se il fornitore non lo comunica
+     */
+    public record PayoutData(
+            String paddlePayoutId, int amount, String currency, Instant paidAt, List<PayoutLine> lines) {}
+
+    /**
+     * Una riga di dettaglio dell'accredito: quanto è stato accreditato <b>per quella transazione</b>.
+     * Negativa per gli storni (rimborsi e contestazioni tornano indietro in un accredito successivo).
+     */
+    public record PayoutLine(String paddleTransactionId, int netAmount, String currency) {}
 
     /** True per gli eventi {@code customer.*} (mappati su {@code accounts.paddle_customer_id}). */
     public boolean isCustomerEvent() {
         return eventType != null && eventType.startsWith("customer.");
+    }
+
+    /** True per gli eventi {@code payout.*} (accrediti del fornitore, UC 0071). */
+    public boolean isPayoutEvent() {
+        return eventType != null && eventType.startsWith("payout.");
     }
 
     /**
@@ -86,6 +116,7 @@ public record PaddleWebhookEvent(
             case "transaction.completed" -> BillingTransactionStatus.paid;
             case "transaction.payment_failed" -> BillingTransactionStatus.failed;
             case "transaction.disputed" -> BillingTransactionStatus.disputed;
+            case "transaction.refunded" -> BillingTransactionStatus.refunded;
             default -> null;
         };
     }
@@ -112,10 +143,46 @@ public record PaddleWebhookEvent(
                     instant(data, "scheduled_change_at"),
                     text(data, "paddle_subscription_id"),
                     text(data, "paddle_customer_id"),
-                    transaction(data, instant(root, "occurred_at")));
+                    transaction(data, instant(root, "occurred_at")),
+                    payout(data, instant(root, "occurred_at")));
         } catch (Exception e) {
             throw new IllegalArgumentException("Payload webhook non valido", e);
         }
+    }
+
+    /**
+     * Accredito, se il payload lo porta (UC 0071). Come per la transazione, il riferimento presso il
+     * fornitore è il minimo indispensabile perché è la chiave di idempotenza: senza, non si registra nulla.
+     * Il dettaglio può mancare — un accredito senza righe resta registrato e la sua quadratura dirà, con
+     * ragione, che non torna.
+     */
+    private static PayoutData payout(JsonNode data, Instant occurredAt) {
+        String id = text(data, "paddle_payout_id");
+        if (id == null) {
+            return null;
+        }
+        JsonNode amount = data.get("amount");
+        Instant paidAt = instant(data, "paid_at");
+        String currency = text(data, "currency");
+        List<PayoutLine> lines = new ArrayList<>();
+        for (JsonNode line : data.path("lines")) {
+            String txId = text(line, "paddle_transaction_id");
+            if (txId == null) {
+                continue;
+            }
+            JsonNode net = line.get("net_amount");
+            String lineCurrency = text(line, "currency");
+            lines.add(new PayoutLine(
+                    txId,
+                    net == null || net.isNull() ? 0 : net.asInt(),
+                    lineCurrency != null ? lineCurrency : currency));
+        }
+        return new PayoutData(
+                id,
+                amount == null || amount.isNull() ? 0 : amount.asInt(),
+                currency,
+                paidAt != null ? paidAt : occurredAt,
+                List.copyOf(lines));
     }
 
     /**
@@ -130,13 +197,15 @@ public record PaddleWebhookEvent(
         }
         JsonNode amount = data.get("amount");
         Instant billedAt = instant(data, "billed_at");
+        JsonNode fee = data.get("fee");
         return new TransactionData(
                 id,
                 amount == null || amount.isNull() ? 0 : amount.asInt(),
                 text(data, "currency"),
                 text(data, "billing_cycle"),
                 text(data, "receipt_url"),
-                billedAt != null ? billedAt : occurredAt);
+                billedAt != null ? billedAt : occurredAt,
+                fee == null || fee.isNull() ? null : fee.asInt());
     }
 
     private static String text(JsonNode node, String field) {

@@ -103,12 +103,32 @@ metodo di pagamento e delle fatture verso il cliente (in capo a Paddle come Merc
   4. Test integration + edge + observability + security verdi.
 
 ## Punti aperti / decisioni differite
-- **Sorgente del dettaglio fee** *(owner: questo UC 0071)*: verificare se il webhook Paddle porta il dettaglio fee per
-  transazione o se serve un pull periodico dall'API; decisione rimandata all'account Paddle reale (gated #14).
-- **Valuta e cambio**: se i payout arrivano in valuta convertita, definire come tracciare il tasso applicato ai fini della
-  quadratura.
-- **Soglia di allarme fee/lordo**: fissare la soglia oltre cui evidenziare che le fee pesano troppo (segnale per il bundling,
-  UC 0070) — è una scelta operativa da tarare sui dati reali.
+
+> Implementato dalla change `0083-use-case-0071-riconciliazione-netto-revenue`. I punti qui sotto sono
+> quelli che **restano aperti dopo** l'implementazione, aggiornati con la postura scelta.
+
+- **Sorgente del dettaglio fee** *(owner: questo UC 0071)*: resta da verificare se il webhook Paddle reale porta il
+  dettaglio delle commissioni per transazione o se serve una lettura periodica dall'interfaccia del fornitore; la
+  verifica è possibile solo con l'account reale (bloccato da #14). **Postura attuale**: il backend accetta la
+  commissione se il payload la porta (campo `fee`) e altrimenti la **stima** con la formula del listino, marcando la
+  riga come stimata (`fee_source`). Se il dato reale non arrivasse col webhook, l'aggancio da scrivere è un metodo di
+  lettura sul `PaymentProvider`, non un cambio di modello dati.
+- **Valuta e cambio** *(owner: questo UC 0071)*: quando un accredito e le transazioni che contiene hanno valute
+  diverse, la quadratura è dichiarata **non calcolabile** (`mixed_currency`) invece di sommare valute diverse. Come
+  registrare il **tasso applicato** dal fornitore resta aperto: dipende dal formato reale dei suoi dati.
+- **Rimborsi parziali** *(owner: questo UC 0071, nuovo)*: il modello rappresenta il rimborso **totale** come cambio di
+  stato della transazione (`refunded`). Un rimborso parziale richiede una riga di rettifica separata, con il proprio
+  importo e il proprio collegamento all'accredito. Rimandato perché oggi nessun flusso lo produce e anticiparlo
+  significherebbe progettare su un formato di dati che non abbiamo ancora visto.
+- **Soglia di allarme fee/lordo**: fissata a **8%** come valore iniziale configurabile
+  (`appgrove.payments.fee-alert-percent`), sopra il ~5% atteso più la quota fissa. La **taratura sui dati reali**
+  resta da fare: è il segnale che alimenta la leva dell'abbonamento unico (UC 0070).
+- **Attesa massima di un accredito**: fissata a **14 giorni** configurabili (`appgrove.payments.payout-max-age`),
+  ipotizzando un ciclo di accrediti quindicinale. Da tarare sul calendario reale del fornitore.
+- **Allarmi infrastrutturali sulle nuove misure** *(owner: UC 0006 / modulo `microsaas_app`)*: le misure
+  `appgrove.billing.reconciliation.*` (netto, peso delle commissioni, non accreditato, accredito in ritardo) sono
+  **esposte**, ma la loro configurazione come allarme in Terraform è rimandata all'accensione reale degli ambienti.
+- **Ricavo ricorrente mensile e tasso di abbandono accanto al netto** *(owner: UC 0021, già in docs/_BACKLOG.md)*:
+  la vista di riconciliazione è collocata dove quei KPI atterreranno, ma non li anticipa.
 - **Confine con la fiscalità**: questa vista è osservabilità gestionale, non contabilità; gli adempimenti fiscali restano col
   commercialista (docs/_COMMERCIALISTA.md). Da non confondere le due cose.
-- **Priorità**: nota operativa, non bloccante; si implementa quando c'è volume reale di payout da riconciliare.

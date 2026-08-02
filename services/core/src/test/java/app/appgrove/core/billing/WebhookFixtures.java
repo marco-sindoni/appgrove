@@ -98,6 +98,68 @@ final class WebhookFixtures {
         return write(root);
     }
 
+    /**
+     * Variante che dichiara anche la <b>commissione</b> trattenuta dal fornitore (UC 0071): è il caso in cui
+     * il netto NON viene stimato ma preso per buono da chi ha incassato.
+     */
+    static String transactionWithFee(
+            String eventId,
+            String type,
+            Instant occurredAt,
+            String tenantId,
+            UUID appId,
+            UUID tierId,
+            String paddleTransactionId,
+            int amount,
+            String currency,
+            Instant billedAt,
+            int fee) {
+        try {
+            ObjectNode root = (ObjectNode) M.readTree(transaction(
+                    eventId, type, occurredAt, tenantId, appId, tierId,
+                    paddleTransactionId, amount, currency, "monthly", null, billedAt));
+            ((ObjectNode) root.get("data")).put("fee", fee);
+            return write(root);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /** Una riga di dettaglio di un accredito: transazione, netto accreditato (con segno), valuta. */
+    record PayoutLine(String paddleTransactionId, int netAmount, String currency) {}
+
+    /**
+     * Evento {@code payout.paid} (UC 0071): l'accredito periodico del fornitore, con il dettaglio delle
+     * transazioni che lo compongono. Non ha {@code custom_data}: un accredito raccoglie transazioni di conti
+     * diversi ed è un dato economico della piattaforma.
+     */
+    static String payout(
+            String eventId,
+            Instant occurredAt,
+            String paddlePayoutId,
+            int amount,
+            String currency,
+            Instant paidAt,
+            PayoutLine... lines) {
+        ObjectNode root = M.createObjectNode();
+        root.put("event_id", eventId);
+        root.put("event_type", "payout.paid");
+        root.put("occurred_at", occurredAt.toString());
+        ObjectNode data = root.putObject("data");
+        data.put("paddle_payout_id", paddlePayoutId);
+        data.put("amount", amount);
+        data.put("currency", currency);
+        data.put("paid_at", paidAt.toString());
+        var array = data.putArray("lines");
+        for (PayoutLine line : lines) {
+            ObjectNode node = array.addObject();
+            node.put("paddle_transaction_id", line.paddleTransactionId());
+            node.put("net_amount", line.netAmount());
+            node.put("currency", line.currency());
+        }
+        return write(root);
+    }
+
     /** Evento {@code customer.updated} (cattura {@code paddle_customer_id}). */
     static String customer(String eventId, Instant occurredAt, String tenantId, String paddleCustomerId) {
         ObjectNode root = M.createObjectNode();

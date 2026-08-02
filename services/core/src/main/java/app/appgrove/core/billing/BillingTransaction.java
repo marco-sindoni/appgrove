@@ -77,6 +77,35 @@ public class BillingTransaction extends BaseTenantEntity {
     @Column(name = "billed_at", nullable = false)
     private Instant billedAt;
 
+    /**
+     * Commissione trattenuta dal fornitore su questa transazione (UC 0071), in unità minori. {@code null}
+     * sulle righe per cui non è applicabile (tentativo fallito) e su quelle registrate prima che il dato
+     * esistesse: inventarlo a posteriori scriverebbe un numero falso proprio nella vista che serve a dire
+     * la verità sui soldi.
+     */
+    @PersonalData(
+            category = "dati di fatturazione (commissione trattenuta sulla transazione)",
+            purpose = "riconciliare il ricavo lordo con il denaro davvero accreditato (osservabilità economica)",
+            retention = "account attivo + grace 14gg; retention fiscale in capo a Paddle")
+    @Column(name = "fee_amount")
+    private Integer feeAmount;
+
+    /** Netto residuo dopo la commissione; 0 su storni e tentativi falliti. */
+    @PersonalData(
+            category = "dati di fatturazione (netto residuo della transazione)",
+            purpose = "riconciliare il ricavo lordo con il denaro davvero accreditato (osservabilità economica)",
+            retention = "account attivo + grace 14gg; retention fiscale in capo a Paddle")
+    @Column(name = "net_amount")
+    private Integer netAmount;
+
+    /**
+     * Provenienza della commissione: {@code provider} se dichiarata dal fornitore, {@code estimated} se
+     * stimata da noi. Testo e non enum per la stessa ragione del ciclo di fatturazione: un valore
+     * inatteso non deve poter spegnere una pagina. Non è un dato personale — descrive il dato, non la persona.
+     */
+    @Column(name = "fee_source", length = 16)
+    private String feeSource;
+
     /** Guardia out-of-order (come su {@link Subscription}): scritta in SQL nativo, qui in sola lettura. */
     @Column(name = "last_event_occurred_at", insertable = false, updatable = false)
     private Instant lastEventOccurredAt;
@@ -119,6 +148,18 @@ public class BillingTransaction extends BaseTenantEntity {
 
     public Instant getBilledAt() {
         return billedAt;
+    }
+
+    public Integer getFeeAmount() {
+        return feeAmount;
+    }
+
+    public Integer getNetAmount() {
+        return netAmount;
+    }
+
+    public String getFeeSource() {
+        return feeSource;
     }
 
     public Instant getLastEventOccurredAt() {

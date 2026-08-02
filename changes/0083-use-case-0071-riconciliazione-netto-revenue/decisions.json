@@ -97,5 +97,69 @@
       { "file": "frontend/apps/admin/e2e/riconciliazione.spec.ts", "description": "Percorso L2-ADMIN-RECON." },
       { "file": "docs/testing/copertura-e2e.yaml", "description": "0071 fra gli use case con superficie; percorso L2-ADMIN-RECON dichiarato coperto." }
     ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Gli accrediti NON hanno un'entità JPA: sono letti solo dalla vista amministrativa, che usa query native cross-tenant come tutta la console (UC 0021). Aggiungere due entità sarebbe stato codice che nessuno legge, e un'entità con il filtro di tenant automatico su una tabella che il tenant non ce l'ha è proprio il genere di cosa che confonde chi arriva dopo. La scrittura passa dal SubscriptionWriter in SQL nativo, esattamente come per le transazioni.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/ReconciliationService.java", "description": "Aggregazioni e quadratura in SQL nativo; nessuna entità per platform.payout / platform.payout_line." }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Uno storno azzera il netto della riga ma NON la sua commissione: il fornitore trattiene comunque quanto ha trattenuto. La transazione contestata o rimborsata esce dall'incassato ed entra nella colonna «storni»; il denaro restituito riappare come riga negativa in un accredito successivo. Così l'incassato non contiene mai denaro tornato indietro, e la commissione non sparisce dai conti come se non fosse mai stata pagata.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionWriter.java", "description": "Il netto è l'importo meno la commissione solo per le transazioni riuscite; 0 per storni e tentativi falliti, dove la commissione resta assente se non applicabile." }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Deviazione consapevole dal punto 7 dei requisiti: lo stub locale NON dichiara la commissione nei suoi eventi di transazione, quindi in locale tutte le righe risultano «stimate». È il caso conservativo e realistico — oggi non sappiamo se il fornitore reale comunicherà la commissione col webhook — ed è quello che ha senso vedere con i propri occhi in locale, avviso incluso. Il percorso «commissione dichiarata dal fornitore» è coperto dai test di integrazione, che costruiscono il payload con il campo dedicato.",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/WebhookFixtures.java", "description": "transactionWithFee(...) esercita il percorso della commissione dichiarata." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Le misure di osservabilità sono registrate come distribuzioni a rilevazione periodica (una volta all'ora) e non come indicatori istantanei: gli accrediti arrivano ogni due settimane e il ritardo si misura in giorni, quindi campionare più spesso costerebbe interrogazioni senza aggiungere informazione. La strumentazione è inerte dove il registro delle misure non esiste (test, servizi senza Micrometer), come già per la proiezione degli entitlement.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/ReconciliationMetrics.java", "description": "Rilevazione oraria, misure appgrove.billing.reconciliation.*, log di avvertimento sull'accredito in ritardo." }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Le transazioni registrate PRIMA di questa change restano senza commissione (colonne vuote) e quindi fuori dal netto: la migrazione non le riempie. Calcolare a posteriori una commissione mai osservata scriverebbe un numero falso proprio nella vista che esiste per dire la verità sui soldi. Restano visibili nel lordo, e la nota sulle righe stimate rende evidente quanto della vista è derivato.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V15__payout_reconciliation.sql", "description": "Nessun aggiornamento retroattivo delle righe esistenti." }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Gate privacy (UC 0031) eseguito: 14 segnali, tutti attesi e classificati. Commissione e netto per transazione sono dati di fatturazione, base giuridica «esecuzione del contratto», conservazione come l'importo (account attivo più 14 giorni di tolleranza), categoria ordinaria, nessun nuovo destinatario esterno → classificazione MINOR, nessun aggiornamento di versione di informativa o condizioni. La provenienza della commissione non è un dato personale: descrive il dato, non la persona. Le tabelle degli accrediti sono dati economici della piattaforma e non entrano nell'esportazione del cliente. Manifesto aggiornato nelle due lingue e registro dei trattamenti rigenerato.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Voci billing_transactions.fee_amount e billing_transactions.net_amount." },
+      { "file": "docs/compliance/ropa.it.md", "description": "Registro dei trattamenti rigenerato dal manifesto." }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Punto legale tracciato, non deciso qui: il dettaglio degli accrediti conserva il riferimento della transazione presso il fornitore in una tabella non riferita ad alcun conto, quindi la cancellazione dei dati del cliente non la tocca. La nostra lettura è che, spezzato il collegamento con la riga del conto, quel riferimento non sia più un dato personale per noi — ma è esattamente il genere di valutazione che deve confermare chi ne risponde. Annotato come punto L16 in docs/_REVISIONE-LEGALE.md con le due alternative (motivare la conservazione, oppure oscurare il riferimento alla cancellazione perdendo la quadratura storica).",
+    "files": [
+      { "file": "docs/_REVISIONE-LEGALE.md", "description": "Nuovo punto L16 da validare prima del go-live." }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Rimandi tracciati nei punti aperti dello use case 0071 invece di essere risolti qui: sorgente reale del dettaglio commissioni (serve l'account del fornitore), tasso di cambio negli accrediti in valuta diversa, rimborsi parziali (nessun flusso li produce oggi), taratura reale della soglia sulle commissioni e dell'attesa massima di un accredito, configurazione degli allarmi infrastrutturali sulle nuove misure (di UC 0006). Ricavo ricorrente mensile e tasso di abbandono restano di UC 0021 e del backlog.",
+    "files": [
+      { "file": "docs/usecases/13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md", "description": "Sezione «Punti aperti / decisioni differite» riscritta con la postura scelta e i rimandi." }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) I test della vista leggono dall'endpoint amministrativo e non invocano il servizio direttamente: le query native passano dal gestore delle entità, che apre la sessione con il risolutore di tenant, e fuori da una richiesta autenticata la lettura viene negata (fail-closed, invariante #1). Passare dall'endpoint prova anche che la superficie sia davvero servita e protetta. Le asserzioni sugli aggregati sono differenziali (misura prima, misura dopo) perché il database è condiviso da tutta la suite.",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/ReconciliationTest.java", "description": "18 test: commissioni dichiarate e stimate, quadratura, scostamento, valuta mista, storni, accredito a cavallo di due mesi, duplicati e fuori ordine, scenari dello stub, osservabilità." }
+    ]
   }
 ]

@@ -22,6 +22,10 @@ export type EntitlementCell = components['schemas']['EntitlementCell']
 export type BillingRow = components['schemas']['BillingRow']
 export type AppView = components['schemas']['AppView']
 export type AppStatusAuditView = components['schemas']['AppStatusAuditView']
+export type ReconciliationView = components['schemas']['ReconciliationView']
+export type ReconciliationPeriod = components['schemas']['ReconciliationPeriod']
+export type ReconciliationTotals = components['schemas']['ReconciliationTotals']
+export type PayoutView = components['schemas']['PayoutView']
 
 /** KPI di piattaforma (`GET /admin/overview`). */
 export function useOverview() {
@@ -78,6 +82,19 @@ export function useBilling() {
   return useQuery({
     queryKey: ['admin', 'billing'],
     queryFn: () => unwrap<BillingRow[]>(client.GET('/api/platform/v1/admin/billing')),
+  })
+}
+
+/**
+ * Riconciliazione fra ricavo lordo e denaro accreditato (`GET /admin/reconciliation`, UC 0071):
+ * totali, righe per mese e accrediti con la loro quadratura.
+ */
+export function useReconciliation() {
+  const client = useApiClient()
+  return useQuery({
+    queryKey: ['admin', 'reconciliation'],
+    queryFn: () =>
+      unwrap<ReconciliationView>(client.GET('/api/platform/v1/admin/reconciliation')),
   })
 }
 

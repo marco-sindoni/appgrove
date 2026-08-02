@@ -22,7 +22,9 @@ import java.util.UUID;
  * linkage tenant è impostato server-side nei {@code custom_data} (#09 C14/D21).
  *
  * <p>Copre il set di scenari lifecycle (#09 I39): happy/past_due/canceled/upgrade/downgrade/paused/
- * resumed/renewal/chargeback/customer. I casi limite per L1 (firma errata/replay, duplicato,
+ * resumed/renewal/chargeback/customer, più i due della riconciliazione (UC 0071): {@code payout} accredita
+ * il netto non ancora accreditato e {@code refund} rimborsa l'ultimo pagamento e lo restituisce in un
+ * accredito successivo. I casi limite per L1 (firma errata/replay, duplicato,
  * out-of-order) sono costruiti puntualmente nei test ({@code WebhookFixtures}); la gestione lato
  * consumer (dedup/out-of-order/DLQ) è ora completa (UC 0025).
  */
@@ -127,6 +129,21 @@ public class StubScenarioEmitter {
                 String paddleCustomerId = "ctm_" + UUID.randomUUID().toString().replace("-", "").substring(0, 24);
                 out.add(sendCustomer("customer.updated", tenantId, paddleCustomerId, base));
             }
+            case payout -> out.add(sendPayout(pendingNet(tenantId, appId), base));
+            case refund -> {
+                SettledTransaction refunded = lastPaid(tenantId, appId);
+                out.add(sendRefund(refunded, tenantId, appId, appTierId, base));
+                // La restituzione arriva nell'accredito SUCCESSIVO, con segno negativo: è così che il
+                // fornitore la comunica, ed è la ragione per cui la quadratura di un accredito già
+                // registrato non deve essere ricalcolata (decisione 5, change 0083).
+                out.add(sendPayout(
+                        List.of(new SettledTransaction(
+                                refunded.paddleTransactionId(),
+                                refunded.amount(),
+                                -refunded.netAmount(),
+                                refunded.currency())),
+                        base.plusSeconds(1)));
+            }
         }
         return out;
     }
@@ -192,6 +209,141 @@ public class StubScenarioEmitter {
         ingest.ingest(body, signature.sign(body));
         remember(occurredAt);
         return new EmittedEvent(eventType, status.name());
+    }
+
+    /** Una transazione da accreditare: riferimento presso il fornitore, lordo, netto e valuta (UC 0071). */
+    private record SettledTransaction(String paddleTransactionId, int amount, int netAmount, String currency) {}
+
+    /**
+     * Le transazioni riuscite del conto e dell'app che nessun accredito ha ancora citato — cioè il denaro
+     * che il fornitore ci deve. Lo stub non le inventa: accredita quelle che ci sono, così l'accredito
+     * simulato quadra davvero con lo storico invece di essere un numero scollegato.
+     */
+    private List<SettledTransaction> pendingNet(String tenantId, UUID appId) {
+        String sql =
+                """
+                select t.paddle_transaction_id, t.amount, coalesce(t.net_amount, 0), t.currency
+                  from platform.billing_transaction t
+                 where t.tenant_id = ? and t.app_id = ? and t.deleted_at is null and t.status = 'paid'
+                   and not exists (
+                       select 1 from platform.payout_line l
+                        where l.paddle_transaction_id = t.paddle_transaction_id)
+                 order by t.billed_at
+                """;
+        List<SettledTransaction> out = new ArrayList<>();
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, appId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    out.add(new SettledTransaction(
+                            rs.getString(1), rs.getInt(2), rs.getInt(3), rs.getString(4)));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("lettura delle transazioni da accreditare fallita", e);
+        }
+        if (out.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "nessuna transazione da accreditare per questa app: esegui prima uno scenario che"
+                            + " produca un pagamento (happy_path o renewal)");
+        }
+        return out;
+    }
+
+    /** L'ultimo pagamento riuscito del conto e dell'app: quello che lo scenario di rimborso restituisce. */
+    private SettledTransaction lastPaid(String tenantId, UUID appId) {
+        String sql =
+                """
+                select t.paddle_transaction_id, t.amount, coalesce(t.net_amount, 0), t.currency
+                  from platform.billing_transaction t
+                 where t.tenant_id = ? and t.app_id = ? and t.deleted_at is null and t.status = 'paid'
+                 order by t.billed_at desc
+                 limit 1
+                """;
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, tenantId);
+            ps.setObject(2, appId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new SettledTransaction(
+                            rs.getString(1), rs.getInt(2), rs.getInt(3), rs.getString(4));
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("lettura dell'ultimo pagamento fallita", e);
+        }
+        throw new IllegalArgumentException(
+                "nessun pagamento riuscito da rimborsare per questa app: esegui prima happy_path");
+    }
+
+    /** Emette un {@code payout.paid} che accredita le righe indicate; l'importo è la somma dei loro netti. */
+    private EmittedEvent sendPayout(List<SettledTransaction> lines, Instant occurredAt) {
+        ObjectNode root = mapper.createObjectNode();
+        root.put("event_id", "evt_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+        root.put("event_type", "payout.paid");
+        root.put("occurred_at", occurredAt.toString());
+        ObjectNode data = root.putObject("data");
+        data.put("paddle_payout_id", "pay_" + UUID.randomUUID().toString().replace("-", "").substring(0, 24));
+        data.put("paid_at", occurredAt.toString());
+        int total = 0;
+        String currency = "EUR";
+        var array = data.putArray("lines");
+        for (SettledTransaction line : lines) {
+            ObjectNode node = array.addObject();
+            node.put("paddle_transaction_id", line.paddleTransactionId());
+            node.put("net_amount", line.netAmount());
+            node.put("currency", line.currency());
+            total += line.netAmount();
+            currency = line.currency();
+        }
+        data.put("amount", total);
+        data.put("currency", currency);
+        send(root, occurredAt);
+        return new EmittedEvent("payout.paid", null);
+    }
+
+    /**
+     * Emette un {@code transaction.refunded} sulla <b>stessa</b> transazione: il riferimento presso il
+     * fornitore è la chiave di idempotenza, quindi il rimborso cambia lo stato della riga esistente invece
+     * di aggiungerne una nuova (decisione 6, change 0083).
+     */
+    private EmittedEvent sendRefund(
+            SettledTransaction original, String tenantId, UUID appId, UUID appTierId, Instant occurredAt) {
+        ObjectNode root = mapper.createObjectNode();
+        root.put("event_id", "evt_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20));
+        root.put("event_type", "transaction.refunded");
+        root.put("occurred_at", occurredAt.toString());
+        ObjectNode data = root.putObject("data");
+        ObjectNode custom = data.putObject("custom_data");
+        custom.put("tenant_id", tenantId);
+        custom.put("app_id", appId.toString());
+        if (appTierId != null) {
+            custom.put("app_tier_id", appTierId.toString());
+        }
+        putTransaction(data, appTierId, occurredAt);
+        // Stesso riferimento e stesso importo della transazione originale: è un cambio di stato della riga
+        // esistente, non un nuovo pagamento. Riscriverli qui evita che un listino nel frattempo cambiato
+        // riscriva l'importo storico di un pagamento già avvenuto.
+        data.put("paddle_transaction_id", original.paddleTransactionId());
+        data.put("amount", original.amount());
+        data.put("currency", original.currency());
+        send(root, occurredAt);
+        return new EmittedEvent("transaction.refunded", null);
+    }
+
+    /** Firma e immette nella stessa pipeline dei webhook reali. */
+    private void send(ObjectNode root, Instant occurredAt) {
+        String body;
+        try {
+            body = mapper.writeValueAsString(root);
+        } catch (Exception e) {
+            throw new IllegalStateException("Serializzazione webhook fallita", e);
+        }
+        ingest.ingest(body, signature.sign(body));
+        remember(occurredAt);
     }
 
     /** Emette un evento {@code customer.*} (cattura {@code paddle_customer_id} su accounts). */
