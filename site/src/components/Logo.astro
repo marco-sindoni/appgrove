@@ -1,0 +1,43 @@
+---
+// Logo appgrove per la vetrina (UC 0087).
+//
+// Il DISEGNO non è qui: arriva da `@appgrove/design-system/logo.js`, l'unico posto in cui
+// esiste (UC 0086). Questo componente lo dipinge con le classi-token, così segue accento e
+// tema chiaro/scuro come tutto il resto — senza React, che la vetrina non compila.
+import { LOGO_TILE_RADIUS, LOGO_VIEWBOX, logoPathsFor } from '@appgrove/design-system/logo.js'
+
+interface Props {
+  /** Dimensione del mark in px: sotto i 22 px si usa da sé il disegno compatto. */
+  size?: number
+}
+
+const { size = 28 } = Astro.props
+const paths = logoPathsFor(size)
+---
+
+<svg
+  width={size}
+  height={size}
+  viewBox={LOGO_VIEWBOX}
+  fill="none"
+  aria-hidden="true"
+  focusable="false"
+  data-logo="appgrove"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect width="32" height="32" rx={LOGO_TILE_RADIUS} class="fill-accent" />
+  {
+    paths.map((path) =>
+      path.fill ? (
+        <path d={path.d} class={path.on === 'contrast' ? 'fill-accent-contrast' : 'fill-accent'} />
+      ) : (
+        <path
+          d={path.d}
+          class="stroke-accent"
+          stroke-width={path.strokeWidth}
+          stroke-linecap="round"
+        />
+      ),
+    )
+  }
+</svg>

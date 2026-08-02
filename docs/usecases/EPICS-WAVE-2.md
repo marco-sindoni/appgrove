@@ -39,7 +39,7 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 1 | [0077](15-supporto-e-piattaforma/0077-provider-entitlement-reale.md) | Provider entitlement reale (sostituisce lo stub) | 15 | — | 0013, 0020, 0021, 0027, 0025, 0024 | 🟢 | ✅ |
 | 2 | [0085](17-skill-e-tooling-contenuto/0085-unificazione-renderer-email-commons.md) | Unificazione renderer email in `services/commons` | 17 | — | 0018, 0039 | 🟢 | ✅ |
 | 3 | [0086](18-brand-e-design-system/0086-brand-kit-token-condiviso.md) | Brand kit / token condiviso (fonte unica) | 18 | — | 0019, 0036, 0046 | 🟢 | ✅ |
-| 4 | [0087](18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md) | Artwork logo finale + illustrazioni on-brand | 18 | 0086 | 0019, 0037 | 🟢 | ⬜ |
+| 4 | [0087](18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md) | Artwork logo finale + illustrazioni on-brand | 18 | 0086 | 0019, 0037 | 🟢 | ✅ |
 | **B. Messa in cloud & go-live** |
 | 5 | [0080](16-messa-in-cloud-golive/0080-prima-esecuzione-live-pipeline.md) | Prima esecuzione live pipeline + config repo GitHub | 16 | — | 0005, 0003, 0004, 0055 | 🟢 | ⬜ |
 | 6 | [0082](16-messa-in-cloud-golive/0082-script-attivazione-ambienti-fasi.md) | Script attivazione ambienti (`test-start`/`test-stop` + cron) | 16 | 0080 | 0004, 0055, 0005, 0006 | 🟢 | ⬜ |

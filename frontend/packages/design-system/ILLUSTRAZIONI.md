@@ -1,6 +1,6 @@
 # Nota di stile — illustrazioni appgrove
 
-Fa parte del brand kit (UC 0086) ed è il **riferimento a cui si attiene UC 0087** quando produce gli artwork.
+Fa parte del brand kit (UC 0086) ed è il **riferimento a cui si è attenuto UC 0087** producendo gli artwork.
 Non descrive un'aspirazione: codifica lo stile **già in uso** nelle illustrazioni del sito vetrina
 (`site/src/components/illustrations/*.astro`, UC 0037), così che ogni figura nuova nasca coerente con quelle
 esistenti invece di aprire un secondo dialetto visivo.
@@ -24,8 +24,11 @@ il controllo `tools/design-tokens` lo segnala e la suite diventa rossa. Le sfuma
 `opacity` sul colore d'accento (valori tipici: `0.16`, `0.35`), non con una tinta inventata.
 
 ### 3. Impianto della figura
-- **Riquadro di disegno** `0 0 480 340` per le figure di sezione (rapporto largo, si accosta bene a una colonna
-  di testo).
+- **Due riquadri di disegno, non uno a piacere** (fissato da UC 0087):
+  - `0 0 480 340` — **figure di sezione** della vetrina: rapporto largo, si accosta bene a una colonna di testo;
+  - `0 0 240 160` — **figure compatte** delle applicazioni web: stanno dentro una scheda, uno stato vuoto, una
+    pagina di errore. Stesso rapporto 3:2, quindi lo stesso occhio.
+  Un terzo riquadro va discusso, non inventato: è così che due figure smettono di sembrare della stessa mano.
 - **Pannello di fondo**: rettangolo `rx="20"` in `fill-surface-2` con bordo `stroke-line` a `1.5` — è la cornice
   che dà unità a tutte le figure.
 - **Angoli morbidi ovunque**: i raggi seguono la scala del brand (8–20 nelle unità del riquadro). Nessuno
@@ -60,8 +63,24 @@ verificarle dai controlli automatici.
   cosa diversa dalle figure.
 - Testo dentro l'SVG: non è traducibile e le lingue del sito sono cinque.
 
+## Dove vivono le figure
+
+| Consumatore | Dove | Forma |
+|---|---|---|
+| Sito vetrina (Astro) | `site/src/components/illustrations/*.astro` | componenti Astro, riquadro 480×340 |
+| Applicazioni web (React) | `frontend/packages/design-system/src/illustrations/*.tsx` | componenti React esportati dal pacchetto, riquadro 240×160 |
+
+Le figure React si appoggiano tutte alla cornice comune `<Illustration name="…">`, che porta il pannello di
+fondo, le classi e la marcatura decorativa: chi disegna una figura nuova scrive **solo il proprio disegno**.
+Regola pratica per non moltiplicare: prima di crearne una, guardare se una di quelle che esistono dice già la
+stessa cosa. «Poche e coerenti» è una regola, non un auspicio.
+
 ## Il logo non è un'illustrazione
 
 Il mark vive in [`src/brand/logo.mjs`](src/brand/logo.mjs), definito una volta sola e consumato sia dal
-componente React sia dai generatori (immagine social). Quello attuale è un **segnaposto on-brand**: l'artwork
-definitivo è compito di UC 0087, che lo sostituisce intervenendo **solo** su quel file.
+componente React sia dai generatori (icone, immagine social). Dall'artwork definitivo (UC 0087) è una **foglia
+in una piastrella ad angoli morbidi**, con tre letture — completa, compatta, monocroma — descritte nel
+[README](README.md).
+
+Corollario operativo: **il logo non entra dentro una figura**. Una tessera generica in accento dice «un'app»
+senza pretendere di essere il marchio; il marchio, ricopiato dentro un disegno, diventa una copia che diverge.

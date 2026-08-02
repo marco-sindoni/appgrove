@@ -6,6 +6,7 @@
 import '../styles/global.css'
 import LanguageSwitcher from '../components/LanguageSwitcher.tsx'
 import NewsletterForm from '../components/NewsletterForm.tsx'
+import Logo from '../components/Logo.astro'
 import {
   LOCALES,
   LOCALE_LABELS,
@@ -33,7 +34,12 @@ interface Props {
    * tutte le lingue (corretto per home e legali, che hanno segmento identico).
    */
   hreflangPaths?: Record<Locale, string>
-  /** Immagine Open Graph (URL relativa alla radice); assente → nessuna og:image (es. bozze landing). */
+  /**
+   * Immagine Open Graph (URL relativa alla radice). Tre casi, distinti apposta (UC 0087):
+   *  • non passata  → anteprima social di PIATTAFORMA (il caso normale: home, legali, blog);
+   *  • una stringa  → quella (le landing pubblicate hanno la propria, col colore della categoria);
+   *  • `null`       → nessuna immagine, ed è voluto (bozze di landing non ancora rifinite).
+   */
   ogImage?: string | null
   /** Identità dell'app per le pagine landing (UC 0038): marcatore usato dal controllo post-build. */
   appId?: string
@@ -42,6 +48,11 @@ interface Props {
 }
 
 const { lang, title, description, pathWithinLocale = '/', hreflangPaths, ogImage, appId, jsonLd } = Astro.props
+
+/** Anteprima social di piattaforma, generata dal logo (`npm run brand:assets`, UC 0087). */
+const OG_PIATTAFORMA = '/og-appgrove.png'
+const ogImageFinale = ogImage === undefined ? OG_PIATTAFORMA : ogImage
+
 const path = normalizePath(pathWithinLocale)
 const t = MARKETING[lang]
 
@@ -103,6 +114,12 @@ const year = new Date().getFullYear()
     {description && <meta name="description" content={description} />}
     {!indexable && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={canonical} />
+
+    {/* Icone del marchio (UC 0087): generate dal disegno unico del logo con
+        `npm run brand:assets` nel pacchetto design-system, mai disegnate a mano. */}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
     {
       alternates.map((alt) => (
         <link rel="alternate" hreflang={alt.hreflang} href={new URL(alt.href, Astro.site).toString()} />
@@ -117,8 +134,8 @@ const year = new Date().getFullYear()
     <meta property="og:title" content={`${title} · appgrove`} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:url" content={canonical} />
-    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site).toString()} />}
-    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+    {ogImageFinale && <meta property="og:image" content={new URL(ogImageFinale, Astro.site).toString()} />}
+    <meta name="twitter:card" content={ogImageFinale ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={`${title} · appgrove`} />
     {description && <meta name="twitter:description" content={description} />}
 
@@ -146,7 +163,10 @@ const year = new Date().getFullYear()
   <body class="flex min-h-screen flex-col bg-bg text-fg">
     <header class="border-b border-line">
       <div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 py-4">
-        <a href={`/${lang}/`} class="text-lg font-extrabold tracking-tight">appgrove</a>
+        <a href={`/${lang}/`} class="flex items-center gap-2 text-lg font-extrabold tracking-tight">
+          <Logo size={28} />
+          appgrove
+        </a>
         <nav aria-label="Primaria" class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
           {
             navLinks.map((l) => (

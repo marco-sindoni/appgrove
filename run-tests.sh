@@ -24,9 +24,11 @@
 #                (5) e2e-coverage (UC 0093) — il registro docs/testing/copertura-e2e.yaml deve rispecchiare i
 #                test end-to-end realmente presenti (etichette [J-*] nei titoli) e classificare OGNI use case
 #                del catalogo: coglie la mappa di copertura che invecchia in silenzio.
-#                (6) design-tokens (UC 0086) — anti-drift del brand kit: nessun consumatore (SPA, vetrina,
+#                (6) design-tokens (UC 0086/0087) — anti-drift del brand kit: nessun consumatore (SPA, vetrina,
 #                landing, email, generatore dell'immagine social) può scrivere a mano un colore che non sia un
 #                token del design system; coglie la divergenza ESTETICA silenziosa, che nessun altro test vede.
+#                Include i DERIVATI del logo (icone, anteprima social): i file committati devono coincidere con
+#                la generazione dal disegno unico — artwork ritoccato senza `npm run brand:assets` = rosso;
 #                È lenta e volutamente FUORI da `./run-tests.sh backend`, per non appesantire i cicli rapidi;
 #                inclusa nell'esecuzione completa. [richiede Docker]
 #   • smoke    — tools/smoke/ (change 0037)   → avvio REALE degli artefatti: boot-profiles.sh (jar impacchettati

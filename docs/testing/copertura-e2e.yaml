@@ -588,7 +588,11 @@ esenzioni:
     motivo: Pacchetto condiviso di token di marca — libreria, nessun percorso utente proprio (come UC 0019).
   - usecase: "0087"
     categoria: senza-superficie
-    motivo: Logo definitivo e stile delle illustrazioni — materiali grafici.
+    motivo: >-
+      Logo definitivo, icone derivate e illustrazioni on-brand — materiali grafici. Non aprono nessun
+      percorso utente: le figure sono decorative e nascoste alle tecnologie assistive, il logo è cornice.
+      Il presidio è altrove ed è più adatto: il collaudo dei derivati confronta i file committati con il
+      disegno unico (tools/design-tokens) e l'anti-drift rifiuta i colori fuori palette.
   - usecase: "0088"
     categoria: non-implementato
     motivo: Ricerca globale dal backoffice — debito tecnico non ancora implementato.
