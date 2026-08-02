@@ -1,0 +1,39 @@
+[
+  {
+    "id": 1,
+    "decision": "(autopilot) La change è documentale: produce il drill-down delle 60 applicazioni del catalogo sotto docs/usecases/_catalogo/, non scaffolda nulla. Motivo: la richiesta chiede i documenti che rendono invocabile la skill new-application, non l'invocazione stessa; scaffoldare 60 app sarebbe una decisione di prodotto (quali app costruire) che l'autopilot non prende.",
+    "files": [
+      { "file": "changes/0086-catalogo-app-drill-down/requirements.md", "description": "Ambito, vincoli e fuori-ambito della change." }
+    ]
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Ambito fissato alle 60 applicazioni delle sezioni 2 e 3 del catalogo, con esclusione dei candidati 61–63 (sezione 4) e del verdetto sul sistema di gestione traduzioni. Motivo: il catalogo si autodefinisce «60 idee di applicazione» e la sezione 4 raccoglie candidati valutati — uno valido come quarta opzione (ExtractGrove), due declassati. Aggiungerli in seguito costa lineare e non cambia il metodo.",
+    "files": []
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Numerazione delle cartelle allineata all'identificativo del catalogo (01–60), non a un ordine di priorità. Motivo: la corrispondenza uno-a-uno con la scheda di origine è verificabile a colpo d'occhio e sopravvive a qualsiasi ri-priorizzazione; l'ordine di attacco vive nelle raccomandazioni del catalogo, non nei nomi delle cartelle.",
+    "files": []
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Le storie utente sono numerate progressivamente a livello di applicazione (0001, 0002, …) e non riazzerate a ogni epica. Motivo: rende ogni storia citabile in modo univoco dentro l'app (come fa il catalogo degli use case con la numerazione assoluta) e permette di spostare una storia fra epiche senza rinumerare.",
+    "files": []
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Prima delle 60 cartelle si costruisce un kit d'autore condiviso in docs/usecases/_catalogo/_kit/ (guida, modelli di descrizione/storia/estensioni admin, guscio HTML del sistema di design, digest dei principi appgrove). Motivo: 60 cartelle scritte da agenti a contesto separato divergerebbero nel formato; il kit è il metro unico e rende il lavoro rigenerabile invece che irripetibile.",
+    "files": []
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Nessuna voce nel registro di copertura end-to-end docs/testing/copertura-e2e.yaml. Motivo: la change non crea alcuna superficie applicativa — è la terza risposta ammessa dal processo di copertura, «nessun impatto». La copertura nascerà con la change che scaffolda davvero l'app.",
+    "files": []
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Listino e classificazione dei dati personali sono scritti nelle descrizioni come PROPOSTE motivate, mai come decisioni prese. Motivo: prezzi/quote e dati personali sono fermate di escalation non derogabili — restano dello sviluppatore e la skill new-application le fa confermare comunque prima di generare.",
+    "files": []
+  }
+]
