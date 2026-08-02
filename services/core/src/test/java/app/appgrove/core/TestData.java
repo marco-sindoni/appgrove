@@ -36,6 +36,14 @@ public class TestData {
         return id;
     }
 
+    /** Come {@link #user} ma con la lingua dell'utente, che decide la lingua delle email (UC 0018). */
+    public UUID userWithLocale(String tenantId, String cognitoSub, String email, String role, String locale) {
+        UUID id = user(tenantId, cognitoSub, email, role);
+        exec("update platform.users set locale = ? where tenant_id = ? and cognito_sub = ?",
+                locale, tenantId, cognitoSub);
+        return id;
+    }
+
     /** Inserisce un utente <b>senza</b> guardia di conflitto: usato per provare il vincolo email unica. */
     public void userStrict(String tenantId, String cognitoSub, String email, String role) {
         exec("insert into platform.users(id,tenant_id,cognito_sub,email,role,status,created_at,updated_at)"
@@ -117,6 +125,25 @@ public class TestData {
                         + " values (?,?,?,?,?,?,?,?)",
                 id, tenantId, type, subject, "normal", status, OffsetDateTime.now(), OffsetDateTime.now());
         return id;
+    }
+
+    /**
+     * Come {@link #ticket} ma con scadenza legale esplicita — serve ai test dell'ordinamento della
+     * coda di amministrazione, che mette per prime le scadenze più vicine (UC 0075).
+     */
+    public UUID ticketDue(String tenantId, String type, String subject, String status, OffsetDateTime dueAt) {
+        UUID id = UUID.randomUUID();
+        exec("insert into platform.support_ticket"
+                        + "(id,tenant_id,type,subject,priority,status,due_at,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?,?)",
+                id, tenantId, type, subject, "normal", status, dueAt,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        return id;
+    }
+
+    /** Provenienza registrata su un ticket (UC 0075: form | event | email). */
+    public String ticketSource(UUID ticketId) {
+        return queryString("select source from platform.support_ticket where id = ?", ticketId);
     }
 
     /** Aggiunge un messaggio al thread di un ticket — per i test del ticketing (UC 0034). */

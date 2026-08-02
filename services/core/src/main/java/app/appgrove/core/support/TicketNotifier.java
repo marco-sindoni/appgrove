@@ -1,5 +1,6 @@
 package app.appgrove.core.support;
 
+import app.appgrove.commons.email.EmailTemplateRenderer;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
@@ -9,21 +10,44 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 /**
- * Notifiche email del ticketing (UC 0034, #13 D21): alla casella di supporto quando nasce un
- * ticket o l'utente risponde; a chi ha aperto il ticket quando l'admin risponde o cambia lo stato.
- * In dev le email vanno a Mailpit (come il servizio auth in locale); il relay SES nel cloud è infrastruttura
- * tracciata (UC 0034 "Punti aperti"). <b>Fail-soft</b>: l'email è best-effort e non deve mai far
- * fallire l'operazione sul ticket — errori loggati e inghiottiti.
+ * Notifiche email del ticketing (UC 0034 · UC 0075). Tre messaggi, tutti resi dal renderer unico
+ * della piattaforma ({@link TicketEmailRenderer}, che poggia su {@code services/commons}, UC 0085):
+ *
+ * <ul>
+ *   <li><b>conferma di apertura</b> a chi ha aperto la richiesta — con il termine di legge quando è
+ *       un'istanza privacy;
+ *   <li><b>avviso di aggiornamento</b> a chi ha aperto la richiesta, quando la piattaforma risponde
+ *       o cambia stato;
+ *   <li><b>avviso alla casella di assistenza</b> quando nasce un ticket o il cliente scrive.
+ * </ul>
+ *
+ * <p><b>Il contenuto del filo non viaggia mai per posta.</b> Le email dicono che c'è un
+ * aggiornamento e portano alla pagina, dove l'accesso è già protetto: è minimizzazione, ed evita
+ * che una richiesta delicata finisca in chiaro nella casella di posta di chi l'ha scritta. Fa
+ * eccezione l'oggetto della richiesta, che serve a riconoscerla.
+ *
+ * <p>In dev le email vanno a Mailpit (come il servizio auth in locale); il relay SES nel cloud è
+ * infrastruttura tracciata (UC 0034 "Punti aperti"). <b>Fail-soft</b>: l'email è best-effort e non
+ * deve mai far fallire l'operazione sul ticket — errori registrati e inghiottiti.
  */
 @ApplicationScoped
 public class TicketNotifier {
 
     private static final Logger LOG = Logger.getLogger(TicketNotifier.class);
+
+    /** Data della scadenza legale nelle email: giorno, non istante — è un termine, non un orario. */
+    private static final DateTimeFormatter DUE_DATE =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneOffset.UTC);
 
     /**
      * Riferimento minimo al ticket per le notifiche. Va costruito da dati <b>certi</b>: la riga
@@ -40,66 +64,115 @@ public class TicketNotifier {
         }
     }
 
+    /** Recapito di chi ha aperto la richiesta: indirizzo e lingua, letti insieme. */
+    private record Recipient(String email, String locale) {}
+
     @Inject
     Mailer mailer;
 
     @Inject
     AgroalDataSource ds;
 
+    @Inject
+    TicketEmailRenderer renderer;
+
     /** Casella della piattaforma che riceve i nuovi ticket/le risposte degli utenti. */
     @ConfigProperty(name = "appgrove.support.inbox")
     String supportInbox;
 
-    /** Nuovo ticket o risposta dell'utente → casella di supporto della piattaforma. */
-    public void notifySupportInbox(TicketRef ticket, String excerpt) {
-        send(supportInbox,
-                "[appgrove] Ticket " + ticket.type() + ": " + ticket.subject(),
-                "Ticket " + ticket.id() + " (tenant " + ticket.tenantId() + ", stato "
-                        + ticket.status() + ")\n\n" + excerpt);
-    }
+    /** Base pubblica del backoffice: la pagina Supporto è la destinazione delle email al cliente. */
+    @ConfigProperty(name = "appgrove.support.backoffice-url")
+    String backofficeUrl;
 
-    /** Risposta/cambio stato dell'admin → email a chi ha aperto il ticket (se ha un'email nota). */
-    public void notifyRequester(TicketRef ticket, String excerpt) {
-        String email = requesterEmail(ticket);
-        if (email == null) {
-            LOG.warnf("ticket.notify nessuna email per il richiedente ticket_id=%s tenant_id=%s",
-                    ticket.id(), ticket.tenantId());
-            return;
-        }
-        send(email,
-                "[appgrove] Aggiornamento sul tuo ticket: " + ticket.subject(),
-                "Il tuo ticket " + ticket.id() + " è ora \"" + ticket.status() + "\".\n\n"
-                        + excerpt + "\n\nPuoi rispondere dalla pagina Supporto del backoffice.");
+    /** Base pubblica della console di amministrazione: destinazione delle email alla casella. */
+    @ConfigProperty(name = "appgrove.support.admin-url")
+    String adminUrl;
+
+    /** Nuovo ticket o risposta dell'utente → casella di assistenza della piattaforma. */
+    public void notifySupportInbox(TicketRef ticket) {
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("ticketId", ticket.id().toString());
+        values.put("tenantId", ticket.tenantId());
+        values.put("ticketType", ticket.type().name());
+        values.put("ticketSubject", ticket.subject());
+        values.put("ticketStatus", ticket.status().name());
+        values.put("actionUrl", adminUrl + "/tickets/" + ticket.id());
+        // La casella di assistenza è interna: si scrive sempre in italiano, la lingua del progetto.
+        send(supportInbox, "it", TicketEmailRenderer.INBOX, values, ticket.id());
     }
 
     /**
-     * Email di chi ha aperto il ticket: {@code created_by} = sub del JWT → {@code users.cognito_sub}
-     * (lookup JDBC con tenant esplicito: chi chiama può essere l'admin, fuori dal tenant del ticket).
+     * Conferma di apertura a chi ha aperto la richiesta (UC 0075 §4.3). Sui ticket privacy il testo
+     * dice il termine di legge e la sua data: è anche la prova che il cliente è stato informato.
      */
-    private String requesterEmail(TicketRef ticket) {
+    public void notifyTicketOpened(TicketRef ticket, Instant dueAt) {
+        Recipient recipient = requester(ticket);
+        if (recipient == null) {
+            return;
+        }
+        boolean privacy = ticket.type() == TicketType.privacy && dueAt != null;
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("ticketSubject", ticket.subject());
+        values.put("actionUrl", backofficeUrl + "/support");
+        if (privacy) {
+            values.put("dueDate", DUE_DATE.format(dueAt));
+        }
+        send(recipient.email(), recipient.locale(),
+                privacy ? TicketEmailRenderer.OPENED_PRIVACY : TicketEmailRenderer.OPENED,
+                values, ticket.id());
+    }
+
+    /** Risposta/cambio stato dalla piattaforma → email a chi ha aperto il ticket. */
+    public void notifyRequester(TicketRef ticket) {
+        Recipient recipient = requester(ticket);
+        if (recipient == null) {
+            return;
+        }
+        Map<String, String> values = new LinkedHashMap<>();
+        values.put("ticketSubject", ticket.subject());
+        values.put("actionUrl", backofficeUrl + "/support");
+        send(recipient.email(), recipient.locale(), TicketEmailRenderer.UPDATED, values, ticket.id());
+    }
+
+    /**
+     * Recapito di chi ha aperto il ticket: {@code created_by} = sub del JWT → riga
+     * {@code platform.users} (lettura JDBC con conto esplicito, perché chi chiama può essere
+     * l'operatore di piattaforma, fuori dal conto del ticket).
+     */
+    private Recipient requester(TicketRef ticket) {
         if (ticket.createdBy() == null) {
+            LOG.warnf("ticket.notify nessun richiedente noto ticket_id=%s tenant_id=%s",
+                    ticket.id(), ticket.tenantId());
             return null;
         }
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement(
-                        "select email from platform.users"
+                        "select email, locale from platform.users"
                                 + " where tenant_id = ? and cognito_sub = ? and deleted_at is null")) {
             ps.setString(1, ticket.tenantId());
             ps.setString(2, ticket.createdBy());
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString(1) : null;
+                if (!rs.next()) {
+                    LOG.warnf("ticket.notify nessuna email per il richiedente ticket_id=%s tenant_id=%s",
+                            ticket.id(), ticket.tenantId());
+                    return null;
+                }
+                return new Recipient(rs.getString(1), rs.getString(2));
             }
         } catch (SQLException e) {
-            LOG.warnf(e, "ticket.notify lookup email fallito ticket_id=%s", ticket.id());
+            LOG.warnf(e, "ticket.notify lettura recapito fallita ticket_id=%s", ticket.id());
             return null;
         }
     }
 
-    private void send(String to, String subject, String body) {
+    private void send(String to, String locale, String messageKey, Map<String, String> values, UUID ticketId) {
         try {
-            mailer.send(Mail.withText(to, subject, body));
+            EmailTemplateRenderer.Rendered r = renderer.render(locale, messageKey, values);
+            mailer.send(Mail.withText(to, r.subject(), r.text()).setHtml(r.html()));
+            LOG.infof("ticket.notify.sent ticket_id=%s message=%s", ticketId, messageKey);
         } catch (RuntimeException e) {
-            LOG.warnf(e, "ticket.notify invio email fallito to=%s (best-effort, si prosegue)", to);
+            LOG.warnf(e, "ticket.notify invio email fallito ticket_id=%s message=%s (best-effort, si prosegue)",
+                    ticketId, messageKey);
         }
     }
 }

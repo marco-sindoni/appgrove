@@ -70,6 +70,40 @@ describe('Pagina Supporto (UC 0034)', () => {
     // si apre il dettaglio: thread con il primo messaggio e la scadenza
     expect(await screen.findByText('Chiedo la limitazione (art. 18).')).toBeInTheDocument()
     expect(screen.getByText(/Due by/)).toBeInTheDocument()
+    // il termine di legge detto a parole, non solo come data in una colonna (UC 0075)
+    expect(screen.getByText(/by law we reply within one month/)).toBeInTheDocument()
+  })
+
+  /** UC 0075: gli allegati sono fuori da questa versione e l'interfaccia deve dirlo. */
+  it('avvisa che gli allegati non sono ancora supportati', async () => {
+    renderWithProviders(<SupportPage />)
+    expect(await screen.findByText(/Attachments are not supported yet/)).toBeInTheDocument()
+  })
+
+  /** UC 0075: quando la piattaforma ha risposto, l'utente deve capire che la palla è sua. */
+  it('mostra che una richiesta in attesa aspetta l’utente', async () => {
+    tickets = [
+      {
+        id: 't-7',
+        type: 'support',
+        subject: 'In attesa di me',
+        priority: 'normal',
+        status: 'waiting_user',
+        createdAt: '2026-07-01T10:00:00Z',
+      },
+    ]
+    threads.set('t-7', [
+      { id: 'm-1', author: 'admin', body: 'Ti serve altro?', createdAt: '2026-07-02T10:00:00Z' },
+    ])
+    renderWithProviders(<SupportPage />)
+    const user = userEvent.setup()
+
+    // l'etichetta di stato è già leggibile nell'elenco…
+    expect(await screen.findByText('Waiting for you')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'In attesa di me' }))
+    // …e nel dettaglio c'è l'invito esplicito a rispondere
+    expect(await screen.findByText(/the request is waiting for you/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Reply')).toBeInTheDocument()
   })
 
   it('elenca i ticket e permette di rispondere nel thread', async () => {

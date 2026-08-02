@@ -22,24 +22,10 @@ const tokenBody = { access_token: accessToken, id_token: idToken, token_type: 'B
 
 /**
  * Console "Diritti GDPR" (UC 0034): platform-admin autenticato via refresh-on-load, endpoint
- * mockati — aggregazione con deep-link, dettaglio ticket con risposta, limitazione art. 18.
+ * mockati — aggregazione con deep-link, dettaglio export, limitazione art. 18. La gestione delle
+ * richieste di assistenza è uscita di qui con UC 0075: vive in `tickets.spec.ts`.
  */
 async function mockAuthed(page: Page) {
-  let ticket: Record<string, unknown> = {
-    id: 't-1',
-    tenantId: 'a-1',
-    accountName: 'Acme',
-    type: 'privacy',
-    subject: 'Export fallito',
-    priority: 'high',
-    status: 'open',
-    dueAt: '2026-08-02T10:00:00Z',
-    exportJobId: 'job-1',
-    createdAt: '2026-07-03T10:00:00Z',
-  }
-  let thread: Array<Record<string, unknown>> = [
-    { id: 'm-1', author: 'system', body: 'Export fallito: errore X', createdAt: '2026-07-03T10:00:00Z' },
-  ]
   let restrictions = { active: [] as Array<Record<string, unknown>>, auditTrail: [] as Array<Record<string, unknown>> }
 
   await page.route('**/config.json', (route) =>
@@ -73,18 +59,6 @@ async function mockAuthed(page: Page) {
       ],
     }),
   )
-  await page.route('**/api/platform/v1/admin/gdpr/tickets?*', (route) => route.fulfill({ json: [ticket] }))
-  await page.route('**/api/platform/v1/admin/gdpr/tickets', (route) => route.fulfill({ json: [ticket] }))
-  await page.route('**/api/platform/v1/admin/gdpr/tickets/t-1', (route) =>
-    route.fulfill({ json: { ticket, thread } }),
-  )
-  await page.route('**/api/platform/v1/admin/gdpr/tickets/t-1/messages', async (route, request) => {
-    const body = request.postDataJSON() as { body: string }
-    const message = { id: `m-${thread.length + 1}`, author: 'admin', body: body.body, createdAt: '2026-07-04T12:00:00Z' }
-    thread = [...thread, message]
-    ticket = { ...ticket, status: 'in_progress' }
-    await route.fulfill({ status: 201, json: message })
-  })
   await page.route('**/api/platform/v1/admin/gdpr/restrictions', async (route, request) => {
     if (request.method() === 'POST') {
       const body = request.postDataJSON() as { targetKind: string; targetId: string }
@@ -144,7 +118,7 @@ async function mockAuthed(page: Page) {
   )
 }
 
-test('[L2-ADMIN-GDPR] console GDPR: aggregazione → ticket → risposta → limitazione art. 18', async ({ page }) => {
+test('[L2-ADMIN-GDPR] console GDPR: aggregazione → dettaglio export → limitazione art. 18', async ({ page }) => {
   await mockAuthed(page)
   await page.goto('/')
   await page.getByRole('link', { name: 'GDPR rights' }).click()
@@ -167,15 +141,7 @@ test('[L2-ADMIN-GDPR] console GDPR: aggregazione → ticket → risposta → lim
   )
   await page.getByRole('link', { name: '← GDPR rights' }).click()
 
-  // dettaglio ticket: thread di sistema (auto-creato) + risposta admin
-  await page.getByRole('link', { name: 'Export fallito' }).first().click()
-  await expect(page.getByText('Export fallito: errore X')).toBeVisible()
-  await page.getByLabel('Reply to the user').fill('Ce ne stiamo occupando.')
-  await page.getByRole('button', { name: 'Send reply' }).click()
-  await expect(page.getByText('Ce ne stiamo occupando.')).toBeVisible()
-
   // limitazione art. 18: applica con conferma, la prova compare nel registro
-  await page.getByRole('link', { name: 'GDPR rights', exact: true }).click()
   await page.getByLabel('Target ID (UUID)').fill('a0000000-0000-4000-8000-000000000001')
   await page.getByRole('button', { name: 'Apply restriction' }).click()
   await expect(page.getByRole('dialog')).toContainText('Apply the restriction?')

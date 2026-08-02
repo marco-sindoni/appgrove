@@ -14,6 +14,12 @@ export type AdminMessageView = components['schemas']['AdminMessageView']
 export type RestrictionsView = components['schemas']['RestrictionsView']
 export type PurgeAuditView = components['schemas']['PurgeAuditView']
 export type UpdateTicket = components['schemas']['UpdateTicket']
+// Vocabolario del ticketing (UC 0075): tipo, provenienza, stato e priorità vengono dallo schema,
+// così un valore nuovo lato servizio rompe la compilazione qui invece di passare inosservato.
+export type TicketType = components['schemas']['TicketType']
+export type TicketSource = components['schemas']['TicketSource']
+export type TicketStatus = components['schemas']['TicketStatus']
+export type TicketPriority = components['schemas']['TicketPriority']
 export type ApplyRestriction = components['schemas']['ApplyRestriction']
 export type AdminAccountView = components['schemas']['AdminAccountView']
 export type AccountDetailView = components['schemas']['AccountDetailView']
@@ -136,21 +142,33 @@ export function useGdprExportDetail(id: string) {
   })
 }
 
-/** Ticket cross-tenant (`GET /admin/gdpr/tickets`), filtri opzionali tipo/stato. */
+/**
+ * Coda dei ticket cross-account (`GET /admin/tickets`) — UC 0075. Filtri opzionali per tipo, stato
+ * e priorità; l'ordinamento (scadenze più vicine per prime) arriva già fatto dal servizio: la coda
+ * dev'essere giusta anche letta dall'API, non solo a schermo.
+ */
 export function useAdminTickets(filters?: {
-  type?: 'support' | 'privacy'
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed'
+  type?: TicketType
+  status?: TicketStatus
+  priority?: TicketPriority
 }) {
   const client = useApiClient()
   return useQuery({
-    queryKey: ['admin', 'gdpr', 'tickets', filters?.type ?? 'all', filters?.status ?? 'all'],
+    queryKey: [
+      'admin',
+      'tickets',
+      filters?.type ?? 'all',
+      filters?.status ?? 'all',
+      filters?.priority ?? 'all',
+    ],
     queryFn: () =>
       unwrap<AdminTicketView[]>(
-        client.GET('/api/platform/v1/admin/gdpr/tickets', {
+        client.GET('/api/platform/v1/admin/tickets', {
           params: {
             query: {
               ...(filters?.type ? { type: filters.type } : {}),
               ...(filters?.status ? { status: filters.status } : {}),
+              ...(filters?.priority ? { priority: filters.priority } : {}),
             },
           },
         }),
@@ -158,48 +176,54 @@ export function useAdminTickets(filters?: {
   })
 }
 
-/** Dettaglio ticket con thread (`GET /admin/gdpr/tickets/{id}`). */
+/** Dettaglio ticket con filo di conversazione (`GET /admin/tickets/{id}`). */
 export function useAdminTicket(id: string) {
   const client = useApiClient()
   return useQuery({
-    queryKey: ['admin', 'gdpr', 'tickets', 'detail', id],
+    queryKey: ['admin', 'tickets', 'detail', id],
     enabled: !!id,
     queryFn: () =>
       unwrap<AdminTicketDetailView>(
-        client.GET('/api/platform/v1/admin/gdpr/tickets/{id}', { params: { path: { id } } }),
+        client.GET('/api/platform/v1/admin/tickets/{id}', { params: { path: { id } } }),
       ),
   })
 }
 
-/** Risposta dell'admin nel thread (`POST /admin/gdpr/tickets/{id}/messages`). */
+/** Risposta di chi assiste (`POST /admin/tickets/{id}/messages`): porta in attesa dell'utente. */
 export function useAdminReplyTicket() {
   const client = useApiClient()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (vars: { id: string; body: string }) =>
       unwrap<AdminMessageView>(
-        client.POST('/api/platform/v1/admin/gdpr/tickets/{id}/messages', {
+        client.POST('/api/platform/v1/admin/tickets/{id}/messages', {
           params: { path: { id: vars.id } },
           body: { body: vars.body },
         }),
       ),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'gdpr'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tickets'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'gdpr'] })
+    },
   })
 }
 
-/** Cambio stato/priorità del ticket (`PATCH /admin/gdpr/tickets/{id}` — ops sicure, mai il contenuto). */
+/** Cambio stato/priorità (`PATCH /admin/tickets/{id}` — ops sicure, mai il contenuto). */
 export function useUpdateAdminTicket() {
   const client = useApiClient()
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (vars: { id: string } & UpdateTicket) =>
       unwrap<AdminTicketView>(
-        client.PATCH('/api/platform/v1/admin/gdpr/tickets/{id}', {
+        client.PATCH('/api/platform/v1/admin/tickets/{id}', {
           params: { path: { id: vars.id } },
           body: { status: vars.status, priority: vars.priority },
         }),
       ),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['admin', 'gdpr'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'tickets'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'gdpr'] })
+    },
   })
 }
 

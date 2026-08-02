@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** DTO dell'API ticket lato utente (UC 0034, #13 D21). I DTO admin sono in {@code AdminGdprDtos}. */
+/** DTO dell'API ticket, lato utente e lato amministrazione (UC 0034 · UC 0075). */
 public final class TicketDtos {
 
     private TicketDtos() {}
@@ -32,6 +32,7 @@ public final class TicketDtos {
     public record TicketView(
             UUID id,
             TicketType type,
+            TicketSource source,
             String subject,
             TicketPriority priority,
             TicketStatus status,
@@ -43,6 +44,7 @@ public final class TicketDtos {
             return new TicketView(
                     ticket.getId(),
                     ticket.getType(),
+                    ticket.getSource(),
                     ticket.getSubject(),
                     ticket.getPriority(),
                     ticket.getStatus(),
@@ -53,4 +55,36 @@ public final class TicketDtos {
     }
 
     public record TicketDetailView(TicketView ticket, List<MessageView> thread) {}
+
+    // ── Vista di amministrazione (UC 0075) ───────────────────────────────────
+    // Stava in AdminGdprDtos perché il ticketing è nato come strumento della console privacy;
+    // con la sezione «Ticket» autonoma torna dove appartiene, accanto al proprio dominio.
+
+    /**
+     * Riga della coda cross-account. {@code flaggedForReview} è il contrassegno «da rivedere»
+     * (categorie particolari, UC 0075); {@code logsUrl} è il collegamento profondo ai registri
+     * (null se non configurato, come in locale).
+     */
+    public record AdminTicketView(
+            UUID id,
+            String tenantId,
+            String accountName,
+            TicketType type,
+            TicketSource source,
+            String subject,
+            TicketPriority priority,
+            TicketStatus status,
+            boolean flaggedForReview,
+            Instant dueAt,
+            UUID exportJobId,
+            Instant closedAt,
+            Instant createdAt,
+            String logsUrl) {}
+
+    public record AdminMessageView(UUID id, TicketAuthor author, String body, Instant createdAt) {}
+
+    public record AdminTicketDetailView(AdminTicketView ticket, List<AdminMessageView> thread) {}
+
+    /** Cambio stato/priorità del ticket (chi assiste non edita mai il contenuto: ops sicure). */
+    public record UpdateTicket(@NotNull TicketStatus status, @NotNull TicketPriority priority) {}
 }

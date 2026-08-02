@@ -59,15 +59,22 @@ public class TicketResource {
     @Transactional
     @ResponseStatus(201)
     public TicketView open(@Valid OpenTicket body) {
-        SupportTicket ticket = new SupportTicket(body.type(), body.subject());
+        SupportTicket ticket = new SupportTicket(body.type(), TicketSource.form, body.subject());
         if (body.type() == TicketType.privacy) {
             ticket.setDueAt(Instant.now().plus(SupportTicket.PRIVACY_SLA));
         }
+        // Categorie particolari (art. 9): priorità alta + contrassegno «da rivedere» PRIMA di
+        // rispondere, così la richiesta delicata non passa mai per la coda ordinaria (UC 0075 §5).
+        if (SpecialCategoryScreening.flags(body.subject(), body.message())) {
+            ticket.flagForReview();
+        }
         tickets.persist(ticket);
         messages.persist(new SupportTicketMessage(ticket.getId(), TicketAuthor.user, body.message()));
-        LOG.infof("ticket.opened ticket_id=%s type=%s tenant_id=%s user_id=%s",
-                ticket.getId(), ticket.getType(), caller.tenantId(), caller.subject());
-        notifier.notifySupportInbox(ref(ticket), body.message());
+        LOG.infof("ticket.opened ticket_id=%s type=%s source=%s flagged=%s tenant_id=%s user_id=%s",
+                ticket.getId(), ticket.getType(), ticket.getSource(), ticket.isFlaggedForReview(),
+                caller.tenantId(), caller.subject());
+        notifier.notifySupportInbox(ref(ticket));
+        notifier.notifyTicketOpened(ref(ticket), ticket.getDueAt());
         return TicketView.from(ticket);
     }
 
@@ -98,13 +105,19 @@ public class TicketResource {
         SupportTicketMessage message =
                 new SupportTicketMessage(ticket.getId(), TicketAuthor.user, body.body());
         messages.persist(message);
-        // una risposta dell'utente su un ticket risolto lo riapre (il thread non è concluso)
-        if (ticket.getStatus() == TicketStatus.resolved) {
+        // La replica dell'utente rimette la palla alla piattaforma: da "in attesa dell'utente"
+        // torna aperto, e riapre anche un ticket già risolto (il filo non era concluso).
+        if (ticket.getStatus() == TicketStatus.waiting_user
+                || ticket.getStatus() == TicketStatus.resolved) {
             ticket.moveTo(TicketStatus.open, Instant.now());
         }
-        LOG.infof("ticket.user-reply ticket_id=%s tenant_id=%s user_id=%s",
-                ticket.getId(), caller.tenantId(), caller.subject());
-        notifier.notifySupportInbox(ref(ticket), body.body());
+        if (SpecialCategoryScreening.flags(body.body())) {
+            ticket.flagForReview();
+        }
+        LOG.infof("ticket.user-reply ticket_id=%s status=%s flagged=%s tenant_id=%s user_id=%s",
+                ticket.getId(), ticket.getStatus(), ticket.isFlaggedForReview(),
+                caller.tenantId(), caller.subject());
+        notifier.notifySupportInbox(ref(ticket));
         return MessageView.from(message);
     }
 

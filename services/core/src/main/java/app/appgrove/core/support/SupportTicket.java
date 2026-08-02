@@ -35,6 +35,19 @@ public class SupportTicket extends BaseTenantEntity {
     @Column(nullable = false, length = 16)
     private TicketType type;
 
+    /** Da dove è arrivata la richiesta (UC 0075). Metadato operativo, non un dato personale. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private TicketSource source = TicketSource.form;
+
+    /**
+     * «Va guardato da un essere umano prima degli altri» (UC 0075): acceso dallo screening delle
+     * categorie particolari. Dice solo <i>che</i> serve attenzione, mai <i>quale</i> categoria è
+     * stata riconosciuta — vedi {@link SpecialCategoryScreening}.
+     */
+    @Column(name = "flagged_for_review", nullable = false)
+    private boolean flaggedForReview;
+
     @PersonalData(
             category = "contenuto libero (oggetto della richiesta di supporto/privacy)",
             purpose = "gestione delle richieste di supporto e di esercizio dei diritti (#13 D21)",
@@ -66,13 +79,32 @@ public class SupportTicket extends BaseTenantEntity {
         // richiesto da JPA
     }
 
-    public SupportTicket(TicketType type, String subject) {
+    public SupportTicket(TicketType type, TicketSource source, String subject) {
         this.type = type;
+        this.source = source;
         this.subject = subject;
     }
 
     public TicketType getType() {
         return type;
+    }
+
+    public TicketSource getSource() {
+        return source;
+    }
+
+    public boolean isFlaggedForReview() {
+        return flaggedForReview;
+    }
+
+    /**
+     * Segnala il ticket per attenzione umana e lo porta a priorità alta (UC 0075). Non abbassa mai
+     * una priorità già alta e non si spegne da solo: una volta che una richiesta è stata marcata
+     * delicata, toglierle il contrassegno è una decisione di chi la legge, non del riconoscitore.
+     */
+    public void flagForReview() {
+        this.flaggedForReview = true;
+        this.priority = TicketPriority.high;
     }
 
     public String getSubject() {

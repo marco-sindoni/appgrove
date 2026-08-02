@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { Button, Card, CardContent, CardHeader, CardTitle, PageHeader } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import {
-  useAdminTickets,
   useApplyRestriction,
   useGdprRequests,
   usePurgeAudit,
@@ -21,8 +20,11 @@ const fmtDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString
 /**
  * Console "Diritti GDPR" (UC 0034, #13 L75): single pane in **aggregazione** su export, recessi
  * per-app, eliminazioni account e ticket privacy, con puntatori all'accessorio (Logs Insights,
- * dettaglio export/ticket); gestione ticket e limitazione del trattamento (art. 18) con prova nel
- * registro. Nessuna impersonation (#03 15): sola lettura + ops sicure.
+ * dettaglio export/ticket); limitazione del trattamento (art. 18) con prova nel registro. Nessuna
+ * impersonation (#03 15): sola lettura + ops sicure.
+ *
+ * La **gestione** dei ticket è uscita da qui con UC 0075 e vive nella sezione «Ticket» della
+ * console: qui resta l'aggregazione delle sole istanze privacy, che rimanda là.
  */
 export function GdprRights() {
   const { t } = useTranslation()
@@ -31,7 +33,6 @@ export function GdprRights() {
     <div className="space-y-[22px]">
       <PageHeader title={t('admin.gdpr.title')} subtitle={t('admin.gdpr.subtitle')} />
       <RequestsSection />
-      <TicketsSection />
       <RestrictionsSection />
       <PurgeAuditSection />
     </div>
@@ -128,7 +129,7 @@ function RequestLinks({ request }: { request: GdprRequestView }) {
     request.type === 'export'
       ? `/gdpr/exports/${request.refId}`
       : request.type === 'privacy_ticket'
-        ? `/gdpr/tickets/${request.refId}`
+        ? `/tickets/${request.refId}`
         : null
   return (
     <span className="flex items-center gap-3">
@@ -148,88 +149,6 @@ function RequestLinks({ request }: { request: GdprRequestView }) {
         </a>
       )}
     </span>
-  )
-}
-
-function TicketsSection() {
-  const { t } = useTranslation()
-  const [type, setType] = useState<'' | 'support' | 'privacy'>('')
-  const [status, setStatus] = useState<'' | 'open' | 'in_progress' | 'resolved' | 'closed'>('')
-  const tickets = useAdminTickets({ type: type || undefined, status: status || undefined })
-  const rows = tickets.data ?? []
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('admin.gdpr.ticketsHeading')}</CardTitle>
-      </CardHeader>
-      <CardContent className="py-4">
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <select
-            aria-label={t('admin.gdpr.colType')}
-            className="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm"
-            value={type}
-            onChange={(e) => setType(e.target.value as '' | 'support' | 'privacy')}
-          >
-            <option value="">{t('admin.gdpr.filterAll')}</option>
-            <option value="support">{t('admin.gdpr.ticketType.support')}</option>
-            <option value="privacy">{t('admin.gdpr.ticketType.privacy')}</option>
-          </select>
-          <select
-            aria-label={t('admin.gdpr.colStatus')}
-            className="rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as '' | 'open' | 'in_progress' | 'resolved' | 'closed')}
-          >
-            <option value="">{t('admin.gdpr.filterAll')}</option>
-            <option value="open">{t('admin.gdpr.status.open')}</option>
-            <option value="in_progress">{t('admin.gdpr.status.in_progress')}</option>
-            <option value="resolved">{t('admin.gdpr.status.resolved')}</option>
-            <option value="closed">{t('admin.gdpr.status.closed')}</option>
-          </select>
-        </div>
-        <QueryState
-          isLoading={tickets.isLoading}
-          isError={tickets.isError}
-          isEmpty={rows.length === 0}
-          onRetry={() => void tickets.refetch()}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[13px]">
-              <thead>
-                <tr>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colSubject')}</th>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colAccount')}</th>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colType')}</th>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colPriority')}</th>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colStatus')}</th>
-                  <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('admin.gdpr.colDue')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((ticket) => (
-                  <tr key={ticket.id} className="border-b border-line last:border-b-0">
-                    <td className="py-2 pr-4">
-                      <Link
-                        to={`/gdpr/tickets/${ticket.id}`}
-                        className="text-accent underline-offset-2 hover:underline"
-                      >
-                        {ticket.subject}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-4">{ticket.accountName ?? ticket.tenantId ?? '—'}</td>
-                    <td className="py-2 pr-4 text-fg-muted">{ticket.type}</td>
-                    <td className="py-2 pr-4 text-fg-muted">{ticket.priority}</td>
-                    <td className="py-2 pr-4">{ticket.status}</td>
-                    <td className="py-2 pr-4 text-fg-muted">{fmtDate(ticket.dueAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </QueryState>
-      </CardContent>
-    </Card>
   )
 }
 

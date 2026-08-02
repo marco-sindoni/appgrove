@@ -108,9 +108,8 @@ public class GdprExportResultsConsumer {
         tickets.createForFailedExport(jobId).ifPresent(ticketId -> {
             LOG.infof("ticket.auto-created ticket_id=%s job_id=%s app_id=%s",
                     ticketId, result.jobId(), result.appId());
-            tickets.find(ticketId).ifPresent(row -> notifier.notifySupportInbox(
-                    TicketNotifier.TicketRef.of(row),
-                    "Ticket privacy auto-creato per export fallito (job " + result.jobId() + ")."));
+            tickets.find(ticketId)
+                    .ifPresent(row -> notifier.notifySupportInbox(TicketNotifier.TicketRef.of(row)));
         });
     }
 

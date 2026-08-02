@@ -1,8 +1,5 @@
 package app.appgrove.core.gdpr;
 
-import app.appgrove.core.gdpr.AdminGdprDtos.AdminMessageView;
-import app.appgrove.core.gdpr.AdminGdprDtos.AdminTicketDetailView;
-import app.appgrove.core.gdpr.AdminGdprDtos.AdminTicketView;
 import app.appgrove.core.gdpr.AdminGdprDtos.ApplyRestriction;
 import app.appgrove.core.gdpr.AdminGdprDtos.ExportDetailView;
 import app.appgrove.core.gdpr.AdminGdprDtos.ExportItemView;
@@ -10,15 +7,10 @@ import app.appgrove.core.gdpr.AdminGdprDtos.PurgeAuditView;
 import app.appgrove.core.gdpr.AdminGdprDtos.RequestView;
 import app.appgrove.core.gdpr.AdminGdprDtos.RestrictionResult;
 import app.appgrove.core.gdpr.AdminGdprDtos.RestrictionsView;
-import app.appgrove.core.gdpr.AdminGdprDtos.UpdateTicket;
 import app.appgrove.core.observability.AwsConsoleLinks;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.CallerContext;
 import app.appgrove.core.platform.Roles;
-import app.appgrove.core.support.TicketAuthor;
-import app.appgrove.core.support.TicketDtos.PostMessage;
-import app.appgrove.core.support.TicketNotifier;
-import app.appgrove.core.support.TicketStatus;
 import app.appgrove.core.support.TicketStore;
 import app.appgrove.core.support.TicketType;
 import jakarta.annotation.security.RolesAllowed;
@@ -31,7 +23,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -56,8 +47,12 @@ import org.jboss.resteasy.reactive.ResponseStatus;
  * store — su export, recessi per-app, eliminazioni account e ticket privacy, con puntatori
  * all'accessorio (Logs Insights, oggetto S3, registri prove). Come {@code AdminResource}: letture
  * cross-tenant via query native, eccezione documentata all'invariante #2 ammessa solo perché gated
- * {@code platform-admin}. Nessuna impersonation (#03 15): le uniche scritture sono le ops sicure
- * del ticketing (risposta/stato) e la limitazione art. 18 (reversibile, con prova in audit).
+ * {@code platform-admin}. Nessuna impersonation (#03 15): l'unica scrittura è la limitazione art. 18
+ * (reversibile, con prova in audit).
+ *
+ * <p>La <b>gestione</b> dei ticket (filo, risposta, stato) è uscita da qui con UC 0075: vive nella
+ * sezione «Ticket» della console ({@code AdminTicketResource}). Qui resta l'aggregazione dei soli
+ * ticket privacy dentro la tabella delle richieste, che rimanda a quella sezione.
  */
 @Path("/api/platform/v1/admin/gdpr")
 @RolesAllowed(Roles.PLATFORM_ADMIN)
@@ -72,9 +67,6 @@ public class AdminGdprResource {
 
     @Inject
     TicketStore tickets;
-
-    @Inject
-    TicketNotifier notifier;
 
     @Inject
     GdprRestrictionService restrictions;
@@ -141,58 +133,6 @@ public class AdminGdprResource {
                         (UUID) r[0], str(r[1]), str(r[2]), str(r[3]),
                         ((Number) r[4]).intValue(), instant(r[5])))
                 .toList();
-    }
-
-    // ── Ticket (vista admin, #13 D21) ─────────────────────────────────────────
-
-    @GET
-    @Path("/tickets")
-    public List<AdminTicketView> ticketList(
-            @QueryParam("type") TicketType type, @QueryParam("status") TicketStatus status) {
-        return tickets.list(type, status).stream().map(this::ticketView).toList();
-    }
-
-    @GET
-    @Path("/tickets/{id}")
-    public AdminTicketDetailView ticket(@PathParam("id") UUID id) {
-        TicketStore.TicketRow row = loadTicket(id);
-        List<AdminMessageView> thread = tickets.thread(id).stream()
-                .map(m -> new AdminMessageView(m.id(), m.author(), m.body(), m.createdAt()))
-                .toList();
-        return new AdminTicketDetailView(ticketView(row), thread);
-    }
-
-    /** Risposta dell'admin nel thread: un ticket {@code open} passa in lavorazione, l'utente è avvisato. */
-    @POST
-    @Path("/tickets/{id}/messages")
-    @ResponseStatus(201)
-    public AdminMessageView reply(@PathParam("id") UUID id, @Valid PostMessage body) {
-        TicketStore.TicketRow row = loadTicket(id);
-        if (row.status() == TicketStatus.closed) {
-            throw new ClientErrorException("Ticket chiuso", Response.Status.CONFLICT);
-        }
-        TicketStore.MessageRow message =
-                tickets.addMessage(row, TicketAuthor.admin, caller.subject(), body.body());
-        if (row.status() == TicketStatus.open) {
-            tickets.update(id, TicketStatus.in_progress, row.priority(), caller.subject(), Instant.now());
-        }
-        LOG.infof("ticket.admin-reply ticket_id=%s tenant_id=%s actor=%s", id, row.tenantId(), caller.subject());
-        notifier.notifyRequester(TicketNotifier.TicketRef.of(loadTicket(id)), body.body());
-        return new AdminMessageView(message.id(), message.author(), message.body(), message.createdAt());
-    }
-
-    /** Cambio stato/priorità (ops sicure: mai editing del contenuto). L'utente è avvisato. */
-    @PATCH
-    @Path("/tickets/{id}")
-    public AdminTicketView update(@PathParam("id") UUID id, @Valid UpdateTicket body) {
-        loadTicket(id);
-        tickets.update(id, body.status(), body.priority(), caller.subject(), Instant.now());
-        TicketStore.TicketRow updated = loadTicket(id);
-        LOG.infof("ticket.admin-update ticket_id=%s status=%s priority=%s tenant_id=%s actor=%s",
-                id, body.status(), body.priority(), updated.tenantId(), caller.subject());
-        notifier.notifyRequester(TicketNotifier.TicketRef.of(updated),
-                "Lo stato del ticket è stato aggiornato dal supporto.");
-        return ticketView(updated);
     }
 
     // ── Limitazione del trattamento (art. 18, #13 D19) ────────────────────────
@@ -296,23 +236,12 @@ public class AdminGdprResource {
     }
 
     private List<RequestView> privacyTicketRequests() {
-        return tickets.list(TicketType.privacy, null).stream()
+        return tickets.list(TicketType.privacy, null, null).stream()
                 .map(t -> new RequestView(
                         "privacy_ticket", t.id(), t.tenantId(), t.accountName(), null,
                         t.createdBy(), t.status().name(), t.createdAt(), t.closedAt(), t.dueAt(),
                         null, logsUrl("ticket_id", t.id().toString())))
                 .toList();
-    }
-
-    private AdminTicketView ticketView(TicketStore.TicketRow row) {
-        return new AdminTicketView(
-                row.id(), row.tenantId(), row.accountName(), row.type(), row.subject(),
-                row.priority(), row.status(), row.dueAt(), row.exportJobId(), row.closedAt(),
-                row.createdAt(), logsUrl("ticket_id", row.id().toString()));
-    }
-
-    private TicketStore.TicketRow loadTicket(UUID id) {
-        return tickets.find(id).orElseThrow(() -> new NotFoundException("Ticket non trovato"));
     }
 
     private RestrictionResult result(GdprRestrictionService.Outcome outcome, String conflictHint) {
