@@ -48,7 +48,7 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 9 | [0081](16-messa-in-cloud-golive/0081-smoke-reali-cloud-test.md) | Smoke reali cloud alla prima accensione `test` | 16 | 0080, 0082 | 0015, 0016, 0014, 0018, 0055, 0005 | 🟢 | ⬜ |
 | 10 | [0083](16-messa-in-cloud-golive/0083-drift-regione-e-casella-security.md) | Drift regione `eu-south-1`→`eu-west-1` + casella `security@` | 16 | 0080 (soft) | 0005, 0037, 0049 | 🟢 | ⬜ |
 | **C. Self-service, supporto, contenuti** |
-| 11 | [0067](13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md) | Gestione abbonamento self-service (backoffice "Abbonamenti") | 13 | — | 0026, 0028, 0027, 0024, 0020 | 🟢 | 🟡 |
+| 11 | [0067](13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md) | Gestione abbonamento self-service (backoffice "Abbonamenti") | 13 | — | 0026, 0028, 0027, 0024, 0020 | 🟢 | ✅ |
 | 12 | [0071](13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md) | Riconciliazione netto/revenue | 13 | — | 0025, 0006, 0021 | 🟢 | ⬜ |
 | 13 | [0075](15-supporto-e-piattaforma/0075-ticketing-nativo-in-house.md) | Ticketing nativo in-house | 15 | 0085 (soft) | 0012, 0013, 0020, 0021, 0018, 0034 | 🟢 | ⬜ |
 | 14 | [0076](15-supporto-e-piattaforma/0076-disabilita-applicazione.md) | Disabilita applicazione (feature admin reversibile) | 15 | — | 0021, 0027, 0014, 0035 | 🟢 | ✅ |

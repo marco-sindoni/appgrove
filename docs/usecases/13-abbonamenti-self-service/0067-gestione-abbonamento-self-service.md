@@ -119,12 +119,17 @@ generata server-side.
   5. Test integration + gating + security + E2E L2 verdi; log strutturati completi.
 
 ## Punti aperti / decisioni differite
-- **Consumo quota in tempo reale nel banner** *(owner: questo UC 0067, condiviso con UC 0027)*. Oggi la sezione può mostrare i
-  **limiti del piano** ma non il **consumo corrente** per-app: manca un contratto di lettura usage trasversale che `core` possa
-  interrogare (lo stock/flow reale vive nel servizio della singola app). Finché non esiste, il banner mostra solo la soglia
-  teorica del piano, non "73 su 100".
-- **Gate `stock` del downgrade contro l'uso reale** *(stesso owner del punto sopra)*. La policy di blocco è testata ma senza il
-  contratto usage sopra il resource riceve un uso corrente vuoto: a runtime il downgrade `stock` non viene ancora bloccato.
+- ~~**Consumo quota in tempo reale nel banner**~~ — **chiuso a metà** dalla change `0082`. L'uso **a giacenza** (posti occupati
+  e simili) arriva ora dalla proiezione `platform.app_usage_stock` (UC 0054), è esposto dal read-model `/me/subscriptions` e la
+  card mostra "8 su 10" con barra e avviso di soglia.
+- **Consumo delle metriche "a finestra"** *(owner: questo UC 0067, condiviso con UC 0027)* — resta aperto. Per le metriche che si
+  azzerano a ogni periodo (es. fatture al mese) `core` non conosce il consumo corrente: la proiezione UC 0054 riguarda solo la
+  giacenza. Per quelle metriche la card mostra il **solo tetto del piano**, non "73 su 100". Serve estendere il contratto di
+  riporto d'uso app → core al consumo a finestra (nome tabella/metrica e finestra di competenza sono la parte da decidere:
+  un contatore a finestra va azzerato o riportato cumulativo?).
+- ~~**Gate `stock` del downgrade contro l'uso reale**~~ — **chiuso** da UC 0054 (comando) e dalla change `0082`, che espone anche
+  in anticipo i piani non ammissibili (`blockedTiers`) così la finestra di cambio piano li disabilita spiegando il perché,
+  invece di lasciarli cliccabili e mostrare un rifiuto 409.
 - **Implementazione reale Paddle** *(gated #14)*. I metodi del provider Paddle per cambio tier/cancel/resume/portal restano
   non implementati finché non esiste l'account Paddle (bloccato da #14); lo stub locale copre sviluppo e test.
 - **Riconciliazione del netto incassato**: l'osservabilità del netto (al netto delle fee Paddle) non è di questa sezione →

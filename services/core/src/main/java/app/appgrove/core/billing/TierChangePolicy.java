@@ -17,13 +17,30 @@ import java.util.Map;
  *       successivo.</li>
  * </ul>
  *
- * <p>Nota (UC 0028): l'<b>uso corrente</b> per metrica è applicativo e non ancora leggibile da core
- * (vedi 0028 §Punti aperti — sorgente usage per-app differita). Finché non è cablato, il resource passa
- * una mappa vuota → nessun blocco stock a runtime; la logica qui resta reale e coperta da test.
+ * <p>L'<b>uso corrente</b> a giacenza arriva dalla proiezione {@link AppUsageStore} (UC 0054): se l'app non
+ * ha ancora riportato nulla la mappa è vuota e il cambio resta libero, il che è corretto — non c'è alcuna
+ * giacenza nota da proteggere. Dalla UC 0067 la stessa valutazione serve <b>due</b> chiamanti: il comando,
+ * che rifiuta, e il read-model, che dice in anticipo quali piani sarebbero rifiutati.
  */
 final class TierChangePolicy {
 
     private TierChangePolicy() {}
+
+    /**
+     * Limiti di un piano nella forma attesa dalla politica, letti dal JSON {@code app_tier.limits}
+     * ({@code {metric, cap, type, window}} — nel JSON la natura si chiama {@code type}). Vive qui, accanto
+     * alla regola che li consuma, perché comando e read-model devono leggerli allo stesso modo: due
+     * conversioni parallele sono il modo più rapido per farli divergere in silenzio.
+     */
+    static Map<String, MetricLimit> limitsOf(Map<String, Object> raw) {
+        if (raw == null || raw.get("metric") == null) {
+            return Map.of();
+        }
+        long cap = raw.get("cap") instanceof Number n ? n.longValue() : -1L;
+        String nature = raw.get("type") != null ? raw.get("type").toString() : null;
+        String window = raw.get("window") != null ? raw.get("window").toString() : null;
+        return Map.of(raw.get("metric").toString(), new MetricLimit(cap, nature, window));
+    }
 
     /** Direzione del cambio piano derivata dagli importi (minor units) del ciclo richiesto. */
     enum Direction {

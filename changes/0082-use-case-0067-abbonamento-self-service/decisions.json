@@ -7,29 +7,44 @@
     "id": 2,
     "decision": "(autopilot) La change implementa lo use case 0067 (Gestione abbonamento self-service, backoffice \"Abbonamenti\"), indicato esplicitamente all'invocazione. Da qui la forma del branch 0082-use-case-0067-abbonamento-self-service. Trattandosi di una storia evolutiva (onda 2, epica 13), l'indice di esecuzione da aggiornare è docs/usecases/EPICS-WAVE-2.md — non docs/usecases/_INDEX.md, che copre l'onda 1 (UC 0001–0060).",
     "files": [
-      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Riga 11 dell'ordine di esecuzione (UC 0067): stato ⬜ → 🟡 all'apertura della change, → ✅ alla chiusura." }
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Riga 11 dell'ordine di esecuzione (UC 0067): stato ⬜ → 🟡 all'apertura della change, → ✅ alla chiusura."
+      }
     ]
   },
   {
     "id": 3,
     "decision": "(autopilot) La sezione \"Abbonamenti\" resta dentro la pagina Fatturazione (/billing), senza nuova rotta né nuova voce di menù. Motivo: UC 0096 — implementato dalla change 0077 poche settimane fa — ha appena stabilito che /billing è la pagina di sola fatturazione con due sezioni, \"I tuoi abbonamenti\" e \"Pagamenti e ricevute\". Creare ora una rotta /subscriptions sarebbe un dietrofront su una decisione fresca, spezzerebbe i percorsi end-to-end L2-BILLING e L2-SUB e lascerebbe la pagina Fatturazione con una sola sezione. Lo use case 0067 chiede la \"sezione Abbonamenti\": è esattamente quella, ed è dove già si trova.",
     "files": [
-      { "file": "frontend/apps/backoffice/src/pages/Billing.tsx", "description": "Resta la pagina ospite: nessuna nuova rotta, la sezione abbonamenti si arricchisce sul posto." }
+      {
+        "file": "frontend/apps/backoffice/src/pages/Billing.tsx",
+        "description": "Resta la pagina ospite: nessuna nuova rotta, la sezione abbonamenti si arricchisce sul posto."
+      }
     ]
   },
   {
     "id": 4,
     "decision": "(autopilot) Il calcolo dei piani non ammissibili per una riduzione resta interamente lato backend e viene esposto nel read-model /me/subscriptions come mappa piano → spiegazione rimediale, invece di essere ricalcolato in TypeScript nel frontend incrociando uso corrente e limiti dei piani. Motivo: la regola vive già in TierChangePolicy e governa il rifiuto 409 del comando; duplicarla nel frontend creerebbe due verità che divergono in silenzio alla prima modifica della regola. Esporla dal read-model dà al frontend esattamente ciò che gli serve — quali piani disabilitare e con quale spiegazione mostrare — senza conoscere la regola.",
     "files": [
-      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java", "description": "Calcola, per ogni abbonamento, uso corrente per metrica e piani bloccati riusando TierChangePolicy.evaluateDowngrade." },
-      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionDtos.java", "description": "SubscriptionView acquisisce i campi usage (metrica → giacenza) e blockedTiers (chiave piano → spiegazione)." }
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java",
+        "description": "Calcola, per ogni abbonamento, uso corrente per metrica e piani bloccati riusando TierChangePolicy.evaluateDowngrade."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionDtos.java",
+        "description": "SubscriptionView acquisisce i campi usage (metrica → giacenza) e blockedTiers (chiave piano → spiegazione)."
+      }
     ]
   },
   {
     "id": 5,
     "decision": "(autopilot) Il consumo mostrato in card è quello a giacenza (posti occupati e simili), l'unico che core conosce davvero: la proiezione platform.app_usage_stock (UC 0054) contiene solo quello. Per le metriche a finestra (consumo che si azzera ogni periodo) la card continua a mostrare il solo limite del piano, senza inventare un numero. Chiude parzialmente il punto aperto \"consumo quota in tempo reale\" di UC 0067 e lascia scritto ciò che resta.",
     "files": [
-      { "file": "docs/usecases/13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md", "description": "Punti aperti aggiornati: il consumo a giacenza è ora mostrato; resta aperto quello delle metriche a finestra." }
+      {
+        "file": "docs/usecases/13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md",
+        "description": "Punti aperti aggiornati: il consumo a giacenza è ora mostrato; resta aperto quello delle metriche a finestra."
+      }
     ]
   },
   {
@@ -39,5 +54,105 @@
   {
     "id": 7,
     "decision": "(autopilot) Le conferme del browser (window.confirm) spariscono dal percorso e sono sostituite da una finestra modale dell'applicazione, perché lo use case 0067 §6 chiede che la conferma riepiloghi cosa succede e quando (\"il downgrade sarà attivo dal 12 agosto\"): una finestra del browser non può mostrare quel riepilogo, non è traducibile nelle 5 lingue e non è verificabile dai test end-to-end senza intercettare l'evento di dialogo. Il pattern di finestra modale accessibile esiste già in pages/members/ConfirmDialog.tsx: viene promosso a primitiva condivisa e riusato da entrambi, invece di duplicarlo."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La lettura dei limiti di un piano dal JSON `app_tier.limits` (forma {metric, cap, type, window}) è stata unificata in `TierChangePolicy.limitsOf`: prima esisteva due volte, identica, nel comando e nel read-model. Da UC 0067 i chiamanti diventano tre — comando, vista dell'abbonamento, calcolo dei piani bloccati — e tre conversioni parallele sono il modo più rapido per farle divergere in silenzio.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/TierChangePolicy.java",
+        "description": "Accoglie limitsOf(Map) accanto alla regola che li consuma; il javadoc obsoleto sull'uso non leggibile da core è stato corretto (UC 0054 lo ha chiuso)."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionResource.java",
+        "description": "Rimosso il duplicato targetLimits(AppTier)."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) I piani bloccati sono calcolati per **tutti** i piani dell'app, senza filtrare per direzione del cambio: un piano capiente non è mai bloccato, quindi valutarli tutti dà lo stesso esito ed evita di ricalcolare i prezzi (e quindi la direzione) dentro il read-model. Quando l'uso noto è vuoto la mappa è vuota per costruzione: nessuna giacenza da proteggere, nessun divieto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java",
+        "description": "blockedTiers(appId, usage) riusa TierChangePolicy.evaluateDowngrade su ogni piano dell'app."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Lo stato transitorio \"in aggiornamento\" si risolve confrontando una **fotografia** dei tre campi che un comando fa cambiare (piano, riduzione programmata, disdetta), presa quando il comando parte, con ciò che il read-model riporta poi; si smette comunque dopo 30 secondi. Scartata l'alternativa di fidarsi della risposta del comando: il modello è comando → fornitore → webhook → read-model, quindi dichiarare il successo prima del webhook mostrerebbe un dato che non esiste ancora. Il polling è acceso solo mentre c'è un comando in sospeso, non di continuo.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/billing/subscriptionsView.ts",
+        "description": "snapshotOf/isStillPending + PENDING_POLL_MS/PENDING_TIMEOUT_MS, logica pura e coperta da test."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/billing/subscriptionsApi.ts",
+        "description": "useMySubscriptions(polling) accende la rilettura periodica solo durante la riconciliazione."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il guscio della finestra modale (sovrapposizione, role=dialog, aria-modal, Escape) è stato estratto in una primitiva condivisa `shell/Modal.tsx` e ConfirmDialog dei membri è stato riscritto sopra di essa, invece di copiarne il codice nella nuova finestra di cambio piano. Due copie della gestione del focus e di Escape sono due accessibilità diverse che divergono alla prima correzione. Il design-system non espone ancora un componente di dialogo: quando lo farà, la primitiva è il punto unico da sostituire.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/shell/Modal.tsx",
+        "description": "Nuova primitiva di finestra modale accessibile."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/ConfirmDialog.tsx",
+        "description": "Riscritto sopra Modal, conserva focus iniziale sul pulsante di conferma e aria-describedby."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Le chiavi i18n `subscriptions.confirmCancel` e `subscriptions.confirmChange` sono state rimosse dalle 5 lingue: erano il testo delle finestre di conferma del browser, sostituite da conferme dell'applicazione che riportano anche la data di efficacia. Lasciare chiavi morte in cinque cataloghi è debito che nessun controllo segnala."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Copertura end-to-end: si copre **ora**. Lo use case 0067 esce dalle esenzioni `non-implementato`, entra fra gli use case con superficie ed è collegato al percorso esistente `L2-SUB`, esteso da 3 a 7 prove (consumo quota, piano non ammissibile disabilitato, conferma con data, disdetta→riattivazione, pagamento in ritardo, scadenza, oltre alle tre preesistenti). Scartata l'idea di un percorso nuovo: la superficie è la stessa sezione, e spezzarla in due identificativi avrebbe reso il registro meno leggibile senza aggiungere copertura.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0067 in usecases_con_superficie, esenzione rimossa, L2-SUB aggiornato (titolo + usecases)."
+      },
+      {
+        "file": "frontend/apps/backoffice/e2e/subscriptions.spec.ts",
+        "description": "Sette prove [L2-SUB]; la prova di riduzione è stata riscritta sul nuovo flusso a due passi (scelta + conferma), non più su window.confirm."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Rimando tracciato: il consumo delle metriche **a finestra** (quelle che si azzerano ogni periodo) resta non mostrato, perché in core esiste solo la proiezione della giacenza (UC 0054). Annotato nei punti aperti di UC 0067, che ne resta proprietario, insieme alla domanda aperta su come vada riportato un contatore a finestra (azzerato o cumulativo).",
+    "files": [
+      {
+        "file": "docs/usecases/13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md",
+        "description": "Punti aperti riscritti: due voci chiuse dalla change, una riformulata e ancora aperta."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il journey di piattaforma J-SUB è stato adeguato al nuovo percorso a due passi (scelta del piano nella finestra, poi conferma) e non intercetta più l'evento di dialogo del browser, che non esiste più. Nessuna copertura persa: le stesse asserzioni, un passaggio in più che è esattamente ciò che la change introduce.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-SUB.spec.ts",
+        "description": "Cambio piano e disdetta passano dalle finestre dell'applicazione; rimosso il gestore page.on('dialog')."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Corretta un'instabilità **preesistente** di J-SUB emersa eseguendo la suite: il webhook sintetico di fine periodo veniva inviato con istante «adesso + 1 secondo», ma lo stub tronca gli istanti al secondo e spinge avanti di un secondo ogni evento che cadrebbe nello stesso, così dopo una raffica (acquisto, riduzione, disdetta) `last_event_occurred_at` è già nel futuro e la guardia anti-fuori-ordine scartava il webhook — journey rosso al primo tentativo, verde al secondo. Ora l'istante si calcola sull'ultimo evento effettivamente applicato, letto dal database. Non è una regressione della change (nulla qui tocca la pipeline dei webhook), ma un rosso intermittente osservato non si lascia in piedi: il prossimo rosso verrebbe ignorato. Effetto collaterale: il journey passa da ~1,4 minuti a ~45 secondi, perché non consuma più il tentativo di riprova.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-SUB.spec.ts",
+        "description": "L'istante del webhook subscription.canceled deriva da last_event_occurred_at (epoch dal database), non dall'orologio del processo di test."
+      }
+    ]
   }
 ]

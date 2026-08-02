@@ -46,15 +46,22 @@ test('[J-SUB] downgrade programmato → disdetta → scadenza via webhook → 40
   expect(contact.status).toBe(201)
 
   await browserLogin(page, t.email, t.password)
-  // I cambi self-service usano window.confirm: si accetta come farebbe l'utente.
-  page.on('dialog', (d) => void d.accept())
 
   // ── 1. downgrade programmato a fine periodo ─────────────────────────────────
+  // Da UC 0067 il cambio piano è una finestra dell'applicazione in due passi (scelta, poi conferma
+  // che dice cosa succede e da quando): niente più finestre di conferma del browser da accettare.
   await page.goto('/billing')
   const panel = page.getByRole('region', { name: 'Your subscriptions' })
   await expect(panel.getByText('Plan: Mini-CRM Team')).toBeVisible()
   await panel.getByRole('button', { name: 'Change plan' }).click()
-  await panel.getByRole('button', { name: 'Mini-CRM Free' }).click()
+  const planDialog = page.getByRole('dialog')
+  await planDialog
+    .getByRole('listitem')
+    .filter({ hasText: 'Mini-CRM Free' })
+    .getByRole('button', { name: 'Choose' })
+    .click()
+  await expect(page.getByText('Move to a lower plan')).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Confirm' }).click()
   // Il comando passa dal provider → webhook → read-model (asincrono): attesa su condizione API.
   await pollUntil(async () => (await mySubscription(t))?.scheduledTierKey === 'free', {
     message: 'downgrade programmato non riflesso dal read-model (webhook non applicato?)',
@@ -64,18 +71,26 @@ test('[J-SUB] downgrade programmato → disdetta → scadenza via webhook → 40
 
   // ── 2. disdetta self-service, poi fine periodo simulata via webhook firmato ─
   await panel.getByRole('button', { name: 'Cancel', exact: true }).click()
+  const cancelDialog = page.getByRole('dialog')
+  await expect(cancelDialog.getByText('Cancel subscription')).toBeVisible()
+  await cancelDialog.getByRole('button', { name: 'Confirm' }).click()
   await pollUntil(async () => !!(await mySubscription(t))?.cancelAt, {
     message: 'disdetta programmata non riflessa dal read-model',
   })
   await page.reload()
   await expect(panel.getByText(/Cancellation scheduled: access until/)).toBeVisible()
 
-  const [appId, paddleSubId] = dbRow(
-    `select s.app_id, s.paddle_subscription_id
+  const [appId, paddleSubId, lastEventEpoch] = dbRow(
+    `select s.app_id, s.paddle_subscription_id,
+            coalesce(extract(epoch from s.last_event_occurred_at), 0)
        from platform.subscription s join platform.app a on a.id = s.app_id
       where s.tenant_id = $1 and a.slug = 'crm' and s.deleted_at is null`,
     [t.tenantId],
   )
+  // L'istante va calcolato sull'ULTIMO EVENTO APPLICATO, non sull'orologio: lo stub tronca al secondo
+  // e spinge avanti di un secondo ogni evento che cadrebbe nello stesso, quindi dopo una raffica
+  // (acquisto + riduzione + disdetta) `last_event_occurred_at` può già essere nel futuro. Un
+  // "adesso + 1s" finirebbe dietro di esso e la guardia anti-fuori-ordine scarterebbe il webhook.
   await sendPaddleWebhook(
     subscriptionEvent({
       eventType: 'subscription.canceled',
@@ -83,7 +98,7 @@ test('[J-SUB] downgrade programmato → disdetta → scadenza via webhook → 40
       tenantId: t.tenantId,
       appId,
       paddleSubscriptionId: paddleSubId,
-      occurredAt: new Date(Date.now() + 1_000),
+      occurredAt: new Date(Math.max(Date.now(), Number(lastEventEpoch) * 1_000) + 1_000),
     }),
   )
   await pollUntil(async () => (await mySubscription(t))?.phase === 'ENDED', {

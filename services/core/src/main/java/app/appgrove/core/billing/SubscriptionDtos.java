@@ -31,6 +31,14 @@ public final class SubscriptionDtos {
      *     diverso da {@code active}). L'abbonamento resta elencato e valido e i dati restano intatti,
      *     ma l'app non è raggiungibile: senza questo flag il pannello mostrerebbe "attivo" per un'app
      *     che è sparita dalla barra laterale, che è la incoerenza annotata nello use case 0076
+     * @param usage uso corrente <b>a giacenza</b> ({@code metrica → valore}) riportato dall'app e
+     *     proiettato in {@code platform.app_usage_stock} (UC 0054). Serve alla card per dire "8 su 10"
+     *     invece del solo tetto del piano (UC 0067 §4.6). Vuoto se l'app non ha ancora riportato nulla,
+     *     o se le sue metriche sono <b>a finestra</b>: di quelle core non conosce il consumo corrente
+     * @param blockedTiers piani dell'app che la regola di riduzione ({@link TierChangePolicy})
+     *     <b>rifiuterebbe adesso</b>, {@code chiave piano → spiegazione rimediale}. Esposti perché la
+     *     finestra "cambia piano" possa disabilitarli spiegando il perché, invece di lasciarli cliccabili
+     *     e farli fallire con un 409: la regola resta in un solo posto e i due lati non divergono
      */
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record SubscriptionView(
@@ -53,7 +61,9 @@ public final class SubscriptionDtos {
             boolean canResume,
             boolean canReactivate,
             boolean portalAvailable,
-            boolean appDisabled) {}
+            boolean appDisabled,
+            Map<String, Long> usage,
+            Map<String, String> blockedTiers) {}
 
     /**
      * Richiesta di cambio piano: tier di destinazione (chiave interna) + ciclo. Il {@code tenant_id}

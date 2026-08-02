@@ -413,8 +413,6 @@ export const es: Resources = {
     resume: 'Deshacer la cancelación',
     reactivate: 'Reactivar',
     gdpr: 'Exportar / eliminar tus datos',
-    confirmCancel: '¿Cancelar esta suscripción? El acceso se mantiene hasta el fin del periodo.',
-    confirmChange: '¿Confirmar el cambio de plan?',
     planLimits: 'Tu plan incluye',
     limitFlow: '{{cap}} {{metric}} / {{window}}',
     limitStock: 'hasta {{cap}} {{metric}}',
@@ -437,6 +435,34 @@ export const es: Resources = {
     blockedTitle: 'Cambio a plan inferior no posible',
     emptyCta: 'Ver el catálogo de apps',
     contactSupport: 'Contactar con soporte',
+    // Sezione "Abbonamenti" completa (UC 0067): consumo, avvisi, finestra di cambio piano, conferme.
+    quotaUsage: '{{used}} de {{cap}} {{metric}} en uso',
+    quotaWarn: 'Estás cerca del límite de tu plan para {{metric}}. Considera pasar a un plan superior.',
+    quotaFull: 'Límite del plan alcanzado para {{metric}}. Pasa a un plan superior para continuar.',
+    dunningTitle: 'Pago pendiente',
+    dunningBody:
+      'No hemos podido cobrar tu método de pago. El acceso se mantiene durante un breve periodo de gracia: actualiza la tarjeta para no perderlo.',
+    dunningCta: 'Actualizar método de pago',
+    expiredTitle: 'Suscripción caducada',
+    expiredBody:
+      'Tus datos siguen aquí. Puedes reactivar cuando quieras, o exportarlos y eliminarlos: esos derechos nunca dependen de una suscripción activa.',
+    updating: 'Actualización en curso: esperamos la confirmación del proveedor de pago.',
+    ownerOnly: 'Solo el propietario del espacio de trabajo puede cambiar la facturación.',
+    billingCycle: 'Ciclo de facturación',
+    currentPlan: 'Plan actual',
+    recommended: 'Recomendado',
+    choosePlan: 'Elegir',
+    freePlan: 'Gratuito',
+    confirmAction: 'Confirmar',
+    confirmUpgradeTitle: 'Pasar a un plan superior',
+    confirmUpgradeBody:
+      'Vas a pasar a «{{tier}}». El cambio se aplica de inmediato y se te cobra la diferencia proporcional por el resto del periodo actual.',
+    confirmDowngradeTitle: 'Pasar a un plan inferior',
+    confirmDowngradeBody:
+      'Pasas a «{{tier}}» desde el {{date}}. Hasta entonces no cambia nada y sigues en tu plan actual. Sin reembolso.',
+    confirmCancelTitle: 'Cancelar la suscripción',
+    confirmCancelBody:
+      'La suscripción se cancela al final del periodo actual: el acceso se mantiene hasta el {{date}} y hasta entonces puedes deshacer la cancelación.',
   },
   // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
   payments: {

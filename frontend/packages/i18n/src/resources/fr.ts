@@ -413,8 +413,6 @@ export const fr: Resources = {
     resume: 'Annuler la résiliation',
     reactivate: 'Réactiver',
     gdpr: 'Exporter / supprimer vos données',
-    confirmCancel: 'Résilier cet abonnement ? L’accès reste actif jusqu’à la fin de la période.',
-    confirmChange: 'Confirmer le changement de formule ?',
     planLimits: 'Votre formule comprend',
     limitFlow: '{{cap}} {{metric}} / {{window}}',
     limitStock: 'jusqu’à {{cap}} {{metric}}',
@@ -437,6 +435,34 @@ export const fr: Resources = {
     blockedTitle: 'Passage à une formule inférieure impossible',
     emptyCta: 'Parcourir le catalogue d’applications',
     contactSupport: 'Contacter l’assistance',
+    // Sezione "Abbonamenti" completa (UC 0067): consumo, avvisi, finestra di cambio piano, conferme.
+    quotaUsage: '{{used}} sur {{cap}} {{metric}} utilisés',
+    quotaWarn: 'Vous approchez de la limite de votre formule pour {{metric}}. Envisagez une formule supérieure.',
+    quotaFull: 'Limite de la formule atteinte pour {{metric}}. Passez à une formule supérieure pour continuer.',
+    dunningTitle: 'Paiement en retard',
+    dunningBody:
+      'Nous n’avons pas pu débiter votre moyen de paiement. L’accès reste actif pendant un court délai de tolérance : mettez votre carte à jour pour ne pas le perdre.',
+    dunningCta: 'Mettre à jour le moyen de paiement',
+    expiredTitle: 'Abonnement expiré',
+    expiredBody:
+      'Vos données sont toujours là. Vous pouvez réactiver à tout moment, ou les exporter et les supprimer : ces droits ne dépendent jamais d’un abonnement actif.',
+    updating: 'Mise à jour en cours — nous attendons la confirmation du prestataire de paiement.',
+    ownerOnly: 'Seul le propriétaire de l’espace de travail peut modifier la facturation.',
+    billingCycle: 'Cycle de facturation',
+    currentPlan: 'Formule actuelle',
+    recommended: 'Recommandé',
+    choosePlan: 'Choisir',
+    freePlan: 'Gratuit',
+    confirmAction: 'Confirmer',
+    confirmUpgradeTitle: 'Passer à une formule supérieure',
+    confirmUpgradeBody:
+      'Vous passez à « {{tier}} ». Le changement est immédiat et la différence au prorata vous est facturée pour le reste de la période en cours.',
+    confirmDowngradeTitle: 'Passer à une formule inférieure',
+    confirmDowngradeBody:
+      'Vous passez à « {{tier}} » à partir du {{date}}. D’ici là, rien ne change et vous restez sur votre formule actuelle. Aucun remboursement.',
+    confirmCancelTitle: 'Résilier l’abonnement',
+    confirmCancelBody:
+      'L’abonnement est résilié à la fin de la période en cours : l’accès reste actif jusqu’au {{date}}, et vous pouvez annuler la résiliation avant cette date.',
   },
   // Storico pagamenti e ricevute (UC 0096) — sezione "Payments & receipts" della pagina Billing.
   payments: {
