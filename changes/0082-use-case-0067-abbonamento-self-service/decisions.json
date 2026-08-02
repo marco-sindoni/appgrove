@@ -1,0 +1,43 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dall'orchestratore (skill go-fast). Nessun gate di workflow: i requisiti si scrivono e committano ma l'implementazione parte subito; il commit avviene senza consenso, solo a suite completa `./run-tests.sh` verde; merge e push restano al chiamante. Restano attive le fermate di escalation e l'obbligo del registro integrale."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0067 (Gestione abbonamento self-service, backoffice \"Abbonamenti\"), indicato esplicitamente all'invocazione. Da qui la forma del branch 0082-use-case-0067-abbonamento-self-service. Trattandosi di una storia evolutiva (onda 2, epica 13), l'indice di esecuzione da aggiornare è docs/usecases/EPICS-WAVE-2.md — non docs/usecases/_INDEX.md, che copre l'onda 1 (UC 0001–0060).",
+    "files": [
+      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Riga 11 dell'ordine di esecuzione (UC 0067): stato ⬜ → 🟡 all'apertura della change, → ✅ alla chiusura." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La sezione \"Abbonamenti\" resta dentro la pagina Fatturazione (/billing), senza nuova rotta né nuova voce di menù. Motivo: UC 0096 — implementato dalla change 0077 poche settimane fa — ha appena stabilito che /billing è la pagina di sola fatturazione con due sezioni, \"I tuoi abbonamenti\" e \"Pagamenti e ricevute\". Creare ora una rotta /subscriptions sarebbe un dietrofront su una decisione fresca, spezzerebbe i percorsi end-to-end L2-BILLING e L2-SUB e lascerebbe la pagina Fatturazione con una sola sezione. Lo use case 0067 chiede la \"sezione Abbonamenti\": è esattamente quella, ed è dove già si trova.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/Billing.tsx", "description": "Resta la pagina ospite: nessuna nuova rotta, la sezione abbonamenti si arricchisce sul posto." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il calcolo dei piani non ammissibili per una riduzione resta interamente lato backend e viene esposto nel read-model /me/subscriptions come mappa piano → spiegazione rimediale, invece di essere ricalcolato in TypeScript nel frontend incrociando uso corrente e limiti dei piani. Motivo: la regola vive già in TierChangePolicy e governa il rifiuto 409 del comando; duplicarla nel frontend creerebbe due verità che divergono in silenzio alla prima modifica della regola. Esporla dal read-model dà al frontend esattamente ciò che gli serve — quali piani disabilitare e con quale spiegazione mostrare — senza conoscere la regola.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java", "description": "Calcola, per ogni abbonamento, uso corrente per metrica e piani bloccati riusando TierChangePolicy.evaluateDowngrade." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionDtos.java", "description": "SubscriptionView acquisisce i campi usage (metrica → giacenza) e blockedTiers (chiave piano → spiegazione)." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Il consumo mostrato in card è quello a giacenza (posti occupati e simili), l'unico che core conosce davvero: la proiezione platform.app_usage_stock (UC 0054) contiene solo quello. Per le metriche a finestra (consumo che si azzera ogni periodo) la card continua a mostrare il solo limite del piano, senza inventare un numero. Chiude parzialmente il punto aperto \"consumo quota in tempo reale\" di UC 0067 e lascia scritto ciò che resta.",
+    "files": [
+      { "file": "docs/usecases/13-abbonamenti-self-service/0067-gestione-abbonamento-self-service.md", "description": "Punti aperti aggiornati: il consumo a giacenza è ora mostrato; resta aperto quello delle metriche a finestra." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il contrassegno \"consigliato\" nella finestra di cambio piano non introduce un dato nuovo nel catalogo: è il primo piano di prezzo superiore a quello attuale, derivato dai prezzi già esposti. Motivo: aggiungere una colonna \"consigliato\" ai piani sarebbe una scelta commerciale (quale piano spingere), che non è dell'agente; derivarlo dal prezzo dà all'utente l'indicazione utile — \"il passo successivo è questo\" — senza decidere nulla di commerciale."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Le conferme del browser (window.confirm) spariscono dal percorso e sono sostituite da una finestra modale dell'applicazione, perché lo use case 0067 §6 chiede che la conferma riepiloghi cosa succede e quando (\"il downgrade sarà attivo dal 12 agosto\"): una finestra del browser non può mostrare quel riepilogo, non è traducibile nelle 5 lingue e non è verificabile dai test end-to-end senza intercettare l'evento di dialogo. Il pattern di finestra modale accessibile esiste già in pages/members/ConfirmDialog.tsx: viene promosso a primitiva condivisa e riusato da entrambi, invece di duplicarlo."
+  }
+]
