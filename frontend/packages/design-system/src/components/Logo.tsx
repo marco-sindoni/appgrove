@@ -1,5 +1,6 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '../lib/cn'
+import { LOGO_PATHS, LOGO_TILE_RADIUS, LOGO_VIEWBOX } from '../brand/logo.mjs'
 
 export interface LogoProps extends HTMLAttributes<HTMLSpanElement> {
   /** Mostra il wordmark "appgrove" accanto al mark. */
@@ -9,8 +10,12 @@ export interface LogoProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Logo appgrove: mark a foglia `eco` in un quadrato ad angoli morbidi (accent) + wordmark.
- * Placeholder on-brand (artwork finale escluso da UC 0019). Si adatta a light/dark via i token.
+ * Logo appgrove: mark a foglia in una piastrella ad angoli morbidi (accent) + wordmark.
+ *
+ * Il DISEGNO non vive qui: viene da `../brand/logo.mjs`, l'unico posto in cui è definito
+ * (UC 0086). Così il generatore dell'immagine social e ogni altro consumatore non-React
+ * disegnano esattamente lo stesso logo, e UC 0087 potrà sostituire l'artwork toccando
+ * un file solo. Qui restano solo i colori, presi dai token → si adatta a chiaro/scuro.
  */
 export function Logo({ showWordmark = true, size = 28, className, ...props }: LogoProps) {
   return (
@@ -23,22 +28,29 @@ export function Logo({ showWordmark = true, size = 28, className, ...props }: Lo
       <svg
         width={size}
         height={size}
-        viewBox="0 0 32 32"
+        viewBox={LOGO_VIEWBOX}
         fill="none"
         aria-hidden="true"
         focusable="false"
       >
-        <rect width="32" height="32" rx="9" fill="rgb(var(--ag-accent))" />
-        <path
-          d="M22 9c0 6.5-3.8 11-9.5 11-1 0-1.9-.15-2.5-.4C10.4 13.2 14.8 9.6 22 9Z"
-          fill="rgb(var(--ag-accent-contrast))"
-        />
-        <path
-          d="M10 22c1.2-3.4 3.4-5.8 6.6-7.2"
-          stroke="rgb(var(--ag-accent))"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-        />
+        <rect width="32" height="32" rx={LOGO_TILE_RADIUS} fill="rgb(var(--ag-accent))" />
+        {LOGO_PATHS.map((path) =>
+          path.fill ? (
+            <path
+              key={path.d}
+              d={path.d}
+              fill={`rgb(var(--ag-${path.on === 'contrast' ? 'accent-contrast' : 'accent'}))`}
+            />
+          ) : (
+            <path
+              key={path.d}
+              d={path.d}
+              stroke="rgb(var(--ag-accent))"
+              strokeWidth={path.strokeWidth}
+              strokeLinecap="round"
+            />
+          ),
+        )}
       </svg>
       {showWordmark && (
         <span className="font-sans text-lg font-extrabold tracking-tight">appgrove</span>

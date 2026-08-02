@@ -111,10 +111,27 @@ riferimenti a icone. Manifesto dati (RoPA/GDPR) non applicabile.
   4. La nota di stile illustrazioni è presente nel pacchetto e serve da riferimento a UC 0087.
 
 ## Punti aperti / decisioni differite
-- **Meccanismo anti-drift automatico**: se un controllo che segnala colori/dimensioni codificati a mano fuori dal pacchetto
-  vada realizzato come parte di questo use case o come strumento a sé (area tooling). *Differito perché:* utile ma non
-  indispensabile alla fonte unica; *possiede:* questo UC finché non emerge un tooling dedicato.
+- ~~**Meccanismo anti-drift automatico**~~ — **RISOLTO** dalla change `0080-use-case-0086-brand-kit-token`: realizzato come
+  strumento a sé, `tools/design-tokens`, agganciato all'area `tooling` di `run-tests.sh`. Motivo della scelta: senza presidio
+  la fonte unica si sfalda alla prima ricopiatura, e il drift trovato durante l'implementazione (dodici colori fuori palette
+  fra email e anteprima social) ha mostrato che non era un rischio teorico.
 - **Posizione del progetto Astro nel monorepo** e forma esatta dell'export cross-progetto: vincolo che UC 0036 possiede; qui
   si assume solo che i token siano esposti come variabili CSS + preset Tailwind + asset, non solo come componenti React.
+  *Stato:* il sito vive in `site/` e collega il pacchetto come dipendenza a percorso; assunzione rispettata.
 - **Versionamento del pacchetto** (se e come marcare cambi che richiedono ripubblicazione dei consumatori): da valutare se il
-  numero di consumatori cresce; oggi la ripubblicazione è manuale/di processo.
+  numero di consumatori cresce; oggi la ripubblicazione è manuale/di processo. *Invariato dopo la change 0080.*
+- **File `.svg` statici del logo su disco** (per un favicon, un allegato email, un'anteprima fuori dal codice): non creati
+  dalla change 0080, perché sarebbero una seconda copia del disegno — che è esattamente ciò che questo use case elimina. Il
+  disegno è disponibile come funzione (`logoMarkSvg`, `logoLockupSvg`): chi avrà bisogno di un file lo materializzerà da lì.
+  *Possiede:* UC 0087, che produce l'artwork definitivo e sa quali formati serviranno davvero.
+
+## Stato dopo l'implementazione (change 0080)
+Il pacchetto era già la fonte unica per i tre consumatori che compilano CSS (SPA backoffice, SPA admin, vetrina Astro con
+dentro le landing generate). La change ha chiuso il divario residuo: token leggibili **da un programma**
+(`@appgrove/design-system/tokens.js`), disegno del logo isolato in un solo file e consumabile fuori da React
+(`src/brand/logo.mjs`), nota di stile delle illustrazioni (`ILLUSTRAZIONI.md`), drift sanato nelle email e nell'anteprima
+social, e presidio automatico contro il suo ritorno.
+
+**Per UC 0087**: l'artwork definitivo si sostituisce intervenendo **solo** su `src/brand/logo.mjs` — i tracciati sono
+dichiarati lì con il loro ruolo colore (`accent` / `contrast`), e componente React, immagine social e ogni consumatore
+futuro li seguono da soli. La nota di stile delle illustrazioni è il riferimento da rispettare.
