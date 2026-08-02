@@ -1,5 +1,6 @@
 package app.appgrove.core.newsletter;
 
+import app.appgrove.commons.email.EmailTemplateRenderer;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -36,7 +37,7 @@ public class NewsletterMailer {
         String actionUrl = baseUrl + "/api/platform/v1/newsletter/confirm?token="
                 + URLEncoder.encode(rawToken, StandardCharsets.UTF_8);
         try {
-            NewsletterEmailRenderer.Rendered r = renderer.renderConfirm(locale, actionUrl);
+            EmailTemplateRenderer.Rendered r = renderer.renderConfirm(locale, actionUrl);
             mailer.send(Mail.withText(email, r.subject(), r.text()).setHtml(r.html()));
             LOG.infof("newsletter.confirm.sent subscriber_id=%s", subscriberId);
         } catch (RuntimeException e) {

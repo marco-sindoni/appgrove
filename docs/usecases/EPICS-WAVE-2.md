@@ -37,7 +37,7 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 |---|------|--------|-------|----------|-------------|-----------|-------|
 | **A. Abilitanti di piattaforma** |
 | 1 | [0077](15-supporto-e-piattaforma/0077-provider-entitlement-reale.md) | Provider entitlement reale (sostituisce lo stub) | 15 | — | 0013, 0020, 0021, 0027, 0025, 0024 | 🟢 | ✅ |
-| 2 | [0085](17-skill-e-tooling-contenuto/0085-unificazione-renderer-email-commons.md) | Unificazione renderer email in `services/commons` | 17 | — | 0018, 0039 | 🟢 | 🟡 |
+| 2 | [0085](17-skill-e-tooling-contenuto/0085-unificazione-renderer-email-commons.md) | Unificazione renderer email in `services/commons` | 17 | — | 0018, 0039 | 🟢 | ✅ |
 | 3 | [0086](18-brand-e-design-system/0086-brand-kit-token-condiviso.md) | Brand kit / token condiviso (fonte unica) | 18 | — | 0019, 0036, 0046 | 🟢 | ⬜ |
 | 4 | [0087](18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md) | Artwork logo finale + illustrazioni on-brand | 18 | 0086 | 0019, 0037 | 🟢 | ⬜ |
 | **B. Messa in cloud & go-live** |

@@ -135,6 +135,38 @@
 
   <build>
     <plugins>
+      <!--
+        Template email (UC 0018/0039): la SORGENTE UNICA è shared/email-templates alla radice del
+        repo. Qui vengono copiati nelle risorse di TEST soltanto, perché i test del renderer
+        condiviso (UC 0085) possano renderli davvero. Nell'artefatto spedito NON finiscono: la
+        copia in classpath di produzione resta un passo del pom di ciascun servizio che spedisce
+        email (auth, core), così commons non porta in giro una terza copia dei testi.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-email-templates-test</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.testOutputDirectory}/email-templates</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/../../shared/email-templates</directory>
+                  <includes>
+                    <include>*.json</include>
+                    <include>layout.*</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- test-jar: espone ai servizi le utility di test condivise (PersonalDataManifestVerifier, UC 0030). -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

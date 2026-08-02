@@ -1,5 +1,6 @@
 package app.appgrove.auth;
 
+import app.appgrove.commons.email.EmailTemplateRenderer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -42,7 +43,7 @@ public class EmailService {
     }
 
     private void send(String to, String locale, String messageKey, Map<String, String> values) {
-        EmailTemplates.Rendered rendered = templates.render(locale, messageKey, values);
+        EmailTemplateRenderer.Rendered rendered = templates.render(locale, messageKey, values);
         sender.get().send(to, rendered.subject(), rendered.text(), rendered.html());
     }
 

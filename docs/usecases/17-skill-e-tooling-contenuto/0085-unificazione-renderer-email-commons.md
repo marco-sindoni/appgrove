@@ -123,7 +123,15 @@ trattamenti; nessun manifesto dati o RoPA da aggiornare. Le email prodotte resta
 - **Custom Message Lambda (Python) fuori scope**: rende la stessa cartella `shared/email-templates` con gli stessi due
   passaggi, ma in un altro linguaggio; unificarlo con la logica Java non è possibile e resta fuori. Se in futuro la
   logica di resa diverge fra Java e Python, va tracciato come punto a sé (possiede il tema UC 0018).
-- **Dove collocare esattamente il renderer in commons**: package e nome della classe sono un dettaglio da fissare
-  all'implementazione (area email dedicata dentro `app.appgrove.commons`); da annotare in `decisions.json`.
+- **Dove collocare esattamente il renderer in commons**: ✅ **chiuso** dalla change `0079` — package
+  `app.appgrove.commons.email`, classi `EmailTemplateRenderer` (renderer) ed `EmailLocales` (set di lingue), risultato
+  `EmailTemplateRenderer.Rendered`.
 - **Set di lingue della newsletter**: oggi `en`/`it`; se in futuro la newsletter passasse alle 5 lingue, basterà
   cambiare il parametro — la scelta di quando farlo appartiene a UC 0039, non a questo refactor.
+- **Copia dei template nell'artefatto di `commons`** (aperto dalla change `0079`): oggi i template sono copiati nel
+  classpath di *ciascun* servizio che spedisce email (`services/auth`, `services/core`) da un passo del rispettivo
+  `pom.xml`, e in `commons` solo nelle risorse di **test**. Si potrebbe invece spedirli dentro il jar di `commons` e
+  togliere i due passi dai servizi: una duplicazione in meno, ma tocca la composizione degli artefatti spediti (una
+  libreria che porta con sé contenuti testuali) ed era fuori dallo scope dichiarato di questo use case, che indicava
+  quei `pom.xml` come invariati. Da valutare a parte, insieme alla domanda "chi possiede i testi delle email": possiede
+  il tema **UC 0018**.

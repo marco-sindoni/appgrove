@@ -7,7 +7,10 @@
     "id": 2,
     "decision": "(autopilot) La change implementa lo use case 0085 (unificazione dei renderer email in services/commons), indicato esplicitamente all'invocazione: da qui la forma del branch 0079-use-case-0085-renderer-email-commons. Il numero 0079 è il progressivo di changes/ (l'ultima presente è 0078) e coincide con quello assegnato dall'orchestratore.",
     "files": [
-      { "file": "docs/usecases/EPICS-WAVE-2.md", "description": "Lo use case 0085 è una storia evolutiva: il suo stato vive qui (indice di esecuzione dell'onda 2), non nella tabella topologica di _INDEX.md. Passa a 🟡 all'apertura della change e a ✅ alla chiusura." }
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Lo use case 0085 è una storia evolutiva: il suo stato vive qui (indice di esecuzione dell'onda 2), non nella tabella topologica di _INDEX.md. Passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
     ]
   },
   {
@@ -22,8 +25,14 @@
     "id": 5,
     "decision": "(autopilot) Forma del renderer condiviso: una classe semplice, non gestita dal contenitore di iniezione, che carica i template nel proprio costruttore e riceve il set di lingue come parametro. In alternativa si sarebbe potuto farne un bean applicativo configurato da proprietà, ma il set di lingue è una scelta del servizio (auth ha le sue, la newsletter le proprie) e un bean unico costringerebbe a un'unica copertura linguistica — esattamente il vincolo che lo use case chiede di evitare. Ogni servizio conserva quindi il proprio bean sottile che costruisce il renderer con il set che gli serve: i punti di iniezione e i chiamanti esistenti non cambiano.",
     "files": [
-      { "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailTemplateRenderer.java", "description": "Renderer unico: classe semplice costruita con un set di lingue, carica impaginazione e cataloghi dal classpath del servizio che la usa." },
-      { "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailLocales.java", "description": "Set di lingue parametrizzabile (lingue ammesse + lingua di ripiego) con la normalizzazione delle forme comuni; unica sede dell'algoritmo, prima duplicato in tre punti." }
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailTemplateRenderer.java",
+        "description": "Renderer unico: classe semplice costruita con un set di lingue, carica impaginazione e cataloghi dal classpath del servizio che la usa."
+      },
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailLocales.java",
+        "description": "Set di lingue parametrizzabile (lingue ammesse + lingua di ripiego) con la normalizzazione delle forme comuni; unica sede dell'algoritmo, prima duplicato in tre punti."
+      }
     ]
   },
   {
@@ -34,7 +43,10 @@
     "id": 7,
     "decision": "(autopilot) I file `pom.xml` di auth e core, che copiano shared/email-templates nell'artefatto, restano invariati (lo use case li dichiara fuori scope). In commons si aggiunge la sola copia verso le risorse di TEST: serve perché i test del renderer condiviso trovino impaginazione e cataloghi, e non immette una terza copia dei template negli artefatti spediti. Si è scartata l'alternativa più radicale — spostare la copia dentro il jar di commons e toglierla dai due servizi — perché tocca la spedizione degli artefatti, esce dallo scope dichiarato e va valutata a parte.",
     "files": [
-      { "file": "services/commons/pom.xml", "description": "Copia di shared/email-templates nelle risorse di test (fase generate-test-resources): solo collaudo, non finisce nell'artefatto." }
+      {
+        "file": "services/commons/pom.xml",
+        "description": "Copia di shared/email-templates nelle risorse di test (fase generate-test-resources): solo collaudo, non finisce nell'artefatto."
+      }
     ]
   },
   {
@@ -44,5 +56,121 @@
   {
     "id": 9,
     "decision": "(autopilot) Copertura end-to-end (registro docs/testing/copertura-e2e.yaml): NESSUN IMPATTO. Lo use case 0085 è già registrato come esente in categoria «senza-superficie» (rifattorizzazione di servizio, nessuna superficie interattiva); la change non introduce pagine, rotte o comportamenti visibili all'utente, quindi il registro non cambia. Nessun percorso Playwright da aggiungere o estendere."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il caricamento dei template avviene nel COSTRUTTORE del renderer condiviso, non in un metodo di inizializzazione differita: un artefatto a cui mancano impaginazione o cataloghi fallisce all'avvio del servizio (dove il bean adattatore costruisce il renderer) e non alla prima email da spedire — che sarebbe una registrazione bloccata in produzione. Il comportamento osservato è lo stesso di prima, dove il caricamento stava nel metodo di post-costruzione dei due bean.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailTemplateRenderer.java",
+        "description": "Costruttore che carica impaginazione e cataloghi delle sole lingue richieste dal set."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il set di lingue è un record con due campi (lingua di ripiego + lingue supportate) che valida sé stesso alla costruzione: il ripiego DEVE essere fra le lingue supportate, altrimenti sarebbe una lingua senza catalogo e il difetto si scoprirebbe solo quando arriva un utente con una lingua non prevista. L'insieme viene copiato in difesa, così chi lo passa non può cambiarlo dopo.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/email/EmailLocales.java",
+        "description": "Validazione del ripiego e copia difensiva dell'insieme; unica sede dell'algoritmo di normalizzazione della lingua."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) In auth la classe Locales resta e continua a dichiarare quali lingue copre il servizio (è usata anche fuori dalle email: lingua scritta a database, attributo passato a Cognito), ma non contiene più l'algoritmo di normalizzazione: espone il set condiviso e vi delega. Si evita così la terza copia dello stesso codice, senza toccare i cinque punti di chiamata esistenti.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/Locales.java",
+        "description": "Aggiunta la costante EMAIL (set di lingue del servizio); normalize delega al set condiviso."
+      },
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/EmailTemplates.java",
+        "description": "Ridotta ad adattatore: costruisce il renderer condiviso con Locales.EMAIL e delega la resa. Zero logica di resa."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Nel core il metodo statico di normalizzazione della lingua resta esposto da NewsletterEmailRenderer e delega al set condiviso, invece di essere spostato altrove: è già richiamato da NewsletterService e NewsletterResource (scelta della lingua con cui si scrive l'iscritto a database e con cui si rende la pagina di esito della conferma), e spostarlo avrebbe allargato la rifattorizzazione oltre lo scope senza alcun beneficio funzionale.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/newsletter/NewsletterEmailRenderer.java",
+        "description": "Ridotta ad adattatore: dichiara le lingue della newsletter e la chiave del messaggio, delega la resa al renderer condiviso, mantiene il metodo di normalizzazione usato altrove."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/newsletter/NewsletterMailer.java",
+        "description": "Usa il tipo di risultato del renderer condiviso; invio e comportamento indulgente sugli errori invariati."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Il risultato della resa è un tipo unico definito dal renderer condiviso: i due record gemelli dei servizi sparivano comunque, e mantenerne uno per servizio avrebbe significato scrivere conversioni fra tipi identici. I due chiamanti (servizio email di auth, spedizione della conferma newsletter) sono stati adeguati al nuovo tipo — è l'unica modifica che tocca codice fuori dai due renderer.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/EmailService.java",
+        "description": "Usa il tipo di risultato del renderer condiviso; logica di invio invariata."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Collocazione dei test: la batteria di comportamento della resa (lingue, ripiego, varianti regionali, sostituzioni, escape dei valori e del collegamento, guardia sui segnaposto, messaggio sconosciuto, set di lingue ristretto o con default diverso) vive in services/commons, dove ora vive il codice; il test di parità fra le lingue dei cataloghi è stato SPOSTATO da auth a commons per la stessa ragione (vale per tutti i servizi che spediscono email, non per uno solo). In auth resta un test di integrazione ridotto che prova la resa vera attraverso il bean del servizio e — soprattutto — che i template siano davvero nell'artefatto di auth: se la copia configurata nel pom si rompesse, quel test diventerebbe rosso invece dell'avvio in produzione. Stesso presidio per il core attraverso i test di flusso della newsletter, che rendono l'email per davvero.",
+    "files": [
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/email/EmailTemplateRendererTest.java",
+        "description": "Nuovo: 11 test di comportamento della resa, inclusi i due casi che dimostrano il set di lingue parametrizzabile."
+      },
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/email/EmailLocalesTest.java",
+        "description": "Nuovo: normalizzazione, ripiego, validazione del set."
+      },
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/email/EmailCatalogParityTest.java",
+        "description": "Spostato da services/auth (era EmailTemplatesParityTest): parità fra le lingue dei cataloghi e presenza delle impaginazioni."
+      },
+      {
+        "file": "services/auth/src/test/java/app/appgrove/auth/EmailTemplatesTest.java",
+        "description": "Ridotto all'integrazione: bean cablato sul renderer condiviso e template presenti nell'artefatto di auth per tutti e tre i messaggi."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) ESITO DEL COLLAUDO DI PARITÀ BYTE-A-BYTE: superato. Prima del cambiamento sono stati catturati 37 casi resi dai due renderer originali (verify, reset e invito per sette forme di lingua — inglese, italiano, tedesco, it-IT, IT_it, ' it ' con spazi, stringa vuota — più il caso della lingua assente; conferma newsletter per le stesse forme più la lingua assente; e l'esito della normalizzazione della lingua della newsletter). Dopo la rifattorizzazione gli stessi 37 casi sono stati rigenerati dal renderer condiviso: il confronto integrale non mostra alcuna differenza (impronte crittografiche dei due insiemi identiche). Nessuna email cambia contenuto, resa o byte prodotti. Gli strumenti di cattura usati per il collaudo erano temporanei e sono stati rimossi, come deciso al punto 8."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Aggiornata la documentazione che descriveva la realtà precedente: il README della sorgente unica dei testi (shared/email-templates) elencava un solo consumatore Java e citava il test di parità nella vecchia sede. Ora dichiara entrambi i servizi consumatori, dice che rendono i testi con lo stesso codice, e punta al test nella nuova sede. Un documento che descrive un assetto superato è un difetto quanto il codice duplicato che questa change ha rimosso.",
+    "files": [
+      {
+        "file": "shared/email-templates/README.md",
+        "description": "Tabella dei consumatori completata con services/core; nota sul renderer unico; riferimento al test di parità aggiornato."
+      },
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "La voce §Tooling che aveva sollevato il tema è marcata chiusa, con esplicitato il residuo non unificabile (la resa in Python del Custom Message Lambda)."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Rimandi tracciati (regola CLAUDE.md sul tracciamento delle decisioni differite): in UC 0018 — che possiede il tema delle email di autenticazione — sono stati scritti due punti aperti. (1) La SECONDA implementazione degli stessi due passaggi nel Custom Message Lambda in Python: non unificabile col codice Java, può divergere in silenzio; oggi il presidio è indiretto (stessa cartella di testi, parità delle lingue verificata in commons) e se divergesse servirebbe un collaudo che confronti gli output dei due programmi. (2) Dove vivono i template nell'artefatto: se spostarli dentro il jar della libreria condivisa e togliere i passi di copia dai due servizi — tocca la composizione degli artefatti spediti, quindi non si decide qui. Nello use case 0085 il punto aperto sulla collocazione del renderer è chiuso con la scelta presa.",
+    "files": [
+      {
+        "file": "docs/usecases/05-auth/0018-localizzazione-email-auth.md",
+        "description": "Due punti aperti nuovi, entrambi di proprietà di UC 0018."
+      },
+      {
+        "file": "docs/usecases/17-skill-e-tooling-contenuto/0085-unificazione-renderer-email-commons.md",
+        "description": "Punto aperto sulla collocazione chiuso; aggiunto il rimando sulla copia dei template."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) run-tests.sh NON va modificato da questa change: non aggiunge né rimuove moduli (services/commons, auth e core esistono già ed erano già nell'area backend) e non cambia il comando di test di nessuna area. Verifica fatta esplicitamente perché è parte della Definition of Done."
   }
 ]
