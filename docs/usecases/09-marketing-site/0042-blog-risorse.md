@@ -79,3 +79,16 @@ Contenuti pubblici, nessun dato personale. Misura via Plausible (cookieless) + r
   l'**Organizzazione** appgrove come `author`/`publisher` (contenuti AI-generati on-brand, dec. #14 35), non una persona
   fisica. Coerente con la postura attuale; se in futuro si vorrà una firma d'autore editoriale, estendere il costruttore
   `articleJsonLd` con un `author` di tipo `Person`.
+
+- **Freschezza dei contenuti pubblicati** _(tracciato dalla change `0085-use-case-0084-…`)_: un articolo che cita una
+  funzionalità, un prezzo o una scadenza normativa eredita la **scadenza di quell'affermazione**, ma oggi nulla la
+  sorveglia — esiste un controllo di freschezza per il registro dei trattamenti (UC 0030), non per i post. La skill
+  `new-blog-post` si limita a chiedere di annotare l'affermazione deperibile nel registro delle decisioni della change.
+  Se il blog cresce, serve un presidio vero (data di ultima verifica per post + controllo che diventi rosso oltre una
+  soglia, sulla falsariga della freschezza RoPA). Non fatto ora: con tre post è cerimonia, e il presidio giusto dipende
+  da quanti articoli faranno affermazioni deperibili. **Lo possiede questo use case**, che possiede il motore del blog.
+
+- **Stato `draft`/`published` — riletto dopo la change `0085`**: la skill `new-blog-post` genera post già pubblicati e
+  fa approvare la copy allo sviluppatore *prima* di generare (fermata obbligatoria in ogni modalità). Il bisogno di una
+  bozza a più passaggi quindi **non è emerso**; la nota qui sopra resta valida se un giorno servirà una revisione
+  editoriale distribuita nel tempo.

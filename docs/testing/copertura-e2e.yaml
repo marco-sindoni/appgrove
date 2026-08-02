@@ -593,7 +593,11 @@ esenzioni:
     motivo: Correzione della regione e casella per le segnalazioni di sicurezza — configurazione.
   - usecase: "0084"
     categoria: senza-superficie
-    motivo: Skill `new-blog-post` — strumento di processo.
+    motivo: >-
+      Skill `new-blog-post` — strumento di processo: genera contenuti, non apre nessun percorso da
+      browser. Il presidio è altrove ed è più adatto: i test del generatore nell'area `tooling`
+      (rifiuto prima di scrivere, agganci pilastro↔cluster, simmetria genera→rimuovi, allarme di
+      deriva sul contratto di UC 0042) e l'area `site` sui contenuti prodotti.
   - usecase: "0085"
     categoria: senza-superficie
     motivo: Unificazione dei generatori di modelli email — rifattorizzazione di servizio.

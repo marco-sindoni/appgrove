@@ -1,0 +1,13 @@
+{
+  "name": "appgrove-new-blog-post",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Metà meccanica della skill new-blog-post (UC 0084): scaffolding di un post del blog del sito vetrina nelle 5 lingue (cartella + file-lingua + identità), entry nel registro dei contenuti e aggancio dei riferimenti reciproci pilastro↔cluster, sul contratto del motore blog di UC 0042. Valida prima di scrivere e rifiuta senza toccare il repository; offre l'inverso per il ripristino. La copy è del co-pilota conversazionale, non di questo strumento.",
+  "scripts": {
+    "test": "node --test",
+    "list": "node generate.mjs list",
+    "check": "node generate.mjs check",
+    "scaffold": "node generate.mjs scaffold"
+  }
+}
