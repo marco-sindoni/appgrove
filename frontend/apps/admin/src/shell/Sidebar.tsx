@@ -88,6 +88,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
         <GroupLabel>Revenue</GroupLabel>
         <NavItem to="/billing" icon="account_balance_wallet" label={t('admin.nav.billing')} onNavigate={onNavigate} />
+        <NavItem to="/reconciliation" icon="account_balance" label={t('admin.nav.reconciliation')} onNavigate={onNavigate} />
 
         <GroupLabel>Governance</GroupLabel>
         <NavItem to="/gdpr" icon="verified_user" label={t('admin.nav.gdpr')} onNavigate={onNavigate} />

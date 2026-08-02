@@ -25,5 +25,16 @@ public enum LifecycleScenario {
     /** active → transaction.disputed: chargeback/dispute → {@code past_due} (reazione MoR, #09 J42). */
     chargeback,
     /** customer.updated: cattura {@code paddle_customer_id} su {@code accounts} (#09 C15/D21). */
-    customer
+    customer,
+    /**
+     * {@code payout.paid}: il fornitore accredita il netto non ancora accreditato del conto e dell'app
+     * (UC 0071). Non genera pagamenti: accredita quelli che ci sono, quindi va lanciato <b>dopo</b> uno
+     * scenario che ne produca (percorso felice, rinnovo).
+     */
+    payout,
+    /**
+     * {@code transaction.refunded} → {@code payout.paid} negativo: rimborso totale dell'ultimo pagamento
+     * riuscito, seguito dalla restituzione in un accredito successivo (UC 0071).
+     */
+    refund
 }

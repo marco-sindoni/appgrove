@@ -56,8 +56,12 @@ public class PaddleWebhookConsumer {
                 // Invalidazione delle proiezioni entitlement (UC 0046) SOLO su PROCESSED: un evento
                 // duplicato o out-of-order non ha cambiato lo stato, quindi non c'è nulla da
                 // rinfrescare — pubblicare comunque genererebbe rinfreschi inutili e falserebbe la
-                // misura di ricorso alla rete di sicurezza, che è la spia di un bus rotto.
-                if (outcome == SubscriptionWriter.Outcome.PROCESSED && !event.isCustomerEvent()) {
+                // misura di ricorso alla rete di sicurezza, che è la spia di un bus rotto. Gli accrediti
+                // (UC 0071) sono fuori per la stessa ragione dei customer.*: contano i soldi arrivati, non
+                // toccano nessun entitlement.
+                if (outcome == SubscriptionWriter.Outcome.PROCESSED
+                        && !event.isCustomerEvent()
+                        && !event.isPayoutEvent()) {
                     invalidation.invalidate(event.tenantId(), event.appId(), event.eventType());
                 }
                 queue.delete(message); // esito di successo (applicato/duplicato/stale) → conferma

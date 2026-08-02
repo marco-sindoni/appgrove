@@ -6,6 +6,8 @@ import app.appgrove.core.platform.AdminDtos.AdminUserView;
 import app.appgrove.core.platform.AdminDtos.AppStatusAuditView;
 import app.appgrove.core.platform.AdminDtos.AppView;
 import app.appgrove.core.billing.EntitlementAccess;
+import app.appgrove.core.billing.ReconciliationDtos.ReconciliationView;
+import app.appgrove.core.billing.ReconciliationService;
 import app.appgrove.core.billing.SubscriptionStatus;
 import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.catalog.AppStatusService;
@@ -51,6 +53,9 @@ public class AdminResource {
 
     @Inject
     AppStatusService appStatus;
+
+    @Inject
+    ReconciliationService reconciliation;
 
     @GET
     @Path("/overview")
@@ -152,6 +157,18 @@ public class AdminResource {
                 .map(r -> new BillingRow(
                         str(r[0]), str(r[1]), str(r[2]), str(r[3]), str(r[4]), str(r[5]), str(r[6]), str(r[7])))
                 .toList();
+    }
+
+    /**
+     * Riconciliazione fra ricavo lordo e denaro davvero accreditato (UC 0071): lordo → commissioni → netto →
+     * accredito, per periodo, con la quadratura di ogni accredito. Sta qui e non nella pagina di
+     * fatturazione del cliente perché il netto è un dato economico della piattaforma: al cliente interessa
+     * quanto ha pagato, a noi quanto è entrato.
+     */
+    @GET
+    @Path("/reconciliation")
+    public ReconciliationView reconciliation() {
+        return reconciliation.view();
     }
 
     /**

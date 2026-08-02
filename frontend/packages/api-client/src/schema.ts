@@ -1094,6 +1094,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/admin/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reconciliation */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReconciliationView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/admin/users": {
         parameters: {
             query?: never;
@@ -3152,7 +3202,7 @@ export interface components {
             currentPeriodEnd?: string;
         };
         /** @enum {string} */
-        BillingTransactionStatus: "paid" | "failed" | "disputed";
+        BillingTransactionStatus: "paid" | "failed" | "disputed" | "refunded";
         /** @enum {string} */
         CatalogAppState: "available" | "active" | "trial" | "payment_pending" | "cancellation_scheduled" | "disabled_by_platform";
         CatalogAppView: {
@@ -3342,6 +3392,22 @@ export interface components {
         PaymentsView: {
             payments?: components["schemas"]["PaymentView"][];
         };
+        PayoutView: {
+            paddlePayoutId?: string;
+            paidAt?: components["schemas"]["Instant"];
+            currency?: string;
+            /** Format: int64 */
+            amount?: number;
+            /** Format: int64 */
+            linesNet?: number;
+            /** Format: int64 */
+            difference?: number;
+            status?: string;
+            /** Format: int64 */
+            lines?: number;
+            coveredFrom?: components["schemas"]["Instant"];
+            coveredTo?: components["schemas"]["Instant"];
+        };
         PortalSessionView: {
             url?: string;
         };
@@ -3374,6 +3440,52 @@ export interface components {
             /** Format: int32 */
             total?: number;
             executedAt?: components["schemas"]["Instant"];
+        };
+        ReconciliationPeriod: {
+            period?: string;
+            /** Format: int64 */
+            gross?: number;
+            /** Format: int64 */
+            fee?: number;
+            /** Format: int64 */
+            net?: number;
+            /** Format: int64 */
+            reversed?: number;
+            /** Format: int64 */
+            transactions?: number;
+            /** Format: double */
+            feePercent?: number;
+            feeOverThreshold?: boolean;
+        };
+        ReconciliationTotals: {
+            /** Format: int64 */
+            gross?: number;
+            /** Format: int64 */
+            fee?: number;
+            /** Format: int64 */
+            net?: number;
+            /** Format: int64 */
+            reversed?: number;
+            /** Format: int64 */
+            settled?: number;
+            /** Format: int64 */
+            unsettled?: number;
+            /** Format: int64 */
+            transactions?: number;
+            /** Format: int64 */
+            estimatedFeeTransactions?: number;
+            oldestUnsettledAt?: components["schemas"]["Instant"];
+        };
+        ReconciliationView: {
+            currency?: string;
+            totals?: components["schemas"]["ReconciliationTotals"];
+            periods?: components["schemas"]["ReconciliationPeriod"][];
+            payouts?: components["schemas"]["PayoutView"][];
+            /** Format: double */
+            feeAlertPercent?: number;
+            payoutOverdue?: boolean;
+            /** Format: int64 */
+            payoutMaxAgeDays?: number;
         };
         RequestView: {
             type?: string;

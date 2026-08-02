@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.Instant;
@@ -21,7 +22,8 @@ import org.jboss.logmanager.MDC;
  * <ol>
  *   <li><b>Dedup</b> (#09 D18b): {@code INSERT ... ON CONFLICT (event_id) DO NOTHING} su
  *       {@code webhook_event}; 0 righe → evento già processato → {@link Outcome#DUPLICATE} (no-op).</li>
- *   <li><b>Apply</b>: {@code customer.*} → {@code accounts.paddle_customer_id}; gli altri eventi del set
+ *   <li><b>Apply</b>: {@code customer.*} → {@code accounts.paddle_customer_id}; {@code payout.*} →
+ *       {@code payout} + {@code payout_line} (accrediti del fornitore, UC 0071); gli altri eventi del set
  *       (#09 D21) → upsert idempotente di {@code subscription} con <b>guardia out-of-order</b> via
  *       {@code occurred_at} (#09 D18c): un evento più vecchio non sovrascrive → {@link Outcome#SKIPPED_STALE}.</li>
  *   <li><b>Esito</b> registrato su {@code webhook_event} ({@code processed}/{@code skipped_stale}).</li>
@@ -97,8 +99,9 @@ public class SubscriptionWriter {
             insert into platform.billing_transaction
               (id, tenant_id, app_id, app_tier_id, paddle_transaction_id, status,
                amount, currency, billing_cycle, receipt_url, billed_at, last_event_occurred_at,
+               fee_amount, net_amount, fee_source,
                created_at, updated_at, created_by, updated_by)
-            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
+            values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
             on conflict (paddle_transaction_id)
             do update set
               app_id                 = excluded.app_id,
@@ -110,10 +113,49 @@ public class SubscriptionWriter {
               receipt_url            = excluded.receipt_url,
               billed_at              = excluded.billed_at,
               last_event_occurred_at = excluded.last_event_occurred_at,
+              fee_amount             = excluded.fee_amount,
+              net_amount             = excluded.net_amount,
+              fee_source             = excluded.fee_source,
               updated_at             = now(),
               updated_by             = 'system'
             where platform.billing_transaction.last_event_occurred_at is null
                or platform.billing_transaction.last_event_occurred_at <= excluded.last_event_occurred_at
+            """;
+
+    /**
+     * Accredito del fornitore (UC 0071): stessa idempotenza e stessa guardia out-of-order della
+     * transazione. {@code returning id} serve a riscrivere il dettaglio <b>solo</b> quando l'accredito è
+     * stato davvero applicato: su un evento più vecchio l'upsert non tocca nulla e il dettaglio non deve
+     * essere riscritto con dati sorpassati.
+     */
+    private static final String UPSERT_PAYOUT =
+            """
+            insert into platform.payout
+              (id, paddle_payout_id, amount, currency, paid_at, last_event_occurred_at,
+               created_at, updated_at, created_by, updated_by)
+            values (?, ?, ?, ?, ?, ?, now(), now(), 'system', 'system')
+            on conflict (paddle_payout_id)
+            do update set
+              amount                 = excluded.amount,
+              currency               = excluded.currency,
+              paid_at                = excluded.paid_at,
+              last_event_occurred_at = excluded.last_event_occurred_at,
+              updated_at             = now(),
+              updated_by             = 'system'
+            where platform.payout.last_event_occurred_at is null
+               or platform.payout.last_event_occurred_at <= excluded.last_event_occurred_at
+            returning id
+            """;
+
+    private static final String DELETE_PAYOUT_LINES = "delete from platform.payout_line where payout_id = ?";
+
+    private static final String INSERT_PAYOUT_LINE =
+            """
+            insert into platform.payout_line (payout_id, paddle_transaction_id, net_amount, currency)
+            values (?, ?, ?, ?)
+            on conflict (payout_id, paddle_transaction_id) do update set
+              net_amount = excluded.net_amount,
+              currency   = excluded.currency
             """;
 
     private static final String UPDATE_CUSTOMER =
@@ -122,6 +164,9 @@ public class SubscriptionWriter {
 
     @Inject
     AgroalDataSource ds;
+
+    @Inject
+    PaymentFees fees;
 
     /** Applica un evento in modo transazionale e ritorna l'esito (mai null). */
     public Outcome apply(PaddleWebhookEvent event) {
@@ -185,6 +230,11 @@ public class SubscriptionWriter {
             updateCustomer(c, event);
             return Outcome.PROCESSED;
         }
+        // Accredito del fornitore (UC 0071): non ha un conto cliente e non tocca nessun abbonamento —
+        // conta soltanto il denaro davvero arrivato. Esce subito, prima del ramo transazione/subscription.
+        if (event.isPayoutEvent()) {
+            return recordPayout(c, event) ? Outcome.PROCESSED : Outcome.SKIPPED_STALE;
+        }
         // Storico pagamenti (UC 0096): indipendente dall'effetto sull'abbonamento, e nella STESSA
         // transazione — o si registrano entrambi o nessuno dei due, altrimenti uno storico e uno stato
         // che si contraddicono sarebbero peggio di un dato mancante.
@@ -209,6 +259,12 @@ public class SubscriptionWriter {
         if (status == null || tx == null || tx.currency() == null) {
             return;
         }
+        // Commissione e netto (UC 0071). Il numero del fornitore vince sempre; in sua assenza si stima e la
+        // riga resta marcata come stimata. Su un tentativo fallito non c'è nulla da trattenere; su uno
+        // storno la commissione resta a carico nostro ma l'incasso è tornato indietro, quindi il netto è
+        // zero e il denaro restituito riappare come riga negativa in un accredito successivo.
+        PaymentFees.Fee fee = status == BillingTransactionStatus.failed ? null : fees.of(tx.amount(), tx.fee());
+        int netAmount = status == BillingTransactionStatus.paid && fee != null ? fee.netAmount() : 0;
         try (PreparedStatement ps = c.prepareStatement(UPSERT_TRANSACTION)) {
             ps.setObject(1, UUID.randomUUID());
             ps.setObject(2, event.tenantId());
@@ -222,8 +278,64 @@ public class SubscriptionWriter {
             setNullable(ps, 10, tx.receiptUrl());
             setTimestamp(ps, 11, tx.billedAt());
             setTimestamp(ps, 12, event.occurredAt());
+            if (fee == null) {
+                ps.setNull(13, Types.INTEGER);
+                ps.setInt(14, 0);
+                ps.setNull(15, Types.VARCHAR);
+            } else {
+                ps.setInt(13, fee.feeAmount());
+                ps.setInt(14, netAmount);
+                ps.setString(15, fee.source().name());
+            }
             ps.executeUpdate();
         }
+    }
+
+    /**
+     * Registra l'accredito e il suo dettaglio (UC 0071). Il dettaglio si riscrive <b>solo</b> se l'accredito
+     * è stato applicato: un evento più vecchio non deve sostituire righe più recenti. Il netto di ogni riga
+     * è quello comunicato dal fornitore per <b>quell'</b>accredito, mai ricalcolato dalla transazione —
+     * altrimenti uno storno successivo farebbe apparire sbagliato un accredito che allora era corretto.
+     *
+     * @return {@code false} se l'evento era più vecchio dello stato già registrato (stale)
+     */
+    private boolean recordPayout(Connection c, PaddleWebhookEvent event) throws SQLException {
+        PaddleWebhookEvent.PayoutData payout = event.payout();
+        if (payout == null || payout.currency() == null) {
+            // Un accredito senza riferimento o senza valuta non è registrabile: non c'è chiave di
+            // idempotenza né unità di misura. Non è un errore di pipeline — si registra come no-op.
+            return true;
+        }
+        UUID payoutId;
+        try (PreparedStatement ps = c.prepareStatement(UPSERT_PAYOUT)) {
+            ps.setObject(1, UUID.randomUUID());
+            ps.setString(2, payout.paddlePayoutId());
+            ps.setInt(3, payout.amount());
+            ps.setString(4, payout.currency());
+            setTimestamp(ps, 5, payout.paidAt());
+            setTimestamp(ps, 6, event.occurredAt());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return false; // stale: nessuna riga aggiornata
+                }
+                payoutId = rs.getObject(1, UUID.class);
+            }
+        }
+        try (PreparedStatement ps = c.prepareStatement(DELETE_PAYOUT_LINES)) {
+            ps.setObject(1, payoutId);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps = c.prepareStatement(INSERT_PAYOUT_LINE)) {
+            for (PaddleWebhookEvent.PayoutLine line : payout.lines()) {
+                ps.setObject(1, payoutId);
+                ps.setString(2, line.paddleTransactionId());
+                ps.setInt(3, line.netAmount());
+                ps.setString(4, line.currency() != null ? line.currency() : payout.currency());
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+        return true;
     }
 
     /** Upsert idempotente con guardia out-of-order; true se ha applicato, false se stale. */

@@ -91,6 +91,7 @@ export function Topbar({ onOpenSidebar }: { onOpenSidebar?: () => void }) {
     users: t('admin.nav.users'),
     entitlements: t('admin.nav.entitlements'),
     billing: t('admin.nav.billing'),
+    reconciliation: t('admin.nav.reconciliation'),
     apps: t('admin.nav.apps'),
     gdpr: t('admin.nav.gdpr'),
   }

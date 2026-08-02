@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -82,6 +83,26 @@ class AdminApiTest {
                 .then().statusCode(200)
                 .body("accounts", greaterThanOrEqualTo(3))
                 .body("disabledApps", greaterThanOrEqualTo(1)); // 'legacy' inactive
+    }
+
+    /**
+     * Riconciliazione (UC 0071): la vista è di piattaforma e vive dietro il ruolo di piattaforma. Qui si
+     * difende la <b>forma</b> e il <b>gating</b>; la correttezza degli aggregati è di {@code ReconciliationTest}.
+     */
+    @Test
+    void reconciliationIsShapedAndRestrictedToPlatformAdmin() {
+        given().header("Authorization", "Bearer " + adminToken())
+                .when().get(ADMIN + "/reconciliation")
+                .then().statusCode(200)
+                .body("totals.gross", greaterThanOrEqualTo(0))
+                .body("feeAlertPercent", greaterThanOrEqualTo(0f))
+                .body("periods", is(notNullValue()))
+                .body("payouts", is(notNullValue()));
+
+        // i dati economici globali non sono affari di un titolare di conto qualunque
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(PLATFORM_TENANT, "owner"))
+                .when().get(ADMIN + "/reconciliation")
+                .then().statusCode(403);
     }
 
     @Test

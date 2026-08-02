@@ -122,13 +122,15 @@ public class PlatformDataContract implements AppDataContract {
         // Storico pagamenti (UC 0096): è ciò che una persona si aspetta di ritrovare in una richiesta di
         // accesso quando chiede "che cosa avete su di me". I documenti fiscali restano del venditore di
         // record (Paddle), che li emette e li conserva: qui si esporta la nostra copia dello storico.
+        // Commissione e netto (UC 0071) fanno parte della stessa riga e vanno esportati con essa: sono dati
+        // che riguardano quel pagamento, e un'esportazione che ne omette una parte sarebbe incompleta.
         entities.put("billing_transactions", query(
                 "select id, app_id, app_tier_id, paddle_transaction_id, status, amount, currency,"
-                        + " billing_cycle, receipt_url, billed_at"
+                        + " billing_cycle, receipt_url, billed_at, fee_amount, net_amount, fee_source"
                         + " from platform.billing_transaction where tenant_id = ? order by billed_at",
                 scope.tenantId(),
                 "id", "app_id", "app_tier_id", "paddle_transaction_id", "status", "amount", "currency",
-                "billing_cycle", "receipt_url", "billed_at"));
+                "billing_cycle", "receipt_url", "billed_at", "fee_amount", "net_amount", "fee_source"));
 
         return new ExportResult(APP_ID, steps, entities);
     }

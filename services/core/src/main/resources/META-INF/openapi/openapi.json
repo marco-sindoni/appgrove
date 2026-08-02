@@ -306,7 +306,7 @@
       },
       "BillingTransactionStatus" : {
         "type" : "string",
-        "enum" : [ "paid", "failed", "disputed" ]
+        "enum" : [ "paid", "failed", "disputed", "refunded" ]
       },
       "CatalogAppState" : {
         "type" : "string",
@@ -843,6 +843,45 @@
           }
         }
       },
+      "PayoutView" : {
+        "type" : "object",
+        "properties" : {
+          "paddlePayoutId" : {
+            "type" : "string"
+          },
+          "paidAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "amount" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "linesNet" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "difference" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "lines" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "coveredFrom" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "coveredTo" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "PortalSessionView" : {
         "type" : "object",
         "properties" : {
@@ -927,6 +966,115 @@
           },
           "executedAt" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ReconciliationPeriod" : {
+        "type" : "object",
+        "properties" : {
+          "period" : {
+            "type" : "string"
+          },
+          "gross" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "fee" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "net" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reversed" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "transactions" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feePercent" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "feeOverThreshold" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ReconciliationTotals" : {
+        "type" : "object",
+        "properties" : {
+          "gross" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "fee" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "net" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reversed" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "settled" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "unsettled" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "transactions" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "estimatedFeeTransactions" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "oldestUnsettledAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ReconciliationView" : {
+        "type" : "object",
+        "properties" : {
+          "currency" : {
+            "type" : "string"
+          },
+          "totals" : {
+            "$ref" : "#/components/schemas/ReconciliationTotals"
+          },
+          "periods" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReconciliationPeriod"
+            }
+          },
+          "payouts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PayoutView"
+            }
+          },
+          "feeAlertPercent" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "payoutOverdue" : {
+            "type" : "boolean"
+          },
+          "payoutMaxAgeDays" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
@@ -2163,6 +2311,33 @@
           }
         },
         "summary" : "Overview",
+        "tags" : [ "Admin Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/admin/reconciliation" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReconciliationView"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Reconciliation",
         "tags" : [ "Admin Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "platform-admin" ]
