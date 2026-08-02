@@ -1,0 +1,101 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. L'agente risponde a tutte le domande di approfondimento seguendo l'opzione raccomandata, i tre gate di workflow (rilettura requisiti, consenso al commit, consenso al merge) sono rinunciati in anticipo dallo sviluppatore; restano obbligatori la suite completa verde prima del commit, il registro integrale delle decisioni e la guida di verifica manuale. Merge e push non sono compito di questa change."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0071 «Riconciliazione netto/revenue» (docs/usecases/13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md), indicato esplicitamente all'invocazione. Da qui la forma del branch change/0083-use-case-0071-riconciliazione-netto-revenue. Il numero progressivo 0083 è il successivo di 0082 in changes/, verificato.",
+    "files": [
+      { "file": "docs/testing/copertura-e2e.yaml", "description": "Lo use case 0071 esce dalle esenzioni 'non-implementato' ed entra fra gli use case con superficie: l'esenzione decade automaticamente all'esistenza della cartella changes/*-use-case-0071-*." }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Sorgente del dettaglio delle commissioni: il payload della transazione può portarle (campi 'fee' e 'earnings'), e in quel caso vincono sempre; quando non le porta, il backend le STIMA con la formula del listino (percentuale + quota fissa per transazione) e marca la riga come stimata. È la risposta al punto aperto «sorgente del dettaglio fee» dello use case: si evita di restare senza netto fino all'account reale del fornitore, senza però spacciare una stima per un dato dichiarato. La provenienza è registrata riga per riga e mostrata nella vista, così una stima non viene mai scambiata per un dato del fornitore.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/PaymentFees.java", "description": "Formula di stima (percentuale + quota fissa, entrambe configurabili) allineata a tools/pricing-change/lib/fee.mjs, con la commissione limitata all'importo della transazione." }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Modello dati: le commissioni e il netto si aggiungono come colonne alla riga di transazione già esistente (fee_amount, net_amount, fee_source), non come tabella a parte — sono attributi della stessa transazione e una tabella affiancata avrebbe solo aggiunto una giunzione. Gli accrediti diventano invece due tabelle nuove di piattaforma (non riferite a un conto cliente): l'accredito e le sue righe di dettaglio, una per transazione accreditata.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V15__payout_reconciliation.sql", "description": "Colonne fee_amount/net_amount/fee_source su platform.billing_transaction; nuove tabelle platform.payout e platform.payout_line." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La riga di dettaglio dell'accredito memorizza il netto accreditato PER QUELLA transazione al momento dell'accredito, non lo ricalcola dalla transazione. È ciò che rende la quadratura stabile: uno storno successivo non deve far apparire come sbagliato un accredito che allora era corretto. Un rimborso o una contestazione compaiono come riga di dettaglio con importo NEGATIVO in un accredito successivo, esattamente come li comunica il fornitore.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V15__payout_reconciliation.sql", "description": "platform.payout_line porta net_amount con segno; lo scostamento è la differenza fra l'importo accreditato e la somma delle sue righe." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Rimborsi e contestazioni: una transazione contestata o rimborsata NON genera una riga nuova nello storico — il riferimento della transazione presso il fornitore è la chiave di idempotenza e la riga esistente cambia stato. Nell'aggregato quella transazione esce dall'incassato ed entra in una colonna dedicata «storni», con il netto della riga azzerato; il denaro restituito compare al suo posto come riga negativa nell'accredito successivo. Si aggiunge lo stato 'refunded' accanto a 'disputed' per distinguere il rimborso volontario dalla contestazione. Il rimborso PARZIALE non è rappresentabile con questo modello e resta un rimando tracciato nello use case 0071.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/BillingTransactionStatus.java", "description": "Nuovo valore refunded (rimborso totale), mappato dall'evento transaction.refunded." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Accrediti a cavallo di due periodi: ogni transazione è attribuita al mese del proprio addebito, mai al mese dell'accredito. Un accredito che raccoglie transazioni di due mesi resta un accredito solo, con il proprio intervallo coperto (dal più vecchio al più recente addebito collegato) mostrato accanto. È l'unica attribuzione che tiene: il contrario farebbe rimbalzare i ricavi di un mese sul mese successivo a ogni cambio di calendario del fornitore.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/ReconciliationService.java", "description": "Aggregazione per mese di billed_at; l'accredito porta l'intervallo coperto derivato dalle transazioni collegate." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Valuta: la quadratura si calcola solo quando tutte le transazioni collegate a un accredito hanno la stessa valuta dell'accredito. Se le valute differiscono la riga è marcata 'valuta-mista' e lo scostamento NON viene calcolato, invece di mostrare una differenza priva di senso sommando valute diverse. Come tracciare il tasso di cambio applicato dal fornitore resta il punto aperto dello use case: rimando confermato, non risolto qui, perché la risposta la dà il formato reale dei dati del fornitore (bloccato da #14).",
+    "files": [
+      { "file": "docs/usecases/13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md", "description": "Punto aperto «valuta e cambio» aggiornato con lo stato scelto in attesa dei dati reali." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Soglia di attenzione sul peso delle commissioni: configurabile, con valore iniziale 8% del lordo (le commissioni attese sono ~5% più una quota fissa, quindi 8% è già il segnale che le micro-transazioni pesano). Non è un prezzo né una quota verso i clienti: è una soglia interna di osservabilità, quindi non è un caso di escalation. La taratura sui dati reali resta il rimando già previsto dallo use case (segnale per la leva di abbonamento unico, UC 0070)."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Accredito atteso e non arrivato: una sorveglianza periodica confronta l'età del netto non ancora accreditato con una soglia configurabile (valore iniziale 14 giorni, che è il ritardo massimo plausibile per un ciclo di accrediti quindicinale). Oltre la soglia si emette una misura e un log di avvertimento; nessuna azione correttiva automatica — è osservabilità, come dice lo use case. La taratura vera resta rimandata al primo volume reale di accrediti.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/ReconciliationMetrics.java", "description": "Misure del netto, del rapporto commissioni/lordo, del non accreditato e dell'accredito in ritardo, con lo stesso schema inerte di EntitlementProjectionMetrics (registro di misure assente = strumentazione muta)." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Lo stub locale del fornitore acquisisce due scenari nuovi: 'payout' (accredito che raccoglie il netto non ancora accreditato del conto e dell'app) e 'refund' (rimborso totale di una transazione, seguito dall'accredito negativo). Senza di questi la vista sarebbe inverificabile in locale e la storia rimborsi/quadratura non avrebbe alcun percorso di prova finché non esiste l'account reale del fornitore. Gli eventi passano dalla stessa pipeline firmata dei webhook reali, come tutti gli altri scenari.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/LifecycleScenario.java", "description": "Nuovi scenari payout e refund." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/StubScenarioEmitter.java", "description": "Emissione degli eventi payout.paid e transaction.refunded, con le commissioni simulate sulle transazioni." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Sede della vista: una pagina dedicata «Riconciliazione» della console admin, nel gruppo Revenue accanto a Fatturazione, e non una sezione dentro la Panoramica. La Panoramica è fatta di quattro contatori; una tabella per mese più l'elenco degli accrediti la snaturerebbe, e lo use case chiede espressamente un pannello.",
+    "files": [
+      { "file": "frontend/apps/admin/src/pages/Reconciliation.tsx", "description": "Pagina con i totali del periodo, la tabella lordo → commissioni → netto → storni per mese e l'elenco degli accrediti con la quadratura." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Fuori scope, con rimando tracciato: ricavo ricorrente mensile e tasso di abbandono (churn) accanto al netto. Lo use case li nomina come contesto («i KPI economici siano leggibili insieme a quanto è davvero entrato»), ma il loro proprietario è UC 0021 e sono già annotati in docs/_BACKLOG.md; costruirli qui sarebbe anticipare il lavoro di un altro use case. La vista di riconciliazione è comunque collocata dove quei KPI atterreranno."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Classificazione privacy: MINOR, nessun nuovo trattamento. Le commissioni e il netto per transazione sono la stessa categoria di dati di fatturazione dell'importo già presente (base giuridica esecuzione del contratto, stessa conservazione), quindi vengono marcati come dati personali ed entrano nel manifesto e nell'esportazione/cancellazione previste dai diritti dell'interessato. Le tabelle degli accrediti sono dati economici della piattaforma, non riferiti a un conto: non sono dati personali e non entrano nell'esportazione del cliente. Nessun aggiornamento di versione di informativa o condizioni.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Nuove voci billing_transactions.fee_amount e billing_transactions.net_amount, stessa finalità e conservazione dell'importo." },
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java", "description": "I nuovi campi entrano nell'esportazione dei pagamenti del conto; la cancellazione era già per riga e non cambia." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Copertura end-to-end: si copre ORA. Lo use case 0071 esce dalle esenzioni ed entra fra quelli con superficie applicativa, con un percorso nuovo di livello 2 sulla console admin (L2-ADMIN-RECON) che attraversa la pagina dal menu, verifica i totali, la tabella per mese e la quadratura degli accrediti (incluso uno scostamento).",
+    "files": [
+      { "file": "frontend/apps/admin/e2e/riconciliazione.spec.ts", "description": "Percorso L2-ADMIN-RECON." },
+      { "file": "docs/testing/copertura-e2e.yaml", "description": "0071 fra gli use case con superficie; percorso L2-ADMIN-RECON dichiarato coperto." }
+    ]
+  }
+]
