@@ -517,7 +517,7 @@ Ciò che l'attività usa tutti i giorni dietro il banco: la scheda del cliente e
 | [0012](03-anagrafica-e-agenda-interna/0012-manifesto-dati-e-diritti-dell-interessato.md) | Manifesto dati e diritti dell'interessato | Manifesto in due lingue, esportazione e cancellazione fisica |
 | [0013](03-anagrafica-e-agenda-interna/0013-agenda-multi-risorsa.md) | Agenda multi-risorsa | La vista giorno e settimana con una colonna per risorsa |
 | [0014](03-anagrafica-e-agenda-interna/0014-prenotazione-dal-banco.md) | Prenotazione dal banco | Creare e modificare un appuntamento a mano, senza doppie prenotazioni |
-| [0015](03-anagrafica-e-agenda-interna/0015-disdetta-spostamento-e-mancata-presentazione.md) | Disdetta, spostamento e mancata presentazione | Gli stati finali dell'appuntamento e la loro traccia |
+| [0015](03-anagrafica-e-agenda-interna/0015-esiti-della-prenotazione.md) | Esiti della prenotazione | Eseguita, non presentato, disdetta: gli stati finali e la loro traccia |
 
 ### Epica 04 — Prenotazione self-service del cliente finale
 

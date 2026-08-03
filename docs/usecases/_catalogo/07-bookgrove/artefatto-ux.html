@@ -1,0 +1,1132 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  KIT D'AUTORE DEL CATALOGO — GUSCIO RIUTILIZZABILE DELL'ARTEFATTO NAVIGABILE
+  docs/usecases/_catalogo/_kit/TEMPLATE-artefatto-ux.html
+================================================================================
+
+  A COSA SERVE
+  ------------
+  È il mockup navigabile che accompagna la cartella di una applicazione del
+  catalogo. Si apre con un doppio clic (funziona da `file://`, senza rete) e
+  mostra allo sviluppatore come si presenterà l'app dentro il backoffice
+  appgrove: intestazione, barra laterale, area di contenuto, schermate.
+  Deriva dal mockup di riferimento del repo:
+  changes/0066-app-catalog-billing-ux-proposal/proposta-ux.template.html
+  e usa i token REALI del sistema di design:
+  frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+
+  REGOLA DI FERRO — NESSUNA RISORSA REMOTA
+  ----------------------------------------
+  Niente font da rete, niente librerie da rete, niente immagini remote,
+  niente `fetch`. Solo CSS e JavaScript in linea e SVG incorporati.
+  Un artefatto che non si apre offline è un artefatto rotto.
+
+  SEGNAPOSTO GIA' RIEMPITI PER QUESTA APP
+  ---------------------------------------
+  Questo file e' il guscio del kit riempito per BookGrove (catalogo #07,
+  identificativo tecnico `prenotazioni`, colore-categoria `green`).
+  Nessun segnaposto residuo: i dati sono inventati, la metrica di quota e'
+  `risorse_prenotabili` (a giacenza) e l'entita' principale e' la
+  prenotazione. Tutti i testi visibili sono in ITALIANO (regola del repo).
+
+  COSA NON TOCCARE
+  ----------------
+  1. Il blocco `:root { … }` dei token e le sue varianti chiaro/scuro: sono
+     copiati dai token reali. Cambiarli fa divergere il mockup dal prodotto.
+  2. Le classi di base (.shell .sidebar .topbar .content .card .btn .badge …):
+     sono il guscio comune a tutte le 60 proposte. Se ne serve una nuova,
+     AGGIUNGILA in fondo al foglio di stile, nel blocco «stili propri dell'app».
+  3. Il piccolo instradatore in fondo (`render`, `go`, `SCHERMATE`): funziona,
+     è testato a mano ed è uguale per tutti.
+
+  COME SI AGGIUNGE UNA SCHERMATA
+  ------------------------------
+  a. scrivi una funzione `vNomeSchermata()` che RESTITUISCE una stringa HTML;
+  b. registrala nella mappa `SCHERMATE` con la sua chiave e il suo titolo:
+     `nome_schermata: ['Titolo visibile', vNomeSchermata]`;
+  c. aggiungi la voce nella barra laterale, dentro il gruppo dell'app:
+     `<button class="nav-item" data-nav="nome_schermata">…</button>`.
+  Qualsiasi elemento con `data-nav="chiave"` diventa un collegamento interno,
+  anche dentro il contenuto (bottoni «apri», «vedi il dettaglio», …).
+
+  COMPONENTI GIÀ PRONTI (ognuno è commentato nel codice)
+  ------------------------------------------------------
+  · indicatori sintetici .......... `bloccoIndicatori()`   — riga di numeri chiave
+  · avviso di quota raggiunta ..... `avvisoQuota()`        — banner bloccante
+  · tabella con filtri ............ `vElenco()`            — ricerca + filtro di stato + paginazione
+  · stato vuoto ................... `statoVuoto()`         — nessun risultato / nessun dato
+  · scheda di dettaglio ........... `vDettaglio()`         — intestazione + campi + azioni
+  · modulo di inserimento ......... `vNuovo()`             — campi, validazione finta, salva/annulla
+  · finestra modale ............... `apriModale()`         — conferma di un'azione
+  Cancella quelli che non servono all'app: un mockup con schermate vuote
+  «tanto per esserci» confonde più di quanto spieghi.
+
+  NOTE DI PROPOSTA
+  ----------------
+  I riquadri `.nota` sono le annotazioni per lo sviluppatore («perché questa
+  schermata è fatta così»). Il pulsante «Note» in alto le nasconde, per vedere
+  l'interfaccia pulita. Usale: sono il motivo per cui questo artefatto vale più
+  di uno screenshot.
+
+  SE QUESTO FILE VA PUBBLICATO COME ARTEFATTO SU claude.ai
+  --------------------------------------------------------
+  Il pubblicatore avvolge da sé il documento: in quel caso vanno rimossi
+  `<!doctype html>`, `<html>`, `<head>`, `<body>` e va tenuto solo il
+  contenuto (stile + marcatura + script). Per l'uso locale, invece, il
+  documento completo così com'è è ciò che serve.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px 1fr;min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Agenda: una colonna per risorsa, blocchi proporzionati alla durata.
+      È la schermata su cui l'attività passa la giornata: la forma con le
+      colonne è quella che il personale riconosce senza spiegazioni. ──── */
+.ag{display:grid;grid-template-columns:52px repeat(2,1fr);border:1px solid rgb(var(--border));border-radius:var(--r-lg);overflow:hidden;background:rgb(var(--surface))}
+.ag-h{padding:9px 10px;font-size:12px;font-weight:800;background:rgb(var(--surface-2));border-bottom:1px solid rgb(var(--border));border-left:1px solid rgb(var(--border))}
+.ag-h:first-child{border-left:0}
+.ag-h .sub{display:block;font-weight:600;font-size:10.5px;color:rgb(var(--muted))}
+.ag-col{position:relative;border-left:1px solid rgb(var(--border));height:720px}
+.ag-ore{position:relative;height:720px}
+.ag-ora{position:absolute;left:0;right:6px;font-size:10.5px;color:rgb(var(--faint));text-align:right;transform:translateY(-6px)}
+.ag-riga{position:absolute;left:0;right:0;border-top:1px dashed rgb(var(--border))}
+.ag-ev{position:absolute;left:4px;right:4px;border-radius:var(--r-sm);padding:5px 8px;font-size:11.5px;line-height:1.25;overflow:hidden;cursor:pointer;border-left:3px solid}
+.ag-ev b{display:block;font-size:12px;font-weight:800}
+.ag-ev .qua{color:rgb(var(--muted));font-size:10.5px}
+.ag-off{position:absolute;left:0;right:0;background:repeating-linear-gradient(135deg,rgb(var(--surface-3)),rgb(var(--surface-3)) 6px,rgb(var(--surface-2)) 6px,rgb(var(--surface-2)) 12px)}
+.ag-chiuso{position:absolute;left:0;right:0;background:rgb(var(--warning)/.14);border-top:1px solid rgb(var(--warning)/.4);border-bottom:1px solid rgb(var(--warning)/.4);font-size:10.5px;color:rgb(var(--warning));padding:3px 7px;font-weight:800}
+.leg{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:rgb(var(--muted));margin-top:10px}
+.leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+/* ── Pagina pubblica: la superficie che il cliente finale apre senza
+      essere autenticato. Vive fuori dal backoffice: qui è riprodotta
+      dentro il mockup solo per poterla mostrare. ──────────────────────── */
+.pub{max-width:540px;margin:0 auto;border:1px solid rgb(var(--border));border-radius:var(--r-xl);background:rgb(var(--surface));box-shadow:var(--sh);overflow:hidden}
+.pub-h{padding:18px 20px;border-bottom:1px solid rgb(var(--border));background:rgb(var(--surface-2))}
+.pub-h h2{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.pub-h p{font-size:12.5px;color:rgb(var(--muted));margin-top:3px}
+.pub-b{padding:18px 20px;display:flex;flex-direction:column;gap:16px}
+.pub-step{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:rgb(var(--faint))}
+.serv{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.serv .v{display:flex;gap:10px;align-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);padding:10px 12px;font-size:13px}
+.serv .v.sel{border-color:rgb(var(--accent));background:rgb(var(--accent)/.07);font-weight:700}
+.serv .du{margin-left:auto;color:rgb(var(--muted));font-size:12px;font-weight:600}
+.slot{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.slot .s{border:1px solid rgb(var(--border));background:rgb(var(--surface));border-radius:var(--r-pill);padding:7px 13px;font-size:12.5px}
+.slot .s.sel{background:rgb(var(--accent)/.12);border-color:rgb(var(--accent));color:rgb(var(--accent));font-weight:800}
+.privacy{font-size:11.5px;color:rgb(var(--muted));border-top:1px dashed rgb(var(--border));padding-top:11px;line-height:1.5}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · BookGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="agenda">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>
+      Agenda
+    </button>
+    <button class="nav-item" data-nav="elenco">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Prenotazioni
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo appuntamento <span class="pill">DEMO</span>
+    </button>
+    <button class="nav-item" data-nav="pubblica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg>
+      Pagina pubblica
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>BookGrove</b> (catalogo #07). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>BookGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #07 BookGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'BookGrove',
+  id: 'prenotazioni',
+  categoria: 'green',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'B',
+  claim: 'Agenda, prenotazioni self-service e promemoria che riducono le mancate presentazioni.',
+  metrica: 'risorse prenotabili',
+  /* La metrica è a GIACENZA: il tetto vale su quante risorse sono aperte
+     adesso, non su quante prenotazioni si prendono nel mese. È la scelta
+     argomentata nel varco d'identità della descrizione dell'applicazione. */
+  quota: { usato: 2, tetto: 3, finestra: 'aperte in questo momento' }
+};
+
+/* Prenotazioni finte — nomi di fantasia, mai dati veri di un cliente. */
+const RIGHE = [
+  { id:'PR-2048', cliente:'Giulia F.',   servizio:'Piega',            risorsa:'Poltrona 1', quando:'gio 06/08 · 10:00', durata:40, origine:'Pagina pubblica', prezzo: 25.00, stato:'confermata' },
+  { id:'PR-2047', cliente:'Marta B.',    servizio:'Colore + piega',   risorsa:'Poltrona 2', quando:'gio 06/08 · 09:30', durata:120,origine:'Banco',           prezzo: 78.00, stato:'confermata' },
+  { id:'PR-2046', cliente:'Sofia R.',    servizio:'Taglio',           risorsa:'Poltrona 1', quando:'gio 06/08 · 15:00', durata:30, origine:'Pagina pubblica', prezzo: 22.00, stato:'richiesta'  },
+  { id:'PR-2045', cliente:'Elena V.',    servizio:'Trattamento',      risorsa:'Poltrona 2', quando:'mer 05/08 · 17:00', durata:60, origine:'Banco',           prezzo: 45.00, stato:'assente'    },
+  { id:'PR-2044', cliente:'Chiara N.',   servizio:'Piega',            risorsa:'Poltrona 1', quando:'mer 05/08 · 11:00', durata:40, origine:'Pagina pubblica', prezzo: 25.00, stato:'eseguita'   },
+  { id:'PR-2043', cliente:'Anna L.',     servizio:'Taglio',           risorsa:'Poltrona 2', quando:'mer 05/08 · 10:00', durata:30, origine:'Banco',           prezzo: 22.00, stato:'eseguita'   },
+  { id:'PR-2042', cliente:'Valeria S.',  servizio:'Colore + piega',   risorsa:'Poltrona 1', quando:'mar 04/08 · 16:00', durata:120,origine:'Pagina pubblica', prezzo: 78.00, stato:'disdetta'   },
+  { id:'PR-2041', cliente:'Irene T.',    servizio:'Trattamento',      risorsa:'Poltrona 2', quando:'mar 04/08 · 09:00', durata:60, origine:'Banco',           prezzo: 45.00, stato:'eseguita'   },
+];
+
+const STATI = {
+  richiesta:  { et:'Da confermare',   cl:'b-warn'    },
+  confermata: { et:'Confermata',      cl:'b-ok'      },
+  eseguita:   { et:'Eseguita',        cl:'b-neutral' },
+  assente:    { et:'Non presentato',  cl:'b-bad'     },
+  disdetta:   { et:'Disdetta',        cl:'b-neutral' },
+};
+
+/* Agenda di giovedì 6 agosto: due risorse, orario 8-20, un blocco di
+   chiusura. Le ore sono in ora locale della sede — nel prodotto vero
+   l'istante è in tempo universale coordinato più il fuso della sede. */
+const ORA0 = 8, ORAN = 20, PX_ORA = 60;
+const RISORSE = [
+  { nome:'Poltrona 1', chi:'Anna',  cat:'--cat-green' },
+  { nome:'Poltrona 2', chi:'Dario', cat:'--cat-blue'  },
+];
+const AGENDA = [
+  { ris:0, da:'10:00', a:'10:40', cli:'Giulia F.',  srv:'Piega',          st:'confermata', id:'PR-2048' },
+  { ris:0, da:'11:30', a:'12:10', cli:'Nadia P.',   srv:'Piega',          st:'confermata', id:'PR-2048' },
+  { ris:0, da:'15:00', a:'15:30', cli:'Sofia R.',   srv:'Taglio',         st:'richiesta',  id:'PR-2046' },
+  { ris:0, da:'16:30', a:'17:30', cli:'Lucia M.',   srv:'Trattamento',    st:'confermata', id:'PR-2048' },
+  { ris:1, da:'09:30', a:'11:30', cli:'Marta B.',   srv:'Colore + piega', st:'confermata', id:'PR-2047' },
+  { ris:1, da:'14:00', a:'14:30', cli:'Rita C.',    srv:'Taglio',         st:'confermata', id:'PR-2047' },
+  { ris:1, da:'18:00', a:'19:00', cli:'Serena D.',  srv:'Trattamento',    st:'confermata', id:'PR-2047' },
+];
+/* Fuori orario (la risorsa non lavora) e chiusure: due cose diverse, e
+   confonderle fa prendere appuntamenti impossibili. */
+const FUORI = [ { ris:0, da:'8:00', a:'9:00' }, { ris:0, da:'19:00', a:'20:00' }, { ris:1, da:'8:00', a:'9:00' }, { ris:1, da:'19:30', a:'20:00' } ];
+const CHIUSURE = [ { ris:1, da:'13:00', a:'14:00', txt:'Pausa — chiusura' } ];
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota raggiunta.
+   `livello`: 'vicino' (avviso giallo) oppure 'raggiunto' (blocco rosso).
+   Il testo deve dire SEMPRE tre cose: cosa è successo, cosa non si può
+   più fare, come si rimedia. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b>.
+      Per aprirne un'altra devi chiuderne una, oppure passare a un piano superiore. Le prenotazioni continuano
+      normalmente: il limite è sulle risorse, non sugli appuntamenti.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Hai usato <b>${APP.quota.usato}</b> di <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} ${esc(APP.quota.finestra)}.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: indicatori, consumo della quota, giornata. */
+function vPanoramica(){
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> I quattro numeri non sono decorativi: sono quelli su cui il titolare decide se
+    l'abbonamento si ripaga. Il <i>tasso di mancata presentazione</i> e gli <i>spazi recuperati</i> dalla lista d'attesa
+    misurano esattamente la promessa dell'app; il riempimento dice se l'agenda è piena; le prenotazioni dal pubblico
+    dicono se la pagina di prenotazione sta funzionando. Definizioni e casi limite: storia <code>0026</code>.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo appuntamento</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Riempimento',              v:'71%',   d:'+6 punti sul mese scorso', tono:'up'},
+    {k:'Mancate presentazioni',    v:'4,1%',  d:'era 9,8% prima dei promemoria', tono:'up'},
+    {k:'Spazi recuperati',         v:'7',     d:'dalla lista d’attesa, ultimi 30 giorni'},
+    {k:'Prenotazioni dal pubblico',v:'62%',   d:'il resto arriva dal banco'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Prossimi appuntamenti">
+      <div class="card-pad"><h2 class="sec">Prossimi appuntamenti</h2><p class="sec-sub">Da qui si apre il dettaglio; l’agenda completa è nella sezione Agenda.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Quando</th><th>Cliente</th><th>Servizio</th><th>Risorsa</th><th>Stato</th></tr></thead>
+        <tbody>${RIGHE.slice(0,4).map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td>${esc(r.quando)}</td><td>${esc(r.cliente)}</td>
+            <td>${esc(r.servizio)}</td><td>${esc(r.risorsa)}</td><td>${badge(r.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Il limite è sulle <b>risorse aperte alla prenotazione</b>, non sul numero di appuntamenti:
+        così un dicembre pieno non fa mai rifiutare una prenotazione a un cliente.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm">${I.scarica} Esporta</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni si comandano a voce. In lettura, libere: «quando posso mettere la signora
+        Bianchi per un colore, giovedì o venerdì?». In scrittura, mai dirette: «prenota Sofia giovedì alle tre» produce
+        una <b>bozza</b> e chiede conferma. Disdette, promemoria e offerte dalla lista d’attesa hanno la conferma
+        <b>obbligatoria</b>, perché parlano a una persona fuori dall’azienda.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Agenda: una colonna per risorsa, la giornata a colpo d'occhio. */
+function minuti(hhmm){ const [h,m] = hhmm.split(':').map(Number); return (h - ORA0) * 60 + m; }
+function y(hhmm){ return minuti(hhmm) / 60 * PX_ORA; }
+function h(da, a){ return (minuti(a) - minuti(da)) / 60 * PX_ORA; }
+
+function vAgenda(){
+  const ore = [];
+  for(let o = ORA0; o < ORAN; o++) ore.push(o);
+
+  const colonna = (i) => {
+    const cat = RISORSE[i].cat;
+    const fuori = FUORI.filter(f => f.ris === i).map(f =>
+      `<div class="ag-off" style="top:${y(f.da)}px;height:${h(f.da,f.a)}px" title="Fuori orario"></div>`).join('');
+    const chius = CHIUSURE.filter(c => c.ris === i).map(c =>
+      `<div class="ag-chiuso" style="top:${y(c.da)}px;height:${h(c.da,c.a)}px">${esc(c.txt)}</div>`).join('');
+    const eventi = AGENDA.filter(e => e.ris === i).map(e => {
+      const rich = e.st === 'richiesta';
+      const col = rich ? '--warning' : cat;
+      /* il nome del cliente compare solo se il blocco è abbastanza alto:
+         un testo tagliato a metà è peggio di un testo assente */
+      const alto = (minuti(e.a) - minuti(e.da)) >= 40;
+      return `<div class="ag-ev" data-nav="dettaglio" data-id="${e.id}"
+        style="top:${y(e.da)}px;height:${h(e.da,e.a)}px;background:rgb(var(${col})/.13);border-left-color:rgb(var(${col}))"
+        title="${esc(e.cli)} — ${esc(e.srv)}">
+        <b>${esc(e.da)} · ${esc(e.srv)}</b>
+        ${alto ? `<span class="qua">${esc(e.cli)}${rich ? ' · da confermare' : ''}</span>` : ''}
+      </div>`;
+    }).join('');
+    const righe = ore.map(o => `<div class="ag-riga" style="top:${(o-ORA0)*PX_ORA}px"></div>`).join('');
+    return `<div class="ag-col">${righe}${fuori}${chius}${eventi}</div>`;
+  };
+
+  return `
+  ${nota(`<b>Proposta — Agenda del giorno.</b> Una colonna per risorsa: è la forma che il personale riconosce senza
+    spiegazioni, e «risorsa» è volutamente più largo di «operatore» (una poltrona, una sala, un ponte, un tavolo) perché
+    questa app è la base dei verticali beauty, ristorazione, cliniche, fitness e veterinaria. Il <i>tempo fuori orario</i>
+    (righe) e la <i>chiusura</i> (fascia gialla) sono resi in modo diverso di proposito: confonderli fa prendere
+    appuntamenti impossibili. Storie <code>0013</code> e <code>0009</code>.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Agenda · giovedì 6 agosto</h1><p>Salone di prova — orario 9:00-19:00, fuso Europe/Rome.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo appuntamento</button>
+  </div>
+
+  <div class="card card-pad" style="padding:0;overflow:hidden">
+    <div class="ag">
+      <div class="ag-h">Ora</div>
+      ${RISORSE.map(r => `<div class="ag-h">${esc(r.nome)}<span class="sub">${esc(r.chi)}</span></div>`).join('')}
+      <div class="ag-ore">${ore.map(o => `<div class="ag-ora" style="top:${(o-ORA0)*PX_ORA}px">${o}:00</div>`).join('')}</div>
+      ${colonna(0)}
+      ${colonna(1)}
+    </div>
+  </div>
+  <div class="leg">
+    <span><i style="background:rgb(var(--cat-green)/.5)"></i>Appuntamento confermato</span>
+    <span><i style="background:rgb(var(--warning)/.5)"></i>Da confermare</span>
+    <span><i style="background:rgb(var(--surface-3))"></i>Fuori orario</span>
+    <span><i style="background:rgb(var(--warning)/.2)"></i>Chiusura</span>
+  </div>`;
+}
+
+/* SCHERMATA — Elenco delle prenotazioni: ricerca, filtro di stato, paginazione. */
+function vElenco(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.cliente.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.servizio.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Prenotazioni.</b> La stessa materia dell'agenda, ma in forma di elenco: serve per cercare,
+    per filtrare sugli stati che costano (<i>da confermare</i>, <i>non presentato</i>) e per chiudere in blocco gli
+    appuntamenti passati. La colonna <i>origine</i> distingue ciò che arriva dalla pagina pubblica da ciò che è stato
+    preso al banco: è il numero che dice se la superficie pubblica sta lavorando.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Prenotazioni</h1><p>Tutti gli appuntamenti di questo spazio di lavoro.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per cliente, codice o servizio…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} prenotazion${trovate.length===1?'e':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Quando</th><th>Cliente</th><th>Servizio</th><th>Risorsa</th><th>Origine</th><th class="num">Prezzo</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.quando)}</td><td>${esc(r.cliente)}</td>
+          <td>${esc(r.servizio)}</td><td>${esc(r.risorsa)}</td><td>${esc(r.origine)}</td>
+          <td class="num">${eur(r.prezzo)}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessuna prenotazione corrisponde ai filtri',
+      'Prova con un’altra parola chiave, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio della prenotazione: fatti, promemoria, cronologia. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  return `
+  ${nota(`<b>Proposta — Dettaglio.</b> A sinistra i fatti, a destra ciò che è successo. Lo <i>stato dei promemoria</i>
+    sta qui perché è la prima cosa che si guarda quando qualcuno non si presenta: se il messaggio non è partito, la
+    colpa non è del cliente. La disdetta passa da una conferma esplicita — è la stessa regola che vale per il livello
+    conversazionale. Storie <code>0015</code> e <code>0022</code>.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.cliente)} · ${esc(r.servizio)}</h1>${badge(r.stato)}</div>
+      <p class="mono">${esc(r.id)} — ${esc(r.quando)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna all'elenco</button>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Dati dell'appuntamento</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Quando</span><span class="v">${esc(r.quando)}</span></div>
+        <div class="dl-row"><span class="k">Durata</span><span class="v">${r.durata} minuti <span class="mono" style="color:rgb(var(--faint))">(+10 di riordino)</span></span></div>
+        <div class="dl-row"><span class="k">Risorsa</span><span class="v">${esc(r.risorsa)}</span></div>
+        <div class="dl-row"><span class="k">Prezzo indicativo</span><span class="v mono">${eur(r.prezzo)}</span></div>
+        <div class="dl-row"><span class="k">Origine</span><span class="v">${esc(r.origine)}</span></div>
+        <div class="dl-row"><span class="k">Contatto</span><span class="v mono">g.f.@esempio.test</span></div>
+        <div class="dl-row"><span class="k">Politica accettata</span><span class="v">Disdetta libera fino a 24 ore prima — versione 2</span></div>
+      </div>
+      <h2 class="sec" style="padding:16px 0 8px">Promemoria</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Conferma</span><span class="v">Inviata per posta elettronica · 03/08 09:14</span></div>
+        <div class="dl-row"><span class="k">24 ore prima</span><span class="v">Programmata per 05/08 10:00</span></div>
+        <div class="dl-row"><span class="k">Canale di messaggistica</span><span class="v">Non utilizzabile — consenso non registrato</span></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn-primary">Sposta</button>
+        <button class="btn btn-ghost">Segna come eseguito</button>
+        <button class="btn btn-ghost" data-modale="apri">Disdici</button>
+      </div>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Cronologia</h2>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Prenotata dalla pagina pubblica</div><div class="when">03/08/2026 · 09:12</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Contatto verificato con codice</div><div class="when">03/08/2026 · 09:13</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Conferma inviata al cliente</div><div class="when">03/08/2026 · 09:14</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Stato portato a «${STATI[r.stato].et}»</div><div class="when">03/08/2026 · 09:14</div></div></div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Nuovo appuntamento dal banco. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo appuntamento.</b> Il modulo che si usa col telefono in mano mentre si lavora: cliente,
+    servizio, orario, e basta. Gli orari proposti vengono dal motore della disponibilità (storia <code>0010</code>), ma
+    il banco può <i>forzare</i> un orario fuori disponibilità — con un avviso e una traccia — perché chi risponde al
+    telefono ha sempre l'ultima parola. Quello che non si può forzare è la sovrapposizione sulla stessa risorsa: quella
+    la impedisce un vincolo nel database, non un controllo nel programma.`)}
+  <div class="page-h"><div class="txt"><h1>Nuovo appuntamento</h1><p>Cliente, servizio e orario: il resto si aggiunge dopo.</p></div></div>
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field" id="f-titolo">
+        <label for="i-titolo">Cliente *</label>
+        <input id="i-titolo" name="cliente" placeholder="Cerca per nome, telefono o posta elettronica…">
+        <span class="hint">Se non esiste, si crea al volo con un solo contatto.</span>
+      </div>
+      <div class="field">
+        <label for="i-servizio">Servizio</label>
+        <select id="i-servizio"><option>Piega — 40 min</option><option>Taglio — 30 min</option><option>Colore + piega — 120 min</option><option>Trattamento — 60 min</option></select>
+        <span class="hint">La durata è quella del servizio, correggibile su questo appuntamento.</span>
+      </div>
+      <div class="field">
+        <label for="i-risorsa">Risorsa</label>
+        <select id="i-risorsa"><option>Prima disponibile</option><option>Poltrona 1 — Anna</option><option>Poltrona 2 — Dario</option></select>
+      </div>
+      <div class="field">
+        <label for="i-data">Giorno</label>
+        <input id="i-data" type="date" value="2026-08-06">
+      </div>
+      <div class="field wide">
+        <label>Orari liberi per «Piega» giovedì 6 agosto</label>
+        <div class="slot">
+          <span class="s">9:00</span><span class="s">9:40</span><span class="s sel">12:20</span>
+          <span class="s">13:00</span><span class="s">13:40</span><span class="s">14:20</span><span class="s">17:40</span>
+        </div>
+        <span class="hint">Calcolati incrociando orari, chiusure, appuntamenti già presi e calendari personali degli operatori. Le 10:00 e le 11:30 non compaiono: sono occupate.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Note interne</label>
+        <textarea id="i-note" placeholder="Annotazioni per il personale…"></textarea>
+        <span class="hint">Campo a testo libero: non scrivere qui informazioni sulla salute della persona.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="elenco">Annulla</button>
+      <button type="submit" class="btn btn-primary">Conferma l'appuntamento</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Pagina pubblica: la superficie senza autenticazione. */
+function vPubblica(){
+  return `
+  ${nota(`<b>Proposta — Pagina pubblica (fuori dal backoffice).</b> È la superficie su cui prenota una persona che
+    <i>non ha nessun token di accesso</i>, e per questo è la deviazione architetturale dell'applicazione. L'account non
+    arriva mai dalla richiesta: si ricava dall'<b>identificativo pubblico di sede</b> nel percorso
+    (<code>/p/salone-di-prova</code>), risolto dal server. Quell'identificativo <b>non è un segreto</b> — sta sul
+    biglietto da visita — quindi le difese non possono essere la segretezza: sono verifica del contatto, limiti di
+    frequenza e risposte indistinguibili (storia <code>0019</code>). Il collegamento che il cliente riceve <i>dopo</i>
+    è invece un vero <b>gettone di capacità</b> firmato, a scadenza e revocabile, come nell'app 06 (storia
+    <code>0018</code>). Qui è riprodotta dentro il mockup solo per poterla mostrare.`)}
+  <div class="page-h"><div class="txt"><h1>Pagina pubblica di prenotazione</h1><p>appgrove.app/p/salone-di-prova — nessun accesso richiesto</p></div></div>
+
+  <div class="pub">
+    <div class="pub-h">
+      <h2>Salone di prova</h2>
+      <p>Via Inventata 1 — prenota il tuo appuntamento in un minuto</p>
+    </div>
+    <div class="pub-b">
+      <div>
+        <span class="pub-step">1 · Scegli il servizio</span>
+        <div class="serv">
+          <div class="v sel">Piega <span class="du">40 min · 25,00 €</span></div>
+          <div class="v">Taglio <span class="du">30 min · 22,00 €</span></div>
+          <div class="v">Colore + piega <span class="du">2 h · 78,00 €</span></div>
+        </div>
+        <span class="hint">Solo i servizi che il salone ha marcato come pubblici. Gli altri si prenotano dal banco.</span>
+      </div>
+
+      <div>
+        <span class="pub-step">2 · Scegli l'orario — giovedì 6 agosto</span>
+        <div class="slot">
+          <span class="s">9:00</span><span class="s">9:40</span><span class="s sel">12:20</span>
+          <span class="s">13:00</span><span class="s">13:40</span><span class="s">17:40</span>
+        </div>
+        <span class="hint">Uno spazio occupato appare solo come non disponibile: da questa pagina non si vede né chi ha prenotato né cosa.</span>
+      </div>
+
+      <div>
+        <span class="pub-step">3 · Lasciaci un contatto</span>
+        <div class="form-grid" style="grid-template-columns:1fr;margin-top:6px">
+          <div class="field"><label for="p-nome">Nome</label><input id="p-nome" placeholder="Come ti chiami"></div>
+          <div class="field"><label for="p-mail">Posta elettronica</label><input id="p-mail" placeholder="nome@esempio.test">
+            <span class="hint">Un solo contatto, non due: serve a confermarti l'appuntamento e a ricordartelo.</span></div>
+          <div class="field"><label for="p-note">Vuoi dirci qualcosa? (facoltativo)</label><textarea id="p-note" placeholder="…"></textarea>
+            <span class="hint">Non scrivere qui informazioni sulla tua salute.</span></div>
+        </div>
+      </div>
+
+      <div class="alert a-warn">${I.warn}
+        <span><b>Disdetta libera fino a 24 ore prima.</b> Oltre quel termine il salone applica le condizioni che hai
+        accettato prenotando.</span>
+      </div>
+
+      <button class="btn btn-primary" data-modale="apri">Prenota — ti manderemo un codice di verifica</button>
+
+      <p class="privacy"><b>Chi tratta i tuoi dati.</b> Il titolare del trattamento è Salone di prova; appgrove è il
+      fornitore che gestisce il servizio. Raccogliamo nome, contatto e l'appuntamento scelto per erogarti il servizio e
+      ricordartelo. Nessun tracciamento, nessun cookie di profilazione, nessun banner di consenso.</p>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e quota esaurita. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Due stati che si dimenticano sempre. Il primo giorno l'agenda
+    è vuota e non basta dire «nessun appuntamento»: prima dei clienti servono un servizio, una risorsa e un orario, e la
+    schermata deve dirlo. Il rifiuto per quota, invece, in questa app capita <b>solo</b> a chi sta configurando —
+    perché il tetto è sulle risorse aperte, non sulle prenotazioni: nessun cliente finale si vedrà mai rifiutare un
+    appuntamento perché il salone ha finito il piano.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta BookGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'L’agenda è vuota, e prima dei clienti servono tre cose',
+    'Crea un servizio con la sua durata, apri una risorsa che lo eroga e imposta l’orario della settimana: da lì la pagina pubblica comincia a mostrare orari liberi.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary" data-nav="nuovo">${I.piu} Crea il primo servizio</button><button class="btn btn-ghost">Importa i clienti da file</button></div>`)}
+  <h2 class="sec">Quota esaurita</h2>
+  ${avvisoQuota('raggiunto')}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica: ['Panoramica',            vPanoramica],
+  agenda:     ['Agenda',                vAgenda],
+  elenco:     ['Prenotazioni',          vElenco],
+  dettaglio:  ['Dettaglio',             vDettaglio],
+  nuovo:      ['Nuovo appuntamento',    vNuovo],
+  pubblica:   ['Pagina pubblica',       vPubblica],
+  vuoto:      ['Primo avvio',           vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il cliente è obbligatorio: senza un contatto non si può né confermare né ricordare.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('elenco');
+  });
+
+  /* apertura della modale dal dettaglio */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale('Disdire questo appuntamento?',
+      'Lo spazio torna disponibile e il cliente riceve un avviso. Se qualcuno è in lista d’attesa per quell’ora, il programma proporrà di offrirglielo — senza mandare nulla finché non confermi.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>

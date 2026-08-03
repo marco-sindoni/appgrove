@@ -1,4 +1,4 @@
-# 0015 — Disdetta, spostamento e mancata presentazione
+# 0015 — Esiti della prenotazione
 
 **Applicazione**: 07 — BookGrove (`prenotazioni`) · **Epica**: 03 — Anagrafica dei clienti e agenda interna
 **Storia**: `0015` · **Taglia stimata**: una giornata · **Stato**: 🟡 bozza d'autore

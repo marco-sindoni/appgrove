@@ -77,8 +77,10 @@ d'essere dell'app.
 
 ## 2. Mercato e analisi in rete
 
-> Compilata dopo 10 accessi in rete (8 ricerche mirate e 2 letture di pagina), elencati al §2.6.
-> Ciò che non è stato trovato è dichiarato al §2.7, non colmato a intuito.
+> Compilata dopo 12 accessi in rete andati a buon fine — **10 ricerche mirate** e **2 letture di pagina ufficiale
+> dei prezzi** (Rydoo e Zoho Expense) — elencati al §2.6. Due letture non sono riuscite (pagina dei prezzi di Soldo
+> e un approfondimento sull'imposta: la prima risponde «non trovata», la seconda nega l'accesso automatico): sono
+> dichiarate al §2.7 insieme a tutto ciò che non sono riuscito a determinare. Nulla è stato colmato a intuito.
 
 ### 2.1 Concorrenti
 
@@ -455,9 +457,13 @@ sconti. Va aggiornato il registro dei trattamenti e va rivista l'informativa.
 | `elenca_spese` | `(periodo?, stato?, collaboratore?, categoria?) → elenco di spese minimizzato` | Restituisce codice, data, esercente, totale, stato. Niente immagini, niente note libere | lettura | no |
 | `riepilogo_spese` | `(periodo, raggruppamento: categoria \| collaboratore \| centro_di_costo) → totali` | I numeri del cruscotto, in forma di tabella | lettura | no |
 | `elenca_da_rivedere` | `(collaboratore?) → elenco delle spese in attesa di revisione, con i campi a bassa fiducia` | «Cosa devo controllare oggi» | lettura | no |
+| `elenca_da_approvare` | `(collaboratore?) → elenco delle note in attesa, con i loro avvisi` | «Cosa devo firmare» — prepara, non approva | lettura | no |
 | `verifica_deducibilita` | `(id_spesa \| periodo) → elenco dei rischi rilevati` | Dice quali spese rischiano l'indeducibilità (pagamento non tracciabile, documento sbagliato, ricevuta mancante) | lettura | no |
+| `elenca_movimenti_orfani` | `(periodo?) → elenco dei movimenti di carta senza ricevuta` | «Di quali uscite non ho il giustificativo» | lettura | no |
+| `stato_conservazione` | `(periodo) → coperto \| scoperto, con i riferimenti dichiarati` | Quali periodi sono stati versati in conservazione | lettura | no |
 | `leggi_ricevuta` | `(riferimento del file caricato) → bozza di spesa con la fiducia per campo` | Lancia la lettura automatica e propone i valori. **Non crea nulla di definitivo** | scrittura (produce bozza) | **sì** |
 | `crea_spesa` | `(data, esercente, totale, categoria, mezzo di pagamento) → bozza di spesa` | Inserimento manuale, per la spesa senza ricevuta | scrittura | **sì** |
+| `crea_percorrenza` | `(data, partenza, arrivo, km, profilo di veicolo) → bozza di spesa` | Il rimborso chilometrico, che è una spesa senza ricevuta | scrittura | **sì** |
 | `categorizza_spesa` | `(id_spesa, categoria) → spesa aggiornata` | Cambia la categoria. Reversibile finché la spesa non è in una nota approvata | scrittura reversibile | **sì**, leggera |
 | `crea_nota_spese` | `(collaboratore, periodo, elenco di spese) → bozza di nota spese` | Compone il fascicolo | scrittura | **sì** |
 | `invia_nota_spese` | `(id_nota) → esito dell'invio` | Esce dalla sfera del collaboratore e chiama in causa l'approvatore: non si annulla | scrittura irreversibile | **sì, obbligatoria** |
@@ -555,8 +561,8 @@ la prova che il percorso funziona davvero dall'inizio alla fine.
 
 | # | Storia | In una riga |
 |---|---|---|
-| [0028](06-esposizione-conversazionale-e-prove/0028-contratto-degli-strumenti-di-lettura.md) | Contratto degli strumenti di lettura | I quattro strumenti che leggono, con dati minimizzati |
-| [0029](06-esposizione-conversazionale-e-prove/0029-strumenti-di-scrittura-con-bozza-e-conferma.md) | Strumenti di scrittura con bozza e conferma | Sei strumenti che scrivono, tutti con conferma; due divieti espliciti |
+| [0028](06-esposizione-conversazionale-e-prove/0028-contratto-degli-strumenti-di-lettura.md) | Contratto degli strumenti di lettura | I sette strumenti che leggono, con dati minimizzati |
+| [0029](06-esposizione-conversazionale-e-prove/0029-strumenti-di-scrittura-con-bozza-e-conferma.md) | Strumenti di scrittura con bozza e conferma | I sette strumenti che scrivono, tutti con conferma; due divieti espliciti |
 | [0030](06-esposizione-conversazionale-e-prove/0030-contratto-dei-dati-dei-collaboratori.md) | Contratto dei dati dei collaboratori | Esportazione e cancellazione fisica, compreso il file della ricevuta |
 | [0031](06-esposizione-conversazionale-e-prove/0031-percorso-end-to-end-dell-app.md) | Percorso end-to-end dell'app | `[J-NOTESPESE]` dalla foto al pacchetto, e registro di copertura aggiornato |
 
