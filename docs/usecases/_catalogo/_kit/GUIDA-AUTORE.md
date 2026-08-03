@@ -216,6 +216,20 @@ Copia [TEMPLATE-artefatto-ux.html](TEMPLATE-artefatto-ux.html) in `NN-<slug>/art
   aprirsi con un doppio clic, anche senza connessione;
 - verifica che si apra davvero prima di considerarlo finito.
 
+### Regola del guscio da non violare — colonne di griglia
+
+Nel foglio di stile del guscio **non scrivere mai una colonna `1fr` nuda**: usa sempre `minmax(0,1fr)`.
+
+`1fr` equivale a `minmax(auto,1fr)`, e `auto` non scende sotto la **larghezza minima del contenuto**. Basta
+una tabella con `min-width` dentro quella colonna e la griglia si allarga invece di far scorrere il
+contenitore: la pagina intera scorre in orizzontale su schermo stretto, e il difetto non si vede finché
+qualcuno non apre l'artefatto sul telefono. Vale anche — soprattutto — dentro le regole per schermi
+stretti, dove è facile riscrivere `grid-template-columns:1fr` e disfare la correzione senza accorgersene.
+
+Il guscio del kit è già a posto: il modo di romperlo è aggiungere una griglia propria nel blocco «stili
+propri dell'app». **Verifica sempre con una misura**, non a occhio: a 390 pixel di larghezza,
+`document.documentElement.scrollWidth - clientWidth` deve valere `0`.
+
 Le istruzioni di dettaglio (cosa non toccare, come aggiungere una schermata, quali componenti sono già pronti)
 stanno nel blocco di commento in testa al file stesso.
 

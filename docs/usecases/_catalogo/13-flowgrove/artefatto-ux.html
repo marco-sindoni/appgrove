@@ -1,0 +1,1172 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlowGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  FLOWGROVE (catalogo #13) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/13-flowgrove/artefatto-ux.html
+================================================================================
+
+  COS'E'. Il mockup che accompagna la cartella dell'applicazione 13 del catalogo
+  (vedi application-description.md). Si apre con un doppio clic, funziona da
+  `file://` senza rete, e mostra come si presenterebbe FlowGrove — progetti,
+  attivita' e ore su commessa — dentro il backoffice appgrove. Guscio e token
+  del sistema di design vengono dal kit d'autore
+  (_kit/TEMPLATE-artefatto-ux.html) e dai token reali del prodotto
+  (frontend/packages/design-system/src/tokens/tokens.css, UC 0019).
+
+  NESSUNA RISORSA REMOTA: niente caratteri, librerie o immagini dalla rete.
+
+  I DATI SONO INVENTATI. Nomi di fantasia, commesse immaginarie, importi tondi:
+  non assomigliano ai dati di nessun cliente vero, e non devono.
+
+  LE NOVE SCHERMATE E PERCHE' CI SONO
+  -----------------------------------
+  · panoramica ... come vanno le commesse: ore della settimana, budget a
+                   rischio, margine; e' la pagina d'atterraggio del titolare
+  · progetti ..... l'elenco delle commesse, con ricerca e filtro di stato
+  · dettaglio .... una commessa: avanzamento, budget consumato, traguardi
+  · nuovo ........ il progetto nuovo, creabile CON IL SOLO TITOLO (storia 0006):
+                   e' la risposta alla lamentela ricorrente del segmento micro
+                   («servono venti campi prima di cominciare»)
+  · lavagna ...... le attivita' per stato, con l'alternativa da tastiera al
+                   trascinamento — quella che la prova automatica percorre
+  · foglio ....... IL FOGLIO ORE SETTIMANALE: una settimana in una schermata
+                   sola, sotto i trenta secondi. E' la schermata da cui dipende
+                   tutta l'app: senza ore, il margine e' finto (storia 0019)
+  · fatturabili .. il lotto pronto da consegnare a 02 BillGrove, con conferma
+                   esplicita: e' l'anello fra il lavoro e la fattura
+  · margine ...... «ci abbiamo guadagnato?» in una schermata, SENZA classifiche
+                   di persone (confine di prodotto, descrizione §6)
+  · vuoto ........ primo avvio e posti esauriti: i due stati che si dimenticano
+
+  QUELLO CHE IL MOCKUP NON MOSTRA, DI PROPOSITO
+  ---------------------------------------------
+  Nessun cronometro che parte da solo, nessuna posizione geografica, nessuna
+  cattura di schermate, nessun conteggio «ore per dipendente» come schermata di
+  prodotto: si dichiara, non si rileva (descrizione §2.3 e §6). L'assenza e'
+  una scelta di prodotto, non una dimenticanza del mockup.
+
+  I riquadri tratteggiati sono le note per lo sviluppatore; il pulsante «Note»
+  in alto le nasconde per vedere l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   Solo token del sistema di design: nessun colore scritto a mano.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* icona dentro un titolo di sezione (senza vincolo, l'SVG occuperebbe tutta la larghezza) */
+h2.sec svg{width:17px;height:17px;stroke:currentColor;vertical-align:-3px}
+
+/* ── Lavagna a colonne (storia 0011) ────────────────────────────────── */
+.lavagna{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:14px;align-items:start}
+.col{background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-lg);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:180px}
+.col-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgb(var(--muted))}
+.col-h .n{margin-left:auto;font-family:var(--font-mono);font-size:12px;color:rgb(var(--faint))}
+.scheda{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-md);padding:11px 12px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--sh-sm);text-align:left;width:100%}
+.scheda:hover{border-color:rgb(var(--border-strong))}
+.scheda .t{font-weight:700;font-size:13px;line-height:1.35}
+.scheda .m{display:flex;align-items:center;gap:8px;font-size:11.5px;color:rgb(var(--muted));flex-wrap:wrap}
+.chi{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:800;background:rgb(var(--accent)/.14);color:rgb(var(--accent));flex:none}
+
+/* ── Foglio ore settimanale (storia 0019) ───────────────────────────── */
+.foglio{width:100%;border-collapse:collapse;font-size:13px;min-width:720px}
+.foglio th{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint));font-weight:700;padding:9px 8px;border-bottom:1px solid rgb(var(--border));text-align:center}
+.foglio th:first-child{text-align:left;min-width:230px}
+.foglio td{padding:7px 8px;border-bottom:1px solid rgb(var(--border));text-align:center}
+.foglio td:first-child{text-align:left}
+.foglio tfoot td{font-family:var(--font-mono);font-weight:700;border-bottom:none;padding-top:11px}
+.foglio input{width:62px;padding:6px 4px;text-align:center;border:1px solid rgb(var(--border-strong));border-radius:var(--r-sm);background:rgb(var(--surface));font-family:var(--font-mono)}
+.foglio input:disabled{background:rgb(var(--surface-3));color:rgb(var(--faint));cursor:not-allowed}
+.foglio .riga-t{display:flex;flex-direction:column;gap:2px}
+.foglio .riga-t small{color:rgb(var(--muted));font-size:11.5px}
+
+/* ── Barra di avanzamento del budget (storie 0021, 0025) ────────────── */
+.avanz{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.avanz-bar{height:9px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.avanz-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--success))}
+.avanz-bar i.warn{background:rgb(var(--warning))}
+.avanz-bar i.full{background:rgb(var(--danger))}
+
+/* ── Conto del margine (storia 0026) ────────────────────────────────── */
+.conto{display:flex;flex-direction:column}
+.conto .r{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid rgb(var(--border));font-size:13.5px}
+.conto .r:last-child{border-bottom:none}
+.conto .r.tot{font-weight:800;font-size:16px;border-top:2px solid rgb(var(--border-strong));margin-top:4px;padding-top:12px}
+.conto .neg{color:rgb(var(--danger))}
+.conto .pos{color:rgb(var(--success))}
+
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .lavagna{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · FlowGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="progetti">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+      Progetti
+    </button>
+    <button class="nav-item" data-nav="lavagna">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="10" rx="1.5"/><rect x="17" y="4" width="4" height="13" rx="1.5"/></svg>
+      Lavagna
+    </button>
+    <button class="nav-item" data-nav="foglio">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Foglio ore
+    </button>
+    <button class="nav-item" data-nav="fatturabili">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M8 12h8M8 16h5"/></svg>
+      Da fatturare <span class="pill">3</span>
+    </button>
+    <button class="nav-item" data-nav="margine">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 9 12l4 3 7-8"/><path d="M15 7h5v5"/></svg>
+      Redditività
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo progetto
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>FlowGrove</b> (catalogo #13). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>FlowGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #13 FlowGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'FlowGrove',
+  id: 'progetti',
+  categoria: 'violet',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'F',
+  claim: 'Progetti, attività e ore su commessa: dal lavoro fatto alla riga pronta da fatturare.',
+  metrica: 'posti',
+  quota: { usato: 8, tetto: 10, finestra: 'sul piano Squadra' }   /* metrica a giacenza: nessuna finestra temporale */
+};
+
+/* Commesse inventate: nomi di fantasia, importi tondi. */
+const RIGHE = [
+  { id:'CM-2026-014', titolo:'Rifacimento impianto — sede di via Larga', refe:'Verdi Impianti',   data:'03/08/2026', valore:12400.00, stato:'rischio', oreFatte:118, oreBudget:140, avanz:72 },
+  { id:'CM-2026-013', titolo:'Identità visiva e sito vetrina',           refe:'Panificio Aurora', data:'31/07/2026', valore: 6800.00, stato:'attivo',  oreFatte: 41, oreBudget:110, avanz:38 },
+  { id:'CM-2026-012', titolo:'Consulenza organizzativa — secondo lotto', refe:'Studio Meridiano', data:'28/07/2026', valore: 9200.00, stato:'sforato', oreFatte:163, oreBudget:150, avanz:88 },
+  { id:'CM-2026-011', titolo:'Manutenzione programmata 2026',            refe:'Officina Bruni',   data:'24/07/2026', valore: 4300.00, stato:'attivo',  oreFatte: 22, oreBudget: 80, avanz:26 },
+  { id:'CM-2026-010', titolo:'Allestimento fiera di settembre',          refe:'Cooperativa Lume', data:'21/07/2026', valore: 5100.00, stato:'sospeso', oreFatte: 12, oreBudget: 60, avanz:15 },
+  { id:'CM-2026-009', titolo:'Collaudo linea di confezionamento',        refe:'Verdi Impianti',   data:'15/07/2026', valore: 7600.00, stato:'chiuso',  oreFatte: 94, oreBudget: 95, avanz:100 },
+  { id:'CM-2026-008', titolo:'Formazione al personale di sala',          refe:'Trattoria Ponte',  data:'09/07/2026', valore: 2200.00, stato:'chiuso',  oreFatte: 30, oreBudget: 32, avanz:100 },
+  { id:'CM-2026-007', titolo:'Progetto pilota depuratore',               refe:'Studio Meridiano', data:'02/07/2026', valore: 3900.00, stato:'attivo',  oreFatte: 18, oreBudget: 45, avanz:33 },
+];
+
+const STATI = {
+  attivo:  { et:'Attivo',           cl:'b-ok'      },
+  rischio: { et:'Budget a rischio', cl:'b-warn'    },
+  sforato: { et:'Fuori budget',     cl:'b-bad'     },
+  sospeso: { et:'Sospeso',          cl:'b-neutral' },
+  chiuso:  { et:'Chiuso',           cl:'b-info'    },
+};
+
+/* Attività della lavagna (storia 0011): stati FISSI, non configurabili. */
+const COLONNE = [['dafare','Da fare'],['incorso','In corso'],['inverifica','In verifica'],['fatta','Fatta']];
+const ATTIVITA = [
+  { id:'AT-341', t:'Sopralluogo e rilievo quote',        chi:'AR', quando:'oggi',        stato:'fatta'      },
+  { id:'AT-342', t:'Ordine materiali al fornitore',      chi:'BM', quando:'ieri',        stato:'fatta'      },
+  { id:'AT-343', t:'Posa canaline primo piano',          chi:'AR', quando:'entro ven',   stato:'incorso'    },
+  { id:'AT-344', t:'Cablaggio quadro secondario',        chi:'CD', quando:'entro lun',   stato:'incorso'    },
+  { id:'AT-345', t:'Verifica di continuità',             chi:'BM', quando:'entro mer',   stato:'inverifica' },
+  { id:'AT-346', t:'Aggiornamento schemi as-built',      chi:'CD', quando:'senza data',  stato:'dafare'     },
+  { id:'AT-347', t:'Preparazione verbale di collaudo',   chi:'AR', quando:'entro 20/08', stato:'dafare'     },
+];
+
+/* Foglio ore della settimana (storia 0019): ore DICHIARATE, non rilevate. */
+const GIORNI = ['lun 27','mar 28','mer 29','gio 30','ven 31','sab 1','dom 2'];
+const FOGLIO = [
+  { att:'Posa canaline primo piano',   prog:'CM-2026-014', fatt:true,  ore:[3,4,2,0,0,0,0], bloccata:false },
+  { att:'Cablaggio quadro secondario', prog:'CM-2026-014', fatt:true,  ore:[0,2,4,4,3,0,0], bloccata:false },
+  { att:'Riunione di avanzamento',     prog:'CM-2026-013', fatt:false, ore:[1,0,0,1,0,0,0], bloccata:false },
+  { att:'Collaudo linea (giugno)',     prog:'CM-2026-009', fatt:true,  ore:[0,0,0,0,0,0,0], bloccata:true  },
+];
+
+/* Righe pronte da consegnare alla fatturazione (storia 0022). */
+const LOTTO = [
+  { voce:'Posa canaline primo piano',   ore:34, tariffa:45, },
+  { voce:'Cablaggio quadro secondario', ore:28, tariffa:45, },
+  { voce:'Verifica di continuità',      ore: 9, tariffa:60, },
+  { voce:'Materiali riaddebitabili',    ore:null, tariffa:null, importo:640 },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota sui posti.
+   La metrica di FlowGrove è a GIACENZA (posti occupati), non a consumo: il
+   testo non dice «questo mese», dice «sul tuo piano», e il rimedio non è
+   aspettare il mese nuovo ma liberare un posto o cambiare piano. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai occupato tutti i <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Per far entrare un'altra persona devi liberare un posto oppure passare al piano superiore.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Occupi <b>${APP.quota.usato}</b> ${esc(APP.metrica)} su <b>${APP.quota.tetto}</b> ${esc(APP.quota.finestra)}: restano 2 persone da far entrare.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo dei posti. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* COMPONENTE — avanzamento del budget in ore (storie 0021, 0025). */
+function barraBudget(fatte, budget){
+  const pct = Math.min(120, Math.round(fatte / budget * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="avanz">
+    <span>${fatte} ore su ${budget} preventivate — ${pct}%</span>
+    <span class="avanz-bar"><i class="${cl}" style="width:${Math.min(100,pct)}%"></i></span>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: come vanno le commesse, in tre secondi. */
+function vPanoramica(){
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> È la pagina d'atterraggio del titolare, e i quattro indicatori sono scelti
+    per rispondere alle sole domande che si fa davvero: <i>quanto lavoro c'è in casa</i>, <i>le ore le stanno
+    dichiarando</i>, <i>quali commesse stanno bruciando il budget</i>, <i>ci stiamo guadagnando</i>. L'indicatore
+    delle ore della settimana è il più importante di tutti: se scende, il margine di tutte le altre schermate
+    diventa finto (storia 0019).`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo progetto</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Commesse attive',            v:'4',        d:'2 chiuse questo mese'},
+    {k:'Ore dichiarate — settimana', v:'32,5',     d:'da 5 persone su 8',            tono:'up'},
+    {k:'Commesse oltre soglia',      v:'2',        d:'una già fuori budget',         tono:'down'},
+    {k:'Margine medio di commessa',  v:'31%',      d:'sulle 2 commesse chiuse'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Commesse che richiedono attenzione">
+      <div class="card-pad"><h2 class="sec">Commesse da guardare</h2><p class="sec-sub">Le più recenti, con il consumo del budget in ore.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Codice</th><th>Commessa</th><th>Cliente</th><th class="num">Ore / budget</th><th>Stato</th></tr></thead>
+        <tbody>${RIGHE.slice(0,4).map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td>
+            <td>${esc(r.refe)}</td><td class="num">${r.oreFatte} / ${r.oreBudget}</td><td>${badge(r.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm" data-nav="foglio">${I.clock} Dichiara ore</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni sono richiamabili a voce dal livello conversazionale (storie 0028 e 0029).
+        Letture libere: «a che punto è il cantiere di via Larga?», «sul lavoro per lo Studio Meridiano ci abbiamo guadagnato?».
+        Scritture con bozza e conferma: «segna due ore sul cantiere di via Larga per ieri» — e sempre solo a nome proprio.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Progetti: ricerca, filtro di stato, tabella, paginazione, stato vuoto. */
+function vProgetti(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.titolo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.refe.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Progetti.</b> Tre viste in tutto in questa app — elenco, lavagna, «le mie attività» — e
+    non venti: la lamentela ricorrente del segmento micro è che gli strumenti sono troppo configurabili
+    (descrizione §2.5). Il filtro per stato del <i>budget</i> («a rischio», «fuori budget») è il filtro che il
+    titolare usa davvero, e per questo sta accanto agli stati del progetto.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Progetti</h1><p>Le commesse di questo spazio di lavoro.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo progetto</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per codice, commessa o cliente…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} commess${trovate.length===1?'a':'e'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Commessa</th><th>Cliente</th><th>Aggiornata</th><th class="num">Valore</th><th class="num">Ore / budget</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td><td>${esc(r.refe)}</td>
+          <td>${esc(r.data)}</td><td class="num">${eur(r.valore)}</td>
+          <td class="num">${r.oreFatte} / ${r.oreBudget}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessuna commessa corrisponde ai filtri',
+      'Prova con un’altra parola chiave, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio della commessa: avanzamento, budget, traguardi. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const sforo = r.oreFatte > r.oreBudget;
+  return `
+  ${nota(`<b>Proposta — Dettaglio della commessa.</b> A sinistra i fatti, a destra i traguardi. La barra del budget
+    in ore sta <i>in alto</i>, non in fondo a un rapporto: il danno che l'app esiste per togliere è scoprire lo
+    sforamento a fine mese, quando non c'è più niente da fare (storia 0021). L'importo maturato è visibile solo a
+    chi ha ruolo <span class="mono">admin</span>.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.titolo)}</h1>${badge(r.stato)}</div>
+      <p class="mono">${esc(r.id)} · ${esc(r.refe)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="progetti">${I.sx} Torna ai progetti</button>
+  </div>
+
+  ${sforo ? `<div class="alert a-bad">${I.warn}<span>Questa commessa ha superato il budget in ore di <b>${r.oreFatte - r.oreBudget} ore</b>. L'avviso era comparso all'80%.</span></div>` : ''}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:10px">Consumo del budget</h2>
+      ${barraBudget(r.oreFatte, r.oreBudget)}
+      <div class="dl" style="margin-top:14px">
+        <div class="dl-row"><span class="k">Valore di commessa</span><span class="v mono">${eur(r.valore)}</span></div>
+        <div class="dl-row"><span class="k">Avanzamento delle attività</span><span class="v">${r.avanz}%</span></div>
+        <div class="dl-row"><span class="k">Ore fatturabili maturate</span><span class="v mono">${eur(r.oreFatte * 45)}</span></div>
+        <div class="dl-row"><span class="k">Origine</span><span class="v">${r.id === 'CM-2026-014' ? 'Preventivo accettato (06 QuoteGrove)' : 'Creata a mano'}</span></div>
+        <div class="dl-row"><span class="k">Ultimo aggiornamento</span><span class="v">${esc(r.data)}</span></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn-primary" data-nav="lavagna">Apri la lavagna</button>
+        <button class="btn btn-ghost" data-nav="margine">Vedi la redditività</button>
+        <button class="btn btn-ghost" data-nav="fatturabili">${I.scarica} Righe da fatturare</button>
+      </div>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Traguardi</h2>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Consegna del rilievo</div><div class="when">raggiunto il 12/07/2026</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Fine posa canaline</div><div class="when">previsto 08/08/2026</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Collaudo con il cliente</div><div class="when">previsto 22/08/2026</div></div></div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-modale="apri" data-titolo="Chiudere il periodo di luglio?" data-testo="Le righe di ore di luglio si bloccano: da quel momento si correggono solo con una riga di rettifica tracciata. La riapertura è un'operazione eccezionale.">Chiudi il periodo</button></div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Nuovo progetto: il modulo minimo, un titolo e basta. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo progetto.</b> Un solo campo obbligatorio: il titolo. Tutto il resto — cliente,
+    referente, date, budget, tariffa — è facoltativo e si aggiunge dopo (storia 0006). È la risposta diretta alla
+    lamentela raccolta nell'analisi: «serve un corso per aprire una scheda». Il progetto nasce quasi sempre da un
+    preventivo accettato, e in quel caso questi campi arrivano già compilati (storia 0023).`)}
+  <div class="page-h"><div class="txt"><h1>Nuovo progetto</h1><p>Basta il titolo: il resto si può aggiungere quando serve.</p></div></div>
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field wide" id="f-titolo">
+        <label for="i-titolo">Titolo della commessa *</label>
+        <input id="i-titolo" name="titolo" placeholder="Es. Rifacimento impianto — sede di via Larga">
+        <span class="hint">L'unico campo obbligatorio. Come la riconoscerai nell'elenco.</span>
+      </div>
+      <div class="field">
+        <label for="i-cliente">Cliente</label>
+        <select id="i-cliente"><option>— nessuno —</option><option>Verdi Impianti</option><option>Panificio Aurora</option><option>Studio Meridiano</option></select>
+        <span class="hint">Anagrafica condivisa: FlowGrove non ne tiene una seconda copia.</span>
+      </div>
+      <div class="field">
+        <label for="i-fine">Fine prevista</label>
+        <input id="i-fine" type="date" value="2026-09-30">
+      </div>
+      <div class="field">
+        <label for="i-ore">Budget in ore</label>
+        <input id="i-ore" type="number" step="1" placeholder="140">
+        <span class="hint">Serve per l'avviso di sforamento: senza, l'avviso non esiste.</span>
+      </div>
+      <div class="field">
+        <label for="i-tariffa">Tariffa oraria (€)</label>
+        <input id="i-tariffa" type="number" step="0.01" placeholder="45,00">
+        <span class="hint">Se manca, si usa quella predefinita dell'account.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Note</label>
+        <textarea id="i-note" placeholder="Annotazioni libere…"></textarea>
+        <span class="hint">Campo a testo libero: non inserire dati sensibili.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="progetti">Annulla</button>
+      <button type="submit" class="btn btn-primary">Crea il progetto</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Lavagna a colonne: stati FISSI, spostamento anche da tastiera. */
+function vLavagna(){
+  return `
+  ${nota(`<b>Proposta — Lavagna.</b> Quattro stati fissi, non configurabili dal cliente: è una scelta contro la
+    complessità, ed è il punto su cui questa app accetta di perdere il confronto con gli strumenti grandi
+    (storia 0011). Ogni scheda ha un menu <i>Sposta a…</i> raggiungibile da tastiera: il trascinamento non è
+    l'unica strada — serve all'accessibilità e rende stabile la prova automatica <span class="mono">[J-PROGETTI]</span>.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Lavagna</h1><p>Commessa CM-2026-014 · Rifacimento impianto — sede di via Larga</p></div>
+    <button class="btn btn-ghost" data-nav="dettaglio">${I.sx} Torna alla commessa</button>
+  </div>
+
+  <div class="lavagna">
+    ${COLONNE.map(([k,et])=>{
+      const dentro = ATTIVITA.filter(a=>a.stato===k);
+      return `<section class="col" aria-label="${esc(et)}">
+        <div class="col-h">${esc(et)}<span class="n">${dentro.length}</span></div>
+        ${dentro.map(a=>`
+          <button class="scheda" aria-label="Attività ${esc(a.t)} — apri per spostarla">
+            <span class="t">${esc(a.t)}</span>
+            <span class="m"><span class="chi" aria-hidden="true">${esc(a.chi)}</span>${esc(a.quando)}<span class="mono" style="margin-left:auto">${esc(a.id)}</span></span>
+          </button>`).join('') || `<p class="sec-sub">Nessuna attività.</p>`}
+      </section>`;
+    }).join('')}
+  </div>
+
+  <div class="card card-pad row">
+    <span class="sec-sub" style="flex:1">Le sotto-attività hanno <b>un solo livello</b>: una sotto-attività non ha figli. Non è un limite tecnico, è una scelta contro la complessità.</span>
+    <button class="btn btn-ghost btn-sm" data-nav="foglio">${I.clock} Dichiara le ore</button>
+  </div>`;
+}
+
+/* SCHERMATA — Foglio ore settimanale: la schermata da cui dipende tutta l'app. */
+function vFoglio(){
+  const tot = FOGLIO.map(r => r.ore.reduce((a,b)=>a+b,0));
+  const totGiorno = GIORNI.map((_,i)=>FOGLIO.reduce((a,r)=>a+r.ore[i],0));
+  const totale = tot.reduce((a,b)=>a+b,0);
+  return `
+  ${nota(`<b>Proposta — Foglio ore settimanale.</b> È la schermata più importante dell'applicazione, e l'unico
+    requisito che conta è il tempo: <b>una settimana intera in una schermata sola, sotto i trenta secondi</b>
+    (storia 0019). Se compilarlo costa fatica nessuno lo compila, e senza ore il margine di commessa è finto.
+    <ul>
+      <li><b>Si dichiara, non si rileva</b>: nessun cronometro che parte da solo, nessuna posizione, nessuna
+      cattura di schermate. È il confine che tiene l'app fuori dall'articolo 4 dello Statuto dei lavoratori
+      (descrizione §2.3);</li>
+      <li>ognuno vede e corregge <b>le proprie</b> righe finché il periodo è aperto; le righe di un periodo chiuso
+      sono in sola lettura e si correggono con una rettifica tracciata (storia 0020);</li>
+      <li>l'interruttore «fatturabile» è per riga, con il valore predefinito dell'attività (storia 0018).</li>
+    </ul>`)}
+  <div class="page-h">
+    <div class="txt"><h1>Il mio foglio ore</h1><p>Settimana 27 luglio – 2 agosto 2026 · Anna Rossi</p></div>
+    <div class="row">
+      <button class="btn btn-ghost btn-sm">${I.sx} Settimana precedente</button>
+      <button class="btn btn-primary">Salva la settimana</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="foglio">
+      <thead><tr><th>Attività</th>${GIORNI.map(g=>`<th>${esc(g)}</th>`).join('')}<th>Totale</th></tr></thead>
+      <tbody>${FOGLIO.map((r,ri)=>`
+        <tr>
+          <td><span class="riga-t"><b>${esc(r.att)}</b><small>${esc(r.prog)} · ${r.fatt?'fatturabile':'non fatturabile'}${r.bloccata?' · periodo chiuso':''}</small></span></td>
+          ${r.ore.map((h,gi)=>`<td><input type="number" step="0.5" min="0" value="${h||''}" ${r.bloccata?'disabled':''} aria-label="Ore su ${esc(r.att)}, ${esc(GIORNI[gi])}"></td>`).join('')}
+          <td class="mono"><b>${tot[ri].toString().replace('.',',')}</b></td>
+        </tr>`).join('')}
+      </tbody>
+      <tfoot><tr><td>Totale della giornata</td>${totGiorno.map(t=>`<td>${t.toString().replace('.',',')}</td>`).join('')}<td>${totale.toString().replace('.',',')}</td></tr></tfoot>
+    </table></div>
+  </div>
+
+  <div class="card card-pad row">
+    <span class="sec-sub" style="flex:1">Quello che il titolare vede di te: le ore che dichiari sulle commesse, per progetto e per periodo. <b>Nessuna classifica di produttività, nessun punteggio, nessun indicatore «ore per dipendente»</b> (descrizione §6).</span>
+    <button class="btn btn-ghost btn-sm">Scarica le mie righe</button>
+  </div>`;
+}
+
+/* SCHERMATA — Da fatturare: il lotto pronto per 02 BillGrove. */
+function vFatturabili(){
+  const righe = LOTTO.map(l => ({...l, importo: l.importo ?? l.ore * l.tariffa}));
+  const totale = righe.reduce((a,r)=>a+r.importo,0);
+  return `
+  ${nota(`<b>Proposta — Da fatturare.</b> È l'anello che giustifica l'esistenza dell'app: fra il preventivo
+    accettato e la fattura c'è il lavoro, e oggi quel pezzo lo si ricopia a mano da un foglio all'altro
+    (storia 0022). Tre regole si vedono qui: si compone <b>solo da un periodo chiuso</b>; l'anteprima si conferma
+    <b>esplicitamente</b>; una riga non può finire in due lotti. Se l'app di fatturazione non è attiva
+    sull'account, il lotto si compone e si esporta lo stesso — FlowGrove deve restare utile anche fuori dalla suite.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Righe da fatturare</h1><p>Commessa CM-2026-014 · periodo luglio 2026 · <b>periodo chiuso</b></p></div>
+    <button class="btn btn-ghost" data-nav="dettaglio">${I.sx} Torna alla commessa</button>
+  </div>
+
+  <div class="alert a-ok">${I.check}<span>Il periodo di luglio è chiuso: le righe non cambiano più mentre componi il lotto.</span></div>
+
+  <div class="card">
+    <div class="card-pad"><h2 class="sec">Anteprima del lotto</h2><p class="sec-sub">71 ore fatturabili raggruppate per attività, più i costi riaddebitabili. Le 18 ore non fatturabili restano nel consuntivo e non compaiono qui.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Voce</th><th class="num">Ore</th><th class="num">Tariffa</th><th class="num">Importo</th></tr></thead>
+      <tbody>${righe.map(r=>`
+        <tr><td>${esc(r.voce)}</td>
+          <td class="num">${r.ore ?? '—'}</td>
+          <td class="num">${r.tariffa ? eur(r.tariffa) : '—'}</td>
+          <td class="num">${eur(r.importo)}</td></tr>`).join('')}
+        <tr><td><b>Totale del lotto</b></td><td class="num"></td><td class="num"></td><td class="num"><b>${eur(totale)}</b></td></tr>
+      </tbody>
+    </table></div>
+    <div class="card-pad row" style="justify-content:flex-end">
+      <button class="btn btn-ghost">${I.scarica} Esporta in tabella</button>
+      <button class="btn btn-primary" data-modale="apri" data-titolo="Consegnare il lotto alla fatturazione?" data-testo="Le 71 ore passano a «consegnate» e non si toccano più: a valle diventano una fattura in 02 BillGrove. La consegna avviene una volta sola.">Consegna a BillGrove</button>
+    </div>
+  </div>
+
+  <div class="card card-pad">
+    <h2 class="sec">Consegne precedenti</h2>
+    <div class="timeline">
+      <div class="tl-item"><span class="tl-dot"></span><div><div>Giugno 2026 — 96 ore — ${eur(4320)} · consegnato</div><div class="when">01/07/2026 · 09:20</div></div></div>
+      <div class="tl-item"><span class="tl-dot"></span><div><div>Maggio 2026 — 88 ore — ${eur(3960)} · consegnato</div><div class="when">02/06/2026 · 08:55</div></div></div>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Redditività: «ci abbiamo guadagnato?» in una schermata. */
+function vMargine(){
+  const ricavo = 12400, costoOre = 118*28, costiEst = 1840;
+  const margine = ricavo - costoOre - costiEst;
+  return `
+  ${nota(`<b>Proposta — Redditività per commessa.</b> La domanda «ci ho guadagnato?» deve essere <i>una schermata</i>,
+    non un rapporto da costruire (storia 0026). Due vincoli, entrambi non negoziabili: il conto è <b>per commessa</b>
+    e mai per persona — nessuna classifica, nessun punteggio, nessun indicatore «ore per dipendente» — e gli importi
+    li vede solo chi ha ruolo <span class="mono">admin</span>. È anche la prima schermata da mostrare in fase di
+    vendita: FlowGrove non si vende come lavagna.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Redditività</h1><p>Commessa CM-2026-014 · Verdi Impianti · dati al 03/08/2026</p></div>
+    <button class="btn btn-ghost" data-nav="progetti">${I.sx} Torna ai progetti</button>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Ricavo previsto', v:eur(ricavo), d:'da preventivo accettato'},
+    {k:'Costo del lavoro', v:eur(costoOre), d:'118 ore al costo orario d’account'},
+    {k:'Margine',          v:eur(margine), d:margine>0?'la commessa regge':'la commessa perde', tono:margine>0?'up':'down'},
+  ])}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:10px">Il conto della commessa</h2>
+      <div class="conto">
+        <div class="r"><span>Ricavo previsto (preventivo accettato)</span><span class="mono">${eur(ricavo)}</span></div>
+        <div class="r"><span>Costo delle ore dichiarate — 118 ore</span><span class="mono neg">− ${eur(costoOre)}</span></div>
+        <div class="r"><span>Costi esterni (materiali, fornitori, trasferte)</span><span class="mono neg">− ${eur(costiEst)}</span></div>
+        <div class="r tot"><span>Margine</span><span class="mono ${margine>0?'pos':'neg'}">${eur(margine)} · ${Math.round(margine/ricavo*100)}%</span></div>
+      </div>
+      <p class="sec-sub" style="margin-top:12px">Il costo orario è quello <b>dell'account</b>, non della singola persona: un costo per persona sarebbe di fatto un dato retributivo, e questa app non lo tratta (storia 0018).</p>
+    </div>
+    <aside class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="sec">Consumo del budget</h2>
+      ${barraBudget(118, 140)}
+      <p class="sec-sub">L'avviso è comparso a 112 ore, cioè all'80%: <b>prima</b> dello sforamento, non a fine mese quando non c'è più niente da fare.</p>
+      <button class="btn btn-ghost btn-sm">${I.scarica} Esporta il consuntivo</button>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e posti esauriti: i due stati che si dimenticano. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e posti esauriti.</b> Due stati che l'utente incontra per primi e che si
+    dimenticano sempre. Il primo giorno l'app è vuota: deve dire cosa fare. Il giorno in cui la squadra cresce, il
+    blocco dei posti deve dire <i>quante persone</i> vanno rimosse per rientrare — perché la metrica è a giacenza e
+    aspettare il mese nuovo non serve a niente (storia 0004).`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta FlowGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'Non c’è ancora nessuna commessa',
+    'Crea il primo progetto — basta il titolo — oppure aspetta che arrivi da un preventivo accettato: in quel caso nasce già con budget e righe.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary" data-nav="nuovo">${I.piu} Crea il primo progetto</button><button class="btn btn-ghost" data-nav="progetti">Guarda l’elenco</button></div>`)}
+  <h2 class="sec">Posti esauriti</h2>
+  ${avvisoQuota('raggiunto')}
+  <div class="card card-pad">
+    <p class="sec-sub">Il passaggio a un piano inferiore è <b>bloccato</b> finché i posti occupati superano il tetto di destinazione, e il messaggio dice quante persone vanno rimosse prima: è la conseguenza di una metrica a giacenza.</p>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica:  ['Panoramica',       vPanoramica],
+  progetti:    ['Progetti',         vProgetti],
+  dettaglio:   ['Dettaglio',        vDettaglio],
+  nuovo:       ['Nuovo progetto',   vNuovo],
+  lavagna:     ['Lavagna',          vLavagna],
+  foglio:      ['Foglio ore',       vFoglio],
+  fatturabili: ['Da fatturare',     vFatturabili],
+  margine:     ['Redditività',      vMargine],
+  vuoto:       ['Primo avvio',      vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il titolo è obbligatorio.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('progetti');
+  });
+
+  /* apertura della modale dal dettaglio */
+  /* Le azioni con effetti difficilmente reversibili passano da una conferma esplicita: è la stessa
+     regola che vale per il livello conversazionale (bozza + conferma umana, storia 0029). */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale(
+      b.dataset.titolo ?? 'Confermi l’operazione?',
+      b.dataset.testo  ?? 'L’operazione non si può annullare. Resta la traccia di chi l’ha fatta e quando.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>

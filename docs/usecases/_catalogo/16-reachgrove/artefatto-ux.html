@@ -1,0 +1,1223 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReachGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  ReachGrove (catalogo #16) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/16-reachgrove/artefatto-ux.html
+================================================================================
+
+  COS'È
+  -----
+  Il mockup navigabile che accompagna la cartella dell'applicazione 16 —
+  ReachGrove (comunicazioni commerciali con prova del consenso). Si apre con
+  un doppio clic, funziona da `file://` senza rete, e mostra come si
+  presenterebbe l'app dentro il backoffice appgrove. Guscio e token del
+  sistema di design vengono dal kit d'autore del catalogo
+  (`_kit/TEMPLATE-artefatto-ux.html`); i contenuti sono della proposta di
+  ReachGrove, descritta in `application-description.md`.
+
+  REGOLA DI FERRO — NESSUNA RISORSA REMOTA
+  ----------------------------------------
+  Niente caratteri da rete, niente librerie, niente immagini remote, niente
+  chiamate. Solo stile e script in linea e disegni vettoriali incorporati.
+
+  I DATI SONO INVENTATI
+  ---------------------
+  Persone, campagne, conteggi e date sono di fantasia e servono solo a far
+  vedere la forma dell'interfaccia. Gli indirizzi di posta usano il dominio
+  `.test`, riservato alle prove: nessuno di questi recapiti esiste.
+
+  LE NOVE SCHERMATE E PERCHÉ CI SONO
+  ----------------------------------
+  · Panoramica ............ i quattro numeri che contano, fra cui il tasso di
+                            segnalazione contro la soglia dello 0,3 %
+  · Iscritti .............. elenco con due conteggi: quanti sono e quanti
+                            sono contattabili
+  · Scheda dell'iscritto .. lo storico del consenso, cioè la prova
+  · Nuovo iscritto ........ si crea, ma nasce in quarantena
+  · Campagne .............. corrispondono al segmento / ricevono davvero
+  · Campagna .............. il controllo pre-volo, senza pulsante di forzatura
+  · Importazione .......... tremila righe, zero contattabili
+  · Impostazioni di invio . autenticazione del mittente e canali col
+                            contratto del cliente
+  · Primo avvio ........... l'app vuota e la quota esaurita
+
+  COSA NON È STATO TOCCATO
+  ------------------------
+  1. Il blocco `:root { … }` dei token e le sue varianti chiaro/scuro.
+  2. Le classi di base del guscio comune alle proposte del catalogo.
+  3. Il piccolo instradatore in fondo (`disegna`, `vai`, `SCHERMATE`).
+
+  NOTE DI PROPOSTA
+  ----------------
+  I riquadri `.nota` sono le annotazioni per lo sviluppatore («perché questa
+  schermata è fatta così»). Il pulsante «Note» in alto le nasconde, per
+  vedere l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+h2.sec svg{width:18px;height:18px;flex:none;stroke:currentColor}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+/* … */
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · ReachGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="iscritti">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="m17 11 2 2 4-4"/></svg>
+      Iscritti
+    </button>
+    <button class="nav-item" data-nav="campagne">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z"/></svg>
+      Campagne
+    </button>
+    <button class="nav-item" data-nav="importazione">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/></svg>
+      Importazione
+    </button>
+    <button class="nav-item" data-nav="canali">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      Impostazioni di invio
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo iscritto <span class="pill">DEMO</span>
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>ReachGrove</b> (catalogo #16). Persone, campagne e numeri sono inventati; nessuna risorsa dalla rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>ReachGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #16 ReachGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'ReachGrove',
+  id: 'campaigns',
+  categoria: 'violet',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'R',
+  claim: 'Comunicazioni commerciali solo a chi ha detto di sì, con la prova che lo ha detto.',
+  metrica: 'invii',
+  quota: { usato: 3840, tetto: 5000, finestra: 'questo mese' }
+};
+
+/* Iscritti — persone inventate. Gli indirizzi usano il dominio `.test`,
+   riservato alle prove: nessuno di questi recapiti esiste davvero.
+   Ogni iscritto porta con sé le proprie registrazioni di consenso: è la
+   forma dell'entità che questa app propone (storia 0007). */
+const RIGHE = [
+  { id:'ISC-4021', nome:'Anna Verdi',      email:'anna.verdi@esempio.test',   lingua:'Italiano', origine:'Modulo pubblico',  data:'12/07/2026', stato:'attivo',
+    motivo:'Consenso confermato con doppia conferma il 12/07/2026',
+    prove:[
+      {q:'12/07/2026 · 09:14', t:'Iscrizione inviata dal modulo «Newsletter del laboratorio»', d:'indirizzo di rete 203.0.113.24'},
+      {q:'12/07/2026 · 09:21', t:'Conferma completata — consenso concesso, base giuridica: consenso', d:'testo accettato: «Acconsento a ricevere comunicazioni commerciali…»'},
+    ]},
+  { id:'ISC-4020', nome:'Bruno Sartori',   email:'b.sartori@esempio.test',    lingua:'Italiano', origine:'Modulo pubblico',  data:'02/08/2026', stato:'attesa',
+    motivo:'In attesa di conferma: il collegamento scade il 09/08/2026',
+    prove:[
+      {q:'02/08/2026 · 18:40', t:'Iscrizione inviata dal modulo «Novità di stagione»', d:'messaggio di conferma spedito, non ancora aperto'},
+    ]},
+  { id:'ISC-4019', nome:'Chiara Lodi',     email:'chiara.lodi@esempio.test',  lingua:'Italiano', origine:'Importazione',     data:'28/06/2026', stato:'quarantena',
+    motivo:'Importata dal file «contatti-vecchio-gestionale.csv» senza prova di consenso',
+    prove:[
+      {q:'28/06/2026 · 11:05', t:'Riga importata — nessuna prova allegata', d:'non inviabile finché non viene allegata la prova'},
+    ]},
+  { id:'ISC-4018', nome:'Davide Ruggeri',  email:'d.ruggeri@esempio.test',    lingua:'Francese', origine:'Dichiarazione',    data:'19/05/2026', stato:'attivo',
+    motivo:'Consenso dichiarato dall’operatore, con nota sull’origine',
+    prove:[
+      {q:'19/05/2026 · 15:02', t:'Consenso concesso — base giuridica: consenso, origine: dichiarazione dell’operatore', d:'nota: «raccolto in fiera, modulo cartaceo n. 214»'},
+    ]},
+  { id:'ISC-4017', nome:'Elena Bassi',     email:'elena.bassi@esempio.test',  lingua:'Italiano', origine:'Modulo pubblico',  data:'04/03/2026', stato:'disiscritto',
+    motivo:'Si è disiscritta dal messaggio del 26/07/2026',
+    prove:[
+      {q:'04/03/2026 · 08:30', t:'Conferma completata — consenso concesso', d:'testo accettato: «Acconsento a ricevere comunicazioni commerciali…»'},
+      {q:'26/07/2026 · 21:11', t:'Consenso revocato — disiscrizione in un clic dal messaggio «Novità di luglio»', d:'recapito aggiunto ai soppressi; la registrazione del 04/03 resta come prova'},
+    ]},
+  { id:'ISC-4016', nome:'Fabio Neri',      email:'f.neri@esempio.test',       lingua:'Inglese',  origine:'Importazione',     data:'28/06/2026', stato:'quarantena',
+    motivo:'Importato senza prova di consenso',
+    prove:[
+      {q:'28/06/2026 · 11:05', t:'Riga importata — nessuna prova allegata', d:'non inviabile finché non viene allegata la prova'},
+    ]},
+  { id:'ISC-4015', nome:'Giulia Pace',     email:'g.pace@esempio.test',       lingua:'Spagnolo', origine:'Modulo pubblico',  data:'11/01/2026', stato:'soppresso',
+    motivo:'Rimbalzo permanente il 30/07/2026: il recapito non esiste più',
+    prove:[
+      {q:'11/01/2026 · 10:45', t:'Conferma completata — consenso concesso', d:'—'},
+      {q:'30/07/2026 · 04:02', t:'Rimbalzo permanente dal server ricevente', d:'recapito soppresso: non si può più usare, in nessuna campagna'},
+    ]},
+  { id:'ISC-4014', nome:'Hans Bauer',      email:'h.bauer@esempio.test',      lingua:'Tedesco',  origine:'Modulo pubblico',  data:'22/04/2026', stato:'attivo',
+    motivo:'Consenso confermato con doppia conferma il 22/04/2026',
+    prove:[
+      {q:'22/04/2026 · 12:00', t:'Conferma completata — consenso concesso', d:'testo accettato in tedesco: la prova resta nella lingua in cui è stata data'},
+    ]},
+];
+
+/* Stati dell'iscritto: sono i cinque della proposta (storia 0006) e NON si
+   possono impostare a mano — si calcolano dalle registrazioni di consenso e
+   dall'elenco di soppressione. */
+const STATI = {
+  attivo:      { et:'Contattabile',          cl:'b-ok'      },
+  attesa:      { et:'In attesa di conferma', cl:'b-info'    },
+  quarantena:  { et:'In quarantena',         cl:'b-warn'    },
+  disiscritto: { et:'Disiscritto',           cl:'b-neutral' },
+  soppresso:   { et:'Soppresso',             cl:'b-bad'     },
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota raggiunta.
+   `livello`: 'vicino' (avviso giallo) oppure 'raggiunto' (blocco rosso).
+   Il testo deve dire SEMPRE tre cose: cosa è successo, cosa non si può
+   più fare, come si rimedia. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Non puoi creare nuovi elementi finché non passi a un piano superiore.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Hai usato <b>${APP.quota.usato}</b> di <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} ${esc(APP.quota.finestra)}.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* Campagne inventate. Gli stati sono quelli della macchina a stati della
+   proposta: bozza → in verifica → programmata → in corso → conclusa, con
+   «bloccata» raggiungibile dalla verifica e dalla spedizione. */
+const CAMPAGNE = [
+  { id:'CMP-0120', nome:'Riapertura del laboratorio', canale:'Posta elettronica', segmento:'Clienti attivi 2026',   quando:'—',                 corrisp:1240, riceve:899, stato:'verifica' },
+  { id:'CMP-0119', nome:'Novità di stagione',          canale:'Posta elettronica', segmento:'Iscritti dal modulo',   quando:'05/08/2026 · 09:00', corrisp:860,  riceve:812, stato:'programmata' },
+  { id:'CMP-0118', nome:'Promemoria evento del 12',    canale:'Messaggi brevi',    segmento:'Chi ha confermato',     quando:'—',                 corrisp:320,  riceve:0,   stato:'bloccata' },
+  { id:'CMP-0117', nome:'Saluti di luglio',            canale:'Posta elettronica', segmento:'Tutti i contattabili',  quando:'26/07/2026 · 10:00', corrisp:1502, riceve:1471, stato:'conclusa' },
+  { id:'CMP-0116', nome:'Corso di giugno',             canale:'Posta elettronica', segmento:'Clienti attivi 2026',   quando:'14/06/2026 · 08:30', corrisp:1180, riceve:1140, stato:'conclusa' },
+];
+
+const STATI_CAMPAGNA = {
+  bozza:       { et:'Bozza',        cl:'b-neutral' },
+  verifica:    { et:'In verifica',  cl:'b-info'    },
+  programmata: { et:'Programmata',  cl:'b-ok'      },
+  corso:       { et:'In corso',     cl:'b-ok'      },
+  conclusa:    { et:'Conclusa',     cl:'b-neutral' },
+  bloccata:    { et:'Bloccata',     cl:'b-bad'     },
+};
+const badgeCamp = st => `<span class="badge ${STATI_CAMPAGNA[st].cl}">${STATI_CAMPAGNA[st].et}</span>`;
+/* separatore delle migliaia all'italiana, per i conteggi di destinatari */
+const num = n => new Intl.NumberFormat('it-IT').format(n);
+
+/* Controlli del pre-volo: `esito` vale 'ok', 'blocco' oppure 'avviso'.
+   È l'elenco chiuso della storia 0018: nessuno di questi si può disattivare. */
+const PREVOLO = [
+  { esito:'ok',     t:'Dominio mittente autenticato',        d:'laboratorio-esempio.test — i tre controlli di autenticazione del mittente (SPF, DKIM, DMARC) sono allineati' },
+  { esito:'blocco', t:'Piè di pagina e disiscrizione',       d:'il collegamento di disiscrizione è stato tolto dal corpo del messaggio. Senza, l’unica via d’uscita che resta al destinatario è segnalare il messaggio come posta indesiderata — che è ciò che fa respingere la posta di tutti. Ripristinalo: non è disattivabile' },
+  { esito:'ok',     t:'Segmento con destinatari inviabili',  d:'899 persone contattabili: sopra zero, quindi la campagna ha senso' },
+  { esito:'ok',     t:'Campi variabili risolti',             d:'«nome» ha un valore di ripiego per i 46 iscritti che non lo hanno' },
+  { esito:'ok',     t:'Tasso di segnalazione sotto soglia',  d:'0,08 % negli ultimi 30 giorni — la soglia di blocco è 0,3 %' },
+  { esito:'avviso', t:'Quota residua',                       d:'restano 1.160 invii questo mese: bastano per gli 899 destinatari, ma non per una seconda campagna' },
+  { esito:'avviso', t:'Destinatari esclusi',                 d:'96 iscritti del segmento sono in quarantena e 214 non hanno confermato: restano fuori. Non è un blocco — la campagna parte verso gli altri — ma non esiste nessun modo per includerli' },
+];
+
+/* Canali. La posta elettronica è nostra; gli altri due l'account li attiva
+   collegando il PROPRIO contratto col fornitore. */
+const CANALI = [
+  { nome:'Posta elettronica', stato:'attivo',  cl:'b-ok',      contratto:'Infrastruttura di appgrove', nota:'Canale primario. È l’unico che spediamo noi.', tetto:null },
+  { nome:'Messaggi brevi',    stato:'collegato', cl:'b-info',  contratto:'Contratto del cliente con il proprio fornitore', nota:'Le credenziali sono tue, la fattura degli invii arriva a te. Noi non rivendiamo invii.', tetto:120 },
+  { nome:'Messaggistica',     stato:'non disponibile', cl:'b-neutral', contratto:'—', nota:'Non attivabile: il trasferimento dei numeri di telefono verso un paese fuori dall’Unione europea è in attesa di revisione legale (storia 0024).', tetto:null },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: i quattro numeri che contano in quest'app. */
+function vPanoramica(){
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> I quattro indicatori non sono quelli soliti di uno strumento di invio.
+    Il primo dice <i>a quante persone posso davvero scrivere</i>, non quante ne ho in archivio: è la differenza fra
+    una lista e un elenco di indirizzi. Il secondo mostra la quarantena, cioè il debito di prove da sanare, e qui è
+    volutamente più grande del primo — è la situazione tipica di chi arriva con un file. Il quarto è il tasso di
+    segnalazione contro la soglia dello 0,3 % oltre la quale i server riceventi smettono di accettare i nostri
+    messaggi: è il numero che nessun cliente guarderebbe mai da solo e che gli costa l'account.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="campagne">${I.piu} Nuova campagna</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Contattabili ora',        v:'1.482',  d:'su 4.612 iscritti in archivio'},
+    {k:'In quarantena',           v:'3.104',  d:'importati senza prova di consenso', tono:'down'},
+    {k:'Invii questo mese',       v:'3.840',  d:'di 5.000 del piano'},
+    {k:'Tasso di segnalazione',   v:'0,08 %', d:'soglia di blocco 0,3 %',            tono:'up'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Ultime campagne">
+      <div class="card-pad"><h2 class="sec">Ultime campagne</h2>
+        <p class="sec-sub">Due colonne di destinatari, sempre: quanti corrispondono al segmento e quanti li ricevono davvero.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Codice</th><th>Campagna</th><th class="num">Corrispondono</th><th class="num">Ricevono</th><th>Stato</th></tr></thead>
+        <tbody>${CAMPAGNE.slice(0,4).map(c=>`
+          <tr data-nav="campagna" data-id="${c.id}">
+            <td class="mono">${esc(c.id)}</td><td>${esc(c.nome)}</td>
+            <td class="num">${num(c.corrisp)}</td><td class="num">${num(c.riceve)}</td><td>${badgeCamp(c.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px;align-self:start">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Gli iscritti archiviati non hanno tetto: si paga ciò che si manda, non la lista ferma.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm" data-nav="canali">Impostazioni di invio</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni sono richiamabili a voce. Esempi di sola lettura:
+        «posso scrivere ad anna.verdi@esempio.test?», «com'è la salute della mia lista?».
+        Le azioni che scrivono producono una bozza e chiedono conferma; registrare un consenso e importare una
+        lista <b>non</b> sono esposti alla chat, per scelta.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Iscritti: ricerca, filtro di stato, tabella, paginazione. */
+function vIscritti(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.nome.toLowerCase().includes(q) || r.email.toLowerCase().includes(q) || r.id.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+  const contattabili = trovate.filter(r => r.stato === 'attivo').length;
+
+  return `
+  ${nota(`<b>Proposta — Iscritti.</b> Il conteggio in testa dice <i>due</i> numeri, non uno: quanti iscritti ci sono e
+    quanti sono contattabili. Lo stato non è modificabile da qui — non c'è un elenco a discesa e non c'è un pulsante
+    «rendi attivo»: si ottiene registrando un consenso o allegando una prova. È la scelta di fondo dell'app, e si
+    vede proprio dall'assenza di quel comando.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Iscritti</h1><p>Le persone del tuo archivio, con il motivo per cui puoi scrivere loro — o non puoi.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo iscritto</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per nome, recapito o codice…" value="${esc(S.q)}" aria-label="Cerca fra gli iscritti">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} iscritt${trovate.length===1?'o':'i'} · ${contattabili} contattabil${contattabili===1?'e':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Nome</th><th>Recapito</th><th>Lingua</th><th>Origine</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="iscritto" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.nome)}</td><td class="mono">${esc(r.email)}</td>
+          <td>${esc(r.lingua)}</td><td>${esc(r.origine)}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessun iscritto corrisponde ai filtri',
+      'Prova con un’altra parola chiave, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Scheda dell'iscritto: lo stato e, soprattutto, la PROVA. */
+function vIscritto(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const puoRicevere = r.stato === 'attivo';
+  return `
+  ${nota(`<b>Proposta — Scheda dell'iscritto.</b> La metà destra della schermata è lo storico dei consensi, ed è la
+    ragione per cui questa app esiste: registrazioni che si <i>aggiungono</i> e non si correggono mai, ciascuna con il
+    momento, il canale, la base giuridica e il testo esatto che la persona ha letto. Una revoca non cancella il
+    consenso di prima: serve a dimostrare che l'invio di allora era lecito. Lo stato in alto è calcolato da questo
+    storico e dall'elenco dei soppressi, mai scritto a mano.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.nome)}</h1>${badge(r.stato)}</div>
+      <p class="mono">${esc(r.id)} · ${esc(r.email)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="iscritti">${I.sx} Torna agli iscritti</button>
+  </div>
+
+  ${puoRicevere
+    ? `<div class="alert a-ok">${I.check}<span>Puoi scrivergli sulla posta elettronica. ${esc(r.motivo)}.</span></div>`
+    : `<div class="alert a-bad">${I.block}<span>Non puoi scrivergli. ${esc(r.motivo)}.</span></div>`}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Recapiti e contattabilità</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Posta elettronica</span><span class="v">${badge(r.stato)}</span></div>
+        <div class="dl-row"><span class="k">Messaggi brevi</span><span class="v"><span class="badge b-neutral">Nessun consenso</span></span></div>
+        <div class="dl-row"><span class="k">Lingua dei messaggi</span><span class="v">${esc(r.lingua)}</span></div>
+        <div class="dl-row"><span class="k">Origine</span><span class="v">${esc(r.origine)}</span></div>
+        <div class="dl-row"><span class="k">In archivio dal</span><span class="v mono">${esc(r.data)}</span></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn-ghost">Modifica i dati</button>
+        <button class="btn btn-ghost">${I.scarica} Esporta i suoi dati</button>
+        <button class="btn btn-danger" data-modale="apri">Disiscrivi</button>
+      </div>
+      <p class="sec-sub" style="margin-top:10px">Non c'è nessun comando che renda contattabile una persona: la
+      contattabilità si ottiene registrando un consenso o allegando la prova a un'importazione.</p>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Registro del consenso</h2>
+      <p class="sec-sub" style="margin-bottom:8px">Ad accrescimento: non si modifica e non si cancella.</p>
+      <div class="timeline">
+        ${r.prove.map(p=>`
+        <div class="tl-item"><span class="tl-dot"></span><div>
+          <div>${esc(p.t)}</div>
+          <div class="when">${esc(p.q)}</div>
+          <div class="when">${esc(p.d)}</div>
+        </div></div>`).join('')}
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Nuovo iscritto: crea, ma NON rende contattabile. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo iscritto.</b> È la schermata che spiega l'app meglio di ogni pagina di aiuto: si può
+    creare una persona, ma nasce <i>in quarantena</i>. L'avviso sta <b>prima</b> del modulo, non dopo il salvataggio,
+    perché il momento giusto per dire una cosa scomoda è prima che l'utente abbia fatto il lavoro.`)}
+  <div class="page-h"><div class="txt"><h1>Nuovo iscritto</h1><p>Inserisci i dati; per poter scrivere a questa persona servirà una prova del consenso.</p></div></div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>L'iscritto nascerà <b>in quarantena</b>: non riceverà nessuna campagna finché non registri il consenso,
+    indicando quando e come lo hai raccolto.</span>
+  </div>
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field" id="f-titolo">
+        <label for="i-titolo">Indirizzo di posta elettronica *</label>
+        <input id="i-titolo" name="email" placeholder="nome.cognome@esempio.test">
+        <span class="hint">È l'unico dato obbligatorio: senza recapito non c'è iscritto.</span>
+      </div>
+      <div class="field">
+        <label for="i-nome">Nome e cognome</label>
+        <input id="i-nome" placeholder="Facoltativo">
+        <span class="hint">Serve solo a personalizzare i messaggi.</span>
+      </div>
+      <div class="field">
+        <label for="i-lingua">Lingua dei messaggi</label>
+        <select id="i-lingua"><option>Italiano</option><option>Inglese</option><option>Francese</option><option>Spagnolo</option><option>Tedesco</option></select>
+        <span class="hint">Il messaggio di disiscrizione uscirà in questa lingua.</span>
+      </div>
+      <div class="field">
+        <label for="i-telefono">Telefono</label>
+        <input id="i-telefono" placeholder="Facoltativo">
+        <span class="hint">Serve solo se attivi un canale aggiuntivo con il tuo contratto.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Da dove viene questo contatto</label>
+        <textarea id="i-note" placeholder="Per esempio: «modulo cartaceo compilato in negozio il 3 agosto»…"></textarea>
+        <span class="hint">Campo a testo libero: non inserire dati che rivelino salute, convinzioni o appartenenze.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="iscritti">Annulla</button>
+      <button type="submit" class="btn btn-primary">Crea in quarantena</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Campagne: l'elenco con i due conteggi di destinatari. */
+function vCampagne(){
+  return `
+  ${nota(`<b>Proposta — Campagne.</b> Ogni riga porta due conteggi: quanti iscritti corrispondono al segmento e quanti
+    lo riceveranno davvero. La differenza sono i non confermati, quelli in quarantena e i soppressi, e mostrarla
+    <i>prima</i> dell'invio evita la domanda che altrimenti arriva dopo: «perché è partito a meno gente?».`)}
+  <div class="page-h">
+    <div class="txt"><h1>Campagne</h1><p>Quello che hai mandato, quello che partirà e quello che è fermo.</p></div>
+    <button class="btn btn-primary">${I.piu} Nuova campagna</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Campagna</th><th>Canale</th><th>Segmento</th><th class="num">Corrispondono</th><th class="num">Ricevono</th><th>Stato</th></tr></thead>
+      <tbody>${CAMPAGNE.map(c=>`
+        <tr data-nav="campagna" data-id="${c.id}">
+          <td class="mono">${esc(c.id)}</td><td>${esc(c.nome)}</td><td>${esc(c.canale)}</td><td>${esc(c.segmento)}</td>
+          <td class="num">${num(c.corrisp)}</td><td class="num">${num(c.riceve)}</td><td>${badgeCamp(c.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card card-pad">
+    <h2 class="sec">Perché una campagna resta bloccata</h2>
+    <p class="sec-sub">CMP-0118 usa i messaggi brevi e il canale non è collegato: il contratto col fornitore lo porta
+    il cliente (vedi <b>Impostazioni di invio</b>). Da «bloccata» si torna solo a «bozza»: nessuna transizione
+    scavalca il controllo pre-volo.</p>
+  </div>`;
+}
+
+/* SCHERMATA — Campagna: il controllo pre-volo, cuore dell'app. */
+function vCampagna(){
+  const c = CAMPAGNE.find(x => x.id === S.sel) ?? CAMPAGNE[0];
+  const bloccanti = PREVOLO.filter(p => p.esito === 'blocco').length;
+  const ic = { ok:I.check, blocco:I.block, avviso:I.warn };
+  const cl = { ok:'b-ok', blocco:'b-bad', avviso:'b-warn' };
+  const et = { ok:'Verde', blocco:'Bloccante', avviso:'Avviso' };
+  return `
+  ${nota(`<b>Proposta — Controllo pre-volo.</b> È la schermata più importante del mockup. Una campagna non lascia lo
+    stato «in verifica» finché ogni controllo bloccante non è verde, e <i>non esiste</i> un pulsante che lo forzi:
+    quello che qui manca è ciò che nei prodotti concorrenti c'è. Ogni riga dice cosa è stato controllato e perché è
+    rossa, perché un blocco senza spiegazione è solo un ostacolo.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(c.nome)}</h1>${badgeCamp(c.stato)}</div>
+      <p class="mono">${esc(c.id)} · ${esc(c.canale)} · segmento «${esc(c.segmento)}»</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="campagne">${I.sx} Torna alle campagne</button>
+  </div>
+
+  ${bloccanti
+    ? `<div class="alert a-bad">${I.block}<span>Non si può programmare: <b>${bloccanti}</b> controllo bloccante non è verde.
+        Risolvilo e ripeti la verifica.</span><span class="spacer"></span>
+        <button class="btn btn-ghost btn-sm" disabled>Programma l'invio</button></div>`
+    : `<div class="alert a-ok">${I.check}<span>Tutti i controlli bloccanti sono verdi.</span>
+        <span class="spacer"></span><button class="btn btn-primary btn-sm">Programma l'invio</button></div>`}
+
+  <div class="detail-grid">
+    <section class="card">
+      <div class="card-pad"><h2 class="sec">Controllo pre-volo</h2>
+        <p class="sec-sub">Elenco chiuso: nessuno di questi controlli si può disattivare dalle impostazioni.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Esito</th><th>Controllo</th><th>Dettaglio</th></tr></thead>
+        <tbody>${PREVOLO.map(p=>`
+          <tr><td><span class="badge ${cl[p.esito]}">${ic[p.esito]} ${et[p.esito]}</span></td>
+              <td><b>${esc(p.t)}</b></td><td>${esc(p.d)}</td></tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px;align-self:start">
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">Destinatari</h2>
+        <div class="dl">
+          <div class="dl-row"><span class="k">Corrispondono al segmento</span><span class="v mono">${num(c.corrisp)}</span></div>
+          <div class="dl-row"><span class="k">Non hanno confermato</span><span class="v mono">−214</span></div>
+          <div class="dl-row"><span class="k">In quarantena</span><span class="v mono">−96</span></div>
+          <div class="dl-row"><span class="k">Soppressi</span><span class="v mono">−31</span></div>
+          <div class="dl-row"><span class="k">Riceveranno</span><span class="v mono">${num(c.riceve)}</span></div>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">Al momento dell'invio</h2>
+        <p class="sec-sub">La contattabilità si ricontrolla per <b>ogni singolo messaggio</b>, non adesso: chi si
+        disiscrive mentre la spedizione è in corso non lo riceve.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Importazione: la promessa dell'app, in numeri. */
+function vImportazione(){
+  return `
+  ${nota(`<b>Proposta — Importazione.</b> È il momento in cui il prodotto dice cosa è. Il rapporto mette in evidenza il
+    numero che nessun concorrente mostra: <i>contattabili: 0</i>. Le righe entrano tutte in quarantena e l'unica via
+    d'uscita è allegare la prova, riga per riga o per l'intero file. Non c'è un pulsante «importa come già iscritti»,
+    e la sua assenza è una scelta di prodotto, non una funzione mancante.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Importazione</h1><p>File «contatti-vecchio-gestionale.csv» · caricato il 28/06/2026 da Marco Sindoni</p></div>
+    <button class="btn btn-ghost">${I.piu} Nuova importazione</button>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>Le righe importate entrano <b>in quarantena</b>: non sono inviabili finché non alleghi la prova del consenso.</span>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Righe lette',            v:'3.000'},
+    {k:'Creati in quarantena',   v:'2.874'},
+    {k:'Contattabili',           v:'0',   d:'finché non alleghi la prova', tono:'down'},
+    {k:'Righe scartate',         v:'126', d:'84 soppressi · 42 recapito non valido'},
+  ])}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Allega la prova del consenso</h2>
+      <p class="sec-sub" style="margin-bottom:14px">Dichiari quando e come queste persone hanno acconsentito. È una
+      dichiarazione con valore probatorio: resta scritto chi l'ha firmata e quando.</p>
+      <div class="form-grid">
+        <div class="field">
+          <label for="i-origine">Origine del consenso</label>
+          <select id="i-origine"><option>Modulo cartaceo</option><option>Esportazione da un altro prodotto</option><option>Dichiarazione scritta</option></select>
+        </div>
+        <div class="field">
+          <label for="i-quando">Momento della raccolta</label>
+          <input id="i-quando" type="date" value="2026-02-14">
+        </div>
+        <div class="field wide">
+          <label for="i-testo">Testo accettato</label>
+          <textarea id="i-testo" placeholder="Incolla il testo esatto che le persone hanno letto e accettato…"></textarea>
+          <span class="hint">Si conserva per copia: se domani cambi il testo del tuo modulo, questa prova non cambia.</span>
+        </div>
+      </div>
+      <div class="form-actions" style="margin-top:16px">
+        <button class="btn btn-ghost">Annulla</button>
+        <button class="btn btn-primary">Firma e sblocca 2.874 iscritti</button>
+      </div>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Scarti</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Recapito già soppresso</span><span class="v mono">84</span></div>
+        <div class="dl-row"><span class="k">Recapito non valido</span><span class="v mono">42</span></div>
+        <div class="dl-row"><span class="k">Doppioni nel file</span><span class="v mono">0</span></div>
+      </div>
+      <p class="sec-sub" style="margin-top:12px">Gli 84 soppressi non sono stati creati: una soppressione non si
+      annulla ricaricando un file.</p>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Impostazioni di invio: recapitabilità e canali. */
+function vCanali(){
+  return `
+  ${nota(`<b>Proposta — Impostazioni di invio.</b> Due cose che decidono se il prodotto funziona. In alto
+    l'autenticazione del dominio mittente: senza i tre controlli allineati i server riceventi <i>respingono</i> i
+    messaggi, e quindi non parte niente — nemmeno sul piano gratuito. In basso i canali: la posta elettronica la
+    spediamo noi, i messaggi brevi e la messaggistica li attiva l'account collegando il <b>proprio</b> contratto col
+    fornitore. Non rivendiamo invii, e il motivo è scritto nella proposta: il costo per messaggio è mille volte
+    quello di una email.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Impostazioni di invio</h1><p>Da dove partono i tuoi messaggi e con quali credenziali.</p></div>
+  </div>
+
+  <section class="card">
+    <div class="card-pad"><h2 class="sec">Dominio mittente</h2>
+      <p class="sec-sub">laboratorio-esempio.test — ultimo controllo: 03/08/2026 · 07:10</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Controllo</th><th>A cosa serve</th><th>Esito</th></tr></thead>
+      <tbody>
+        <tr><td><b>SPF</b></td><td>dichiara quali server possono spedire per il tuo dominio</td><td><span class="badge b-ok">${I.check} Allineato</span></td></tr>
+        <tr><td><b>DKIM</b></td><td>firma i messaggi, così il destinatario sa che non sono stati alterati</td><td><span class="badge b-ok">${I.check} Allineato</span></td></tr>
+        <tr><td><b>DMARC</b></td><td>dice al server ricevente cosa fare se i primi due non tornano</td><td><span class="badge b-ok">${I.check} Allineato</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="card-pad"><p class="sec-sub">Se uno dei tre decade, l'invio si ferma da solo: è preferibile una
+    campagna che non parte a una campagna respinta da tutti i server riceventi.</p></div>
+  </section>
+
+  <section class="card">
+    <div class="card-pad"><h2 class="sec">Canali</h2>
+      <p class="sec-sub">La posta elettronica è nostra. Gli altri canali sono tuoi: tuo il contratto, tue le credenziali, tua la fattura degli invii.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Canale</th><th>Chi ha il contratto</th><th>Tetto di spesa</th><th>Stato</th></tr></thead>
+      <tbody>${CANALI.map(c=>`
+        <tr><td><b>${esc(c.nome)}</b><div class="sec-sub">${esc(c.nota)}</div></td>
+            <td>${esc(c.contratto)}</td>
+            <td class="mono">${c.tetto ? eur(c.tetto)+' / mese' : '—'}</td>
+            <td><span class="badge ${c.cl}">${esc(c.stato)}</span></td></tr>`).join('')}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="card card-pad">
+    <h2 class="sec">Recapiti soppressi</h2>
+    <p class="sec-sub">312 recapiti non si possono più usare: 198 disiscrizioni, 96 rimbalzi permanenti, 18
+    segnalazioni di posta indesiderata. L'elenco si consulta e si esporta, ma <b>non si svuota</b>: non c'è nessun
+    comando che rimuova una voce, perché rimuoverla riaprirebbe una porta che qualcuno ha chiuso.</p>
+    <div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm">${I.scarica} Esporta l'elenco</button></div>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e quota esaurita: i due stati che si dimenticano. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Due stati che l'utente incontra per primi e che di solito
+    nessuno disegna. Il primo giorno l'app è vuota e deve indicare la strada giusta — il modulo di iscrizione prima
+    dell'importazione, perché è la porta che produce da sola una prova completa. Il giorno in cui gli invii finiscono
+    deve dire come si sblocca, senza addebitare nulla di nascosto.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta ReachGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'Non hai ancora nessun iscritto',
+    'Il modo migliore per cominciare è pubblicare un modulo di iscrizione: chi si iscrive da lì porta con sé la propria prova di consenso. Se hai già una lista puoi importarla, ma entrerà in quarantena finché non alleghi la prova.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary">${I.piu} Crea un modulo di iscrizione</button><button class="btn btn-ghost" data-nav="importazione">Importa una lista</button></div>`)}
+  <h2 class="sec">Quota esaurita</h2>
+  ${avvisoQuota('raggiunto')}
+  <div class="card card-pad">
+    <p class="sec-sub">Gli invii finiti bloccano le nuove spedizioni, non l'archivio: gli iscritti restano, le
+    disiscrizioni continuano a essere onorate e i tuoi dati restano esportabili. Una spedizione già in corso si mette
+    in pausa e riprende da dove era arrivata, senza doppioni.</p>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica:   ['Panoramica',            vPanoramica],
+  iscritti:     ['Iscritti',              vIscritti],
+  iscritto:     ['Scheda dell’iscritto',  vIscritto],
+  nuovo:        ['Nuovo iscritto',        vNuovo],
+  campagne:     ['Campagne',              vCampagne],
+  campagna:     ['Campagna',              vCampagna],
+  importazione: ['Importazione',          vImportazione],
+  canali:       ['Impostazioni di invio', vCanali],
+  vuoto:        ['Primo avvio',           vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">L’indirizzo di posta elettronica è obbligatorio.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('iscritti');
+  });
+
+  /* apertura della modale dal dettaglio */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale('Disiscrivere questa persona?', 'La disiscrizione è irreversibile: il recapito entra fra i soppressi e nessuna campagna potrà più raggiungerlo. La prova del consenso precedente resta, perché serve a dimostrare che gli invii di ieri erano leciti.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>

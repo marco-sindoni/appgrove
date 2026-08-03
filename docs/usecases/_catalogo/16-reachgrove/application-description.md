@@ -468,7 +468,7 @@ Alla fine l'app esiste, è vuota, si avvia in locale, compare nella barra latera
 | # | Storia | In una riga |
 |---|---|---|
 | [0001](01-fondamenta/0001-impianto-del-servizio.md) | Impianto del servizio | Il servizio `campaigns` nasce dallo scaffolding, risponde su `/api/campaigns/v1/*` e ha la sua istanza di infrastruttura |
-| [0002](01-fondamenta/0002-modello-dati-multi-account.md) | Modello dati multi-account | Le tredici tabelle sullo schema `app_campaigns`, con `tenant_id`, colonne di controllo e cancellazione logica |
+| [0002](01-fondamenta/0002-modello-dati-multi-account.md) | Modello dati multi-account | Le tabelle del modello di dominio sullo schema `app_campaigns` — le tredici entità del §4 più quelle di appoggio (invii del modulo, righe importate, segni di conferma) — con `tenant_id`, colonne di controllo e cancellazione logica |
 | [0003](01-fondamenta/0003-guscio-del-modulo-frontend.md) | Guscio del modulo frontend | Il modulo compare nella barra laterale con le sue sezioni, in cinque lingue e nei due temi |
 | [0004](01-fondamenta/0004-abbonamento-e-quota-degli-invii.md) | Abbonamento e quota degli invii | La catena dei varchi fino al `429` sulla metrica `messages_sent` |
 | [0005](01-fondamenta/0005-avvio-locale-e-dati-di-prova.md) | Avvio locale e dati di prova | `./dev.sh services` la vede, `./app-start.sh` la avvia, un comando la riempie di dati inventati |

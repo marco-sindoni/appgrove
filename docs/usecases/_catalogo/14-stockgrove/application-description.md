@@ -616,7 +616,10 @@ persona approva», e due percorsi automatici dimostrano che il registro e il con
 | [0036](07-esposizione-conversazionale-e-prove/0036-percorso-end-to-end-dei-movimenti.md) | Percorso end-to-end dei movimenti | Dall'articolo vuoto al saldo corretto passando per due scarichi simultanei, etichettato `[J-MAGAZZINO]` |
 | [0037](07-esposizione-conversazionale-e-prove/0037-percorso-end-to-end-dell-inventario.md) | Percorso end-to-end dell'inventario | Contare, trovare una differenza, rettificarla e ritrovarla nel registro; registro di copertura aggiornato |
 
-**Totale**: 7 epiche, 37 storie.
+**Totale**: 7 epiche, 37 storie — **tutte scritte**, insieme a [estensioni-admin.md](estensioni-admin.md) e al mockup
+navigabile [artefatto-ux.html](artefatto-ux.html). Ogni riga di questo indice punta a un file che esiste; le
+migrazioni citate dalle storie sono numerate senza salti né doppioni da `V1__articolo.sql` a
+`V21__bozze_strumenti.sql`.
 
 ---
 
@@ -706,6 +709,8 @@ non è un difetto ma un danno (§2.3, §11 punto 1).
 | 7 | **Regole non italiane** su scritture di magazzino e su controllo dell'attività dei lavoratori (§2.3 punto 5, §2.7) | non verificate per nessun altro paese europeo, mentre il prodotto nasce in cinque lingue | sviluppatore, prima di vendere fuori dall'Italia |
 | 8 | **Colore-categoria `amber`** | nel repository il listino e il manifesto delle due app reali oggi non concordano fra loro sul colore: prima di scegliere va capito quale delle due fonti comanda | sviluppatore, al momento dello scaffolding |
 | 9 | **Anagrafica di prodotto condivisa** (§10) | oggi StockGrove tiene la propria; quando nascerà l'anagrafica di suite servirà una migrazione e un criterio di riconciliazione per i codici duplicati | epica della suite |
+| 10 | **Lettura del codice a barre e disegno del codice QR dentro il browser** (storie `0030`, `0033`) | emerso scrivendo l'epica 06: non ho verificato se il pacchetto frontend contenga già una libreria di decodifica e una di generazione. Nulla si può scaricare dalla rete, quindi o esistono già o vanno aggiunte al pacchetto — con il costo di manutenzione che ne segue | sviluppatore, prima dell'epica 06 |
+| 11 | **Un solo telefono usato da più addetti** (storia `0032`) | emerso scrivendo la coda delle scansioni: se il dispositivo del magazzino è uno e lo usano in tre, l'autore dei movimenti è quello dell'accesso rimasto aperto e la tracciabilità — che è la ragione d'essere del registro — si annacqua. È un difetto d'uso, non di codice, e la risposta (accesso rapido per persona? scelta dell'operatore a inizio sessione?) è una scelta di prodotto | sviluppatore — direzione di prodotto |
 
 **Rischi noti**
 

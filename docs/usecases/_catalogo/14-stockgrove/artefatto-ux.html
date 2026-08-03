@@ -1,0 +1,1301 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StockGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  StockGrove (catalogo #14) — mockup navigabile della proposta di interfaccia
+  docs/usecases/_catalogo/14-stockgrove/artefatto-ux.html
+================================================================================
+
+  CHE COS'E'
+  ----------
+  Il mockup navigabile che accompagna la cartella dell'applicazione 14 del
+  catalogo: magazzino e inventario per micro e piccole imprese che tengono
+  merce fisica. Si apre con un doppio clic (funziona da `file://`, senza rete)
+  e mostra come si presenterebbe l'app dentro il backoffice appgrove.
+  Guscio e token del sistema di design vengono dal kit d'autore
+  (docs/usecases/_catalogo/_kit/TEMPLATE-artefatto-ux.html), che a sua volta li
+  copia da frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+  Identificativo tecnico proposto: `magazzino`. Colore-categoria: `amber`.
+
+  L'IDEA CHE L'INTERFACCIA DEVE FAR VEDERE
+  ----------------------------------------
+  La giacenza NON e' un numero che qualcuno riscrive: e' la somma di un
+  registro di movimenti in sola aggiunta. Da qui discendono tre scelte
+  visibili in ogni schermata di questo mockup:
+   1. nessuna casella «quantita'» modificabile, da nessuna parte: si cambia un
+      saldo solo registrando un movimento (carico, scarico, trasferimento) o
+      una rettifica con motivo obbligatorio;
+   2. un errore non si cancella, si storna — il registro resta leggibile;
+   3. due persone che scaricano lo stesso articolo nello stesso istante sono il
+      caso normale: chi perde la corsa vede un rifiuto con la quantita'
+      residua, mai un saldo sbagliato.
+
+  NESSUNA RISORSA REMOTA
+  ----------------------
+  Niente font, librerie o immagini dalla rete; nessuna chiamata. Solo CSS e
+  JavaScript in linea e disegni vettoriali incorporati.
+
+  DATI INVENTATI
+  --------------
+  Articoli, depositi, fornitori, quantita' e nomi degli operatori sono
+  inventati e servono solo a far vedere la forma dell'interfaccia. Nessun dato
+  reale, nessun codice a barre valido.
+
+  LE NOVE SCHERMATE E PERCHE' CI SONO
+  -----------------------------------
+  · panoramica ..... cosa sta finendo e come sta il registro, in tre secondi
+  · giacenze ....... l'elenco per articolo e deposito, con ricerca e filtri
+  · dettaglio ...... IL cuore dell'app: la scheda dell'articolo con il registro
+                     dei movimenti, il motivo e l'autore di ognuno
+  · movimento ...... registrare carico o scarico, con il rifiuto per giacenza
+                     insufficiente mostrato come lo vedrebbe l'utente
+  · inventario ..... la sessione di conteggio e l'elenco delle differenze
+                     mostrato PRIMA di confermare
+  · riordino ....... la lista della spesa per fornitore: l'avviso che porta a
+                     qualcosa, ma che non manda niente a nessuno
+  · scansione ...... il lavoro sul campo dal telefono, con la coda delle
+                     letture quando la rete non c'e'
+  · valore ......... il valore gestionale del magazzino e il confine, scritto
+                     nell'interfaccia, con la materia del commercialista
+  · vuoto .......... primo avvio e quota esaurita, i due stati che si
+                     dimenticano sempre
+
+  I riquadri `.nota` sono le annotazioni per lo sviluppatore. Il pulsante
+  «Note» in alto le nasconde, per vedere l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+/* un disegno vettoriale dentro un titolo non ha misura propria: senza questa
+   riga occuperebbe l'intera altezza predefinita e aprirebbe un buco nella scheda */
+h2.sec svg{width:18px;height:18px;stroke:currentColor;vertical-align:-3px}
+/* riquadro del telefono per il lavoro sul campo (schermata «scansione») */
+.fono{max-width:340px;border:1px solid rgb(var(--border-strong));border-radius:26px;background:rgb(var(--surface-2));padding:14px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:12px}
+.fono-testa{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:700;color:rgb(var(--muted))}
+.mirino{position:relative;aspect-ratio:4/3;border-radius:var(--r-md);background:rgb(var(--surface-3));display:grid;place-items:center;overflow:hidden}
+.mirino .cornice{position:absolute;inset:14% 10%;border:2px solid rgb(var(--accent));border-radius:var(--r-sm)}
+.barre{display:flex;align-items:stretch;gap:3px;height:70px}
+.barre i{display:block;background:rgb(var(--text));border-radius:1px}
+/* coda delle letture non ancora inviate */
+.coda{display:flex;flex-direction:column;gap:8px}
+.coda-riga{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgb(var(--border));border-radius:var(--r-md);font-size:13px;background:rgb(var(--surface))}
+.coda-riga .spacer{margin-left:auto}
+/* due colonne di pari peso (schermate «valore» e «scansione») */
+.grid-2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+/* riga di intestazione di un gruppo dentro una tabella (riordino per fornitore) */
+table.tbl tr.gruppo td{background:rgb(var(--surface-2));font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:rgb(var(--muted))}
+table.tbl tr.gruppo:hover{background:rgb(var(--surface-2));cursor:default}
+table.tbl tr.non-cliccabile:hover{background:transparent;cursor:default}
+/* quantità con segno dentro il registro */
+.segno-piu{color:rgb(var(--success));font-weight:700}
+.segno-meno{color:rgb(var(--danger));font-weight:700}
+/* etichetta stampabile con codice interno */
+.etichetta{border:1px dashed rgb(var(--border-strong));border-radius:var(--r-sm);padding:10px;display:flex;gap:10px;align-items:center;background:rgb(var(--surface))}
+.etichetta .qr{width:54px;height:54px;flex:none}
+.etichetta .qr rect{fill:rgb(var(--text))}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid,.grid-2{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · StockGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="giacenze">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="8" height="6" rx="1"/><rect x="13" y="7" width="8" height="6" rx="1"/><rect x="8" y="15" width="8" height="6" rx="1"/></svg>
+      Giacenze
+    </button>
+    <button class="nav-item" data-nav="movimento">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h12l-3-3m3 3-3 3"/><path d="M20 16H8l3-3m-3 3 3 3"/></svg>
+      Registra un movimento
+    </button>
+    <button class="nav-item" data-nav="inventario">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><rect x="4" y="7" width="16" height="14" rx="3"/><path d="m8.5 13.5 2 2 4-4"/></svg>
+      Inventario
+    </button>
+    <button class="nav-item" data-nav="riordino">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h2l2.4 10.2a2 2 0 0 0 2 1.6h6.8a2 2 0 0 0 2-1.5L21 8H7"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+      Riordino
+    </button>
+    <button class="nav-item" data-nav="scansione">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 9v6M11 9v6M14 9v6M17 9v6"/></svg>
+      Scansione <span class="pill">TELEFONO</span>
+    </button>
+    <button class="nav-item" data-nav="valore">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M16 7H10a2.5 2.5 0 0 0 0 5h4a2.5 2.5 0 0 1 0 5H8"/></svg>
+      Valore gestionale
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>StockGrove</b> (catalogo #14). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>StockGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #14 StockGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'StockGrove',
+  id: 'magazzino',
+  categoria: 'amber',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'S',
+  claim: "Quanta merce c'è, dov'è e come ci è arrivata.",
+  metrica: 'articoli gestiti',
+  quota: { usato: 312, tetto: 500, finestra: 'attivi ora' }
+};
+
+/* Giacenze per coppia articolo-deposito. `qta` non è un campo che si scrive:
+   nel prodotto è la somma dei movimenti, e in questo mockup si comporta come
+   tale (nessuna schermata la rende modificabile). */
+const RIGHE = [
+  { id:'ART-0142', titolo:'Cavo tripolare 3×1,5 mm² — matassa da 100 m', dep:'Magazzino',  ubic:'A-03-2',    um:'matassa', qta:14, soglia:10, costo: 62.40, stato:'ok'       },
+  { id:'ART-0207', titolo:'Faretto da incasso 7 W, bianco caldo',        dep:'Magazzino',  ubic:'B-01-4',    um:'pezzo',   qta: 6, soglia:20, costo:  9.15, stato:'sotto'    },
+  { id:'ART-0091', titolo:'Scatola di derivazione 120×80',               dep:'Furgone 1',  ubic:'Cassetta 2',um:'pezzo',   qta: 0, soglia: 5, costo:  3.80, stato:'esaurito' },
+  { id:'ART-0318', titolo:'Vite autofilettante 4×40 — confezione da 200',dep:'Magazzino',  ubic:'C-02-1',    um:'conf.',   qta:38, soglia:12, costo:  7.90, stato:'ok'       },
+  { id:'ART-0402', titolo:'Guaina corrugata Ø 20 mm — rotolo da 25 m',   dep:'Negozio',    ubic:'Scaffale 2',um:'rotolo',  qta: 3, soglia: 6, costo: 11.20, stato:'sotto'    },
+  { id:'ART-0155', titolo:'Interruttore differenziale 25 A',             dep:'Magazzino',  ubic:'B-04-1',    um:'pezzo',   qta:-2, soglia: 4, costo: 47.00, stato:'negativo' },
+  { id:'ART-0233', titolo:'Morsetto a leva 3 vie — confezione da 50',    dep:'Furgone 1',  ubic:'Cassetta 3',um:'conf.',   qta: 9, soglia: 4, costo: 14.60, stato:'ok'       },
+  { id:'ART-0500', titolo:'Nastro isolante nero 19 mm',                  dep:'Negozio',    ubic:'Scaffale 1',um:'pezzo',   qta:24, soglia:10, costo:  1.35, stato:'ok'       },
+];
+
+const STATI = {
+  ok:       { et:'Sopra soglia',   cl:'b-ok'      },
+  sotto:    { et:'Sotto scorta',   cl:'b-warn'    },
+  esaurito: { et:'Esaurito',       cl:'b-neutral' },
+  negativo: { et:'Negativo',       cl:'b-bad'     },
+};
+
+/* Registro dei movimenti: in sola aggiunta. Nessuna riga si modifica, nessuna
+   si cancella; l'unica correzione è lo storno, che è a sua volta un movimento. */
+const MOVIMENTI = [
+  { id:'MOV-8846', art:'ART-0207', tipo:'Rettifica',  q:-1, dep:'Magazzino', motivo:'Rottura in magazzino',        rif:'Inventario INV-07',   autore:'Sara (banco di carico)', quando:'03/08/2026 · 09:40' },
+  { id:'MOV-8845', art:'ART-0207', tipo:'Scarico',    q:-3, dep:'Magazzino', motivo:'Prelievo per lavoro',         rif:'Cantiere Via dei Tigli', autore:'Luca (tecnico)',       quando:'03/08/2026 · 08:05' },
+  { id:'MOV-8844', art:'ART-0207', tipo:'Storno',     q:+2, dep:'Magazzino', motivo:'Storno di MOV-8840 (errore di battitura)', rif:'MOV-8840', autore:'Sara (banco di carico)', quando:'02/08/2026 · 16:22' },
+  { id:'MOV-8843', art:'ART-0207', tipo:'Scarico',    q:-2, dep:'Magazzino', motivo:'Prelievo per lavoro',         rif:'Cantiere Via Palermo', autore:'Luca (tecnico)',        quando:'02/08/2026 · 11:48' },
+  { id:'MOV-8842', art:'ART-0207', tipo:'Carico',     q:+10,dep:'Magazzino', motivo:'Arrivo da fornitore',         rif:'Bolla 2026/318',      autore:'Sara (banco di carico)', quando:'02/08/2026 · 08:12' },
+  { id:'MOV-8839', art:'ART-0155', tipo:'Scarico',    q:-2, dep:'Magazzino', motivo:'Vendita registrata da ShopGrove', rif:'Evento vendita 4471', autore:'evento di un\'altra app', quando:'01/08/2026 · 17:30' },
+  { id:'MOV-8838', art:'ART-0091', tipo:'Trasferimento', q:-4, dep:'Magazzino → Furgone 1', motivo:'Carico del furgone', rif:'TRF-221',      autore:'Luca (tecnico)',         quando:'01/08/2026 · 07:15' },
+];
+
+/* Righe della sessione di conteggio aperta (schermata «inventario»). */
+const CONTEGGIO = [
+  { id:'ART-0142', desc:'Cavo tripolare 3×1,5 mm²',        atteso:14, contato:14, motivo:'—'                       },
+  { id:'ART-0207', desc:'Faretto da incasso 7 W',          atteso: 7, contato: 6, motivo:'Rottura in magazzino'     },
+  { id:'ART-0318', desc:'Vite autofilettante 4×40',        atteso:38, contato:41, motivo:'Merce trovata'            },
+  { id:'ART-0155', desc:'Interruttore differenziale 25 A', atteso:-2, contato: 1, motivo:'Errore di registrazione'  },
+  { id:'ART-0500', desc:'Nastro isolante nero 19 mm',      atteso:24, contato:null, motivo:'—'                      },
+];
+
+/* Proposta di riordino, raggruppata per fornitore. */
+const RIORDINO = [
+  { fornitore:'Elettroforniture Aurora s.r.l.', voci:[
+    { id:'ART-0207', desc:'Faretto da incasso 7 W, bianco caldo', giacenza:6, soglia:20, proposta:24, costo:9.15 },
+    { id:'ART-0155', desc:'Interruttore differenziale 25 A',      giacenza:-2, soglia:4, proposta:8,  costo:47.00 },
+  ]},
+  { fornitore:'Materiali Ponente s.n.c.', voci:[
+    { id:'ART-0091', desc:'Scatola di derivazione 120×80',        giacenza:0, soglia:5,  proposta:20, costo:3.80 },
+    { id:'ART-0402', desc:'Guaina corrugata Ø 20 mm',             giacenza:3, soglia:6,  proposta:12, costo:11.20 },
+  ]},
+];
+
+/* Letture fatte dal telefono e non ancora confermate dal servizio. */
+const SCANSIONI = [
+  { codice:'ART-0318', desc:'Vite autofilettante 4×40', q:'+2', stato:'inviata',  nota:'Movimento MOV-8847 registrato' },
+  { codice:'ART-0142', desc:'Cavo tripolare 3×1,5 mm²', q:'−1', stato:'in coda',  nota:'Rete assente: parte da sola quando torna' },
+  { codice:'ART-0091', desc:'Scatola di derivazione',   q:'−3', stato:'rifiutata',nota:'Giacenza insufficiente: ne restano 0' },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici. Da 2 a 4 numeri, non di più. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota.
+   La metrica è a GIACENZA: il tetto è su ciò che esiste ora, non su un consumo
+   che si azzera ogni mese. Il testo dice sempre tre cose: cosa è successo,
+   cosa non si può più fare, come si rimedia — e qui una quarta, decisiva:
+   i movimenti continuano comunque a funzionare. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Non puoi aggiungere altri articoli finché non ne archivi qualcuno o non passi a un piano superiore.
+      <b>I movimenti sugli articoli che hai già continuano a funzionare</b>: il tuo saldo non si ferma.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Stai usando <b>${APP.quota.usato}</b> dei <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} del tuo piano (${esc(APP.quota.finestra)}).
+      Archiviare un articolo che non tieni più libera un posto.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto: titolo, spiegazione, azione. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* COMPONENTE — quantità con segno, come appare nel registro. */
+function conSegno(n){
+  const s = n > 0 ? `+${n}` : String(n);
+  return `<span class="${n >= 0 ? 'segno-piu' : 'segno-meno'} mono">${s}</span>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: cosa sta finendo, e se il registro è in salute. */
+function vPanoramica(){
+  const daGuardare = RIGHE.filter(r => r.stato !== 'ok');
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> La pagina d'atterraggio non racconta il passato: dice <i>cosa richiede attenzione
+    adesso</i>. Per un magazzino sono due cose sole — quello che sta finendo e quello che non torna. Gli indicatori sono
+    quattro perché di più nessuno li legge; «valore gestionale» porta l'etichetta nel nome, non in una nota a piè di pagina.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="movimento">${I.piu} Registra un movimento</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Articoli gestiti',       v:'312',      d:'su 500 del piano'},
+    {k:'Sotto scorta',           v:'7',        d:'2 esauriti, 1 negativo', tono:'down'},
+    {k:'Movimenti oggi',         v:'24',       d:'18 scarichi, 6 carichi'},
+    {k:'Valore gestionale',      v:eur(18430), d:'costo medio, non fiscale'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Articoli da guardare">
+      <div class="card-pad"><h2 class="sec">Da guardare adesso</h2>
+        <p class="sec-sub">Sotto la soglia di scorta, esauriti, o con un saldo che non si spiega.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Codice</th><th>Articolo</th><th>Deposito</th><th class="num">Giacenza</th><th class="num">Soglia</th><th>Stato</th></tr></thead>
+        <tbody>${daGuardare.map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td><td>${esc(r.dep)}</td>
+            <td class="num">${r.qta}</td><td class="num">${r.soglia}</td><td>${badge(r.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      <div class="card-pad" style="border-top:1px solid rgb(var(--border))">
+        <button class="btn btn-ghost btn-sm" data-nav="riordino">Prepara la lista della spesa</button>
+      </div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Il tetto è sugli articoli che esistono ora, non su quanti movimenti registri: registrare
+        è gratis, e deve restare tale.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.check} Salute del registro</h2>
+        <p class="sec-sub">Ultima ricostruzione della giacenza dal registro: <b>03/08/2026 · 04:00</b>.
+        Nessuna divergenza fra la somma dei movimenti e il saldo pubblicato.</p>
+        <p class="sec-sub">È il controllo che dimostra che il numero mostrato dice la verità. Se un giorno divergesse,
+        la verità è il registro e il saldo si rifà da lì.</p>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni si comandano a voce: «quanti faretti ho in furgone?»,
+        «scaricane due per il lavoro di stamattina», «cosa devo ricomprare?».
+        Le domande rispondono subito; le azioni che scrivono preparano una bozza e chiedono conferma.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Giacenze: l'elenco per articolo e deposito. */
+function vGiacenze(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.titolo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.dep.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Giacenze.</b> Una riga per coppia articolo-deposito, perché «quante ne ho» senza «dove» non serve
+    a nessuno. La colonna <i>Giacenza</i> non è modificabile qui né altrove: <b>non esiste una casella quantità</b>.
+    Si cambia registrando un movimento o una rettifica con motivo — è la scelta che tiene in piedi tutta l'applicazione.
+    La ricerca accetta anche il codice letto da un lettore esterno, che si comporta come una tastiera.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Giacenze</h1><p>Quanta merce c'è, in quale deposito e in quale ubicazione.</p></div>
+    <button class="btn btn-primary" data-nav="movimento">${I.piu} Registra un movimento</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per codice, descrizione o deposito…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato della scorta">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} rig${trovate.length===1?'a':'he'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Articolo</th><th>Deposito</th><th>Ubicazione</th><th class="num">Giacenza</th><th class="num">Soglia</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td><td>${esc(r.dep)}</td><td>${esc(r.ubic)}</td>
+          <td class="num">${r.qta} <span style="color:rgb(var(--faint));font-weight:400">${esc(r.um)}</span></td>
+          <td class="num">${r.soglia}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessuna riga corrisponde ai filtri',
+      'Prova con un altro codice o un’altra parola, oppure azzera i filtri per rivedere tutte le giacenze.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio dell'articolo: la scheda e il suo registro. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const suoi = MOVIMENTI.filter(m => m.art === r.id);
+  const reg = suoi.length ? suoi : [
+    { id:'MOV-8000', art:r.id, tipo:'Carico', q:r.qta, dep:r.dep, motivo:'Carico iniziale da importazione',
+      rif:'Importazione 01/2026', autore:'Titolare', quando:'12/01/2026 · 17:20' }
+  ];
+  return `
+  ${nota(`<b>Proposta — Scheda dell'articolo.</b> A sinistra i fatti, a destra il registro: <b>è il registro il prodotto</b>.
+    Ogni riga porta il motivo, il riferimento al documento e chi l'ha fatta — senza quel «chi» una differenza d'inventario
+    resta un mistero. Nessuna riga si modifica e nessuna si cancella: l'unica correzione è lo <i>storno</i>, che aggiunge
+    un movimento contrario e lascia la storia leggibile. Il dato di autore serve alla tracciabilità della merce e
+    <b>non</b> alimenta classifiche di produttività per persona.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.titolo)}</h1>${badge(r.stato)}</div>
+      <p class="mono">${esc(r.id)} · ${esc(r.dep)} · ${esc(r.ubic)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="giacenze">${I.sx} Torna alle giacenze</button>
+  </div>
+
+  <div class="detail-grid">
+    <section class="card">
+      <div class="card-pad"><h2 class="sec">Registro dei movimenti</h2>
+        <p class="sec-sub">In sola aggiunta: si scrive in fondo, non si riscrive mai sopra.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Movimento</th><th>Tipo</th><th class="num">Quantità</th><th>Motivo</th><th>Riferimento</th><th>Chi e quando</th></tr></thead>
+        <tbody>${reg.map(m=>`
+          <tr class="non-cliccabile">
+            <td class="mono">${esc(m.id)}</td>
+            <td>${esc(m.tipo)}</td>
+            <td class="num">${conSegno(m.q)}</td>
+            <td>${esc(m.motivo)}</td>
+            <td>${esc(m.rif)}</td>
+            <td>${esc(m.autore)}<br><span style="color:rgb(var(--faint));font-size:12px">${esc(m.quando)}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      <div class="card-pad" style="border-top:1px solid rgb(var(--border));display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-primary" data-nav="movimento">${I.piu} Registra un movimento</button>
+        <button class="btn btn-ghost" data-modale="apri"
+          data-titolo="Rettificare la giacenza?"
+          data-testo="La rettifica non riscrive il saldo: aggiunge un movimento che dichiara di quanto il registro era sbagliato, e pretende un motivo. Resta visibile per sempre e si annulla solo con uno storno.">Rettifica con motivo</button>
+        <button class="btn btn-ghost">${I.scarica} Esporta il registro</button>
+      </div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:8px">Dati dell'articolo</h2>
+        <div class="dl">
+          <div class="dl-row"><span class="k">Codice interno</span><span class="v mono">${esc(r.id)}</span></div>
+          <div class="dl-row"><span class="k">Codice a barre registrato</span><span class="v mono">80 12345 000${r.id.slice(-3)}</span></div>
+          <div class="dl-row"><span class="k">Unità di misura</span><span class="v">${esc(r.um)}</span></div>
+          <div class="dl-row"><span class="k">Giacenza ora</span><span class="v mono">${r.qta}</span></div>
+          <div class="dl-row"><span class="k">Soglia di scorta</span><span class="v mono">${r.soglia}</span></div>
+          <div class="dl-row"><span class="k">Costo medio gestionale</span><span class="v mono">${eur(r.costo)}</span></div>
+          <div class="dl-row"><span class="k">Origine dell'anagrafica</span><span class="v">locale</span></div>
+        </div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">Il prezzo di vendita non è qui</h2>
+        <p class="sec-sub">StockGrove possiede la <b>quantità</b> del prodotto; l'identità commerciale e il prezzo
+        stanno nel catalogo condiviso. Se il prezzo comparisse in questa schermata, il giorno dopo qualcuno
+        chiederebbe di modificarlo da qui — e i saldi diventerebbero due.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Registrazione di un movimento, con il rifiuto per giacenza
+   insufficiente mostrato come lo vedrebbe davvero l'utente. */
+function vMovimento(){
+  return `
+  ${nota(`<b>Proposta — Registra un movimento.</b> Tre campi e via: chi sta al banco di carico non compila moduli.
+    Il caso interessante è l'errore: <b>l'aritmetica si fa nella base di dati</b>, in una sola operazione condizionata,
+    non leggendo il saldo e riscrivendolo. Così due persone che scaricano lo stesso articolo nello stesso istante non si
+    sovrascrivono: una passa, l'altra riceve un rifiuto con la quantità rimasta. Prova a scaricare più di 6 faretti.`)}
+  <div class="page-h"><div class="txt"><h1>Registra un movimento</h1>
+    <p>Carico, scarico o trasferimento. Il saldo si aggiorna da sé: è la somma di quello che scrivi qui.</p></div></div>
+
+  <div id="esito-movimento"></div>
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field">
+        <label for="i-tipo">Tipo di movimento</label>
+        <select id="i-tipo">
+          <option value="carico">Carico — la merce entra</option>
+          <option value="scarico" selected>Scarico — la merce esce</option>
+          <option value="trasferimento">Trasferimento fra depositi</option>
+        </select>
+        <span class="hint">La rettifica non è qui: si fa dalla scheda dell'articolo e pretende un motivo.</span>
+      </div>
+      <div class="field">
+        <label for="i-art">Articolo</label>
+        <select id="i-art">
+          <option>ART-0207 — Faretto da incasso 7 W (giacenza 6)</option>
+          <option>ART-0142 — Cavo tripolare 3×1,5 mm² (giacenza 14)</option>
+          <option>ART-0318 — Vite autofilettante 4×40 (giacenza 38)</option>
+        </select>
+        <span class="hint">Si può anche inquadrare il codice: ${'<button type="button" class="btn btn-ghost btn-sm" data-nav="scansione">apri la scansione</button>'}</span>
+      </div>
+      <div class="field">
+        <label for="i-dep">Deposito</label>
+        <select id="i-dep"><option>Magazzino</option><option>Negozio</option><option>Furgone 1</option></select>
+      </div>
+      <div class="field" id="f-titolo">
+        <label for="i-titolo">Quantità *</label>
+        <input id="i-titolo" type="number" min="1" step="1" placeholder="es. 3">
+        <span class="hint">Nel registro finisce con il segno: uno scarico è una quantità negativa.</span>
+      </div>
+      <div class="field">
+        <label for="i-motivo">Motivo</label>
+        <select id="i-motivo">
+          <option>Prelievo per lavoro</option><option>Vendita al banco</option>
+          <option>Reso al fornitore</option><option>Carico del furgone</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="i-rif">Riferimento al documento</label>
+        <input id="i-rif" placeholder="es. Bolla 2026/318, cantiere, ordine…">
+        <span class="hint">Facoltativo, ma è quello che dopo spiega il movimento.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Nota</label>
+        <textarea id="i-note" placeholder="Annotazioni libere…"></textarea>
+        <span class="hint">Campo a testo libero: non inserire dati sensibili.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="giacenze">Annulla</button>
+      <button type="submit" class="btn btn-primary">Registra</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Sessione di inventario fisico e differenze. */
+function vInventario(){
+  const contate = CONTEGGIO.filter(c => c.contato !== null);
+  const diff = contate.filter(c => c.contato !== c.atteso);
+  return `
+  ${nota(`<b>Proposta — Inventario.</b> Si conta in più mani, si può interrompere e riprendere, e la quantità attesa è
+    <i>congelata all'apertura</i>: contare contro un bersaglio che si muove è il modo migliore per non finire mai.
+    Alla chiusura non succede niente di magico: l'elenco delle differenze si vede <b>prima</b> di confermare, e ogni riga
+    diversa diventa <b>una rettifica con il suo motivo</b>. Il conteggio mancante non è una differenza a zero: è una riga
+    da contare, e resta distinta.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Inventario INV-07 · Magazzino</h1>
+      <p>Aperto il 03/08/2026 alle 07:30 · ambito: tutto il deposito · 4 righe contate su 5</p></div>
+    <button class="btn btn-primary" data-modale="apri"
+      data-titolo="Chiudere l'inventario e applicare 3 differenze?"
+      data-testo="Nascono tre movimenti di rettifica: ART-0207 −1 (rottura in magazzino), ART-0318 +3 (merce trovata), ART-0155 +3 (errore di registrazione). Restano nel registro per sempre e si annullano solo con uno storno. La riga non contata (ART-0500) resta da contare e non produce nulla.">Chiudi l'inventario</button>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>Una riga non è ancora stata contata. Chiudere adesso <b>non</b> la considera pari a zero: resta da contare.</span>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Articolo</th><th class="num">Atteso (congelato)</th><th class="num">Contato</th><th class="num">Differenza</th><th>Motivo della differenza</th></tr></thead>
+      <tbody>${CONTEGGIO.map(c=>{
+        const d = c.contato === null ? null : c.contato - c.atteso;
+        return `
+        <tr class="non-cliccabile">
+          <td class="mono">${esc(c.id)}</td><td>${esc(c.desc)}</td>
+          <td class="num">${c.atteso}</td>
+          <td class="num">${c.contato === null ? '<span style="color:rgb(var(--faint))">da contare</span>' : c.contato}</td>
+          <td class="num">${d === null ? '—' : (d === 0 ? '0' : conSegno(d))}</td>
+          <td>${d ? esc(c.motivo) : '<span style="color:rgb(var(--faint))">—</span>'}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table></div>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Righe contate',      v:`${contate.length} / ${CONTEGGIO.length}`},
+    {k:'Differenze trovate', v:String(diff.length), d:'diventeranno altrettante rettifiche'},
+    {k:'Chi sta contando',   v:'2 persone', d:'Sara e Luca, dalla stessa sessione'},
+  ])}`;
+}
+
+/* SCHERMATA — Proposta di riordino, raggruppata per fornitore. */
+function vRiordino(){
+  const totale = RIORDINO.reduce((s,g)=> s + g.voci.reduce((x,v)=> x + v.proposta*v.costo, 0), 0);
+  return `
+  ${nota(`<b>Proposta — Riordino.</b> Un elenco di articoli sotto soglia che non porta a niente viene percepito come
+    lavoro in più, non in meno: per questo l'avviso finisce in una <b>lista della spesa</b> raggruppata per fornitore,
+    modificabile riga per riga ed esportabile. Il confine è netto e va tenuto: <b>StockGrove non manda l'ordine a
+    nessuno</b>. Prepara, esporta, e si ferma lì — l'ordine, la conferma e il ciclo degli acquisti sono di un'altra app.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Proposta di riordino</h1>
+      <p>Generata il 03/08/2026 sui 7 articoli sotto soglia · quantità suggerite fino alla scorta di riordino</p></div>
+    <button class="btn btn-primary">${I.scarica} Esporta la proposta</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Codice</th><th>Articolo</th><th class="num">Giacenza</th><th class="num">Soglia</th><th class="num">Da ordinare</th><th class="num">Costo stimato</th></tr></thead>
+      <tbody>${RIORDINO.map(g=>`
+        <tr class="gruppo"><td colspan="6">${esc(g.fornitore)}</td></tr>
+        ${g.voci.map(v=>`
+        <tr class="non-cliccabile">
+          <td class="mono">${esc(v.id)}</td><td>${esc(v.desc)}</td>
+          <td class="num">${v.giacenza}</td><td class="num">${v.soglia}</td>
+          <td class="num">${v.proposta}</td><td class="num">${eur(v.proposta*v.costo)}</td>
+        </tr>`).join('')}`).join('')}
+      </tbody>
+    </table></div>
+    <div class="card-pad" style="border-top:1px solid rgb(var(--border));display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="result-count">Totale stimato al costo medio: <b class="mono">${eur(totale)}</b></span>
+      <span style="margin-left:auto"></span>
+      <button class="btn btn-ghost btn-sm">Archivia la proposta</button>
+      <button class="btn btn-ghost btn-sm" data-modale="apri"
+        data-titolo="Perché non c'è un pulsante «invia al fornitore»?"
+        data-testo="Perché mandare un ordine è un effetto verso l'esterno dell'azienda, e questa app non ne ha nessuno. Si esporta il file e lo si manda con i propri strumenti; quando esisterà l'app degli acquisti, la proposta diventerà un ordine vero e la merce ricevuta tornerà qui come carico.">Perché non si invia?</button>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Scansione dal telefono e coda delle letture. */
+function vScansione(){
+  const barre = [3,1,2,1,1,3,2,1,3,1,1,2,3,1,2,1,3,2,1,1,3,1,2,3]
+    .map(w=>`<i style="width:${w}px"></i>`).join('');
+  const stiliCoda = { 'inviata':'b-ok', 'in coda':'b-warn', 'rifiutata':'b-bad' };
+  return `
+  ${nota(`<b>Proposta — Scansione.</b> È la schermata che si usa in piedi, davanti allo scaffale, con una mano sola:
+    per questo sta dentro una colonna stretta e ha bottoni grandi. Due onestà obbligatorie. La prima: la fotocamera di un
+    telefono impiega uno o due secondi a fuoco per lettura e in un magazzino buio fatica — sotto una cinquantina di letture
+    al giorno basta, sopra serve un lettore dedicato, che qui funziona perché si comporta come una tastiera. La seconda:
+    in magazzino <b>la rete non c'è</b>, quindi le letture si accodano e partono da sole, ognuna con la propria chiave di
+    idempotenza — un invio ripetuto non conta due volte lo stesso pezzo. Le immagini della fotocamera non lasciano mai il
+    telefono: viaggia solo il codice.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Scansione</h1><p>Dal codice al movimento in due tocchi, senza tornare al computer.</p></div>
+    <button class="btn btn-ghost" data-nav="giacenze">${I.sx} Torna alle giacenze</button>
+  </div>
+
+  <div class="grid-2">
+    <div class="fono">
+      <div class="fono-testa"><span>Deposito: Furgone 1</span><span>Scarico</span></div>
+      <div class="mirino" role="img" aria-label="Inquadratura simulata di un codice a barre">
+        <div class="cornice"></div>
+        <div class="barre" aria-hidden="true">${barre}</div>
+      </div>
+      <div class="card card-pad" style="padding:12px 14px">
+        <div class="row" style="justify-content:space-between">
+          <b class="mono">ART-0318</b><span class="badge b-ok">Riconosciuto</span>
+        </div>
+        <p class="sec-sub">Vite autofilettante 4×40 — confezione da 200 · giacenza in furgone: 5</p>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn btn-ghost">−</button>
+        <b class="mono" style="font-size:22px">2</b>
+        <button class="btn btn-ghost">+</button>
+      </div>
+      <button class="btn btn-primary" style="justify-content:center">Registra e leggi il prossimo</button>
+      <button class="btn btn-ghost" style="justify-content:center">Digita il codice a mano</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Coda delle letture</h2>
+        <p class="sec-sub">Quello che hai fatto adesso, e cosa ne è stato. Niente sparisce in silenzio.</p>
+        <div class="coda">
+          ${SCANSIONI.map(s=>`
+          <div class="coda-riga">
+            <b class="mono">${esc(s.codice)}</b>
+            <span style="color:rgb(var(--muted))">${esc(s.desc)}</span>
+            <span class="spacer"></span>
+            <span class="mono">${esc(s.q)}</span>
+            <span class="badge ${stiliCoda[s.stato]}">${esc(s.stato)}</span>
+          </div>
+          <p class="sec-sub" style="margin:-4px 0 4px 4px">${esc(s.nota)}</p>`).join('')}
+        </div>
+        <div class="row"><button class="btn btn-ghost btn-sm">Riprova le rifiutate</button>
+          <button class="btn btn-ghost btn-sm" data-nav="movimento">Sistemale a mano</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Per la merce che un codice non ce l'ha</h2>
+        <div class="etichetta">
+          <svg class="qr" viewBox="0 0 12 12" aria-hidden="true">
+            <rect x="0" y="0" width="4" height="4"/><rect x="8" y="0" width="4" height="4"/>
+            <rect x="0" y="8" width="4" height="4"/><rect x="5" y="1" width="1" height="1"/>
+            <rect x="6" y="3" width="1" height="1"/><rect x="5" y="5" width="2" height="2"/>
+            <rect x="9" y="6" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/>
+            <rect x="9" y="9" width="2" height="2"/>
+          </svg>
+          <div><b class="mono">ART-0318</b><br><span class="sec-sub">Vite autofilettante 4×40</span></div>
+        </div>
+        <p class="sec-sub">Il codice interno lo decide l'impresa e si stampa in foglio. Il codice a barre commerciale,
+        invece, <b>si registra ma non si genera</b>: il prefisso è noleggiato da chi lo assegna, e inventarne uno è un
+        errore che esce dall'azienda.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Stampa un foglio di etichette</button></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Valore gestionale e confine con la contabilità. */
+function vValore(){
+  const perDeposito = [
+    { dep:'Magazzino', articoli:214, valore:13480.55 },
+    { dep:'Negozio',   articoli: 63, valore: 3260.10 },
+    { dep:'Furgone 1', articoli: 35, valore: 1689.35 },
+  ];
+  return `
+  ${nota(`<b>Proposta — Valore gestionale.</b> Serve a rispondere a «quanto capitale ho fermo sugli scaffali?», e a
+    nient'altro. È il punto in cui un'app di magazzino è tentata di promettere più di quello che può: per questo
+    l'etichetta «gestionale» sta <b>nel titolo della schermata, nella colonna e nel file esportato</b>, non in una nota
+    in fondo. La parola «rimanenze» non compare in senso fiscale da nessuna parte.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Valore gestionale del magazzino</h1>
+      <p>Quantità per costo medio ponderato mobile, aggiornato dai carichi · al 03/08/2026</p></div>
+    <button class="btn btn-primary">${I.scarica} Esporta per il commercialista</button>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span><b>Questo non è il valore fiscale delle rimanenze.</b> È una stima gestionale a costo medio: la valutazione
+    per il bilancio e per la dichiarazione — quale metodo, quali svalutazioni, quale raccordo — è materia del
+    commercialista, e questa app non la fa e non la sostituisce.</span>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Valore gestionale totale', v:eur(18430), d:'costo medio ponderato mobile'},
+    {k:'Articoli valorizzati',     v:'312',      d:'su 312 gestiti'},
+    {k:'Senza costo noto',         v:'0',        d:'nessun carico da valorizzare'},
+  ])}
+
+  <div class="grid-2">
+    <section class="card">
+      <div class="card-pad"><h2 class="sec">Per deposito</h2>
+        <p class="sec-sub">Dove sta fermo il capitale.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Deposito</th><th class="num">Articoli</th><th class="num">Valore gestionale</th></tr></thead>
+        <tbody>${perDeposito.map(d=>`
+          <tr class="non-cliccabile"><td>${esc(d.dep)}</td><td class="num">${d.articoli}</td><td class="num">${eur(d.valore)}</td></tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+      <h2 class="sec">Cosa fa e cosa non fa questo numero</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Risponde a</span><span class="v">«quanto capitale ho fermo?»</span></div>
+        <div class="dl-row"><span class="k">Metodo</span><span class="v">costo medio ponderato mobile</span></div>
+        <div class="dl-row"><span class="k">Aggiornato da</span><span class="v">ogni carico registrato</span></div>
+        <div class="dl-row"><span class="k">Non compila</span><span class="v">nessun rigo di dichiarazione</span></div>
+        <div class="dl-row"><span class="k">Non produce</span><span class="v">scritture ausiliarie di magazzino</span></div>
+      </div>
+      <p class="sec-sub">L'esportazione è un file che scarichi tu e consegni tu: l'app non parla con nessuno fuori
+      dall'azienda, nemmeno con il tuo commercialista.</p>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e quota esaurita: i due stati che si dimenticano. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Il primo giorno l'app è vuota e deve dire cosa fare: e la cosa
+    da fare non è «crea un articolo», è <b>importare l'anagrafica che hai già</b> — nessuno ribatte a mano quattrocento
+    codici. Il giorno in cui il piano finisce, invece, va detto con chiarezza cosa si blocca e cosa no: si bloccano gli
+    articoli nuovi, <b>non</b> i movimenti. Bloccare i movimenti significherebbe restituire al cliente un saldo falso il
+    giorno in cui torna a pagare.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta StockGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'Il magazzino è ancora vuoto',
+    'Importa l’anagrafica che hai già — un foglio di calcolo va benissimo — oppure crea il primo articolo e il primo deposito. Da lì in poi ogni carico e ogni scarico costruiscono il saldo da soli.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary">${I.scarica} Importa da un foglio</button><button class="btn btn-ghost" data-nav="giacenze">Crea il primo articolo</button></div>`)}
+  <h2 class="sec">Quota esaurita</h2>
+  ${avvisoQuota('raggiunto')}
+  ${nota(`<b>Nota di prodotto.</b> Il tetto è <i>a giacenza</i>: conta gli articoli che esistono adesso, non quelli creati
+    nel mese. Archiviare un articolo che non si tiene più libera davvero un posto — ed è anche il motivo per cui passare a
+    un piano più piccolo resta bloccato finché gli articoli attivi superano il tetto di destinazione.`)}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica: ['Panoramica',             vPanoramica],
+  giacenze:   ['Giacenze',               vGiacenze],
+  dettaglio:  ['Scheda dell’articolo', vDettaglio],
+  movimento:  ['Registra un movimento',  vMovimento],
+  inventario: ['Inventario',             vInventario],
+  riordino:   ['Riordino',               vRiordino],
+  scansione:  ['Scansione',              vScansione],
+  valore:     ['Valore gestionale',      vValore],
+  vuoto:      ['Primo avvio',            vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta e rifiuto per giacenza insufficiente.
+     È l'unico punto in cui il mockup «calcola» qualcosa, e lo fa per mostrare
+     il comportamento che conta: uno scarico oltre la giacenza non passa, e non
+     lascia dietro di sé un saldo sbagliato. */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    const esito = document.getElementById('esito-movimento');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(esito) esito.innerHTML = '';
+    const q = Number(input.value);
+    if(!input.value.trim() || !Number.isFinite(q) || q <= 0){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">La quantità è obbligatoria e maggiore di zero: senza quantità non c\u2019è movimento.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    const tipo = document.getElementById('i-tipo').value;
+    const disponibili = 6;   /* giacenza finta dell'articolo preselezionato */
+    if(tipo !== 'carico' && q > disponibili){
+      esito.innerHTML = `<div class="alert a-bad">${I.block}
+        <span><b>Giacenza insufficiente: ne restano ${disponibili}.</b> Nessun movimento è stato registrato e il saldo
+        non è cambiato. È la stessa risposta che riceve chi perde la corsa quando due persone scaricano lo stesso
+        articolo nello stesso istante.</span></div>`;
+      window.scrollTo({top:0});
+      return;
+    }
+    esito.innerHTML = `<div class="alert a-ok">${I.check}
+      <span><b>Movimento registrato.</b> La giacenza è ora ${tipo === 'carico' ? disponibili + q : disponibili - q}:
+      non l'ha riscritta nessuno, è la somma del registro.</span></div>`;
+    window.scrollTo({top:0});
+  });
+
+  /* apertura della modale dal dettaglio */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale(b.dataset.titolo ?? 'Confermi?', b.dataset.testo ?? 'L’azione va confermata da una persona.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>
