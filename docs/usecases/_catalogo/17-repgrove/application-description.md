@@ -474,7 +474,8 @@ terzi: la valutazione d'impatto va messa in conto fin dalla prima storia che scr
 | `elenca_recensioni` | `(sede?, periodo?, voto_massimo?, solo_senza_risposta?) → elenco minimizzato` | restituisce voto, momento, piattaforma, prime righe del testo e stato della risposta | lettura | no |
 | `punteggio_reputazione` | `(sede?, periodo?) → media, volume, distribuzione, andamento` | la fotografia di una sede | lettura | no |
 | `recensioni_negative_da_gestire` | `(sede?) → elenco ordinato per anzianità` | ciò che aspetta una risposta | lettura | no |
-| `stato_delle_richieste` | `(sede, periodo) → invitati, esclusi con motivo, regola di equità applicata` | è la **prova di equità** in forma leggibile | lettura | no |
+| `stato_delle_richieste` | `(sede, periodo) → invitati, esclusi con motivo, regola di equità applicata` | è la **prova di equità** in forma leggibile, in conteggi e motivi: **mai** nomi e recapiti dei clienti finali | lettura | no |
+| `dichiarazione_trasparenza` | `(sede) → testo in vigore, versione, stato` | il testo che la direttiva europea impone, come è pubblicato adesso (storia 0025) | lettura | no |
 | `prepara_risposta` | `(id_recensione, tono?) → bozza di risposta` | scrive una bozza; non pubblica niente | scrittura | **sì** (la bozza va approvata da una persona) |
 | `pubblica_risposta` | `(id_bozza) → esito della pubblicazione` | **atto pubblico verso l'esterno, a nome dell'azienda** | scrittura irreversibile | **sì, obbligatoria e non disattivabile** |
 | `programma_richieste` | `(sede, dal, al) → bozza del lotto: chi verrebbe invitato e chi no, con il motivo` | prepara il lotto; non manda niente | scrittura | **sì** |
@@ -571,12 +572,14 @@ dell'app è provato dall'inizio alla fine.
 
 | # | Storia | In una riga |
 |---|---|---|
-| [0027](06-esposizione-conversazionale-e-prove/0027-contratto-degli-strumenti-di-lettura.md) | Contratto degli strumenti di lettura | i quattro strumenti di sola lettura, con schema, minimizzazione e filtro per account |
+| [0027](06-esposizione-conversazionale-e-prove/0027-contratto-degli-strumenti-di-lettura.md) | Contratto degli strumenti di lettura | gli strumenti di sola lettura, con schema, minimizzazione e filtro per account |
 | [0028](06-esposizione-conversazionale-e-prove/0028-strumenti-di-scrittura-con-bozza-e-conferma.md) | Strumenti di scrittura con bozza e conferma | i quattro strumenti che producono bozze, e la conferma umana che non si disattiva |
 | [0029](06-esposizione-conversazionale-e-prove/0029-rifiuto-delle-richieste-vietate.md) | Rifiuto delle richieste vietate | quando l'istruzione chiede una pratica proibita, lo strumento rifiuta e spiega |
 | [0030](06-esposizione-conversazionale-e-prove/0030-percorso-end-to-end-dell-app.md) | Percorso end-to-end dell'app | il percorso `[J-RECENSIONI]` dall'attivazione alla risposta pubblicata, e il registro di copertura |
+| [0031](06-esposizione-conversazionale-e-prove/0031-esportazione-e-cancellazione-dei-dati-personali.md) | Esportazione e cancellazione dei dati personali | tutte le tabelle coperte o escluse con motivo, e la verità sull'originale che resta sulla piattaforma |
 
-**Totale**: 6 epiche, 30 storie.
+**Totale**: 6 epiche, 31 storie. La storia 0031 sta **in coda** all'epica, dopo il percorso end-to-end, perché è la
+verifica finale della copertura: ha bisogno che tutte le tabelle esistano e non è prerequisito di nessun'altra.
 
 ---
 
@@ -645,7 +648,7 @@ Manager» che i concorrenti vendono a parte: qui è compreso, e va detto nel lis
   incentivo nel testo dell'invito, la sanzione (500-5.000 €) arriva a lui. *Attenuazione*: il controllo della
   storia 0013 respinge il testo **prima** che venga usato, e conserva la prova di averlo respinto.
 
-**Fuori dimensionamento**: non applicabile. 6 epiche (raccomandate 4-7), da 4 a 6 storie per epica (raccomandate
-4-8), 30 storie in tutto (fascia raccomandata 20-45).
+**Fuori dimensionamento**: non applicabile. 6 epiche (raccomandate 4-7), da 5 a 6 storie per epica (raccomandate
+4-8), 31 storie in tutto (fascia raccomandata 20-45).
 </content>
 </invoke>

@@ -570,7 +570,8 @@ Le tabelle di `app_insights` che contengono dati riferibili a persone e che devo
 domanda in forma strutturata), `avviso`, `rapporto_programmato`, e — per i soli `created_by` / `updated_by` —
 `fonte`, `definizione_metrica`, `cruscotto`, `riquadro`, `previsione`.
 La tabella `fatto` **non** contiene dati personali per contratto, ma va comunque nella cancellazione per account:
-è dato dell'account.
+è dato dell'account. Il contratto completo — elenco delle tabelle, prova di completezza fra esportazione e
+cancellazione, conservazioni — è la storia 0035.
 
 Due precisazioni:
 
@@ -727,7 +728,8 @@ Come i numeri escono dall'app: verso un file, verso una casella di posta, verso 
 
 ### Epica 07 — Esposizione conversazionale e prove end-to-end
 
-Il contratto degli strumenti verso il livello conversazionale di piattaforma, e la prova che il percorso regge.
+Il contratto degli strumenti verso il livello conversazionale di piattaforma, la prova che il percorso regge e il
+contratto dati che chiude l'applicazione.
 
 | # | Storia | In una riga |
 |---|---|---|
@@ -735,8 +737,9 @@ Il contratto degli strumenti verso il livello conversazionale di piattaforma, e 
 | [0032](07-esposizione-conversazionale-e-prove/0032-strumenti-di-scrittura-con-conferma.md) | Strumenti di scrittura con bozza e conferma | Avvisi, rapporti, definizioni e fonti: si preparano, non si eseguono |
 | [0033](07-esposizione-conversazionale-e-prove/0033-ruolo-e-quota-sulle-chiamate-dell-assistente.md) | Ruolo e quota sulle chiamate dell'assistente | Gli stessi varchi delle schermate valgono per la chat: nessuna porta di servizio |
 | [0034](07-esposizione-conversazionale-e-prove/0034-percorso-end-to-end-e-registro-di-copertura.md) | Percorso end-to-end e registro di copertura | Il percorso `[J-INSIGHTS]` dal collegamento della fonte alla risposta verificabile |
+| [0035](07-esposizione-conversazionale-e-prove/0035-esportazione-e-cancellazione-dei-dati-personali.md) | Esportazione e cancellazione dei dati personali | Il contratto dati dell'app: che cosa esce, che cosa sparisce fisicamente, e la prova che nessuna tabella è dimenticata |
 
-**Totale**: 7 epiche, 34 storie.
+**Totale**: 7 epiche, 35 storie.
 
 ---
 
@@ -832,4 +835,4 @@ indicatori più preziosi. Ma le tocca **di lato**: ne riceve le misure, non ne c
   (storia 0008), e la stessa conferma sullo strumento conversazionale (§7).
 
 **Fuori dimensionamento**: non applicabile. 7 epiche (fascia 4-7), da 4 a 6 storie per epica (fascia 4-8),
-34 storie in tutto (fascia 20-45).
+35 storie in tutto (fascia 20-45).

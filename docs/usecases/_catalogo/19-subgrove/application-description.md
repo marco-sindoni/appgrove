@@ -498,6 +498,7 @@ fornitori. La classificazione descrive la realtà, non è una leva per evitare a
 | `prossimi_rinnovi` | `(giorni) → elenco di rinnovi con importo e data` | «Cosa mi si rinnova nei prossimi 30 giorni» | lettura | no |
 | `scadenze_non_incassate` | `(periodo?, oltre_giorni?) → elenco con progressivo dei solleciti` | Il buco di cassa e a che punto è il recupero | lettura | no |
 | `metriche_ricorrenti` | `(mese) → ricavo mensile, attivi, nuovo/espansione/contrazione/abbandono` | La fotografia del mese | lettura | no |
+| `previsione_incassi` | `(mesi) → per mese: impegnato, scaduto non incassato, atteso` | Cosa è **già impegnato** nei prossimi mesi (mai una stima) | lettura | no |
 | `stato_abbonato` | `(riferimento_abbonato) → scheda minimizzata` | Tutto su un abbonato, senza aprire l'interfaccia | lettura | no |
 | `crea_abbonamento` | `(abbonato, piano, decorrenza) → bozza` | Sottoscrive un abbonamento | scrittura | **sì** |
 | `cambia_piano` | `(abbonamento, nuovo_piano, quando) → bozza con conguaglio calcolato` | Cambia quanto l'abbonato pagherà | scrittura | **sì** |
@@ -604,12 +605,13 @@ due percorsi che contano — quello interno e quello dell'abbonato — sono cope
 
 | # | Storia | In una riga |
 |---|---|---|
-| [0031](07-esposizione-conversazionale-e-prove/0031-strumenti-di-lettura.md) | Strumenti di lettura | I cinque strumenti che rispondono alle domande sul ricorrente, con dati minimizzati |
+| [0031](07-esposizione-conversazionale-e-prove/0031-strumenti-di-lettura.md) | Strumenti di lettura | I sei strumenti che rispondono alle domande sul ricorrente, con dati minimizzati |
 | [0032](07-esposizione-conversazionale-e-prove/0032-strumenti-di-scrittura-con-conferma.md) | Strumenti di scrittura con conferma | Sei strumenti che scrivono, tutti con bozza; tre con conferma obbligatoria |
 | [0033](07-esposizione-conversazionale-e-prove/0033-percorso-end-to-end-interno.md) | Percorso end-to-end interno | Dal piano al sollecito: il percorso `[J-ABBONATI]` sullo stack locale reale |
 | [0034](07-esposizione-conversazionale-e-prove/0034-percorso-end-to-end-dell-abbonato.md) | Percorso end-to-end dell'abbonato | Il portale pubblico e la disdetta con un clic, provati come li vive l'abbonato |
+| [0035](07-esposizione-conversazionale-e-prove/0035-chiusura-del-contratto-dati.md) | Chiusura del contratto dati | Esportazione e cancellazione complete su tutte le tabelle, verificate da un programma |
 
-**Totale**: 7 epiche, 34 storie.
+**Totale**: 7 epiche, 35 storie.
 
 ---
 
@@ -741,5 +743,5 @@ ingresso e il documento fiscale in uscita.
   ne accorge finché non manca un avviso di legge. *Attenuazione*: la lavorazione è idempotente e recupera i
   giorni saltati (storia `0012`), e il suo stato è visibile in console (§9).
 
-**Fuori dimensionamento**: nessuno. 7 epiche (fascia 4-7), da 4 a 6 storie per epica (fascia 4-8), 34 storie in
+**Fuori dimensionamento**: nessuno. 7 epiche (fascia 4-7), da 4 a 6 storie per epica (fascia 4-8), 35 storie in
 tutto (fascia 20-45).

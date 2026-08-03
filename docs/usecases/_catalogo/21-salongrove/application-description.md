@@ -653,7 +653,9 @@ calcolare quanto gli spetta. Va confermato (§11, punto 6).
 **Esportazione e cancellazione.** Devono comparire **sia** in `exportData` **sia** in `purgeData` del contratto
 dati: `scheda_tecnica`, `foto_trattamento`, `conto`, `riga_conto`, `pacchetto`, `utilizzo_pacchetto`,
 `tessera_fedelta`, `movimento_punti`, `regola_provvigione`, `prospetto_provvigioni`, `movimento_magazzino` (per la
-sola colonna di chi l'ha causato). La candidata a essere dimenticata è **`foto_trattamento`**, perché l'immagine
+sola colonna di chi l'ha causato), più le due tabelle che nascono nelle epiche 06 e 07 — `richiamo_esito` (storia
+`0027`) e `bozza_operazione` (storia `0029`). L'elenco si chiude e si mette sotto controllo automatico nella storia
+`0032`. La candidata a essere dimenticata è **`foto_trattamento`**, perché l'immagine
 non sta in una colonna di testo e chi scrive l'esportazione pensa alle righe, non ai file. La seconda candidata è
 `movimento_magazzino`, che sembra un registro tecnico e invece dice chi ha fatto cosa.
 
@@ -803,7 +805,8 @@ classifica.
 
 ### Epica 07 — Esposizione conversazionale e prove end-to-end
 
-Il contratto degli strumenti e i due percorsi che dimostrano che il verticale funziona davvero.
+Il contratto degli strumenti, i due percorsi che dimostrano che il verticale funziona davvero, e la chiusura del
+contratto dei dati — che solo qui può essere completa, perché solo qui tutte le tabelle esistono.
 
 | # | Storia | In una riga |
 |---|---|---|
@@ -811,8 +814,9 @@ Il contratto degli strumenti e i due percorsi che dimostrano che il verticale fu
 | [0029](07-esposizione-conversazionale-e-prove/0029-strumenti-di-scrittura-con-conferma.md) | Strumenti di scrittura con conferma | Bozza e «sì» umano per tutto ciò che muove denaro, magazzino o compensi |
 | [0030](07-esposizione-conversazionale-e-prove/0030-percorso-end-to-end-del-salone.md) | Percorso end-to-end del salone | `[J-SALONGROVE]`: dal servizio a fasi al conto chiuso |
 | [0031](07-esposizione-conversazionale-e-prove/0031-percorso-end-to-end-del-pacchetto.md) | Percorso end-to-end del pacchetto | `[J-SALONGROVE-PKG]`: pacchetto venduto, seduta scalata, provvigione maturata |
+| [0032](07-esposizione-conversazionale-e-prove/0032-esportazione-e-cancellazione-complete.md) | Esportazione e cancellazione complete | Il contratto dati chiuso su tutte le epiche, con il controllo che impedisce di dimenticare una tabella |
 
-**Totale**: 7 epiche, 31 storie (`0001`-`0031`).
+**Totale**: 7 epiche, 32 storie (`0001`-`0032`).
 
 ---
 
@@ -894,6 +898,6 @@ la stessa cosa e poi doverle tenere d'accordo.
   domanda arrivi.
 
 **Fuori dimensionamento**: nessuno. 7 epiche (fascia raccomandata 4-7), da 4 a 5 storie per epica (fascia 4-8),
-31 storie in tutto (fascia 20-45). Il conteggio **non comprende** le circa 25 storie di BookGrove che sotto la via
-(a) andrebbero riscritte: se lo sviluppatore sceglie quella via, il lavoro reale di SalonGrove è di 31 storie più
+32 storie in tutto (fascia 20-45). Il conteggio **non comprende** le circa 25 storie di BookGrove che sotto la via
+(a) andrebbero riscritte: se lo sviluppatore sceglie quella via, il lavoro reale di SalonGrove è di 32 storie più
 un motore di prenotazione, ed è esattamente il numero che rende la decisione del §0 quello che è.

@@ -1,0 +1,1277 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RepGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  RepGrove (catalogo #17) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/17-repgrove/artefatto-ux.html
+================================================================================
+
+  COS'È
+  -----
+  Il mockup navigabile che accompagna la cartella dell'applicazione 17 —
+  RepGrove (recensioni e reputazione per attività con sede fisica). Si apre
+  con un doppio clic, funziona da `file://` senza rete, e mostra come si
+  presenterebbe l'app dentro il backoffice appgrove. Guscio e token del
+  sistema di design vengono dal kit d'autore del catalogo
+  (`_kit/TEMPLATE-artefatto-ux.html`); i contenuti sono della proposta di
+  RepGrove, descritta in `application-description.md`.
+
+  REGOLA DI FERRO — NESSUNA RISORSA REMOTA
+  ----------------------------------------
+  Niente caratteri da rete, niente librerie, niente immagini remote, niente
+  chiamate. Solo stile e script in linea e disegni vettoriali incorporati.
+
+  I DATI SONO INVENTATI
+  ---------------------
+  Sedi, recensioni, autori, date e conteggi sono di fantasia e servono solo a
+  far vedere la forma dell'interfaccia. I recapiti usano il dominio `.test`,
+  riservato alle prove: nessuno di questi indirizzi esiste.
+
+  LE SETTE SCHERMATE E PERCHÉ CI SONO
+  -----------------------------------
+  · Panoramica ............ i quattro numeri che contano, con l'equità della
+                            settimana accanto alla media delle stelle
+  · Recensioni ............ il flusso unico multi-piattaforma, con filtro per
+                            voto e per «senza risposta»
+  · Dettaglio ............. la recensione con la bozza di risposta e i DUE
+                            gesti separati: approva, poi pubblica
+  · Richieste ............. la schermata che definisce il prodotto: la regola
+                            di equità ha due sole forme, e la terza opzione —
+                            quella vietata — è MOSTRATA e disattivata, con il
+                            motivo e la fonte
+  · Servizio erogato ...... il modulo che rende ammissibile l'invito
+  · Da confermare ......... le bozze prodotte dal livello conversazionale, che
+                            aspettano una persona, e i rifiuti spiegati
+  · Vetrina ............... riquadro per il sito e dichiarazione di trasparenza
+  · Primo avvio ........... com'è l'app vuota e com'è quando le sedi del piano
+                            sono finite (la quota è a giacenza, non a consumo)
+
+  IL VINCOLO DI PRODOTTO CHE SI VEDE, INVECE DI ESSERE NASCOSTO
+  -------------------------------------------------------------
+  RepGrove non filtra i clienti scontenti prima di chiedere la recensione: è
+  una pratica vietata da Google e da Trustpilot (descrizione §1 e §2.3). Un
+  mockup che semplicemente «non ha quel bottone» non lo racconterebbe: qui la
+  terza opzione compare, barrata, con la fonte del divieto e l'alternativa
+  ammessa. È il posizionamento dell'app, non una limitazione da nascondere.
+
+  COSA NON È STATO TOCCATO DEL GUSCIO
+  -----------------------------------
+  Il blocco dei token `:root`, le classi di base e l'instradatore in fondo.
+  Gli stili propri dell'app stanno nel blocco marcato «STILI PROPRI
+  DELL'APP», e ogni colonna di griglia aggiunta usa `minmax(0,1fr)` — mai
+  `1fr` nudo — perché la pagina non scorra in orizzontale sul telefono.
+
+  NOTE DI PROPOSTA
+  ----------------
+  I riquadri `.nota` sono le annotazioni per lo sviluppatore («perché questa
+  schermata è fatta così»). Il pulsante «Note» in alto le nasconde, per vedere
+  l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+h2.sec svg{width:18px;height:18px;flex:none;stroke:currentColor}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   Regola del kit: nessuna colonna di griglia `1fr` nuda, sempre
+   `minmax(0,1fr)`, altrimenti una tabella larga allarga la griglia e la
+   pagina scorre in orizzontale su schermo stretto.
+   ══════════════════════════════════════════════════════════════════════ */
+/* stelle del voto: disegnate con caratteri, nessuna immagine */
+.stelle{display:inline-flex;gap:1px;font-size:13px;line-height:1;white-space:nowrap}
+.stelle i{font-style:normal;color:rgb(var(--cat-amber))}
+.stelle i.off{color:rgb(var(--faint))}
+.voto-num{font-weight:800;font-size:12.5px;color:rgb(var(--muted))}
+/* estratto del testo di una recensione dentro una tabella o una scheda */
+.rec-testo{font-size:13px;color:rgb(var(--muted));line-height:1.55}
+.rec-cita{border-left:3px solid rgb(var(--border-strong));padding:2px 0 2px 12px;font-size:13.5px;line-height:1.6}
+/* piastrelle della piattaforma d'origine */
+.piatt{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:rgb(var(--muted));white-space:nowrap}
+.piatt::before{content:"";width:8px;height:8px;border-radius:50%;background:rgb(var(--faint))}
+.piatt.google::before{background:rgb(var(--cat-blue))}
+.piatt.trustpilot::before{background:rgb(var(--cat-green))}
+/* le due forme ammesse della regola di equità + la terza, vietata */
+.opzioni{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.opz{border:1.5px solid rgb(var(--border));border-radius:var(--r-lg);padding:14px;display:flex;flex-direction:column;gap:6px;background:rgb(var(--surface))}
+.opz.scelta{border-color:rgb(var(--accent));box-shadow:0 0 0 3px rgb(var(--accent)/.12)}
+.opz b{font-size:13.5px}
+.opz p{font-size:12.5px;color:rgb(var(--muted));line-height:1.5}
+.opz.vietata{border-style:dashed;border-color:rgb(var(--danger)/.55);background:rgb(var(--danger)/.05)}
+/* barrato SOLO sul titolo dell'opzione vietata: il testo che spiega
+   l'alternativa ammessa deve restare leggibile */
+.opz.vietata>b{text-decoration:line-through;color:rgb(var(--danger))}
+.opz .fonte{font-size:11.5px;color:rgb(var(--faint));line-height:1.5}
+/* anteprima del riquadro pubblico da incorporare nel sito del cliente */
+.riquadro{border:1px solid rgb(var(--border-strong));border-radius:var(--r-lg);padding:16px;background:rgb(var(--surface-2));display:flex;flex-direction:column;gap:12px}
+.riquadro-testa{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.riquadro-media{font-size:30px;font-weight:800;letter-spacing:-.03em}
+.riquadro-rec{border-top:1px solid rgb(var(--border));padding-top:10px;font-size:12.5px;color:rgb(var(--muted));line-height:1.55}
+.codice{font-family:var(--font-mono);font-size:11.5px;background:rgb(var(--surface-3));border:1px solid rgb(var(--border));border-radius:var(--r-sm);padding:10px 12px;overflow-x:auto;white-space:pre;color:rgb(var(--muted))}
+/* riquadro di una bozza in attesa di conferma umana */
+.bozza{border:1px solid rgb(var(--border));border-left:3px solid rgb(var(--warning));border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:10px;background:rgb(var(--surface))}
+.bozza.rifiutata{border-left-color:rgb(var(--danger))}
+.bozza .chi{font-size:12px;color:rgb(var(--faint))}
+/* barra della distribuzione dei voti */
+.distr{display:flex;flex-direction:column;gap:6px}
+.distr-riga{display:grid;grid-template-columns:52px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:12px;color:rgb(var(--muted))}
+.distr-bar{height:8px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.distr-bar i{display:block;height:100%;background:rgb(var(--cat-amber))}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · RepGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="elenco">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.5 2.6 5.3 5.9.9-4.2 4.1 1 5.7-5.3-2.8-5.3 2.8 1-5.7L3.5 9.7l5.9-.9L12 3.5Z"/></svg>
+      Recensioni
+    </button>
+    <button class="nav-item" data-nav="richieste">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/><path d="M8.5 12h7"/></svg>
+      Richieste di recensione
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Registra servizio <span class="pill">DEMO</span>
+    </button>
+    <button class="nav-item" data-nav="bozze">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><path d="m15 18 2 2 4-4.5"/></svg>
+      Da confermare <span class="pill">2</span>
+    </button>
+    <button class="nav-item" data-nav="vetrina">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 9h18"/><path d="M7 13h6"/></svg>
+      Vetrina e trasparenza
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>RepGrove</b> (catalogo #17). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>RepGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #17 RepGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'RepGrove',
+  id: 'recensioni',
+  categoria: 'amber',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'R',
+  claim: 'Chiedi la recensione a tutti i clienti, rispondi in un posto solo, conserva la prova di averlo fatto.',
+  metrica: 'sedi monitorate',
+  /* La metrica è a GIACENZA (stock), non a consumo: il tetto è su ciò che
+     esiste ora, non su quante cose si fanno nel mese. Per questo la
+     "finestra" dice «in questo momento» e non «questo mese». */
+  quota: { usato: 2, tetto: 5, finestra: 'in questo momento', natura: 'giacenza' }
+};
+
+/* Le due sedi dell'account dimostrativo. Nomi e indirizzi inventati. */
+const SEDI = [
+  { id:'SED-1', nome:'Officina Via Tolmino', piattaforme:['google','trustpilot'], stato:'attivo'  },
+  { id:'SED-2', nome:'Officina Corso Zara',  piattaforme:['google'],              stato:'scaduto' },
+];
+
+/* Recensioni raccolte dalle piattaforme collegate — tutte inventate.
+   `voto` da 1 a 5; `stato` è lo stato della RISPOSTA, non della recensione. */
+const RIGHE = [
+  { id:'REC-2041', autore:'Giulia M.',   piatt:'google',     sede:'Via Tolmino', voto:2, data:'02/08/2026',
+    testo:'Preventivo rispettato ma ho aspettato due ore oltre l’orario concordato e nessuno mi ha avvisata.', stato:'da_rispondere' },
+  { id:'REC-2040', autore:'Marco T.',    piatt:'google',     sede:'Corso Zara',  voto:5, data:'02/08/2026',
+    testo:'Cambio gomme in mezz’ora, prezzo esattamente quello detto al telefono. Torno di sicuro.', stato:'bozza_pronta' },
+  { id:'REC-2039', autore:'Sara P.',     piatt:'trustpilot', sede:'Via Tolmino', voto:4, data:'31/07/2026',
+    testo:'Lavoro fatto bene, unica nota il parcheggio scomodo. Personale gentile.', stato:'pubblicata' },
+  { id:'REC-2038', autore:'A. Ferretti', piatt:'google',     sede:'Via Tolmino', voto:1, data:'29/07/2026',
+    testo:'Recensione che parla di un’altra officina, con il nome di un’altra città: non ho mai messo piede qui.', stato:'segnalata' },
+  { id:'REC-2037', autore:'Luca B.',     piatt:'google',     sede:'Corso Zara',  voto:5, data:'28/07/2026',
+    testo:'Mi hanno spiegato cosa non serviva fare. Raro.', stato:'pubblicata' },
+  { id:'REC-2036', autore:'Elena V.',    piatt:'trustpilot', sede:'Via Tolmino', voto:3, data:'26/07/2026',
+    testo:'Tutto corretto, ma la sala d’attesa andrebbe rinfrescata.', stato:'da_rispondere' },
+  { id:'REC-2035', autore:'Davide R.',   piatt:'google',     sede:'Via Tolmino', voto:5, data:'24/07/2026',
+    testo:'Puntuali e chiari sul costo prima di iniziare.', stato:'pubblicata' },
+  { id:'REC-2034', autore:'Chiara N.',   piatt:'google',     sede:'Corso Zara',  voto:4, data:'21/07/2026',
+    testo:'Bene il lavoro, un po’ lunga l’attesa al telefono per prendere l’appuntamento.', stato:'pubblicata' },
+];
+
+const STATI = {
+  da_rispondere: { et:'Da rispondere',       cl:'b-bad'     },
+  bozza_pronta:  { et:'Bozza pronta',        cl:'b-warn'    },
+  pubblicata:    { et:'Risposta pubblicata', cl:'b-ok'      },
+  segnalata:     { et:'Segnalata',           cl:'b-neutral' },
+};
+
+/* Il lotto di inviti della settimana: chi verrebbe invitato e chi no, con il
+   motivo. È la PROVA DI EQUITÀ, e il motivo è obbligatorio: un invito non
+   partito senza motivo registrato è un difetto (descrizione §4). */
+const LOTTO = [
+  { cli:'Cliente 4821', quando:'02/08 · 09:10', esito:'invito', motivo:'—' },
+  { cli:'Cliente 4822', quando:'02/08 · 10:40', esito:'invito', motivo:'—' },
+  { cli:'Cliente 4823', quando:'02/08 · 11:15', esito:'no',     motivo:'Nessun recapito registrato' },
+  { cli:'Cliente 4824', quando:'01/08 · 16:05', esito:'invito', motivo:'—' },
+  { cli:'Cliente 4825', quando:'01/08 · 17:30', esito:'no',     motivo:'Ha chiesto di non essere contattato' },
+  { cli:'Cliente 4826', quando:'30/07 · 08:55', esito:'no',     motivo:'Già invitato per lo stesso servizio' },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* PROPRIO DELL'APP — le stelle del voto, disegnate con caratteri: nessuna
+   immagine, nessun carattere scaricato. Il numero accanto serve a chi non
+   distingue i colori. */
+const stelle = v => `<span class="stelle" role="img" aria-label="${v} stelle su 5">${
+  [1,2,3,4,5].map(i => `<i class="${i<=v?'':'off'}" aria-hidden="true">★</i>`).join('')
+}</span> <span class="voto-num">${v},0</span>`;
+const NOME_PIATT = { google:'Google', trustpilot:'Trustpilot' };
+const piatt = p => `<span class="piatt ${p}">${NOME_PIATT[p] ?? p}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota raggiunta.
+   `livello`: 'vicino' (avviso giallo) oppure 'raggiunto' (blocco rosso).
+   Il testo deve dire SEMPRE tre cose: cosa è successo, cosa non si può
+   più fare, come si rimedia. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai collegato tutte le <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> del tuo piano.
+      Per collegarne un'altra passa a un piano superiore oppure scollega una sede: la quota è a giacenza, non si azzera a
+      fine mese perché una sede non si consuma.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Hai <b>${APP.quota.usato}</b> di <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} ${esc(APP.quota.finestra)}.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: come sta la reputazione e cosa chiede attenzione. */
+function vPanoramica(){
+  const senzaRisposta = RIGHE.filter(r => r.stato === 'da_rispondere').length;
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> La rassegna di mercato dice che il cliente tipo vuole «solo chiedere ai clienti e
+    vedere le risposte» (descrizione §2.5): gli indicatori sono quattro e uno solo è la media delle stelle. Gli altri tre
+    dicono <i>cosa devi fare</i>: quante recensioni aspettano una risposta, quanti clienti serviti hai invitato rispetto al
+    totale — che è la <b>prova di equità</b> — e quante recensioni nuove sono arrivate. La media da sola non fa agire
+    nessuno.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Registra un servizio</button>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>Il collegamento a Google della sede <b>Officina Corso Zara</b> è <b>scaduto</b>: da tre giorni non arrivano
+    recensioni nuove per quella sede.</span>
+    <span class="spacer"></span><button class="btn btn-primary btn-sm">Ricollega la sede</button>
+  </div>
+
+  <div class="alert a-ok">${I.check}
+    <span>Ci sono <b>2 bozze</b> in attesa di una persona: una risposta da pubblicare e un lotto di inviti da mandare.</span>
+    <span class="spacer"></span><button class="btn btn-ghost btn-sm" data-nav="bozze">Vai a «Da confermare»</button>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Media delle stelle',     v:'4,1', d:'+0,2 sul mese scorso', tono:'up'},
+    {k:'Recensioni nuove',       v:'6',   d:'ultimi 7 giorni'},
+    {k:'Senza risposta',         v:String(senzaRisposta), d:'1 negativa da 2 giorni', tono:'down'},
+    {k:'Invitati / clienti serviti', v:'18 / 18', d:'nessuna esclusione arbitraria', tono:'up'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Ultime recensioni">
+      <div class="card-pad"><h2 class="sec">Ultime recensioni</h2><p class="sec-sub">Da tutte le piattaforme collegate, dalla più recente.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Voto</th><th>Recensione</th><th>Sede</th><th>Origine</th><th>Stato</th></tr></thead>
+        <tbody>${RIGHE.slice(0,4).map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td>${stelle(r.voto)}</td>
+            <td><b>${esc(r.autore)}</b><div class="rec-testo">${esc(r.testo.slice(0,74))}…</div></td>
+            <td>${esc(r.sede)}</td><td>${piatt(r.piatt)}</td><td>${badge(r.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">La quota è <b>a giacenza</b>: conta le sedi collegate adesso, non quante recensioni raccogli.
+        Non contiamo gli inviti, e non è un dettaglio — contarli darebbe un motivo economico per invitarne di meno.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm" data-nav="richieste">${I.scarica} Registro di equità</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Distribuzione dei voti</h2>
+        <div class="distr">
+          ${[[5,58],[4,22],[3,9],[2,6],[1,5]].map(([v,p])=>`
+            <div class="distr-riga"><span>${v} stelle</span><span class="distr-bar"><i style="width:${p}%"></i></span><span>${p}%</span></div>`).join('')}
+        </div>
+        <p class="sec-sub">38 recensioni in tutto sulle due sedi.</p>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni si comandano dal livello conversazionale. Esempi: «cosa mi è arrivato di brutto
+        oggi?», «ho invitato tutti quelli di ieri?», «prepara una risposta alla recensione di Giulia».
+        Le azioni che scrivono producono una <b>bozza</b> e aspettano una persona.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Recensioni: il flusso unico multi-piattaforma. */
+function vElenco(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.testo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.autore.toLowerCase().includes(q) || r.sede.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Recensioni.</b> Un flusso solo per tutte le piattaforme collegate: se il titolare deve guardare in
+    due posti, tornerà a non guardare affatto. Il filtro che conta davvero è «senza risposta», non la piattaforma. Ogni riga
+    porta l'<b>attribuzione all'origine</b>, che non è una gentilezza ma una condizione d'uso delle piattaforme (storia 0010).`)}
+  <div class="page-h">
+    <div class="txt"><h1>Recensioni</h1><p>Tutte le recensioni delle sedi collegate, dalla più recente.</p></div>
+    <button class="btn btn-ghost" data-nav="richieste">Richieste di recensione</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca nel testo, nell'autore o nella sede…" value="${esc(S.q)}" aria-label="Cerca fra le recensioni">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato della risposta">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} recension${trovate.length===1?'e':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Voto</th><th>Recensione</th><th>Sede</th><th>Origine</th><th>Data</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td>${stelle(r.voto)}</td>
+          <td><b>${esc(r.autore)}</b><div class="rec-testo">${esc(r.testo.slice(0,86))}…</div></td>
+          <td>${esc(r.sede)}</td><td>${piatt(r.piatt)}</td><td>${esc(r.data)}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessuna recensione corrisponde ai filtri',
+      'Prova con un’altra parola, oppure azzera i filtri per rivedere tutto il flusso.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio della recensione: bozza di risposta e i due gesti separati. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  return `
+  ${nota(`<b>Proposta — Dettaglio e risposta.</b> È l'unico punto dell'app in cui qualcosa esce verso il mondo a nome del
+    cliente, e per questo i gesti sono <b>due e separati</b>: prima si approva il testo, poi si conferma la pubblicazione
+    vedendo esattamente cosa verrà pubblicato e dove. Non c'è nessuna impostazione per saltare il secondo gesto: la conferma
+    sta nella macchina a stati, non nell'interfaccia (storia 0019). Il controllo sui dati personali è un <i>avviso</i>, non
+    un blocco: bloccare per un falso positivo spingerebbe a scrivere le risposte fuori dall'app.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>Recensione di ${esc(r.autore)}</h1>${badge(r.stato)}</div>
+      <p class="mono">${esc(r.id)} · ${esc(r.sede)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna alle recensioni</button>
+  </div>
+
+  <div class="detail-grid">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <div class="row">${stelle(r.voto)} ${piatt(r.piatt)} <span class="sec-sub">${esc(r.data)}</span></div>
+        <p class="rec-cita">${esc(r.testo)}</p>
+        <div class="dl">
+          <div class="dl-row"><span class="k">Autore pubblico</span><span class="v">${esc(r.autore)}</span></div>
+          <div class="dl-row"><span class="k">Sede</span><span class="v">${esc(r.sede)}</span></div>
+          <div class="dl-row"><span class="k">Origine</span><span class="v">${NOME_PIATT[r.piatt]}</span></div>
+          <div class="dl-row"><span class="k">Raccolta il</span><span class="v">${esc(r.data)} · 06:10</span></div>
+        </div>
+      </div>
+
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <h2 class="sec">Bozza di risposta</h2>
+        <p class="sec-sub">Proposta dall'assistente, modificabile. Finché non la approvi resta una bozza: nessuno la vede.</p>
+        <div class="field">
+          <label for="i-risposta">Testo della risposta</label>
+          <textarea id="i-risposta">Buongiorno e grazie per averci scritto: aspettare due ore senza un avviso non è il servizio che vogliamo dare. Abbiamo cambiato il modo in cui avvisiamo dei ritardi. Se vuole passare, rivediamo insieme il lavoro fatto.</textarea>
+          <span class="hint">Firmata a nome dell'officina. Evita di citare dati che il cliente non ha scritto nella recensione.</span>
+        </div>
+        <div class="alert a-warn">${I.warn}
+          <span>Nel testo c'è <b>«due ore»</b>, che riprende la recensione: va bene. Se aggiungessi il cognome, la targa o un
+          numero di telefono, li vedrebbero tutti — e non si possono più togliere.</span>
+        </div>
+        <div class="row">
+          <button class="btn btn-primary">Approva la bozza</button>
+          <button class="btn btn-ghost" disabled title="Prima va approvata">Pubblica su ${NOME_PIATT[r.piatt]}</button>
+          <span class="spacer" style="flex:1"></span>
+          <button class="btn btn-ghost" data-modale="apri"
+            data-titolo="Segnalare questa recensione?"
+            data-testo="La segnalazione è un atto formale verso la piattaforma: porta il motivo normativo, la tua identità e una dichiarazione di buona fede. È l'unica strada offerta contro una recensione non conforme — non esiste nessuna funzione «fai sparire».">Segnala alla piattaforma</button>
+        </div>
+        <p class="sec-sub">I due gesti restano separati anche quando la richiesta arriva da una chat: l'assistente prepara,
+        la persona approva e conferma.</p>
+      </div>
+    </div>
+
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Cronologia</h2>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Servizio erogato registrato</div><div class="when">28/07/2026 · 17:20</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Invito inviato per posta elettronica</div><div class="when">29/07/2026 · 09:00</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Recensione pubblicata su ${NOME_PIATT[r.piatt]}</div><div class="when">${esc(r.data)} · 21:44</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Bozza di risposta preparata dall'assistente</div><div class="when">03/08/2026 · 08:05</div></div></div>
+      </div>
+      <p class="sec-sub" style="margin-top:10px">L'invito era partito perché il servizio era stato erogato: è il legame che
+      la legge italiana 34/2026 chiede fra recensione e <b>fruizione effettiva</b>.</p>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Richieste di recensione: la regola di equità e il lotto.
+   È la schermata che definisce il prodotto: la terza opzione, quella vietata,
+   si VEDE ed è disattivata, con il motivo e la fonte. */
+function vRichieste(){
+  const invitati = LOTTO.filter(x => x.esito === 'invito').length;
+  const esclusi  = LOTTO.length - invitati;
+  return `
+  ${nota(`<b>Proposta — Richieste di recensione.</b> Qui sta il posizionamento dell'app. Le forme ammesse sono due, e
+    <i>nessuna delle due guarda se il cliente è contento</i>: «tutti» oppure «uno ogni N» con un criterio imparziale, che
+    Trustpilot ammette espressamente. La terza opzione — il filtro dei clienti scontenti, venduto anche come «sondaggio
+    interno di qualità» — <b>si mostra invece di nasconderla</b>: chi arriva da un altro fornitore la cerca, e deve trovare
+    la risposta qui dentro, con la fonte del divieto, non in un articolo del blog. Nel prodotto non è disattivata: <b>non
+    esiste</b>, nemmeno come parametro nascosto.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Richieste di recensione</h1><p>Chi viene invitato, con quale regola, e la prova di averlo fatto.</p></div>
+    <button class="btn btn-ghost" data-nav="nuovo">${I.piu} Registra un servizio</button>
+  </div>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 class="sec">Regola di equità</h2>
+      <p class="sec-sub">In vigore dal 12/05/2026, impostata da Marco. Le regole non si modificano: se ne registra una nuova
+      che vale da una data — è materiale di prova.</p>
+    </div>
+    <div class="opzioni">
+      <div class="opz scelta">
+        <b>Invita tutti</b>
+        <p>Ogni cliente a cui è stato erogato un servizio riceve lo stesso invito, con lo stesso testo.</p>
+        <span class="badge b-ok">${I.check} In vigore</span>
+      </div>
+      <div class="opz">
+        <b>Invita uno ogni N</b>
+        <p>Un cliente ogni tre, scelto con un criterio indipendente dalla soddisfazione. Serve a chi ha volumi alti e non
+        vuole inondare le piattaforme.</p>
+        <span class="sec-sub">Ammesso espressamente da Trustpilot.</span>
+      </div>
+      <div class="opz vietata">
+        <b>Invita solo i clienti soddisfatti</b>
+        <p>Non c'è, e non è una funzione mancante: è la pratica per cui le piattaforme sospendono il profilo del
+        <i>tuo</i> negozio — non il nostro. Vale anche se la chiami «sondaggio interno»: se l'esito decide chi riceve il
+        collegamento pubblico, è un filtro.</p>
+        <span class="fonte">Google, «Prohibited &amp; restricted content»: vietata la sollecitazione selettiva di recensioni
+        positive · Trustpilot, «Guidelines for businesses» (feb. 2026): vietato scegliere chi invitare, con conseguenze fino
+        all'avviso al consumatore pubblicato sul profilo.</span>
+        <span class="fonte"><b>Cosa puoi fare invece:</b> invitare tutti, oppure uno ogni N. Il giudizio interno lo puoi
+        raccogliere — semplicemente non decide chi invitare.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-pad" style="display:flex;flex-wrap:wrap;gap:12px;align-items:baseline">
+      <div><h2 class="sec">Lotto della settimana</h2><p class="sec-sub">Chi verrebbe invitato e chi no, con il motivo. Il motivo è obbligatorio: un invito non partito senza motivo registrato è un difetto.</p></div>
+      <span style="flex:1"></span>
+      <span class="badge b-ok">${invitati} da invitare</span>
+      <span class="badge b-neutral">${esclusi} esclusi con motivo</span>
+      <button class="btn btn-ghost btn-sm">${I.scarica} Esporta il registro di equità</button>
+    </div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Cliente servito</th><th>Servizio erogato</th><th>Esito</th><th>Motivo</th></tr></thead>
+      <tbody>${LOTTO.map(x=>`
+        <tr>
+          <td class="mono">${esc(x.cli)}</td><td>${esc(x.quando)}</td>
+          <td>${x.esito==='invito' ? '<span class="badge b-ok">Invito</span>' : '<span class="badge b-neutral">Non inviato</span>'}</td>
+          <td>${esc(x.motivo)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="card-pad">
+      <div class="alert a-warn">${I.clock}
+        <span>Gli inviti partono entro la <b>finestra dei 30 giorni</b> dalla fruizione: oltre, in Italia la recensione non
+        sarebbe più conforme alla legge 34/2026 e l'invito non parte. Un solo sollecito, mai due.</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Registrazione del servizio erogato: il fatto che rende ammissibile l'invito. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Registra un servizio.</b> L'invito nasce da un fatto, non da un elenco di contatti: qualcuno è
+    stato servito. Il modulo è corto perché lo compila chi sta alla cassa. Nota cosa <b>non</b> c'è: nessuna domanda «come è
+    andata?», nessun campo «cliente soddisfatto», nessuna casella «invita solo se…». Se la suite è presente, questi fatti
+    arrivano da soli dagli appuntamenti o dalle fatture e questo modulo serve solo per le eccezioni.`)}
+  <div class="page-h"><div class="txt"><h1>Registra un servizio erogato</h1><p>Da qui nasce l'invito, con la stessa regola per tutti.</p></div></div>
+
+  ${avvisoQuota('vicino')}
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field" id="f-titolo">
+        <label for="i-titolo">Cliente servito *</label>
+        <input id="i-titolo" name="titolo" placeholder="Nome e cognome, o riferimento della scheda">
+        <span class="hint">Se hai l'anagrafica condivisa, cerca qui dentro invece di riscrivere.</span>
+      </div>
+      <div class="field">
+        <label for="i-sede">Sede</label>
+        <select id="i-sede">${SEDI.map(s=>`<option>${esc(s.nome)}</option>`).join('')}</select>
+        <span class="hint">Ogni sede ha il suo profilo e il suo punteggio.</span>
+      </div>
+      <div class="field">
+        <label for="i-data">Servizio erogato il</label>
+        <input id="i-data" type="date" value="2026-08-03">
+        <span class="hint">Da qui parte la finestra dei 30 giorni.</span>
+      </div>
+      <div class="field">
+        <label for="i-recapito">Recapito per l'invito</label>
+        <input id="i-recapito" type="email" placeholder="nome@esempio.test">
+        <span class="hint">Senza recapito l'invito non parte, e nel registro resta scritto il motivo.</span>
+      </div>
+      <div class="field">
+        <label for="i-origine">Origine del fatto</label>
+        <select id="i-origine"><option>Registrato a mano</option><option>Appuntamento erogato</option><option>Fattura emessa</option></select>
+      </div>
+      <div class="field">
+        <label for="i-riferimento">Riferimento del documento</label>
+        <input id="i-riferimento" placeholder="Es. scontrino 1187">
+        <span class="hint">Lo scontrino crea presunzione di autenticità della recensione (legge 34/2026).</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Note interne</label>
+        <textarea id="i-note" placeholder="Annotazioni per i colleghi…"></textarea>
+        <span class="hint">Campo libero e interno: non influenza in alcun modo chi viene invitato.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="richieste">Annulla</button>
+      <button type="submit" class="btn btn-primary">Registra il servizio</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Da confermare: le bozze del livello conversazionale e i rifiuti. */
+function vBozze(){
+  return `
+  ${nota(`<b>Proposta — Da confermare.</b> È il luogo in cui atterra tutto ciò che un assistente ha <i>preparato</i>. La
+    regola del catalogo è che l'intelligenza artificiale prepara e la persona approva: qui si vede il testo definitivo e la
+    destinazione prima di dire di sì. La conferma è legata alla singola bozza, scade, e non è riutilizzabile. Le due
+    operazioni irreversibili — pubblicare una risposta e inviare una segnalazione — non hanno alcuna impostazione per
+    saltare questo passaggio.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Da confermare</h1><p>Quello che l'assistente ha preparato e aspetta una persona.</p></div>
+  </div>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+    <div class="bozza">
+      <div class="row"><span class="badge b-warn">${I.clock} Scade fra 41 ore</span><span class="sec-sub">Pubblicazione di una risposta · effetto pubblico e irreversibile</span></div>
+      <div><b>Risposta a Marco T. (5 stelle, Google, Corso Zara)</b>
+        <p class="rec-cita">Grazie Marco, ci fa piacere che il preventivo telefonico sia stato rispettato: è il minimo che
+        ci chiediamo. La aspettiamo al prossimo cambio.</p>
+      </div>
+      <div class="chi">Preparata dall'assistente su richiesta di Marco Sindoni · 03/08/2026 · 08:12</div>
+      <div class="row">
+        <button class="btn btn-primary" data-modale="apri"
+          data-titolo="Pubblicare questa risposta su Google?"
+          data-testo="Da questo momento il testo è pubblico sulla scheda dell'attività, a nome dell'officina, e resta visibile ai clienti futuri. Puoi modificarlo dopo, ma non puoi far finta che non sia mai stato pubblicato.">Leggi e pubblica</button>
+        <button class="btn btn-ghost">Modifica il testo</button>
+        <button class="btn btn-ghost">Rifiuta la bozza</button>
+      </div>
+    </div>
+
+    <div class="bozza">
+      <div class="row"><span class="badge b-warn">${I.clock} Scade fra 6 giorni</span><span class="sec-sub">Lotto di inviti · 4 messaggi verso persone vere</span></div>
+      <div><b>Inviti per i servizi erogati dal 30/07 al 02/08 — sede Via Tolmino</b>
+        <p class="sec-sub">4 clienti da invitare, 2 esclusi con motivo (nessun recapito; ha chiesto di non essere
+        contattato). Regola applicata: <b>invita tutti</b>.</p>
+      </div>
+      <div class="chi">Preparata dall'assistente · 03/08/2026 · 07:55</div>
+      <div class="row">
+        <button class="btn btn-primary" data-modale="apri"
+          data-titolo="Mandare i 4 inviti?"
+          data-testo="Partono 4 messaggi verso altrettante persone, con il collegamento ufficiale della piattaforma. Nessun messaggio si può richiamare. I 2 clienti esclusi restano registrati con il loro motivo: è la prova che l'invito non è stato selettivo.">Rivedi e manda</button>
+        <button class="btn btn-ghost" data-nav="richieste">Vedi chi è escluso e perché</button>
+        <button class="btn btn-ghost">Rifiuta la bozza</button>
+      </div>
+    </div>
+
+    <div class="bozza rifiutata">
+      <div class="row"><span class="badge b-bad">${I.block} Richiesta rifiutata</span><span class="sec-sub">03/08/2026 · 07:51</span></div>
+      <div><b>«Manda l'invito solo a quelli che si sono trovati bene»</b>
+        <p class="sec-sub">Categoria: <b>sollecitazione selettiva</b>. Lo strumento non ha nessun parametro per farlo, e
+        non lo avrà: è la pratica per cui le piattaforme sospendono il profilo dell'attività.
+        <br><b>Alternative ammesse:</b> invitare tutti, oppure uno ogni N con criterio imparziale.</p>
+      </div>
+      <div class="chi">Fonte del divieto: politica sui contenuti di Google · linee guida Trustpilot per le imprese, feb. 2026.</div>
+      <div class="row"><button class="btn btn-ghost" data-nav="richieste">Vai alla regola di equità</button></div>
+    </div>
+  </div>`;
+}
+
+/* SCHERMATA — Vetrina: riquadro per il sito e dichiarazione di trasparenza. */
+function vVetrina(){
+  return `
+  ${nota(`<b>Proposta — Vetrina e trasparenza.</b> Due cose che stanno insieme perché la legge le tiene insieme: chi mostra
+    recensioni deve dichiarare <i>se e come</i> verifica che vengano da clienti veri (direttiva europea «omnibus»). Il testo
+    lo genera l'app da com'è configurata davvero, e il riquadro non si pubblica finché il cliente non l'ha letto e accettato.
+    Nelle impostazioni del riquadro manca una cosa sola, e manca apposta: <b>il filtro per voto</b>. Si può scegliere quante
+    recensioni mostrare, mai quali stelle.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Vetrina e trasparenza</h1><p>Le recensioni sul tuo sito, con la dichiarazione che la legge chiede.</p></div>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>La dichiarazione di trasparenza è <b>da riconfermare</b>: hai cambiato la regola di equità il 12/05 e il testo
+    pubblicato non lo dice ancora. Hai 7 giorni, poi il riquadro smette di servire dati.</span>
+    <span class="spacer"></span><button class="btn btn-primary btn-sm">Rileggi e accetta</button>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+      <div><h2 class="sec">Anteprima del riquadro</h2><p class="sec-sub">Così lo vedono i visitatori del tuo sito.</p></div>
+      <div class="riquadro">
+        <div class="riquadro-testa">
+          <span class="riquadro-media">4,1</span>${stelle(4)}
+          <span class="sec-sub">su <b>38 recensioni</b> · Officina Via Tolmino</span>
+        </div>
+        <div class="riquadro-rec"><b>Sara P.</b> ${stelle(4)}<br>Lavoro fatto bene, unica nota il parcheggio scomodo. Personale gentile. ${piatt('trustpilot')}</div>
+        <div class="riquadro-rec"><b>Elena V.</b> ${stelle(3)}<br>Tutto corretto, ma la sala d’attesa andrebbe rinfrescata. ${piatt('trustpilot')}</div>
+        <div class="riquadro-rec"><b>Giulia M.</b> ${stelle(2)}<br>Preventivo rispettato ma ho aspettato due ore oltre l’orario concordato. ${piatt('google')}</div>
+        <div class="riquadro-rec">La media e il totale sono quelli veri di tutte le 38 recensioni, non delle tre mostrate —
+        compresa quella da due stelle, che infatti è qui. <b>Come verifichiamo le recensioni</b></div>
+      </div>
+      <div>
+        <p class="sec-sub" style="margin-bottom:6px">Codice da incollare nel sito:</p>
+        <div class="codice">&lt;iframe src="https://app.appgrove.test/recensioni/riquadro/9f2c…"
+        width="100%" height="420" title="Recensioni"&gt;&lt;/iframe&gt;</div>
+      </div>
+    </div>
+
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <h2 class="sec">Impostazioni</h2>
+        <div class="field">
+          <label for="i-quante">Quante recensioni mostrare</label>
+          <select id="i-quante"><option>3</option><option selected>5</option><option>10</option></select>
+        </div>
+        <div class="field">
+          <label for="i-ordine">Ordinamento</label>
+          <select id="i-ordine"><option selected>Dalla più recente</option></select>
+          <span class="hint">C'è un solo ordinamento, ed è il tempo.</span>
+        </div>
+        <div class="field">
+          <label for="i-lingua">Lingua delle etichette</label>
+          <select id="i-lingua"><option selected>Italiano</option><option>English</option><option>Français</option><option>Español</option><option>Deutsch</option></select>
+        </div>
+        <div class="opz vietata">
+          <b>Mostra solo da 4 stelle in su</b>
+          <p>Non esiste. Far passare una selezione delle recensioni migliori per l'insieme delle recensioni è una pratica
+          ingannevole: si può limitare <i>quante</i> se ne vedono, mai <i>quali</i>.</p>
+        </div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Dichiarazione di trasparenza</h2>
+        <p class="rec-cita">Le recensioni mostrate provengono da Google e Trustpilot e sono raccolte invitando <b>tutti</b> i
+        clienti a cui è stato erogato un servizio, con lo stesso messaggio e senza alcun incentivo. Non selezioniamo chi
+        invitare in base alla soddisfazione e non filtriamo per voto le recensioni mostrate.</p>
+        <p class="sec-sub">Generata dall'app da com'è configurata: le frasi non si possono riscrivere, puoi solo aggiungere
+        un paragrafo tuo. Disponibile in 5 lingue.</p>
+        <div class="row"><button class="btn btn-primary btn-sm">Rileggi e accetta</button><button class="btn btn-ghost btn-sm">${I.scarica} Scarica</button></div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e quota esaurita: i due stati che si dimenticano sempre. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Il primo giorno l'app è vuota e la prima cosa da fare non è
+    «creare un elemento» ma <b>collegare una sede</b>: senza delega non arriva niente. Il giorno in cui le sedi del piano
+    finiscono, il messaggio deve dire che la quota è a <b>giacenza</b> — si libera scollegando, non aspettando il mese nuovo.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta RepGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'Non c’è ancora nessuna sede',
+    'Aggiungi la tua prima sede e collegala al profilo Google dell’attività: da lì cominciano ad arrivare le recensioni. Poi bastano due minuti per impostare la regola con cui inviti i clienti.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary">${I.piu} Aggiungi la prima sede</button><button class="btn btn-ghost">Come funziona il collegamento</button></div>`)}
+  <h2 class="sec">Quota esaurita</h2>
+  ${avvisoQuota('raggiunto')}
+  <div class="card card-pad">
+    <p class="sec-sub">Con la quota esaurita continui a leggere le recensioni delle sedi già collegate, a rispondere e a
+    invitare: si blocca <b>solo</b> il collegamento di una sede nuova. E il passaggio a un piano più piccolo resta bloccato
+    finché le sedi collegate superano il tetto di destinazione — non cancelliamo dati per farci stare un piano.</p>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica: ['Panoramica',                vPanoramica],
+  elenco:     ['Recensioni',                vElenco],
+  dettaglio:  ['Dettaglio della recensione',vDettaglio],
+  richieste:  ['Richieste di recensione',   vRichieste],
+  nuovo:      ['Registra un servizio',      vNuovo],
+  bozze:      ['Da confermare',             vBozze],
+  vetrina:    ['Vetrina e trasparenza',     vVetrina],
+  vuoto:      ['Primo avvio',               vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il titolo è obbligatorio.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('elenco');
+  });
+
+  /* apertura della modale: ogni pulsante porta il proprio titolo e il proprio
+     testo, perché in questa app le conferme non sono tutte uguali — pubblicare
+     una risposta e mandare un lotto di inviti hanno conseguenze diverse. */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale(
+      b.dataset.titolo ?? 'Confermare l’operazione?',
+      b.dataset.testo  ?? 'L’operazione ha effetti verso l’esterno e non si può annullare.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>
