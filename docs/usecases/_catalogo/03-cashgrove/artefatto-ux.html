@@ -35,11 +35,14 @@
   LE SCHERMATE
   ------------
   · panoramica ....... anzianità dei crediti, indicatori, quota, prossimi solleciti
-  · crediti .......... elenco con ricerca, filtro di stato e paginazione
-  · dettaglio ........ scheda del credito con la cronologia dei solleciti
-  · sequenza ......... il piano dei solleciti, con i limiti di condotta
+  · elenco ........... i crediti, con ricerca, filtro di stato e paginazione
+  · dettaglio ........ scheda del credito: importi, mora, registro dei solleciti
+  · sequenza ......... la scala dei passi, ciò che la ferma, i limiti del motore
   · nuovo ............ registrazione di un credito a mano
   · vuoto ............ primo avvio e quota esaurita
+
+  «Oggi» del mockup è lunedì 3 agosto 2026: date, ritardi e avanzamento della
+  sequenza sono coerenti fra loro a partire da quella giornata.
 
   LE NOTE DI PROPOSTA
   -------------------
@@ -312,7 +315,45 @@ table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric
 /* ══════════════════════════════════════════════════════════════════════
    STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
    ══════════════════════════════════════════════════════════════════════ */
-/* … */
+
+/* ── La scala dei passi di sollecito (schermata «Sequenza») ──────────────
+   Una riga per passo: quando scatta, il numero, che cosa dice. I passi già
+   partiti su un dato credito si distinguono per COLORE **e** per etichetta,
+   mai per il solo colore. */
+.scala{display:flex;flex-direction:column}
+.passo{display:grid;grid-template-columns:104px 26px 1fr;gap:13px;padding:15px 0;align-items:start}
+.passo + .passo{border-top:1px solid rgb(var(--border))}
+.passo .quando{text-align:right;font-family:var(--font-mono);font-weight:700;font-size:13.5px;padding-top:1px}
+.passo .quando small{display:block;font-family:var(--font-sans);font-weight:600;font-size:11px;color:rgb(var(--faint));letter-spacing:0}
+.passo .segno{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;background:rgb(var(--accent)/.14);color:rgb(var(--accent))}
+.passo .corpo{display:flex;flex-direction:column;gap:5px;min-width:0}
+.passo .corpo .titolo{font-weight:700}
+.passo .corpo .testo{font-size:12.5px;color:rgb(var(--muted))}
+.passo-fine{display:grid;grid-template-columns:104px 26px 1fr;gap:13px;padding:15px 0;border-top:1px dashed rgb(var(--border-strong));font-size:13px;color:rgb(var(--muted))}
+.passo-fine .segno{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+.passo-fine .segno svg{width:14px;height:14px;stroke:currentColor}
+
+/* avanzamento di un credito lungo la scala: barra + «2 di 4» */
+.avanz{display:flex;align-items:center;gap:9px;min-width:118px}
+.avanz .quota-bar{flex:1;min-width:56px}
+.avanz .mono{font-size:12px;font-weight:700;color:rgb(var(--muted));white-space:nowrap}
+
+/* elenco dei freni e dei limiti: voce a capo, motivo sotto */
+.regole{display:flex;flex-direction:column;gap:11px;font-size:13px}
+.regole li{list-style:none;display:flex;gap:9px;align-items:flex-start}
+.regole li svg{width:15px;height:15px;flex:none;margin-top:3px;stroke:rgb(var(--accent))}
+.regole li b{display:block}
+.regole li span{color:rgb(var(--muted));font-size:12.5px}
+
+/* collegamenti interni scritti dentro al testo */
+a[data-nav]{cursor:pointer;font-weight:700}
+
+/* icona in linea dentro un titolo di sezione: senza misure esplicite un
+   disegno vettoriale prende tutta la larghezza disponibile e sfonda la scheda */
+h2.sec svg{width:17px;height:17px;stroke:currentColor;vertical-align:-3px}
+
+/* il bottone di un avviso non va mai mandato a capo a metà */
+.alert .btn{white-space:nowrap}
 
 /* ── Adattamento agli schermi stretti ───────────────────────────────── */
 @media (max-width:900px){
@@ -428,20 +469,23 @@ table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric
 <!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
 <div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
   <div class="modal">
-    <h3 id="modale-titolo">Titolo della conferma</h3>
-    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <h3 id="modale-titolo">Inviare adesso il sollecito?</h3>
+    <p id="modale-testo">Il messaggio parte subito verso il debitore e non si richiama indietro.</p>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
-      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+      <button class="btn btn-primary" data-modale="conferma">Sì, invia adesso</button>
     </div>
   </div>
 </div>
 
 <script>
 /* ══════════════════════════════════════════════════════════════════════
-   1. DATI FINTI — sostituire con quelli dell'app.
+   1. DATI FINTI DI CASHGROVE — denominazioni di fantasia, importi inventati.
       Servono solo a far vedere la forma dell'interfaccia: non devono
       essere realistici al punto da sembrare dati veri di un cliente.
+      Sono però COERENTI fra loro — date, ritardi, fasce di anzianità e
+      avanzamento della sequenza tornano — perché un mockup che si contraddice
+      da solo fa perdere tempo a chi lo legge.
    ══════════════════════════════════════════════════════════════════════ */
 const APP = {
   nome: 'CashGrove',
@@ -454,19 +498,83 @@ const APP = {
   quota: { usato: 128, tetto: 150, finestra: 'in questo momento' }
 };
 
+/* «Oggi» del mockup: lunedì 3 agosto 2026. Tutte le date qui sotto sono
+   coerenti con questa giornata e con la sequenza predefinita (−3, +7, +21, +45),
+   così che l'avanzamento raccontato nella schermata «Sequenza» torni davvero. */
+const OGGI = 'lunedì 3 agosto 2026';
+
+/* La sequenza predefinita dell'account (storia 0011, RF-6): quattro passi, il
+   primo PRIMA della scadenza. Lo scarto è in giorni rispetto alla scadenza. */
+const SEQUENZA = {
+  nome: 'Sequenza predefinita dell’account',
+  attiva: true,
+  passi: [
+    { n:1, scarto:-3, canale:'Posta elettronica', tono:'Cortese', modello:'Promemoria di cortesia',
+      testo:'Non è ancora un sollecito: ricorda una scadenza che sta arrivando. Intercetta i ritardi per dimenticanza, che sono la maggior parte.' },
+    { n:2, scarto:7,  canale:'Posta elettronica', tono:'Cortese', modello:'Primo sollecito',
+      testo:'Dà per scontata la buona fede e chiede una data. Se il debitore ha più documenti scaduti, ne porta l’elenco in un messaggio solo.' },
+    { n:3, scarto:21, canale:'Posta elettronica + messaggio breve', tono:'Fermo', modello:'Secondo sollecito',
+      testo:'Cambia registro: nomina importo, scadenza superata e il fatto che gli interessi di mora maturano. Il messaggio breve non è mai il primo passo (storia 0015).' },
+    { n:4, scarto:45, canale:'Posta elettronica', tono:'Formale', modello:'Ultimo avviso',
+      testo:'Annuncia la messa in mora. Dopo questo passo il credito va in escalation e l’automatismo tace: si decide a mano.' },
+  ]
+};
+const TONI = { Cortese:'b-info', Fermo:'b-warn', Formale:'b-bad' };
+
 /* Crediti finti: denominazioni di fantasia, importi verosimili ma inventati.
-   `ritardo` = giorni oltre la scadenza (negativo = non ancora scaduto). */
+   `ritardo` = giorni oltre la scadenza (negativo = non ancora scaduto);
+   `orig` = importo di fattura, `valore` = residuo ancora dovuto;
+   `passi` = quanti passi della sequenza sono già partiti;
+   `sosp` = perché la sequenza è ferma (null se corre);
+   `prossimo` = che cosa parte, e quando;
+   `invii` = le date del registro dei solleciti (storia 0017, sola aggiunta);
+   `eventi` = gli altri fatti della cronologia. */
 const RIGHE = [
-  { id:'2026/114', titolo:'Fattura 2026/114', refe:'Officine Vallelunga',   data:'12/05/2026', valore:4820.00, ritardo:83,  stato:'escalation' },
-  { id:'2026/131', titolo:'Fattura 2026/131', refe:'Studio Pergolesi',      data:'02/06/2026', valore:1290.00, ritardo:62,  stato:'scaduto'    },
-  { id:'2026/147', titolo:'Fattura 2026/147', refe:'Carpenteria Rovito',    data:'21/06/2026', valore: 940.00, ritardo:43,  stato:'contestato' },
-  { id:'2026/158', titolo:'Fattura 2026/158', refe:'Panificio Sant’Erasmo', data:'04/07/2026', valore:2310.50, ritardo:30,  stato:'promessa'   },
-  { id:'2026/166', titolo:'Fattura 2026/166', refe:'Officine Vallelunga',   data:'14/07/2026', valore: 615.20, ritardo:20,  stato:'scaduto'    },
-  { id:'2026/171', titolo:'Fattura 2026/171', refe:'Vivai Costamagna',      data:'21/07/2026', valore: 380.00, ritardo:13,  stato:'scaduto'    },
-  { id:'2026/178', titolo:'Fattura 2026/178', refe:'Studio Pergolesi',      data:'28/07/2026', valore:1120.00, ritardo:-4,  stato:'aperto'     },
-  { id:'2026/180', titolo:'Fattura 2026/180', refe:'Carpenteria Rovito',    data:'30/07/2026', valore: 745.00, ritardo:-9,  stato:'aperto'     },
-  { id:'2026/109', titolo:'Fattura 2026/109', refe:'Vivai Costamagna',      data:'28/04/2026', valore:1980.00, ritardo:0,   stato:'incassato'  },
+  { id:'2026/114', refe:'Officine Vallelunga', emesso:'12/04/2026', data:'12/05/2026', orig:4820.00, valore:4820.00, ritardo:83, stato:'escalation', passi:4,
+    sosp:null, prossimo:'Sequenza esaurita: nessun sollecito automatico',
+    invii:['09/05/2026','19/05/2026','02/06/2026','26/06/2026'],
+    eventi:[
+      { t:'Sollecito inviato a mano, fuori sequenza', q:'02/08/2026 · 11:20 · Marco Sindoni' },
+      { t:'Credito portato in escalation: ultimo passo consumato', q:'27/06/2026 · 06:00 · sistema' },
+    ] },
+  { id:'2026/131', refe:'Studio Pergolesi', emesso:'14/06/2026', data:'14/07/2026', orig:1290.00, valore:1290.00, ritardo:20, stato:'scaduto', passi:2,
+    sosp:null, prossimo:'3° passo — fermo, domani alle 09:10', invii:['11/07/2026','21/07/2026'], eventi:[] },
+  { id:'2026/147', refe:'Carpenteria Rovito', emesso:'21/05/2026', data:'21/06/2026', orig:940.00, valore:940.00, ritardo:43, stato:'contestato', passi:3,
+    sosp:'Contestazione aperta il 15/07 — merce non conforme', prossimo:'Fermo: si riprende alla chiusura della contestazione',
+    invii:['18/06/2026','28/06/2026','12/07/2026'],
+    eventi:[
+      { t:'Contestazione aperta — merce non conforme, 940,00 €', q:'15/07/2026 · 15:40 · Marco Sindoni' },
+      { t:'Solleciti sospesi finché la contestazione resta aperta', q:'15/07/2026 · 15:40 · sistema' },
+    ] },
+  { id:'2026/158', refe:'Panificio Sant’Erasmo', emesso:'04/06/2026', data:'04/07/2026', orig:2310.50, valore:2310.50, ritardo:30, stato:'promessa', passi:3,
+    sosp:'Promessa di pagamento per il 14/08', prossimo:'Fermo: si riprende il 15/08 se l’incasso non arriva',
+    invii:['01/07/2026','11/07/2026','25/07/2026'],
+    eventi:[
+      { t:'Promessa di pagamento per il 14/08/2026 — 2.310,50 €', q:'28/07/2026 · 09:55 · Anna Ferretti' },
+      { t:'Solleciti sospesi fino al 15/08/2026', q:'28/07/2026 · 09:55 · sistema' },
+    ] },
+  { id:'2026/166', refe:'Officine Vallelunga', emesso:'27/06/2026', data:'27/07/2026', orig:1215.20, valore:615.20, ritardo:7, stato:'scaduto', passi:1,
+    sosp:null, prossimo:'2° passo — cortese, slittato a mercoledì 05/08', invii:['24/07/2026'],
+    eventi:[
+      { t:'2° passo slittato al 05/08: distanza minima fra due messaggi allo stesso debitore', q:'03/08/2026 · 09:10 · sistema' },
+      { t:'Incasso parziale di 600,00 € — bonifico', q:'30/07/2026 · 08:10 · Anna Ferretti' },
+    ] },
+  { id:'2026/171', refe:'Vivai Costamagna', emesso:'30/06/2026', data:'30/07/2026', orig:380.00, valore:380.00, ritardo:4, stato:'scaduto', passi:1,
+    sosp:null, prossimo:'2° passo — cortese, giovedì alle 09:10', invii:['27/07/2026'], eventi:[] },
+  { id:'2026/178', refe:'Studio Pergolesi', emesso:'07/07/2026', data:'07/08/2026', orig:1120.00, valore:1120.00, ritardo:-4, stato:'aperto', passi:0,
+    sosp:null, prossimo:'1° passo — promemoria, domani alle 09:10', invii:[], eventi:[] },
+  { id:'2026/180', refe:'Carpenteria Rovito', emesso:'12/07/2026', data:'12/08/2026', orig:745.00, valore:745.00, ritardo:-9, stato:'aperto', passi:0,
+    sosp:null, prossimo:'1° passo — promemoria, slittato a lunedì 10/08', invii:[],
+    eventi:[{ t:'1° passo slittato al 10/08: maturava di domenica, fuori finestra di invio', q:'03/08/2026 · 06:00 · sistema' }] },
+  { id:'2026/109', refe:'Vivai Costamagna', emesso:'28/03/2026', data:'28/04/2026', orig:1980.00, valore:0, ritardo:0, stato:'incassato', passi:2,
+    sosp:null, prossimo:'Chiuso', invii:['25/04/2026','05/05/2026'],
+    eventi:[
+      { t:'Incasso totale di 1.980,00 € — bonifico', q:'26/06/2026 · 07:30 · Anna Ferretti' },
+      { t:'Credito chiuso: incassato — una unità di quota liberata', q:'26/06/2026 · 07:30 · sistema' },
+    ] },
 ];
+/* Ogni credito porta il titolo che si legge nell'intestazione della scheda. */
+RIGHE.forEach(r => r.titolo = `Fattura ${r.id}`);
 
 const STATI = {
   aperto:     { et:'Non scaduto',      cl:'b-info'    },
@@ -477,14 +585,23 @@ const STATI = {
   incassato:  { et:'Incassato',        cl:'b-ok'      },
 };
 
-/* Fasce di anzianità: il prospetto che il titolare guarda per primo. */
+/* I crediti che pesano ancora sul portafoglio: sono quelli che l'anzianità
+   conta e quelli che occupano quota. */
+const APERTI = RIGHE.filter(r => r.stato !== 'incassato');
+
+/* Fasce di anzianità: il prospetto che il titolare guarda per primo.
+   Sono CALCOLATE dai crediti, non scritte a mano: così il totale della
+   panoramica e l'elenco non possono raccontare due storie diverse. */
 const FASCE = [
-  { et:'Non scaduto',  n:2, imp:1865.00 },
-  { et:'1-30 giorni',  n:2, imp:2925.70 },
-  { et:'31-60 giorni', n:1, imp: 940.00 },
-  { et:'61-90 giorni', n:2, imp:6110.00 },
-  { et:'Oltre 90',     n:0, imp:   0.00 },
-];
+  { et:'Non scaduto',  test:r => r.ritardo <= 0 },
+  { et:'1-30 giorni',  test:r => r.ritardo > 0  && r.ritardo <= 30 },
+  { et:'31-60 giorni', test:r => r.ritardo > 30 && r.ritardo <= 60 },
+  { et:'61-90 giorni', test:r => r.ritardo > 60 && r.ritardo <= 90 },
+  { et:'Oltre 90',     test:r => r.ritardo > 90 },
+].map(f => {
+  const gruppo = APERTI.filter(f.test);
+  return { et:f.et, n:gruppo.length, imp:gruppo.reduce((s,r) => s + r.valore, 0) };
+});
 
 /* ══════════════════════════════════════════════════════════════════════
    2. UTILITÀ DEL GUSCIO — non toccare.
@@ -510,6 +627,35 @@ const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
 const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* Interessi di mora del decreto legislativo 231/2002, calcolati sul RESIDUO:
+   tasso di riferimento della Banca centrale europea + 8 punti (10,15% nel primo
+   semestre 2026) più il forfait di 40 euro. Il numero è calcolato, non scritto:
+   un importo che non si sa spiegare non si mette in una lettera (storia 0020). */
+const TASSO_MORA = 0.1015, FORFAIT_MORA = 40;
+const mora = r => {
+  const giorni = Math.max(0, r.ritardo);
+  const interessi = r.valore * TASSO_MORA * giorni / 365;
+  return { giorni, interessi, forfait: giorni > 0 ? FORFAIT_MORA : 0, totale: interessi + (giorni > 0 ? FORFAIT_MORA : 0) };
+};
+
+/* Come sta messa la sequenza di quel credito: è la stessa etichetta ovunque —
+   elenco, scheda, schermata della sequenza (storia 0016, RF-4). */
+function statoSequenza(r){
+  if(r.stato === 'incassato')  return `<span class="badge b-ok">Chiusa — incassato</span>`;
+  if(r.stato === 'escalation') return `<span class="badge b-bad">Esaurita — in escalation</span>`;
+  if(r.sosp)                   return `<span class="badge b-neutral">Sospesa</span>`;
+  return `<span class="badge b-info">In corso</span>`;
+}
+
+/* Avanzamento lungo la scala dei passi: «2 di 4», con la barra. */
+function avanzamento(r){
+  const tot = SEQUENZA.passi.length;
+  return `<span class="avanz">
+    <span class="quota-bar"><i class="${r.sosp?'warn':''}" style="width:${Math.round(r.passi/tot*100)}%"></i></span>
+    <span class="mono">${r.passi} di ${tot}</span>
+  </span>`;
+}
 
 /* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
 const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
@@ -579,6 +725,8 @@ function statoVuoto(titolo, testo, azione){
    si fa davvero — quanto è fermo, da quanto, quando rientra, sta migliorando? */
 function vPanoramica(){
   const totale = FASCE.reduce((s,f)=>s+f.imp,0);
+  /* «vecchio» = quello che sta oltre i 60 giorni: la parte che si incassa peggio */
+  const vecchio = FASCE.slice(3).reduce((s,f)=>s+f.imp,0);
   return `
   ${nota(`<b>Proposta — Panoramica.</b> In tre secondi deve dire <i>quanto denaro è fermo</i> e <i>su chi insistere
     oggi</i>. Le fasce di anzianità stanno in alto perché sono la domanda numero uno; l'indicatore dei giorni medi di
@@ -594,15 +742,15 @@ function vPanoramica(){
   ${avvisoQuota('vicino')}
 
   ${bloccoIndicatori([
-    {k:'Denaro fermo',              v:eur(totale), d:'7 crediti aperti'},
-    {k:'Scaduto oltre 60 giorni',   v:eur(6110),   d:'2 crediti, 1 in escalation', tono:'down'},
-    {k:'Giorni medi di incasso',    v:'52 g',      d:'−9 rispetto al trimestre precedente', tono:'up'},
-    {k:'Atteso nelle 4 settimane',  v:eur(4180),   d:'di cui 2.310 € da promessa'},
+    {k:'Denaro fermo',              v:eur(totale),  d:`${APERTI.length} crediti aperti`},
+    {k:'Scaduto oltre 60 giorni',   v:eur(vecchio), d:'1 credito, in escalation', tono:'down'},
+    {k:'Giorni medi di incasso',    v:'52 g',       d:'−9 rispetto al trimestre precedente', tono:'up'},
+    {k:'Atteso nelle 4 settimane',  v:eur(4180),    d:'di cui 2.310,50 € da una promessa di pagamento'},
   ])}
 
   <section class="card" aria-label="Anzianità dei crediti">
     <div class="card-pad"><h2 class="sec">Anzianità dei crediti</h2>
-      <p class="sec-sub">Quanto denaro è fermo, e da quanto tempo. Tocca una fascia per aprire l'elenco filtrato.</p></div>
+      <p class="sec-sub">Quanto denaro è fermo, e da quanto tempo. Tocca una fascia per andare all'elenco dei crediti.</p></div>
     <div class="table-wrap"><table class="tbl">
       <thead><tr><th>Fascia di ritardo</th><th class="num">Crediti</th><th class="num">Importo</th><th>Peso</th></tr></thead>
       <tbody>${FASCE.map(f=>`
@@ -621,14 +769,17 @@ function vPanoramica(){
   <div class="detail-grid">
     <section class="card" aria-label="Prossimi solleciti">
       <div class="card-pad"><h2 class="sec">Prossimi solleciti</h2>
-        <p class="sec-sub">Cosa parte da solo, e cosa è fermo — con il motivo.</p></div>
+        <p class="sec-sub">Cosa parte da solo, e cosa è fermo — con il motivo. Il piano completo sta nella
+          <a data-nav="sequenza" role="button" tabindex="0">sequenza di sollecito</a>.</p></div>
       <div class="table-wrap"><table class="tbl">
-        <thead><tr><th>Credito</th><th>Debitore</th><th>Quando</th><th>Esito previsto</th></tr></thead>
-        <tbody>
-          <tr data-nav="dettaglio" data-id="2026/131"><td class="mono">2026/131</td><td>Studio Pergolesi</td><td>domani, 09:10</td><td><span class="badge b-info">3° passo — fermo</span></td></tr>
-          <tr data-nav="dettaglio" data-id="2026/171"><td class="mono">2026/171</td><td>Vivai Costamagna</td><td>giovedì, 09:10</td><td><span class="badge b-info">1° passo — cortese</span></td></tr>
-          <tr data-nav="dettaglio" data-id="2026/158"><td class="mono">2026/158</td><td>Panificio Sant’Erasmo</td><td>sospeso</td><td><span class="badge b-neutral">promessa fino al 14/08</span></td></tr>
-          <tr data-nav="dettaglio" data-id="2026/147"><td class="mono">2026/147</td><td>Carpenteria Rovito</td><td>sospeso</td><td><span class="badge b-neutral">contestazione aperta</span></td></tr>
+        <thead><tr><th>Credito</th><th>Debitore</th><th>Che cosa parte, e quando</th><th>Sequenza</th></tr></thead>
+        <tbody>${APERTI.filter(r => r.stato !== 'escalation').map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td>
+            <td>${esc(r.refe)}</td>
+            <td>${esc(r.sosp ?? r.prossimo)}</td>
+            <td>${statoSequenza(r)}</td>
+          </tr>`).join('')}
         </tbody>
       </table></div>
     </section>
@@ -652,10 +803,12 @@ function vPanoramica(){
 /* SCHERMATA — Elenco: ricerca, filtro di stato, tabella, paginazione, stato vuoto. */
 function vElenco(){
   const q = S.q.trim().toLowerCase();
+  /* ordinamento predefinito: giorni di ritardo decrescenti — la domanda è
+     «chi è più indietro», non «qual è la fattura più recente» */
   const trovate = RIGHE.filter(r =>
     (S.filtro === 'tutti' || r.stato === S.filtro) &&
     (!q || r.titolo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.refe.toLowerCase().includes(q))
-  );
+  ).sort((a,b) => b.ritardo - a.ritardo);
   const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
   if(S.pagina > pagine) S.pagina = pagine;
   const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
@@ -663,8 +816,9 @@ function vElenco(){
   return `
   ${nota(`<b>Proposta — Elenco dei crediti.</b> Ricerca su numero del documento e debitore, filtro per stato,
     ordinamento predefinito per <i>giorni di ritardo</i> decrescenti — non per data, perché la domanda è «chi è più
-    indietro». Il residuo è la colonna che conta: l'importo di fattura, dopo un pagamento parziale, mente. La riga si
-    apre sul dettaglio.`)}
+    indietro». Il residuo è la colonna che conta: l'importo di fattura, dopo un pagamento parziale, mente. L'ultima
+    colonna dice a che punto è arrivata la <a data-nav="sequenza">sequenza di sollecito</a>, così non serve aprire la
+    scheda per sapere se sta per partire qualcosa. La riga si apre sul dettaglio.`)}
   <div class="page-h">
     <div class="txt"><h1>Crediti</h1><p>Tutto quello che hai fatturato e non ancora incassato.</p></div>
     <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo credito</button>
@@ -684,13 +838,14 @@ function vElenco(){
   ${fetta.length ? `
   <div class="card">
     <div class="table-wrap"><table class="tbl">
-      <thead><tr><th>Documento</th><th>Debitore</th><th>Scadenza</th><th class="num">Residuo</th><th class="num">Ritardo</th><th>Stato</th></tr></thead>
+      <thead><tr><th>Documento</th><th>Debitore</th><th>Scadenza</th><th class="num">Residuo</th><th class="num">Ritardo</th><th>Stato</th><th>Sequenza</th></tr></thead>
       <tbody>${fetta.map(r=>`
         <tr data-nav="dettaglio" data-id="${r.id}">
           <td class="mono">${esc(r.id)}</td><td>${esc(r.refe)}</td>
-          <td>${esc(r.data)}</td><td class="num">${eur(r.valore)}</td>
+          <td>${esc(r.data)}</td><td class="num">${r.stato==='incassato' ? '—' : eur(r.valore)}</td>
           <td class="num">${r.stato==='incassato' ? '—' : (r.ritardo>0 ? r.ritardo+' g' : 'fra '+(-r.ritardo)+' g')}</td>
           <td>${badge(r.stato)}</td>
+          <td title="${esc(r.sosp ?? r.prossimo)}">${avanzamento(r)}</td>
         </tr>`).join('')}
       </tbody>
     </table></div>
@@ -705,86 +860,299 @@ function vElenco(){
       `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
 }
 
-/* SCHERMATA — Dettaglio: intestazione, campi, cronologia, azioni (una apre la modale). */
+/* SCHERMATA — Dettaglio del credito: i fatti a sinistra, la prova a destra.
+   La cronologia è il registro dei solleciti (storia 0017): sola aggiunta, con
+   gli invii riusciti E quelli slittati o annullati — un registro che mostra
+   solo i successi non è una prova, è una vetrina. */
 function vDettaglio(){
   const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const m = mora(r);
+  const incassato = r.orig - r.valore;
+  /* il registro: prima i fatti recenti, poi i solleciti dal più nuovo al più vecchio */
+  const cronologia = [
+    ...r.eventi,
+    ...r.invii.map((d,i) => {
+      const p = SEQUENZA.passi[i];
+      return { t:`${p.n}° passo — ${p.modello.toLowerCase()} (${p.tono.toLowerCase()}) · ${p.canale.toLowerCase()}`,
+               q:`${d} · 09:10 · accettato dal fornitore` };
+    }).reverse(),
+  ];
+
   return `
-  ${nota(`<b>Proposta — Dettaglio.</b> Una sola colonna di fatti a sinistra, il contesto a destra (cronologia, azioni).
-    Le azioni irreversibili passano da una conferma esplicita — è la stessa regola che vale per il livello conversazionale.`)}
+  ${nota(`<b>Proposta — Scheda del credito.</b> A sinistra i fatti che rendono l'importo <i>indiscutibile</i>: importo
+    di fattura, incassato, residuo, giorni di ritardo, interessi di mora calcolati con il tasso del semestre più il
+    forfait di 40 euro (storia 0020) — un numero che non si sa spiegare non si può mettere in una lettera. A destra la
+    <b>prova</b>: il registro dei solleciti in sola aggiunta, con gli invii riusciti e quelli slittati o annullati
+    (storia 0017). «Invia adesso il sollecito» è l'unica azione che esce verso una persona che non è nostro utente:
+    passa da una conferma esplicita e non è aggirabile, nemmeno dalla chat.`)}
   <div class="page-h">
     <div class="txt">
       <div class="row"><h1>${esc(r.titolo)}</h1>${badge(r.stato)}</div>
-      <p class="mono">${esc(r.id)}</p>
+      <p>${esc(r.refe)} · documento emesso il ${esc(r.emesso)}</p>
     </div>
     <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna all'elenco</button>
   </div>
 
+  ${r.sosp ? `<div class="alert a-warn">${I.warn}<span>I solleciti automatici su questo credito sono <b>fermi</b>:
+      ${esc(r.sosp)}.</span><span class="spacer"></span><button class="btn btn-ghost btn-sm">Riprendi i solleciti</button></div>` : ''}
+
   <div class="detail-grid">
     <div class="card card-pad">
-      <h2 class="sec" style="padding-bottom:8px">Dati dell'elemento</h2>
+      <h2 class="sec" style="padding-bottom:8px">Il credito</h2>
       <div class="dl">
-        <div class="dl-row"><span class="k">Riferimento</span><span class="v">${esc(r.refe)}</span></div>
-        <div class="dl-row"><span class="k">Data</span><span class="v">${esc(r.data)}</span></div>
-        <div class="dl-row"><span class="k">Valore</span><span class="v mono">${eur(r.valore)}</span></div>
-        <div class="dl-row"><span class="k">Stato</span><span class="v">${STATI[r.stato].et}</span></div>
-        <div class="dl-row"><span class="k">Creato da</span><span class="v">Marco Sindoni</span></div>
+        <div class="dl-row"><span class="k">Debitore</span><span class="v">${esc(r.refe)}</span></div>
+        <div class="dl-row"><span class="k">Scadenza</span><span class="v">${esc(r.data)}</span></div>
+        <div class="dl-row"><span class="k">Giorni di ritardo</span><span class="v mono">${r.stato==='incassato' ? '—' : (r.ritardo>0 ? r.ritardo+' g' : 'non ancora scaduto')}</span></div>
+        <div class="dl-row"><span class="k">Importo di fattura</span><span class="v mono">${eur(r.orig)}</span></div>
+        <div class="dl-row"><span class="k">Incassato</span><span class="v mono">${eur(incassato)}</span></div>
+        <div class="dl-row"><span class="k">Residuo dovuto</span><span class="v mono">${eur(r.valore)}</span></div>
+        <div class="dl-row"><span class="k">Interessi di mora maturati</span><span class="v mono">${eur(m.interessi)}</span></div>
+        <div class="dl-row"><span class="k">Rimborso forfettario</span><span class="v mono">${eur(m.forfait)}</span></div>
       </div>
+      <p class="sec-sub" style="margin-top:10px">Mora calcolata sul residuo, ${m.giorni} giorni al 10,15% (tasso della
+        Banca centrale europea del primo semestre 2026 più 8 punti) più il forfait previsto per le transazioni
+        commerciali. Decidi tu se metterla nel sollecito, se rinunciarvi o se tenerla come informazione interna.</p>
       <div class="row" style="margin-top:16px">
-        <button class="btn btn-primary">Modifica</button>
-        <button class="btn btn-ghost">${I.scarica} Esporta</button>
-        <button class="btn btn-ghost" data-modale="apri">Elimina</button>
+        <button class="btn btn-primary">Registra un incasso</button>
+        <button class="btn btn-ghost">Registra una promessa</button>
+        <button class="btn btn-ghost">Apri una contestazione</button>
+        <button class="btn btn-ghost">Sospendi i solleciti</button>
+        <button class="btn btn-ghost">${I.scarica} Prepara la messa in mora</button>
+        <button class="btn btn-danger" data-modale="apri">Invia adesso il sollecito</button>
       </div>
     </div>
-    <aside class="card card-pad">
-      <h2 class="sec" style="padding-bottom:6px">Cronologia</h2>
-      <div class="timeline">
-        <div class="tl-item"><span class="tl-dot"></span><div><div>Elemento creato</div><div class="when">02/08/2026 · 09:14</div></div></div>
-        <div class="tl-item"><span class="tl-dot"></span><div><div>Stato portato a «${STATI[r.stato].et}»</div><div class="when">02/08/2026 · 11:02</div></div></div>
-        <div class="tl-item"><span class="tl-dot"></span><div><div>Esportato in formato tabellare</div><div class="when">03/08/2026 · 08:40</div></div></div>
+
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">La sequenza</h2>
+        <div class="row" style="justify-content:space-between">${avanzamento(r)}${statoSequenza(r)}</div>
+        <p class="sec-sub">${esc(r.sosp ?? r.prossimo)}</p>
+        <button class="btn btn-ghost btn-sm" data-nav="sequenza">Vedi la sequenza intera</button>
+      </div>
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">Registro dei solleciti</h2>
+        <p class="sec-sub" style="margin-bottom:6px">Sola aggiunta: non si modifica e non si cancella riga per riga.</p>
+        <div class="timeline">${cronologia.length ? cronologia.map(e=>`
+          <div class="tl-item"><span class="tl-dot"></span><div><div>${esc(e.t)}</div><div class="when">${esc(e.q)}</div></div></div>`).join('')
+          : `<p class="sec-sub">Ancora nessun messaggio partito: il primo passo di questo credito deve ancora maturare.</p>`}
+        </div>
       </div>
     </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Sequenza di sollecito: è il cuore dell'app.
+   Quattro cose, in quest'ordine: (1) la SCALA dei passi con i loro tempi e il
+   loro tono; (2) a che punto è ogni credito lungo la scala; (3) che cosa la
+   FERMA — è la condizione per fidarsi dell'automatismo (storia 0016); (4) i
+   limiti che il motore impone all'utente e che l'utente non può allargare
+   (storie 0011 RT-10 e 0013 RT-10, vademecum del Garante).
+   La coda dei prossimi invii chiude la schermata (storia 0013, RF-6). */
+function vSequenza(){
+  const scala = SEQUENZA.passi.map(p => `
+    <div class="passo">
+      <div class="quando">${p.scarto < 0 ? '−'+Math.abs(p.scarto) : '+'+p.scarto} g
+        <small>${p.scarto < 0 ? 'prima della scadenza' : 'dopo la scadenza'}</small></div>
+      <div class="segno">${p.n}</div>
+      <div class="corpo">
+        <div class="titolo">${esc(p.modello)}</div>
+        <div class="row">
+          <span class="badge ${TONI[p.tono]}">Tono ${esc(p.tono.toLowerCase())}</span>
+          <span class="badge b-neutral">${esc(p.canale)}</span>
+        </div>
+        <div class="testo">${esc(p.testo)}</div>
+      </div>
+    </div>`).join('');
+
+  /* La coda: data, ora prevista, destinatario, passo — e il motivo quando slitta. */
+  const CODA = [
+    { quando:'martedì 04/08 · 09:10', chi:'Studio Pergolesi',      cosa:'3° passo — fermo',      doc:'2026/131', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'martedì 04/08 · 09:10', chi:'Studio Pergolesi',      cosa:'1° passo — promemoria', doc:'2026/178', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'mercoledì 05/08 · 09:10', chi:'Officine Vallelunga', cosa:'2° passo — cortese',    doc:'2026/166', nota:'slittato: distanza minima di 3 giorni dall’ultimo messaggio a questo debitore', st:'b-warn' },
+    { quando:'giovedì 06/08 · 09:10', chi:'Vivai Costamagna',      cosa:'2° passo — cortese',    doc:'2026/171', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'lunedì 10/08 · 09:10',  chi:'Carpenteria Rovito',    cosa:'1° passo — promemoria', doc:'2026/180', nota:'slittato: maturava di domenica, fuori finestra di invio',                 st:'b-warn' },
+  ];
+
+  return `
+  ${nota(`<b>Proposta — Sequenza di sollecito.</b> È il cuore dell'app: il titolare decide <i>una volta</i> quanti
+    messaggi partono, quando e con che tono, e poi non ci pensa più. La scala si legge dall'alto verso il basso come
+    una linea del tempo, con il primo passo <i>prima</i> della scadenza — non è ancora un sollecito, ed è quello che
+    intercetta i ritardi per dimenticanza. Il riquadro «Quando la sequenza si ferma» è la parte che decide se il
+    prodotto verrà usato o spento: un messaggio mandato a chi ha appena pagato fa più danno del ritardo che voleva
+    risolvere. I limiti del motore <b>non</b> sono impostazioni: la sollecitazione ripetuta è considerata invasiva dal
+    Garante, e un prodotto che permettesse dodici solleciti in dieci giorni metterebbe nei guai chi lo usa.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Sequenza di sollecito</h1><p>Quanti messaggi partono, quando, con che tono — e cosa li ferma.</p></div>
+    <button class="btn btn-ghost">Modifica la sequenza</button>
+  </div>
+
+  <section class="card" aria-label="La scala dei passi">
+    <div class="card-pad" style="display:flex;flex-direction:column;gap:8px">
+      <div class="row" style="justify-content:space-between">
+        <h2 class="sec">${esc(SEQUENZA.nome)}</h2>
+        <span class="badge ${SEQUENZA.attiva ? 'b-ok' : 'b-neutral'}">${SEQUENZA.attiva ? 'Attiva' : 'Non attiva'}</span>
+      </div>
+      <p class="sec-sub">Il cliente riceverà: 3 giorni <b>prima</b> della scadenza, poi 7, 21 e 45 giorni dopo.
+        Si applica a tutti i crediti che non hanno una sequenza propria — quella del debitore o quella del singolo
+        credito, dove la più specifica vince.</p>
+    </div>
+    <div class="card-pad" style="padding-top:0">
+      <div class="scala">${scala}</div>
+      <div class="passo-fine">
+        <div class="quando" style="text-align:right;font-family:var(--font-mono);font-weight:700">fine</div>
+        <div class="segno">${I.block}</div>
+        <div><b>Sequenza esaurita: il credito va in escalation.</b> Nessun altro sollecito automatico parte, e la
+          decisione torna a una persona: messa in mora, legale, stralcio. L'automatismo sa quando tacere.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="detail-grid">
+    <section class="card" aria-label="A che punto è ogni credito">
+      <div class="card-pad"><h2 class="sec">A che punto è ogni credito</h2>
+        <p class="sec-sub">Dove si trova ciascun credito lungo la scala, oggi — ${esc(OGGI)}.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Documento</th><th>Debitore</th><th>Avanzamento</th><th>Che cosa succede adesso</th></tr></thead>
+        <tbody>${APERTI.map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td>
+            <td>${esc(r.refe)}</td>
+            <td>${avanzamento(r)}</td>
+            <td>${statoSequenza(r)}<div class="sec-sub">${esc(r.sosp ?? r.prossimo)}</div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <h2 class="sec">Quando la sequenza si ferma</h2>
+          <p class="sec-sub">I freni stanno in un punto solo, così nessun percorso di invio può aggirarli.</p>
+        </div>
+        <ul class="regole">
+          <li>${I.check}<div><b>Il residuo è zero</b><span>Il credito è stato pagato: non c’è più niente da chiedere.</span></div></li>
+          <li>${I.clock}<div><b>C’è una promessa di pagamento attiva</b><span>Si tace fino al giorno dopo la data promessa. Se l’incasso non arriva, la promessa risulta mancata e i solleciti riprendono.</span></div></li>
+          <li>${I.warn}<div><b>C’è una contestazione aperta</b><span>Si tace finché non si chiude — accolta, respinta o risolta con accordo — poi si riprende sul residuo aggiornato.</span></div></li>
+          <li>${I.block}<div><b>Qualcuno ha sospeso a mano</b><span>Sul singolo credito o sull’intero debitore, con un motivo e — se si vuole — una data di ripresa.</span></div></li>
+          <li>${I.block}<div><b>Il credito è incassato, stralciato o già in escalation</b><span>Stati da cui nessun sollecito automatico parte mai.</span></div></li>
+          <li>${I.check}<div><b>Il controllo si fa due volte</b><span>Quando l’invio entra in coda e di nuovo un istante prima di trasmettere: fra i due momenti può arrivare un pagamento. L’invio bloccato non sparisce, resta registrato come annullato con la ragione.</span></div></li>
+        </ul>
+        <p class="sec-sub">Alla ripresa si riparte dal <b>passo dovuto oggi</b>: i passi saltati durante la
+          sospensione non si recuperano, altrimenti il debitore riceverebbe tre messaggi in un’ora.</p>
+      </div>
+
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <h2 class="sec">Limiti del motore</h2>
+          <p class="sec-sub">Si possono <b>restringere</b>, non allargare: non sono preferenze, sono un presidio.</p>
+        </div>
+        <ul class="regole">
+          <li>${I.clock}<div><b>Giorni feriali, dalle 9 alle 18</b><span>Nel fuso orario dell’account. Fuori finestra l’invio resta in coda fino alla prima ora utile.</span></div></li>
+          <li>${I.clock}<div><b>Almeno 3 giorni fra due messaggi allo stesso debitore</b><span>Vale fra crediti diversi dello stesso debitore, non solo dentro un credito.</span></div></li>
+          <li>${I.check}<div><b>Un messaggio per debitore, non uno per fattura</b><span>Se più documenti maturano lo stesso giorno, parte un solo messaggio con l’elenco.</span></div></li>
+          <li>${I.warn}<div><b>Il messaggio breve non è mai il primo passo</b><span>Si usa dopo che la posta elettronica non ha prodotto effetto, e con le credenziali del cliente: appgrove non rivende messaggi.</span></div></li>
+          <li>${I.block}<div><b>Il messaggio va al debitore e a nessun altro</b><span>Niente copie di cortesia ad altri indirizzi, e l’oggetto non rivela il motivo a chi guarda lo schermo di sfuggita.</span></div></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <section class="card" aria-label="Coda dei prossimi invii">
+    <div class="card-pad"><h2 class="sec">Coda dei prossimi invii</h2>
+      <p class="sec-sub">Cosa è già stato calcolato e sta per uscire. Ogni invio si può annullare finché non è partito;
+        il passo risulterà saltato nella cronologia del credito e il successivo resta programmato.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Quando</th><th>Destinatario</th><th>Passo</th><th>Documento</th><th>Situazione</th><th></th></tr></thead>
+      <tbody>${CODA.map(c=>`
+        <tr>
+          <td>${esc(c.quando)}</td><td>${esc(c.chi)}</td><td>${esc(c.cosa)}</td>
+          <td class="mono" data-nav="dettaglio" data-id="${c.doc}">${esc(c.doc)}</td>
+          <td><span class="badge ${c.st}">${esc(c.nota)}</span></td>
+          <td><button class="btn btn-ghost btn-sm">Annulla</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+    <h2 class="sec">${I.chat} Dalla chat</h2>
+    <p class="sec-sub">La sequenza <b>non</b> si configura a voce: è una scelta che si fa una volta, guardandola.
+      Dalla chat si legge («cosa parte domani?», «cosa è stato mandato a Vallelunga?») e si frena
+      («sospendi i solleciti a Rovito, contestazione aperta») — con una bozza da confermare. L'invio vero di un
+      sollecito chiede sempre un sì umano, perché esce verso una persona che non è nostro utente e non si richiama
+      indietro.</p>
   </div>`;
 }
 
 /* SCHERMATA — Modulo di inserimento: campi, aiuti, errore mostrato in linea. */
 function vNuovo(){
   return `
-  ${nota(`<b>Proposta — Nuovo elemento.</b> Il modulo minimo che serve a creare l'entità: i campi obbligatori in alto,
-    quelli facoltativi sotto. Il salvataggio è finto e mostra solo la validazione. Se la creazione consuma quota,
-    l'avviso deve comparire <i>prima</i> del modulo, non dopo il salvataggio.`)}
-  <div class="page-h"><div class="txt"><h1>Nuovo elemento</h1><p>Compila i dati essenziali; il resto si può aggiungere dopo.</p></div></div>
+  ${nota(`<b>Proposta — Nuovo credito.</b> Si registra una fattura già emessa: l'app non fattura, parte da lì. I campi
+    obbligatori sono quattro — debitore, numero, scadenza, importo — perché è il minimo che serve a far partire una
+    sequenza; tutto il resto si aggiunge dopo. Il debitore si può creare al volo senza perdere quello che si è già
+    scritto. L'avviso di quota sta <i>prima</i> del modulo, non dopo il salvataggio: scoprire che il piano è pieno
+    quando si preme «salva» è il modo migliore per far arrabbiare qualcuno. Chi ha un elenco già pronto non passa da
+    qui: usa l'importazione da file.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Nuovo credito</h1><p>Una fattura emessa e non ancora incassata. Da qui in poi ci pensa la sequenza.</p></div>
+    <button class="btn btn-ghost">${I.scarica} Importa da file</button>
+  </div>
 
   ${avvisoQuota('vicino')}
 
   <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
     <div class="form-grid">
-      <div class="field" id="f-titolo">
-        <label for="i-titolo">Titolo *</label>
-        <input id="i-titolo" name="titolo" placeholder="Descrizione breve dell'elemento">
-        <span class="hint">Come lo riconoscerai nell'elenco.</span>
+      <div class="field">
+        <label for="i-refe">Debitore *</label>
+        <select id="i-refe">
+          <option>Officine Vallelunga</option><option>Studio Pergolesi</option>
+          <option>Carpenteria Rovito</option><option>Panificio Sant’Erasmo</option><option>Vivai Costamagna</option>
+          <option>+ Nuovo debitore…</option>
+        </select>
+        <span class="hint">Se non c’è, si crea qui senza perdere il resto del modulo.</span>
+      </div>
+      <div class="field" id="f-doc">
+        <label for="i-doc">Numero del documento *</label>
+        <input id="i-doc" name="documento" placeholder="es. 2026/181">
+        <span class="hint">Come lo riconoscerai nell’elenco e come lo leggerà il debitore nel sollecito.</span>
       </div>
       <div class="field">
-        <label for="i-refe">Riferimento</label>
-        <select id="i-refe"><option>Cliente Alfa</option><option>Cliente Beta</option><option>Cliente Gamma</option></select>
-        <span class="hint">Anagrafica condivisa dello spazio di lavoro.</span>
+        <label for="i-emesso">Data del documento</label>
+        <input id="i-emesso" type="date" value="2026-08-03">
       </div>
       <div class="field">
-        <label for="i-data">Data</label>
-        <input id="i-data" type="date" value="2026-08-03">
+        <label for="i-scadenza">Data di scadenza *</label>
+        <input id="i-scadenza" type="date" value="2026-09-02">
+        <span class="hint">Fra imprese il termine massimo di legge è 60 giorni; l’app usa 30 giorni come predefinito dell’account.</span>
       </div>
       <div class="field">
-        <label for="i-valore">Valore (€)</label>
+        <label for="i-valore">Importo *</label>
         <input id="i-valore" type="number" step="0.01" placeholder="0,00">
+        <span class="hint">Il residuo nasce uguale all’importo e cala con gli incassi.</span>
+      </div>
+      <div class="field">
+        <label for="i-valuta">Valuta</label>
+        <select id="i-valuta"><option>EUR — euro</option><option>CHF — franco svizzero</option><option>GBP — sterlina</option></select>
+      </div>
+      <div class="field wide">
+        <label for="i-sequenza">Sequenza di sollecito</label>
+        <select id="i-sequenza">
+          <option>Predefinita dell’account — promemoria −3, poi +7, +21, +45</option>
+          <option>Quella assegnata al debitore, se esiste</option>
+          <option>Nessuna: sollecito solo a mano</option>
+        </select>
+        <span class="hint">Vale la più specifica: credito, poi debitore, poi account.</span>
       </div>
       <div class="field wide">
         <label for="i-note">Note</label>
         <textarea id="i-note" placeholder="Annotazioni libere…"></textarea>
-        <span class="hint">Campo a testo libero: non inserire dati sensibili.</span>
+        <span class="hint">Campo a testo libero: non scriverci dati delicati sul debitore. Nel sollecito non finisce.</span>
       </div>
     </div>
     <div class="form-actions">
       <button type="button" class="btn btn-ghost" data-nav="elenco">Annulla</button>
-      <button type="submit" class="btn btn-primary">Salva elemento</button>
+      <button type="submit" class="btn btn-primary">Salva il credito</button>
     </div>
   </form>`;
 }
@@ -795,12 +1163,30 @@ function vVuoto(){
   return `
   ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Due stati che si dimenticano sempre e che l'utente incontra
     per primi. Il primo giorno l'app è vuota: deve dire cosa fare. Il giorno in cui il piano finisce, deve dire come si sblocca.`)}
-  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta @@NOME_APP@@ appena attivata.</p></div></div>
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1>
+    <p>Come si presenta ${esc(APP.nome)} il giorno in cui viene attivata, e il giorno in cui il piano si riempie.</p></div></div>
   ${statoVuoto(
-    'Non c’è ancora nulla qui',
-    'Crea il primo elemento oppure importa quelli che hai già: bastano un paio di minuti e l’app comincia a servire a qualcosa.',
-    `<div class="row" style="justify-content:center"><button class="btn btn-primary" data-nav="nuovo">${I.piu} Crea il primo elemento</button><button class="btn btn-ghost">Importa da file</button></div>`)}
+    'Non c’è ancora nessun credito da tenere d’occhio',
+    'Registra la prima fattura non incassata, oppure porta dentro in un colpo solo l’elenco che tieni nel foglio di calcolo. Bastano pochi minuti: da lì l’anzianità dei crediti comincia a dirti quanto denaro è fermo e da quanto.',
+    `<div class="row" style="justify-content:center">
+       <button class="btn btn-primary" data-nav="nuovo">${I.piu} Registra il primo credito</button>
+       <button class="btn btn-ghost">${I.scarica} Importa da file</button>
+     </div>`)}
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+    <h2 class="sec">Non c'è niente da configurare</h2>
+    <p class="sec-sub">La <a data-nav="sequenza">sequenza di sollecito</a> è già pronta e attiva — promemoria 3 giorni
+      prima della scadenza, poi solleciti a 7, 21 e 45 giorni — e i testi dei messaggi esistono già nei tre toni e
+      nelle cinque lingue. Si possono cambiare quando si vuole, ma non è un lavoro da fare prima di cominciare: chi
+      deve collegare il gestionale, mappare i clienti e disegnare tre sequenze prima di vedere un risultato,
+      abbandona il prodotto.</p>
+    <div class="row"><button class="btn btn-ghost btn-sm" data-nav="sequenza">Guarda la sequenza predefinita</button></div>
+  </div>
+
   <h2 class="sec">Quota esaurita</h2>
+  ${nota(`<b>Perché questo stato conta.</b> La metrica è a <i>giacenza</i>: il tetto riguarda i crediti aperti adesso.
+    Il messaggio deve dire tre cose — cosa è successo, cosa non si può più fare, come si rimedia — e la via d'uscita
+    non è solo «paga di più»: chiudere un credito incassato o stralciato libera un posto.`)}
   ${avvisoQuota('raggiunto')}`;
 }
 
@@ -809,11 +1195,12 @@ function vVuoto(){
       Per aggiungere una schermata basta registrarla qui sotto.
    ══════════════════════════════════════════════════════════════════════ */
 const SCHERMATE = {
-  panoramica: ['Panoramica',      vPanoramica],
-  elenco:     ['@@ENTITA@@',      vElenco],
-  dettaglio:  ['Dettaglio',       vDettaglio],
-  nuovo:      ['Nuovo elemento',  vNuovo],
-  vuoto:      ['Primo avvio',     vVuoto],
+  panoramica: ['Panoramica',              vPanoramica],
+  elenco:     ['Crediti',                 vElenco],
+  dettaglio:  ['Dettaglio del credito',   vDettaglio],
+  sequenza:   ['Sequenza di sollecito',   vSequenza],
+  nuovo:      ['Nuovo credito',           vNuovo],
+  vuoto:      ['Primo avvio',             vVuoto],
 };
 
 function disegna(){
@@ -852,11 +1239,11 @@ function disegna(){
   const form = document.getElementById('form-nuovo');
   if(form) form.addEventListener('submit', e => {
     e.preventDefault();
-    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    const campo = document.getElementById('f-doc'), input = document.getElementById('i-doc');
     campo.querySelectorAll('.err').forEach(x => x.remove());
     if(!input.value.trim()){
       campo.classList.add('invalid');
-      campo.insertAdjacentHTML('beforeend','<span class="err">Il titolo è obbligatorio.</span>');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il numero del documento è obbligatorio.</span>');
       input.focus();
       return;
     }
@@ -866,7 +1253,8 @@ function disegna(){
 
   /* apertura della modale dal dettaglio */
   document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
-    apriModale('Eliminare questo elemento?', 'L’operazione non si può annullare. I dati collegati restano nello storico di controllo.')));
+    apriModale('Inviare adesso il sollecito?',
+      'Il messaggio parte subito verso il debitore, fuori dalla sequenza, e non si richiama indietro. Resta nel registro con il testo esatto, il destinatario e l’istante. È la sola azione dell’app che esce verso una persona che non è nostro utente: per questo la conferma non si può disattivare.')));
 
   window.scrollTo({top:0});
 }

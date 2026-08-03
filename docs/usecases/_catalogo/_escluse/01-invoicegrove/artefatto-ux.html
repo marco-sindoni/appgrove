@@ -1,0 +1,1543 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InvoiceGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  InvoiceGrove (catalogo #01) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/01-invoicegrove/artefatto-ux.html
+================================================================================
+  Si apre con un doppio clic, anche senza connessione: nessuna risorsa dalla
+  rete, solo stile e istruzioni in linea. I token del sistema di design sono
+  copiati da frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+
+  Tutti i dati sono INVENTATI: imprese di fantasia, numeri di documento di
+  comodo, identificativi dell'autorità fiscale finti. Nessun dato reale di
+  nessun cliente, nessuna controparte esistente.
+
+  Identità dell'app usata qui (dal varco d'identità di application-description.md):
+    nome InvoiceGrove · identificativo `einvoicing` · catalogo #01 ·
+    colore-categoria `amber` · metrica di quota «documenti trasmessi o ricevuti»
+    (consumo mensile) · entità principale «documenti».
+
+  Schermate: Panoramica · Documenti · Dettaglio del documento · Diagnosi dello
+  scarto · Controparti e recapito · Conservazione a norma · Scadenze normative ·
+  Nuovo documento · Primo avvio.
+
+  IL FILO CONDUTTORE DI QUESTO MOCKUP — il ciclo di vita legale.
+  La cosa difficile di questa app non è la tabella dei documenti: è che «lo
+  stato» non è un'etichetta di comodo, dice se il documento **esiste per la
+  legge**, e cambia forma da paese a paese (§4 della descrizione: famiglia a
+  liberatoria, famiglia a quattro angoli, famiglia a cinque angoli). Il mockup
+  fa una scelta precisa: mostrare sempre la macchina a stati **della
+  giurisdizione di quel documento**, con l'istante che ha effetto giuridico
+  marcato in modo visibile, e raccontarla con parole che un imprenditore capisce
+  senza aver letto la norma. Le note di proposta spiegano il perché, schermata
+  per schermata.
+
+  I riquadri chiari sono le NOTE DI PROPOSTA per lo sviluppatore. Il pulsante
+  «Note» in alto le nasconde, per vedere l'interfaccia pulita.
+================================================================================
+-->
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px 1fr;min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+/* ── COMPONENTE PROPRIO: striscia del ciclo di vita legale ──────────────
+   È il pezzo di interfaccia specifico di questa app. Ogni riquadro è uno
+   stato della macchina a stati della GIURISDIZIONE di quel documento:
+   verde = già superato, colorato d'accento = punto in cui si trova ora,
+   tratteggiato = ancora da venire, rosso = ramo di errore imboccato,
+   giallo = esito degradato (consegna non riuscita). L'etichetta
+   «effetto giuridico» marca l'unico passo che fa nascere il documento
+   agli occhi della legge: in Italia è l'accettazione dell'autorità, in
+   Belgio è la consegna al destinatario. È il concetto che tutta questa
+   schermata esiste per rendere leggibile. */
+.ciclo{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.passo{
+  flex:1 1 148px;min-width:148px;border:1px solid rgb(var(--border));border-radius:var(--r-md);
+  padding:9px 11px;display:flex;flex-direction:column;gap:3px;background:rgb(var(--surface-2));
+}
+.passo .n{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgb(var(--faint))}
+.passo .t{font-size:13px;font-weight:700;line-height:1.25}
+.passo .q{font-size:11.5px;color:rgb(var(--muted));line-height:1.35}
+.passo.fatto{border-color:rgb(var(--success)/.45);background:rgb(var(--success)/.08)}
+.passo.fatto .n{color:rgb(var(--success))}
+.passo.qui{border-color:rgb(var(--accent));background:rgb(var(--accent)/.1);box-shadow:var(--sh-sm)}
+.passo.qui .n{color:rgb(var(--accent))}
+.passo.avviso{border-color:rgb(var(--warning)/.55);background:rgb(var(--warning)/.12)}
+.passo.avviso .n{color:rgb(var(--warning))}
+.passo.ko{border-color:rgb(var(--danger)/.5);background:rgb(var(--danger)/.1)}
+.passo.ko .n{color:rgb(var(--danger))}
+.passo.futuro{opacity:.62;border-style:dashed}
+.legale{
+  align-self:flex-start;margin-top:3px;font-size:9.5px;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;background:rgb(var(--accent));color:rgb(var(--accent-c));
+  border-radius:var(--r-pill);padding:1.5px 8px;
+}
+.ciclo-legenda{margin-top:12px;font-size:12.5px;color:rgb(var(--muted));line-height:1.5}
+.ciclo-legenda b{color:rgb(var(--text))}
+
+/* Icona in linea dentro un titolo di sezione: senza misura esplicita
+   occuperebbe tutta la larghezza della scheda. */
+h2.sec > svg{width:17px;height:17px;stroke:currentColor;vertical-align:-3px}
+
+/* ── COMPONENTE PROPRIO: il codice dell'autorità e la sua traduzione ────
+   Il codice grezzo a sinistra (com'è scritto sulla notifica), la frase in
+   lingua comune a destra. È la storia 0015 messa in pixel. */
+.codice{
+  display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);font-weight:700;
+  font-size:12.5px;background:rgb(var(--surface-3));border:1px solid rgb(var(--border-strong));
+  border-radius:var(--r-sm);padding:2.5px 9px;
+}
+.rimedio{display:flex;flex-direction:column;gap:10px;counter-reset:passo-rimedio}
+.rimedio li{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;list-style:none}
+.rimedio li::before{
+  counter-increment:passo-rimedio;content:counter(passo-rimedio);
+  width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:rgb(var(--accent)/.14);color:rgb(var(--accent));font-weight:800;font-size:12px;
+}
+
+/* ── COMPONENTE PROPRIO: barra della custodia decennale ─────────────────
+   Non è una quota: è il tempo che manca alla fine dell'obbligo di legge. */
+.anni{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.anni-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.anni-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--cat-blue))}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP ▼▼▼
+         Nel backoffice reale sono le `sections[]` del manifesto del modulo
+         (storia 0003), mostrate sotto «Le tue app» a chi ha l'abbonamento
+         a InvoiceGrove. Ogni bottone porta `data-nav="<chiave della schermata>"`.
+         Nota di proposta sull'ordine: prima «come sta andando» (Panoramica),
+         poi il lavoro quotidiano (Documenti), poi le due anagrafiche che
+         decidono se un documento parte (Controparti) o resta a norma nel
+         tempo (Conservazione), infine il calendario degli obblighi. -->
+    <div class="nav-group">Le tue app · InvoiceGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="elenco">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+      Documenti
+    </button>
+    <button class="nav-item" data-nav="controparti">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M17 4.6a3.4 3.4 0 0 1 0 6.8"/><path d="M18.5 20c0-2.2-.9-3.9-2.4-4.9"/></svg>
+      Controparti
+    </button>
+    <button class="nav-item" data-nav="conservazione">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4.5" rx="1.5"/><path d="M5 8.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19V8.5"/><path d="M10 12.5h4"/></svg>
+      Conservazione
+    </button>
+    <button class="nav-item" data-nav="mandati">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 11h18"/><path d="m9 16 2 2 4-4"/></svg>
+      Scadenze normative
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo documento <span class="pill">RIPIEGO</span>
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>InvoiceGrove</b> (catalogo #01). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>InvoiceGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #01 InvoiceGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ─────────────────
+     Serve alle azioni irreversibili: la trasmissione all'autorità fiscale
+     è l'esempio canonico (storia 0029). Titolo, testo ed etichetta del
+     bottone di conferma arrivano dal bottone che l'apre, così ogni azione
+     spiega la propria conseguenza invece di un avviso generico. -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Titolo della conferma</h3>
+    <p id="modale-testo">Testo che spiega cosa succede se si conferma.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" id="modale-ok" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — tutti inventati.
+      Imprese di fantasia, numeri di documento di comodo, identificativi
+      dell'autorità fiscale plausibili nella forma ma privi di significato.
+      Servono solo a far vedere la forma dell'interfaccia.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'InvoiceGrove',
+  id: 'einvoicing',
+  categoria: 'amber',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'I',
+  claim: 'Porta i tuoi documenti fiscali a norma nel paese in cui li emetti: li valida, li trasmette, ne segue l’esito e li conserva per dieci anni.',
+  metrica: 'documenti trasmessi o ricevuti',
+  quota: { usato: 78, tetto: 100, finestra: 'in agosto' },
+  piano: 'europa'
+};
+
+/* Le giurisdizioni attive nella prima versione: Italia (modello a liberatoria)
+   e rete europea a quattro angoli. Francia, Polonia e Germania sono previste
+   dal contratto dell'adattatore ma NON implementate (§11 della descrizione):
+   nel mockup compaiono solo nella schermata delle scadenze. */
+const PAESI = {
+  IT: { nome:'Italia',      famiglia:'liberatoria', canale:'Sistema di Interscambio', formato:'FatturaPA' },
+  BE: { nome:'Belgio',      famiglia:'quattro',     canale:'rete europea',            formato:'formato europeo UBL' },
+  DK: { nome:'Danimarca',   famiglia:'quattro',     canale:'rete europea',            formato:'formato europeo UBL' },
+  NL: { nome:'Paesi Bassi', famiglia:'quattro',     canale:'rete europea',            formato:'formato europeo UBL' },
+};
+
+const RIGHE = [
+  { id:'FT 2026/0215', tipo:'Fattura',         contro:'Officine Radaelli S.r.l.',   paese:'IT', data:'03/08/2026', valore:2240.00, stato:'bozza',        verso:'attivo' },
+  { id:'FT 2026/0214', tipo:'Fattura',         contro:'Nordwind Logistik BVBA',     paese:'BE', data:'03/08/2026', valore:4180.00, stato:'consegnato',   verso:'attivo' },
+  { id:'FT 2026/0213', tipo:'Fattura',         contro:'Ferramenta Bosisio S.r.l.',  paese:'IT', data:'03/08/2026', valore:1245.60, stato:'accettato',    verso:'attivo', idAutorita:'IT03928471_00A7C' },
+  { id:'FT 2026/0212', tipo:'Fattura',         contro:'Studio Meridiana S.t.p.',    paese:'IT', data:'02/08/2026', valore: 780.00, stato:'scartato',     verso:'attivo', scarto:'00311' },
+  { id:'NC 2026/0037', tipo:'Nota di credito', contro:'Ferramenta Bosisio S.r.l.',  paese:'IT', data:'02/08/2026', valore: 240.00, stato:'accettato',    verso:'attivo', idAutorita:'IT03928471_00A7B' },
+  { id:'FT 2026/0211', tipo:'Fattura',         contro:'Kvist Møbler ApS',           paese:'DK', data:'01/08/2026', valore:2960.00, stato:'trasmesso',    verso:'attivo' },
+  { id:'FT 2026/0210', tipo:'Fattura',         contro:'Cooperativa Valgrande',      paese:'IT', data:'31/07/2026', valore:1510.00, stato:'disposizione', verso:'attivo', idAutorita:'IT03928471_009F4' },
+  { id:'FT 2026/0209', tipo:'Fattura',         contro:'De Vries Interieur B.V.',    paese:'NL', data:'29/07/2026', valore:3420.00, stato:'rifiutato',    verso:'attivo' },
+  { id:'FA 25-1188',   tipo:'Fattura passiva', contro:'Grafiche Sant’Ilario S.n.c.',paese:'IT', data:'28/07/2026', valore: 410.00, stato:'ricevuto',     verso:'passivo' },
+  { id:'INV-2026-4471',tipo:'Fattura passiva', contro:'Papierwaren Deltaflex B.V.', paese:'NL', data:'27/07/2026', valore:1180.00, stato:'ricevuto',     verso:'passivo' },
+  { id:'FT 2026/0208', tipo:'Fattura',         contro:'Ferramenta Bosisio S.r.l.',  paese:'IT', data:'24/07/2026', valore: 620.00, stato:'conservato',   verso:'attivo', idAutorita:'IT03928471_0098D' },
+  { id:'FT 2026/0207', tipo:'Fattura',         contro:'Nordwind Logistik BVBA',     paese:'BE', data:'22/07/2026', valore:1890.00, stato:'conservato',   verso:'attivo' },
+];
+
+/* Gli stati NON sono etichette di comodo: sono la macchina a stati del ciclo
+   di vita legale (§4 della descrizione). Ce ne sono tanti perché il dominio
+   ne ha tanti — semplificarli qui vorrebbe dire mentire all'utente. */
+const STATI = {
+  bozza:        { et:'Bozza',                    cl:'b-neutral' },
+  validato:     { et:'Validato, pronto',         cl:'b-info'    },
+  trasmesso:    { et:'In trasmissione',          cl:'b-warn'    },
+  accettato:    { et:'Accettato dall’autorità',  cl:'b-ok'      },
+  consegnato:   { et:'Consegnato',               cl:'b-ok'      },
+  disposizione: { et:'Messa a disposizione',     cl:'b-warn'    },
+  scartato:     { et:'Scartato',                 cl:'b-bad'     },
+  rifiutato:    { et:'Rifiutato dal cliente',    cl:'b-bad'     },
+  conservato:   { et:'In conservazione',         cl:'b-neutral' },
+  ricevuto:     { et:'Ricevuto',                 cl:'b-info'    },
+};
+
+/* Le due famiglie di ciclo di vita implementate. Ogni passo porta con sé la
+   sua spiegazione in parole comuni: è la traduzione che l'imprenditore
+   compra. La famiglia a cinque angoli (Francia) non c'è, e non c'è di
+   proposito: vedi la schermata «Scadenze normative». */
+const CICLI = {
+  liberatoria: {
+    nome: 'a liberatoria — l’autorità fiscale deve accettare il documento',
+    passi: [
+      { k:'bozza',      t:'Bozza',                   q:'Esiste solo qui dentro: nessuno l’ha ancora vista.' },
+      { k:'validato',   t:'Validato',                q:'Ha superato le regole italiane: adesso può partire.' },
+      { k:'trasmesso',  t:'Trasmesso all’autorità',  q:'Consegnato al Sistema di Interscambio, che ha cinque giorni per rispondere.' },
+      { k:'accettato',  t:'Accettato dall’autorità', q:'Da questo istante la fattura esiste per la legge.', legale:true },
+      { k:'consegnato', t:'Consegnata al cliente',   q:'Recapitata sul canale che il cliente ha dichiarato.' },
+      { k:'conservato', t:'In conservazione',        q:'Custodita a norma per dieci anni, con sigillo e marca temporale.' },
+    ],
+    mappa: {
+      bozza:{i:0}, validato:{i:1}, trasmesso:{i:2}, accettato:{i:3}, consegnato:{i:4}, conservato:{i:5},
+      disposizione:{ i:4, tono:'avviso', et:'Messa a disposizione',
+        q:'Il recapito del cliente non ha funzionato: la fattura resta nella sua area riservata sul sito dell’autorità. È valida lo stesso, ma il cliente va avvisato.' },
+      scartato:{ i:3, tono:'ko', et:'Scartata dall’autorità',
+        q:'Rifiutata con un codice: per la legge questa fattura non è mai esistita. Non si corregge, se ne emette una nuova.' },
+    },
+    legenda: '<b>Perché questo passaggio conta.</b> In Italia (e dal 2027 in Polonia) comanda l’autorità fiscale: finché non ha accettato il documento, la fattura <b>non esiste</b> — non è «in ritardo», proprio non c’è. Se la scarta, non si corregge la fattura esistente: se ne emette una <b>nuova</b> con il contenuto corretto, e InvoiceGrove tiene legate le due (storia 0020).'
+  },
+  quattro: {
+    nome: 'a quattro angoli — conta la consegna, non l’accettazione di un’autorità',
+    passi: [
+      { k:'bozza',      t:'Bozza',                       q:'Esiste solo qui dentro: nessuno l’ha ancora vista.' },
+      { k:'validato',   t:'Validato',                    q:'Ha superato le regole europee e quelle del paese del cliente.' },
+      { k:'trasmesso',  t:'Affidata alla rete',          q:'Il nostro fornitore di rete cerca quello del cliente.' },
+      { k:'consegnato', t:'Consegnata al destinatario',  q:'Qui la fattura è a norma: nessuna autorità la deve accettare.', legale:true },
+      { k:'accettato',  t:'Accettata dal cliente',       q:'Risposta commerciale, facoltativa: il cliente può anche rifiutarla.' },
+      { k:'conservato', t:'In conservazione',            q:'Custodita a norma per dieci anni, con sigillo e marca temporale.' },
+    ],
+    mappa: {
+      bozza:{i:0}, validato:{i:1}, trasmesso:{i:2}, consegnato:{i:3}, accettato:{i:4}, conservato:{i:5},
+      rifiutato:{ i:4, tono:'ko', et:'Rifiutata dal cliente',
+        q:'Rifiuto <i>commerciale</i>: il documento è valido e consegnato, è il cliente che ne contesta il contenuto. Si chiude con una nota di credito, non con una nuova trasmissione.' },
+    },
+    legenda: '<b>Perché qui non esiste «accettato dall’autorità».</b> In Belgio e nei paesi nordici il documento viaggia direttamente fra il tuo fornitore di rete e quello del cliente: l’evento che conta è la <b>consegna</b>. Cercare lo stato italiano fuori dall’Italia è l’errore tipico — ed è il motivo per cui questa striscia cambia forma insieme alla bandiera del documento, invece di essere una sola per tutti.'
+  }
+};
+
+/* Controparti: la stessa impresa, vista da paesi diversi, ha recapiti
+   elettronici di natura diversa. L'interfaccia non usa mai i nomi tecnici
+   delle reti: dice «come vuole ricevere le fatture». */
+const CONTROPARTI = [
+  { nome:'Ferramenta Bosisio S.r.l.',   paese:'IT', come:'Codice di recapito',                  rec:'W7YVJK9',                                    esito:'ok',   quando:'verificato il 12/06/2026' },
+  { nome:'Studio Meridiana S.t.p.',     paese:'IT', come:'Codice di recapito',                  rec:'M5UXCR2',                                    esito:'ko',   quando:'l’autorità non lo riconosce' },
+  { nome:'Cooperativa Valgrande',       paese:'IT', come:'Posta elettronica certificata',       rec:'amministrazione@valgrande.pec.esempio',      esito:'warn', quando:'mai verificato' },
+  { nome:'Marta Peverelli',             paese:'IT', come:'Cliente privato, senza recapito',     rec:'copia di cortesia via posta elettronica',    esito:'ok',   quando:'nessuna verifica necessaria' },
+  { nome:'Nordwind Logistik BVBA',      paese:'BE', come:'Trovata sulla rete europea',          rec:'partita IVA belga BE 0788 ••• •••',          esito:'ok',   quando:'trovata sulla rete il 28/07/2026' },
+  { nome:'Kvist Møbler ApS',            paese:'DK', come:'Trovata sulla rete europea',          rec:'registro danese delle imprese 41 ••• •••',   esito:'ok',   quando:'trovata sulla rete il 01/08/2026' },
+  { nome:'De Vries Interieur B.V.',     paese:'NL', come:'Trovata sulla rete europea',          rec:'partita IVA olandese NL 8624 ••• •••',       esito:'ok',   quando:'trovata sulla rete il 29/07/2026' },
+];
+const ESITI_RECAPITO = {
+  ok:   { et:'Recapito valido', cl:'b-ok'   },
+  warn: { et:'Mai verificato',  cl:'b-warn' },
+  ko:   { et:'Non valido',      cl:'b-bad'  },
+};
+
+/* Pacchetti di versamento mandati in conservazione (storie 0022 e 0023). */
+const PACCHETTI = [
+  { id:'PDV-2026-07', periodo:'luglio 2026',    doc: 64, impronta:'sha256:9f3c…a4e1', marca:'02/08/2026 · 03:15', fino:'31/07/2036', anni:0 },
+  { id:'PDV-2026-06', periodo:'giugno 2026',    doc: 71, impronta:'sha256:2b70…cc19', marca:'02/07/2026 · 03:15', fino:'30/06/2036', anni:0 },
+  { id:'PDV-2025-12', periodo:'dicembre 2025',  doc: 88, impronta:'sha256:d514…70fa', marca:'02/01/2026 · 03:15', fino:'31/12/2035', anni:1 },
+  { id:'PDV-2024-09', periodo:'settembre 2024', doc: 52, impronta:'sha256:6e0a…31b8', marca:'02/10/2024 · 03:15', fino:'30/09/2034', anni:2 },
+];
+
+/* Calendario dei mandati per paese, con lo stato rispetto ai soggetti
+   dell'account (storia 0010). Le date sono quelle rilevate nella ricerca
+   di mercato (§2.3 della descrizione), non inventate. */
+const MANDATI = [
+  { paese:'Italia',      da:'in vigore',       modello:'L’autorità deve accettare la fattura',                 stato:'attivo',      cosa:'Già operativo: emetti e ricevi da qui.' },
+  { paese:'Belgio',      da:'1° gennaio 2026', modello:'Conta la consegna al cliente sulla rete europea',      stato:'attivo',      cosa:'Già operativo per Nordwind Logistik BVBA.' },
+  { paese:'Polonia',     da:'1° gennaio 2027', modello:'L’autorità deve accettare la fattura',                 stato:'avvicina',    cosa:'Nessuna tua controparte è polacca: ti avvisiamo se ne aggiungi una.' },
+  { paese:'Francia',     da:'1° settembre 2027', modello:'Piattaforma accreditata più comunicazione fiscale',  stato:'scoperto',    cosa:'Non copriamo la Francia: serve una piattaforma accreditata dallo Stato. Te lo diciamo prima che tu ci provi.' },
+  { paese:'Germania',    da:'1° gennaio 2028', modello:'Conta la consegna al cliente',                         stato:'lontano',     cosa:'Ricezione già obbligatoria per chi ha clienti tedeschi; emissione più avanti.' },
+];
+const STATI_MANDATO = {
+  attivo:   { et:'Ti riguarda già',        cl:'b-ok'      },
+  avvicina: { et:'Si avvicina',            cl:'b-warn'    },
+  scoperto: { et:'Non coperto da noi',     cl:'b-bad'     },
+  lontano:  { et:'Non ti riguarda ancora', cl:'b-neutral' },
+};
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+  invia: svg('<path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5 21 3Z"/>'),
+  scudo: svg('<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+const doc = id => RIGHE.find(x => x.id === id) ?? RIGHE[0];
+
+/* stato dell'interfaccia (ricerca, filtri, pagina, documento selezionato) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', paese:'tutti', pagina:1, sel:'FT 2026/0213' };
+const PER_PAGINA = 6;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici. Da 2 a 4 numeri, non di più. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota. Dice sempre tre cose: cosa è successo,
+   cosa non si può più fare, come si rimedia. Qui il blocco è particolarmente
+   duro da spiegare: la quota ferma la TRASMISSIONE, cioè un adempimento con
+   una scadenza di legge. Il testo lo dice, non lo nasconde. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Non puoi trasmettere né ricevere altri documenti fino al 1° settembre. Le bozze si continuano a preparare e a validare.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Passa al piano superiore</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Hai usato <b>${APP.quota.usato}</b> di <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} ${esc(APP.quota.finestra)}.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto: titolo, spiegazione, azione. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* COMPONENTE PROPRIO DELL'APP — la striscia del ciclo di vita legale.
+   Prende il documento, ricava la famiglia dalla sua giurisdizione e disegna
+   la macchina a stati GIUSTA per quel paese, marcando l'unico passo che ha
+   effetto giuridico. È il cuore della proposta di interfaccia. */
+function cicloDiVita(d){
+  const fam = PAESI[d.paese].famiglia;
+  const def = CICLI[fam];
+  const m = def.mappa[d.stato] ?? { i:0 };
+  const passi = def.passi.map((p, i) => {
+    let cl = i < m.i ? 'fatto' : (i > m.i ? 'futuro' : 'qui');
+    let t = p.t, q = p.q;
+    if(i === m.i && m.tono) cl = m.tono;
+    if(i === m.i && m.et){ t = m.et; q = m.q; }
+    const marchio = (p.legale && !(i === m.i && m.tono === 'ko')) ? '<span class="legale">effetto giuridico</span>' : '';
+    return `<div class="passo ${cl}">
+      <span class="n">Passo ${i+1}</span>
+      <span class="t">${esc(t)}</span>
+      <span class="q">${q}</span>
+      ${marchio}
+    </div>`;
+  }).join('');
+  return `<div class="ciclo">${passi}</div><p class="ciclo-legenda">${def.legenda}</p>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica.
+   Il cliente si fa due sole domande: «è andata?» e «se no, perché?»
+   (§2.5 della descrizione). Tutto il resto è rumore. */
+function vPanoramica(){
+  const attenzione = ['FT 2026/0212','FT 2026/0209','FT 2026/0210','FT 2026/0211'].map(doc);
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> Gli indicatori rispondono alle due sole domande che il cliente si pone
+    davvero: «è andata?» e «se no, perché?». Per questo <i>non</i> c’è nessun grafico e nessun fatturato: quelli
+    stanno nell’app che emette i documenti, non in quella che li porta a norma. Il quarto indicatore è la prossima
+    scadenza <i>di legge</i>, perché è l’unica data che può far male al cliente senza che lui se ne accorga.
+    Il blocco «Richiedono attenzione» è ordinato per gravità giuridica, non per data: uno scarto (documento che non
+    esiste) viene prima di una consegna non riuscita (documento valido ma non recapitato).`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="elenco">${I.invia} Vai ai documenti</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Trasmessi in agosto',    v:'78',  d:'su 100 del piano europa'},
+    {k:'In attesa di esito',     v:'2',   d:'uno fermo da 2 giorni', tono:'down'},
+    {k:'Da correggere',          v:'1',   d:'scartata dall’autorità', tono:'down'},
+    {k:'Prossimo obbligo',       v:'2027', d:'Polonia · 1° gennaio'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Documenti che richiedono attenzione">
+      <div class="card-pad">
+        <h2 class="sec">Richiedono attenzione</h2>
+        <p class="sec-sub">In ordine di gravità: prima ciò che per la legge non esiste, poi ciò che esiste ma non è arrivato.</p>
+      </div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Documento</th><th>Controparte</th><th>Paese</th><th>Stato</th><th>Cosa fare</th></tr></thead>
+        <tbody>
+          <tr data-nav="scarto" data-id="FT 2026/0212">
+            <td class="mono">FT 2026/0212</td><td>Studio Meridiana S.t.p.</td><td>Italia</td>
+            <td>${badge('scartato')}</td><td>Leggi perché e correggi</td>
+          </tr>
+          <tr data-nav="dettaglio" data-id="FT 2026/0209">
+            <td class="mono">FT 2026/0209</td><td>De Vries Interieur B.V.</td><td>Paesi Bassi</td>
+            <td>${badge('rifiutato')}</td><td>Emetti una nota di credito</td>
+          </tr>
+          <tr data-nav="dettaglio" data-id="FT 2026/0210">
+            <td class="mono">FT 2026/0210</td><td>Cooperativa Valgrande</td><td>Italia</td>
+            <td>${badge('disposizione')}</td><td>Avvisa il cliente: è valida ma non gli è arrivata</td>
+          </tr>
+          <tr data-nav="dettaglio" data-id="FT 2026/0211">
+            <td class="mono">FT 2026/0211</td><td>Kvist Møbler ApS</td><td>Danimarca</td>
+            <td>${badge('trasmesso')}</td><td>Ferma da 2 giorni: la stiamo seguendo noi</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Piano <b>europa</b>: Italia più rete europea, fino a 3 soggetti emittenti.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm" data-nav="conservazione">${I.scudo} Conservazione</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni si chiedono a parole (storie 0027-0029). Per esempio:
+        «perché è stata scartata la 2026/0212?», «quali fatture sono ferme da più di due giorni?»,
+        «prepara la fattura sostitutiva per Studio Meridiana».
+        Le richieste che <b>scrivono</b> producono una bozza; la trasmissione all’autorità chiede sempre una
+        conferma esplicita, anche in chat.</p>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">Scadenze normative</h2>
+        <p class="sec-sub">Polonia dal 1° gennaio 2027, Francia dal 1° settembre 2027. Nessuna delle tue controparti
+        è in quei paesi: per ora non ti riguardano.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm" data-nav="mandati">Vedi il calendario</button></div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Documenti: ricerca, due filtri, tabella, paginazione. */
+function vElenco(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (S.paese === 'tutti' || r.paese === S.paese) &&
+    (!q || r.id.toLowerCase().includes(q) || r.contro.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Documenti.</b> Il secondo filtro è la <i>giurisdizione</i>, e non è un vezzo: due documenti
+    nello stesso stato apparente («consegnato») hanno un valore legale diverso a seconda del paese, e il cliente
+    multi-paese ragiona per paese quando arriva una scadenza fiscale. Gli stati sono dieci perché il dominio ne ha
+    dieci: comprimerli in «ok / non ok» farebbe sparire proprio la distinzione che il cliente paga —
+    fra «scartata» (non esiste), «messa a disposizione» (esiste ma non è arrivata) e «rifiutata dal cliente»
+    (esiste, è arrivata, ed è contestata). I documenti passivi ricevuti dai canali stanno nello stesso elenco,
+    con il verso indicato: sono lo stesso adempimento visto dall’altro lato.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Documenti</h1><p>Emessi e ricevuti, di tutti i soggetti e di tutte le giurisdizioni attive.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo documento</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per numero o controparte…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato del ciclo di vita">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <select class="select" id="paese" aria-label="Filtra per giurisdizione">
+      <option value="tutti"${S.paese==='tutti'?' selected':''}>Tutte le giurisdizioni</option>
+      ${Object.entries(PAESI).map(([k,v])=>`<option value="${k}"${S.paese===k?' selected':''}>${v.nome}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} document${trovate.length===1?'o':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Numero</th><th>Verso</th><th>Controparte</th><th>Giurisdizione</th><th>Data</th><th class="num">Totale</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${esc(r.id)}">
+          <td class="mono">${esc(r.id)}</td>
+          <td>${r.verso === 'passivo' ? 'ricevuto' : 'emesso'}</td>
+          <td>${esc(r.contro)}</td>
+          <td>${esc(PAESI[r.paese].nome)}</td>
+          <td>${esc(r.data)}</td>
+          <td class="num">${eur(r.valore)}</td>
+          <td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessun documento corrisponde ai filtri',
+      'Prova con un altro numero o un’altra controparte, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio del documento.
+   È la schermata che deve rendere leggibile la macchina a stati legale. */
+function vDettaglio(){
+  const d = doc(S.sel);
+  const g = PAESI[d.paese];
+  const passivo = d.verso === 'passivo';
+  const daTrasmettere = d.stato === 'bozza' || d.stato === 'validato';
+
+  const avvisoStato =
+    d.stato === 'scartato' ? `<div class="alert a-bad">${I.block}
+        <span>Questa fattura è stata <b>scartata</b>: per la legge non è mai esistita. Va corretta e trasmessa di nuovo come documento nuovo.</span>
+        <span class="spacer"></span><button class="btn btn-primary btn-sm" data-nav="scarto" data-id="${esc(d.id)}">Vedi perché</button>
+      </div>` :
+    d.stato === 'disposizione' ? `<div class="alert a-warn">${I.warn}
+        <span>La fattura è <b>valida</b> ma non è arrivata al cliente: la trova nella sua area riservata sul sito dell’autorità. Conviene avvisarlo tu.</span>
+        <span class="spacer"></span><button class="btn btn-ghost btn-sm">Invia copia di cortesia</button>
+      </div>` :
+    d.stato === 'rifiutato' ? `<div class="alert a-warn">${I.warn}
+        <span>Il cliente ha <b>rifiutato</b> la fattura per motivi commerciali. Il documento resta valido: si chiude con una nota di credito.</span>
+        <span class="spacer"></span><button class="btn btn-ghost btn-sm">Prepara la nota di credito</button>
+      </div>` : '';
+
+  return `
+  ${nota(`<b>Proposta — Dettaglio del documento.</b> Qui sta la scelta che regge tutto il mockup: la prima cosa che
+    si vede <i>non</i> sono i totali, è <b>la striscia del ciclo di vita della giurisdizione di questo documento</b>.
+    Cambia da sola con il paese — sei passi con l’accettazione dell’autorità per l’Italia, sei passi con la consegna
+    al destinatario per la rete europea — e marca con l’etichetta <i>effetto giuridico</i> l’unico istante in cui il
+    documento comincia a esistere per la legge. Un imprenditore che non ha letto una riga di normativa deve poter
+    capire, guardando questa riga di riquadri, <b>se la fattura c’è o non c’è</b>. La cronologia a destra tiene i
+    codici veri dell’autorità: servono al commercialista e servono a noi quando il cliente chiama, ma non sono la
+    cosa che si legge per prima.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(d.id)}</h1>${badge(d.stato)}<span class="badge b-neutral">${esc(g.nome)}</span></div>
+      <p>${esc(d.tipo)} · ${esc(d.contro)} · ${esc(d.data)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna ai documenti</button>
+  </div>
+
+  ${avvisoStato}
+
+  ${passivo ? `
+  <section class="card card-pad">
+    <h2 class="sec">Documento ricevuto</h2>
+    <p class="sec-sub" style="margin-bottom:10px">Questo documento non l’hai emesso tu: è arrivato dal canale
+    ${esc(g.canale)} e InvoiceGrove lo ha riconosciuto, registrato e messo in conservazione insieme ai tuoi.
+    Non ha un ciclo di vita da seguire: per te è già definitivo.</p>
+    <div class="row"><button class="btn btn-ghost">${I.scarica} Scarica l’originale</button><button class="btn btn-ghost" data-nav="conservazione">Vedi il pacchetto di conservazione</button></div>
+  </section>` : `
+  <section class="card card-pad">
+    <h2 class="sec">Ciclo di vita legale — ${esc(g.nome)}, famiglia ${esc(CICLI[g.famiglia].nome)}</h2>
+    <p class="sec-sub" style="margin-bottom:14px">Dove si trova adesso questo documento, e cosa manca perché sia definitivo.</p>
+    ${cicloDiVita(d)}
+  </section>`}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Dati del documento</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Soggetto emittente</span><span class="v">Bottega Sarti S.r.l.</span></div>
+        <div class="dl-row"><span class="k">Controparte</span><span class="v">${esc(d.contro)}</span></div>
+        <div class="dl-row"><span class="k">Giurisdizione</span><span class="v">${esc(g.nome)}</span></div>
+        <div class="dl-row"><span class="k">Come viaggia</span><span class="v">${esc(g.canale)}</span></div>
+        <div class="dl-row"><span class="k">Formato ufficiale</span><span class="v">${esc(g.formato)}</span></div>
+        <div class="dl-row"><span class="k">Imponibile</span><span class="v mono">${eur(d.valore / 1.22)}</span></div>
+        <div class="dl-row"><span class="k">Imposta (22%)</span><span class="v mono">${eur(d.valore - d.valore / 1.22)}</span></div>
+        <div class="dl-row"><span class="k">Totale</span><span class="v mono">${eur(d.valore)}</span></div>
+        ${d.idAutorita ? `<div class="dl-row"><span class="k">Identificativo dell’autorità</span><span class="v mono">${esc(d.idAutorita)}</span></div>` : ''}
+      </div>
+      <div class="row" style="margin-top:16px">
+        ${daTrasmettere ? `<button class="btn btn-primary" data-modale="apri"
+            data-mt="Trasmettere ${esc(d.id)} all’autorità fiscale?"
+            data-mx="Dopo l’accettazione del Sistema di Interscambio la fattura esiste per la legge e non si annulla: l’unico rimedio è una nota di credito. Prima di procedere abbiamo verificato tutte le regole italiane: nessuna violazione bloccante."
+            data-mok="Sì, trasmetti">${I.invia} Verifica e trasmetti</button>` : ''}
+        <button class="btn btn-ghost">${I.scarica} Scarica il file ufficiale</button>
+        <button class="btn btn-ghost">Scarica la copia leggibile</button>
+        ${d.stato === 'conservato' ? `<button class="btn btn-ghost" data-nav="conservazione">Vedi il pacchetto</button>` : ''}
+      </div>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Cronologia delle notifiche</h2>
+      <p class="sec-sub" style="margin-bottom:6px">Con i codici originali, per il commercialista.</p>
+      <div class="timeline">
+        ${cronologia(d).map(e=>`
+          <div class="tl-item"><span class="tl-dot"></span><div>
+            <div>${e.t} ${e.c ? `<span class="codice">${esc(e.c)}</span>` : ''}</div>
+            <div class="when">${esc(e.q)}</div>
+          </div></div>`).join('')}
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* Cronologia finta, coerente con lo stato e con la famiglia del paese. */
+function cronologia(d){
+  const it = PAESI[d.paese].famiglia === 'liberatoria';
+  const base = [
+    { t:'Documento acquisito dall’app di fatturazione', c:null, q:`${d.data} · 08:41 · a eventi, storia 0012` },
+    { t:'Validazione superata', c:null, q:`${d.data} · 08:41 · 0 violazioni bloccanti, 1 avvertimento` },
+  ];
+  if(d.stato === 'bozza') return [base[0]];
+  if(d.verso === 'passivo') return [
+    { t:'Documento ricevuto dal canale', c:null, q:`${d.data} · 06:12` },
+    { t:'Controparte riconosciuta in anagrafica', c:null, q:`${d.data} · 06:12` },
+    { t:'Messo in conservazione', c:null, q:`${d.data} · 23:05` },
+  ];
+  const dopo = it ? {
+    trasmesso:    [{ t:'Trasmesso al Sistema di Interscambio', c:'IT03928471_00A9', q:`${d.data} · 09:02 · in attesa di esito` }],
+    accettato:    [{ t:'Trasmesso al Sistema di Interscambio', c:'IT03928471_00A9', q:`${d.data} · 09:02` },
+                   { t:'Accettato — la fattura esiste per la legge', c:'RC', q:`${d.data} · 11:18` }],
+    consegnato:   [{ t:'Accettato dall’autorità', c:'RC', q:`${d.data} · 11:18` },
+                   { t:'Consegnato al cliente', c:'RC', q:`${d.data} · 11:20` }],
+    disposizione: [{ t:'Accettato dall’autorità', c:'RC', q:`${d.data} · 10:04` },
+                   { t:'Consegna non riuscita: messa a disposizione', c:'MC', q:`${d.data} · 10:06 · recapito non raggiungibile` }],
+    scartato:     [{ t:'Trasmesso al Sistema di Interscambio', c:'IT03928471_00A5', q:`${d.data} · 09:02` },
+                   { t:'Scartato dall’autorità', c:'NS 00311', q:`${d.data} · 14:37 · vedi la diagnosi` }],
+    conservato:   [{ t:'Accettato dall’autorità', c:'RC', q:`${d.data} · 10:11` },
+                   { t:'Consegnato al cliente', c:'RC', q:`${d.data} · 10:13` },
+                   { t:'Messo in conservazione con marca temporale', c:'PDV-2026-07', q:'02/08/2026 · 03:15' }],
+  } : {
+    trasmesso:    [{ t:'Affidato al punto di accesso', c:'AP-7741', q:`${d.data} · 09:05 · destinatario in ricerca` }],
+    consegnato:   [{ t:'Affidato al punto di accesso', c:'AP-7741', q:`${d.data} · 09:05` },
+                   { t:'Consegnato al destinatario — il documento è a norma', c:'ricevuta di consegna', q:`${d.data} · 09:07` }],
+    accettato:    [{ t:'Consegnato al destinatario', c:'ricevuta di consegna', q:`${d.data} · 09:07` },
+                   { t:'Accettato dal cliente', c:'risposta commerciale', q:`${d.data} · 16:22` }],
+    rifiutato:    [{ t:'Consegnato al destinatario', c:'ricevuta di consegna', q:`${d.data} · 09:07` },
+                   { t:'Rifiutato dal cliente: quantità contestate', c:'risposta commerciale', q:`${d.data} · 17:40` }],
+    conservato:   [{ t:'Consegnato al destinatario', c:'ricevuta di consegna', q:`${d.data} · 09:07` },
+                   { t:'Messo in conservazione con marca temporale', c:'PDV-2026-07', q:'02/08/2026 · 03:15' }],
+  };
+  return base.concat(dopo[d.stato] ?? []);
+}
+
+/* SCHERMATA — Diagnosi dello scarto.
+   È la funzione per cui il cliente paga (§2.5 della descrizione, storia 0015). */
+function vScarto(){
+  const d = doc(S.sel).scarto ? doc(S.sel) : doc('FT 2026/0212');
+  return `
+  ${nota(`<b>Proposta — Diagnosi dello scarto.</b> L’autorità comunica lo scarto con un codice e nient’altro:
+    <span class="codice">00311</span>. Tradurlo in una frase e in tre gesti è, letteralmente, la funzione per cui il
+    cliente paga l’abbonamento. La schermata è costruita in quest’ordine — <i>cosa è successo</i>, <i>cosa vuol dire
+    per te</i>, <i>cosa fai adesso</i> — e il codice originale resta in vista ma in secondo piano, perché serve al
+    commercialista e non a chi deve rimediare. La frase più importante è quella in rosso: la fattura scartata
+    <b>non è mai esistita</b>, quindi non si corregge, se ne emette un’altra. È il concetto che i clienti sbagliano
+    più spesso, ed è per questo che è scritto per esteso invece che essere lasciato dedurre dallo stato.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>Perché è stata scartata</h1>${badge('scartato')}</div>
+      <p>${esc(d.id)} · ${esc(d.contro)} · ${esc(d.data)} · ${eur(d.valore)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="dettaglio" data-id="${esc(d.id)}">${I.sx} Torna al documento</button>
+  </div>
+
+  <div class="alert a-bad">${I.block}
+    <span>Per la legge questa fattura <b>non è mai esistita</b>. Hai cinque giorni per rimediare senza conseguenze:
+    si emette un documento <b>nuovo</b> con lo stesso contenuto corretto — non si modifica questo.</span>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card card-pad" style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <h2 class="sec">Cosa dice l’autorità</h2>
+        <p class="sec-sub" style="margin-top:6px">
+          <span class="codice">00311</span> &nbsp;«Codice destinatario non valido»
+        </p>
+      </div>
+      <div>
+        <h2 class="sec">Cosa vuol dire davvero</h2>
+        <p class="sec-sub" style="margin-top:6px">Il codice di recapito che hai in anagrafica per
+        <b>Studio Meridiana S.t.p.</b> — <span class="codice">M5UXCR2</span> — non risulta a nessuno.
+        Succede quando il cliente cambia gestionale e non avvisa, oppure quando il codice è stato copiato
+        con un carattere sbagliato. Non è un problema del contenuto della fattura: gli importi e le righe vanno bene.</p>
+      </div>
+      <div>
+        <h2 class="sec">Cosa fai adesso</h2>
+        <ol class="rimedio" style="margin-top:10px">
+          <li><div><b>Chiedi al cliente il codice giusto.</b> Sette caratteri fra lettere e numeri; in alternativa
+            va bene il suo indirizzo di posta elettronica certificata. Se non te lo dà, si può usare il codice
+            convenzionale e mandargli una copia di cortesia.</div></li>
+          <li><div><b>Correggilo in anagrafica</b>, così non succede più sugli altri documenti.</div></li>
+          <li><div><b>Trasmetti il documento sostitutivo.</b> Lo prepariamo noi con lo stesso contenuto e un numero
+            nuovo, e lo teniamo legato a questo (storia 0020), così il tuo commercialista capisce cos’è successo.</div></li>
+        </ol>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary" data-nav="controparti">Correggi il recapito in anagrafica</button>
+        <button class="btn btn-ghost" data-nav="nuovo">Prepara il documento sostitutivo</button>
+      </div>
+    </div>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">Altri codici che vediamo spesso</h2>
+        <p class="sec-sub" style="margin-bottom:8px">La stessa traduzione vale per tutti: ogni codice ha una frase e un rimedio.</p>
+        <div class="dl">
+          <div class="dl-row"><span class="k"><span class="codice">00200</span></span><span class="v" style="font-weight:600">Il file non rispetta il formato ufficiale</span></div>
+          <div class="dl-row"><span class="k"><span class="codice">00301</span></span><span class="v" style="font-weight:600">La partita IVA del cliente non esiste</span></div>
+          <div class="dl-row"><span class="k"><span class="codice">00404</span></span><span class="v" style="font-weight:600">Hai già mandato una fattura con questo numero</span></div>
+          <div class="dl-row"><span class="k"><span class="codice">00423</span></span><span class="v" style="font-weight:600">I totali delle righe non tornano con il totale</span></div>
+        </div>
+      </div>
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">«Perché è stata scartata la 2026/0212?» dà esattamente questa risposta in una frase.
+        La preparazione del documento sostitutivo produce una <b>bozza</b>; la trasmissione, no: quella la
+        confermi tu (storia 0029).</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Controparti e recapito elettronico (storie 0008 e 0009). */
+function vControparti(){
+  return `
+  ${nota(`<b>Proposta — Controparti.</b> Nessuno vuole imparare la parola «Peppol» (§2.5 della descrizione): la
+    colonna si chiama <i>Come riceve le fatture</i> e contiene frasi, non nomi di reti. Il paese della controparte
+    decide da solo la giurisdizione, il formato e il canale — l’utente non sceglie mai «quale rete», sceglie
+    <i>a chi</i> sta fatturando. La colonna della verifica esiste perché lo scarto più frequente nasce qui: un
+    recapito sbagliato si scopre <b>prima</b> di emettere, con un controllo che costa nulla, oppure <b>dopo</b>,
+    con una fattura che per la legge non esiste. La riga rossa è quella che ha causato lo scarto della 2026/0212.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Controparti</h1><p>Clienti e fornitori, con il recapito giusto per il loro paese.</p></div>
+    <button class="btn btn-primary">${I.piu} Nuova controparte</button>
+  </div>
+
+  <div class="alert a-warn">${I.warn}
+    <span>Un recapito <b>non valido</b> e uno <b>mai verificato</b>. Verificarli adesso costa un minuto; scoprirlo con uno scarto costa una fattura.</span>
+    <span class="spacer"></span><button class="btn btn-ghost btn-sm">Verifica tutti</button>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Controparte</th><th>Paese</th><th>Come riceve le fatture</th><th>Recapito</th><th>Verifica</th></tr></thead>
+      <tbody>${CONTROPARTI.map(c=>`
+        <tr>
+          <td><b>${esc(c.nome)}</b></td>
+          <td>${esc(PAESI[c.paese].nome)}</td>
+          <td>${esc(c.come)}</td>
+          <td class="mono">${esc(c.rec)}</td>
+          <td><span class="badge ${ESITI_RECAPITO[c.esito].cl}">${ESITI_RECAPITO[c.esito].et}</span>
+            <div class="when" style="font-size:11.5px;color:rgb(var(--faint))">${esc(c.quando)}</div></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>
+
+  ${nota(`<b>Perché la riga «Marta Peverelli» è diversa.</b> È un cliente privato: in Italia la fattura elettronica
+    si emette lo stesso, con un codice convenzionale, e al cliente si manda una copia leggibile per cortesia.
+    Ed è anche il punto in cui l’app deve fermarsi: se l’operazione è una <b>prestazione sanitaria a una persona
+    fisica</b>, la legge italiana <i>vieta</i> in modo permanente di emetterla per via elettronica. La regola di
+    validazione lo blocca prima dell’invio (storia 0014) — si vede in azione nella schermata «Nuovo documento» —
+    e quel divieto è anche il presidio che tiene i dati sulla salute fuori da questa app.`)}`;
+}
+
+/* SCHERMATA — Conservazione a norma (storie 0022-0024 e 0026). */
+function vConservazione(){
+  return `
+  ${nota(`<b>Proposta — Conservazione.</b> Conservare a norma non è «archiviare»: è un processo con un pacchetto
+    firmato, una marca temporale, un indice di metadati obbligatori e una durata di legge di dieci anni. La
+    schermata mostra proprio quelle quattro cose, perché sono ciò che rende il documento <i>opponibile</i> se un
+    giorno qualcuno lo contesta. La barra degli anni non è una quota: è il tempo che manca alla fine dell’obbligo.
+    L’avviso in fondo dice ad alta voce la cosa scomoda — un documento in conservazione <b>non si cancella su
+    richiesta</b>, perché l’obbligo di legge prevale sul diritto alla cancellazione: è un punto aperto della
+    descrizione (§11, punto 3) e va risolto con il presidio di conformità, non nascosto nell’interfaccia.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Conservazione a norma</h1><p>Documenti custoditi in modo opponibile presso un conservatore qualificato.</p></div>
+    <button class="btn btn-ghost" data-modale="apri"
+      data-mt="Scaricare l’intero archivio conservato?"
+      data-mx="Prepariamo un pacchetto con tutti i documenti, i loro metadati e le ricevute di conservazione. Richiede qualche minuto e ti avvisiamo quando è pronto. È la stessa operazione che si usa quando cambi fornitore o chiudi l’abbonamento."
+      data-mok="Prepara lo scarico">${I.scarica} Scarica tutto l’archivio</button>
+  </div>
+
+  ${bloccoIndicatori([
+    {k:'Documenti conservati', v:'1.284', d:'attivi e passivi insieme'},
+    {k:'Pacchetti versati',    v:'27',    d:'uno al mese, in automatico'},
+    {k:'Ultima marca temporale', v:'02/08', d:'ore 03:15, senza errori'},
+    {k:'Custodia più vecchia', v:'2034',  d:'scade il 30/09/2034'},
+  ])}
+
+  <section class="card">
+    <div class="card-pad">
+      <h2 class="sec">Pacchetti di versamento</h2>
+      <p class="sec-sub">Ogni pacchetto porta l’impronta dei documenti che contiene e la marca temporale del conservatore: è quella che rende la custodia opponibile.</p>
+    </div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Pacchetto</th><th>Periodo</th><th class="num">Documenti</th><th>Impronta</th><th>Marca temporale</th><th>Da conservare fino al</th></tr></thead>
+      <tbody>${PACCHETTI.map(p=>`
+        <tr>
+          <td class="mono">${esc(p.id)}</td>
+          <td>${esc(p.periodo)}</td>
+          <td class="num">${p.doc}</td>
+          <td class="mono">${esc(p.impronta)}</td>
+          <td>${esc(p.marca)}</td>
+          <td>${esc(p.fino)}
+            <div class="anni" style="margin-top:4px">
+              <span class="anni-bar"><i style="width:${p.anni*10}%"></i></span>
+              <span style="font-size:11px">${p.anni === 0 ? 'primo anno di custodia' : `${p.anni} anni su 10`}</span>
+            </div>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Esibire un documento</h2>
+      <p class="sec-sub" style="margin-bottom:12px">Se te lo chiede un controllo, serve il documento <i>più</i> la
+      prova che è stato conservato a norma: si scaricano insieme.</p>
+      <div class="tools">
+        <div class="search">${I.cerca}
+          <input type="search" placeholder="Numero, controparte o periodo…" aria-label="Cerca nell’archivio conservato">
+        </div>
+        <button class="btn btn-primary">Cerca nell’archivio</button>
+      </div>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">${I.scudo} Cancellazione e obbligo di legge</h2>
+      <p class="sec-sub">Se un cliente ti chiede di cancellare i suoi dati, cancelliamo tutto quello che non è
+      coperto dall’obbligo fiscale. I documenti già in conservazione <b>restano</b> fino alla scadenza dei dieci
+      anni: te lo diciamo per iscritto, con l’elenco di cosa resta e fino a quando, così puoi rispondere al tuo
+      cliente. Non è una scelta nostra, è la legge che prevale.</p>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Scadenze normative (storia 0010). */
+function vMandati(){
+  return `
+  ${nota(`<b>Proposta — Scadenze normative.</b> Il cliente non conosce il calendario europeo, e il calendario si
+    muove (la Polonia ha già spostato le micro-imprese al 2027). Questa schermata serve a due cose e a nessun’altra:
+    dire <i>da quando</i> una regola lo riguarda, e dire <b>subito</b> quando noi non copriamo un paese. La riga
+    della Francia è scritta in rosso apposta: dichiarare un limite prima che il cliente ci sbatta contro vale più
+    di una funzione in più. La colonna «Modello» traduce le tre famiglie in una frase, senza mai nominare le reti
+    o i portali: è la stessa traduzione che compare nella striscia del ciclo di vita.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Scadenze normative</h1><p>Quando la fattura elettronica diventa obbligatoria nei paesi in cui vendi.</p></div>
+  </div>
+
+  <div class="alert a-ok">${I.check}
+    <span>Sei in regola in tutti i paesi in cui hai clienti oggi: <b>Italia</b>, <b>Belgio</b>, <b>Danimarca</b> e <b>Paesi Bassi</b>.</span>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Paese</th><th>Obbligatoria da</th><th>Come funziona lì</th><th>Ti riguarda?</th><th>Cosa devi fare</th></tr></thead>
+      <tbody>${MANDATI.map(m=>`
+        <tr>
+          <td><b>${esc(m.paese)}</b></td>
+          <td>${esc(m.da)}</td>
+          <td>${esc(m.modello)}</td>
+          <td><span class="badge ${STATI_MANDATO[m.stato].cl}">${STATI_MANDATO[m.stato].et}</span></td>
+          <td>${esc(m.cosa)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>
+
+  ${nota(`<b>Perché la Francia è dichiarata scoperta.</b> Non è una scelta di comodo: per emettere fatture francesi
+    bisogna essere una <i>piattaforma accreditata</i> dall’amministrazione fiscale, con un dossier di
+    immatricolazione e una certificazione di sicurezza (§2.3 della descrizione). È una decisione aziendale, non una
+    storia da mettere in coda a un’epica — e il punto 6 dei rischi lo dice apertamente. In interfaccia la regola è:
+    se non lo copriamo, lo scriviamo prima, non dopo.`)}`;
+}
+
+/* SCHERMATA — Nuovo documento (di ripiego, storia 0013).
+   Il modulo serve anche a mostrare la validazione BLOCCANTE prima dell'invio. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo documento, ed è di proposito una via secondaria.</b> InvoiceGrove <i>non crea</i>
+    fatture: la porta d’ingresso normale è l’app di fatturazione che gliele passa da sola (storia 0012), o un file
+    importato. Questo modulo esiste per chi non ha ancora collegato una sorgente, e per questo porta l’etichetta
+    «ripiego» anche nel menu: se diventasse il modo abituale di lavorare, avremmo sbagliato il prodotto.
+    <br><br>La cosa da guardare qui è un’altra: <b>la giurisdizione non si sceglie</b>, la decide il paese della
+    controparte, e con lei il formato e il canale. E la validazione avviene <i>prima</i> dell’invio, mai dopo:
+    prova a scegliere «prestazione sanitaria a una persona fisica» e premi Salva — la legge italiana lo vieta in
+    modo permanente, e l’app deve fermarti spiegandoti perché (storia 0014). È lo stesso presidio che tiene i dati
+    sulla salute fuori da questa applicazione.`)}
+  <div class="page-h"><div class="txt"><h1>Nuovo documento</h1><p>Solo per chi non ha una sorgente collegata: il modo normale è che i documenti arrivino da soli.</p></div></div>
+
+  ${avvisoQuota('vicino')}
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field">
+        <label for="i-emittente">Soggetto emittente *</label>
+        <select id="i-emittente">
+          <option>Bottega Sarti S.r.l. — Italia</option>
+          <option>Bottega Sarti Belgium BVBA — Belgio</option>
+        </select>
+        <span class="hint">Chi emette: decide il regime fiscale e il canale di partenza.</span>
+      </div>
+      <div class="field">
+        <label for="i-controparte">Controparte *</label>
+        <select id="i-controparte">
+          <option data-paese="Italia">Ferramenta Bosisio S.r.l. — Italia</option>
+          <option data-paese="Italia">Marta Peverelli (cliente privato) — Italia</option>
+          <option data-paese="Belgio">Nordwind Logistik BVBA — Belgio</option>
+          <option data-paese="Danimarca">Kvist Møbler ApS — Danimarca</option>
+        </select>
+        <span class="hint">Dall’anagrafica: se il recapito non è verificato te lo diciamo qui.</span>
+      </div>
+      <div class="field">
+        <label for="i-giurisdizione">Giurisdizione (derivata)</label>
+        <input id="i-giurisdizione" value="Italia · l’autorità deve accettare la fattura · formato FatturaPA" readonly>
+        <span class="hint">Non si sceglie: la decide il paese della controparte.</span>
+      </div>
+      <div class="field">
+        <label for="i-tipo">Tipo di documento *</label>
+        <select id="i-tipo"><option>Fattura</option><option>Nota di credito</option></select>
+      </div>
+      <div class="field" id="f-numero">
+        <label for="i-numero">Numero *</label>
+        <input id="i-numero" name="numero" placeholder="es. FT 2026/0216">
+        <span class="hint">Deve essere progressivo e mai riusato: l’autorità rifiuta i doppioni.</span>
+      </div>
+      <div class="field">
+        <label for="i-data">Data *</label>
+        <input id="i-data" type="date" value="2026-08-03">
+      </div>
+      <div class="field wide" id="f-operazione">
+        <label for="i-operazione">Tipo di operazione *</label>
+        <select id="i-operazione">
+          <option value="beni">Cessione di beni</option>
+          <option value="servizi">Prestazione di servizi</option>
+          <option value="sanitaria">Prestazione sanitaria a una persona fisica</option>
+        </select>
+        <span class="hint">Serve alle regole di conformità, non è un dettaglio contabile.</span>
+      </div>
+      <div class="field">
+        <label for="i-imponibile">Imponibile (€) *</label>
+        <input id="i-imponibile" type="number" step="0.01" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label for="i-aliquota">Aliquota</label>
+        <select id="i-aliquota"><option>22%</option><option>10%</option><option>5%</option><option>4%</option><option>Esente</option></select>
+      </div>
+      <div class="field wide">
+        <label for="i-descrizione">Descrizione della riga *</label>
+        <textarea id="i-descrizione" placeholder="Cosa hai venduto o quale servizio hai reso…"></textarea>
+        <span class="hint">Testo libero: finisce sul documento fiscale e resta conservato dieci anni.
+        Non scrivere informazioni sulla salute, sulle convinzioni o sulla vita privata di una persona.</span>
+      </div>
+    </div>
+    <div id="esito-validazione"></div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="elenco">Annulla</button>
+      <button type="submit" class="btn btn-primary">Valida e salva la bozza</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Primo avvio, modalità prova e quota esaurita.
+   Tre stati che si dimenticano sempre e che l'utente incontra per primi. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio, prova e quota esaurita.</b> Il primo giorno l’app è vuota, e per questa app
+    «vuota» ha un significato preciso: non manca un documento, manca <i>la sorgente</i> dei documenti. Lo stato
+    vuoto propone quindi di collegare l’app di fatturazione, non di scrivere una fattura a mano.
+    <br><br>Il riquadro della prova è la parte più delicata: durante i 14 giorni l’app <b>valida, converte e mostra
+    l’anteprima del file ufficiale, ma non trasmette a nessuna autorità</b>. Non è un limite commerciale, è la
+    regola di piattaforma sugli effetti irreversibili verso l’esterno — e la conferma il mercato, visto che nemmeno
+    i prodotti italiani più diffusi fanno provare gratis un atto fiscale. Va detto in modo chiaro <i>prima</i>, non
+    scoperto al primo invio.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta InvoiceGrove appena attivata.</p></div></div>
+
+  ${statoVuoto(
+    'Non hai ancora collegato una sorgente di documenti',
+    'InvoiceGrove non crea fatture: le prende da dove nascono e le porta a norma. Collega l’app di fatturazione e i documenti cominceranno ad arrivare da soli.',
+    `<div class="row" style="justify-content:center">
+       <button class="btn btn-primary">Collega l’app di fatturazione</button>
+       <button class="btn btn-ghost">Importa da file</button>
+       <button class="btn btn-ghost" data-nav="nuovo">Scrivine uno a mano</button>
+     </div>`)}
+
+  <h2 class="sec">Durante la prova gratuita</h2>
+  <div class="alert a-warn">${I.warn}
+    <span>Sei in <b>prova</b> per altri 11 giorni. Puoi validare i documenti, vedere il file ufficiale e simulare il
+    ciclo di vita, ma <b>non trasmettiamo nulla all’autorità fiscale</b>: una trasmissione non si annulla.</span>
+    <span class="spacer"></span><button class="btn btn-primary btn-sm">Attiva l’abbonamento</button>
+  </div>
+
+  <h2 class="sec">Quando il piano è esaurito</h2>
+  ${avvisoQuota('raggiunto')}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI.
+      Ogni chiave qui sotto deve avere la sua funzione, e ogni bottone con
+      data-nav deve puntare a una di queste chiavi: nessun bottone orfano.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica:    ['Panoramica',           vPanoramica],
+  elenco:        ['Documenti',            vElenco],
+  dettaglio:     ['Dettaglio',            vDettaglio],
+  scarto:        ['Diagnosi dello scarto',vScarto],
+  controparti:   ['Controparti',          vControparti],
+  conservazione: ['Conservazione',        vConservazione],
+  mandati:       ['Scadenze normative',   vMandati],
+  nuovo:         ['Nuovo documento',      vNuovo],
+  vuoto:         ['Primo avvio',          vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtri dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const gp = document.getElementById('paese');
+  if(gp) gp.addEventListener('change', e => { S.paese = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.paese='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: la giurisdizione si deriva dalla controparte, non si sceglie */
+  const cp = document.getElementById('i-controparte');
+  if(cp) cp.addEventListener('change', () => {
+    const paese = cp.selectedOptions[0].dataset.paese;
+    const testo = paese === 'Italia'
+      ? 'Italia · l’autorità deve accettare la fattura · formato FatturaPA'
+      : `${paese} · conta la consegna al destinatario · formato europeo UBL`;
+    document.getElementById('i-giurisdizione').value = testo;
+  });
+
+  /* modulo: validazione finta, ma con la regola che conta davvero —
+     il divieto italiano sulle prestazioni sanitarie a persone fisiche. */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campoNum = document.getElementById('f-numero');
+    const inputNum = document.getElementById('i-numero');
+    const campoOp  = document.getElementById('f-operazione');
+    const esito    = document.getElementById('esito-validazione');
+    form.querySelectorAll('.err').forEach(x => x.remove());
+    campoNum.classList.remove('invalid'); campoOp.classList.remove('invalid');
+    esito.innerHTML = '';
+
+    if(document.getElementById('i-operazione').value === 'sanitaria'){
+      campoOp.classList.add('invalid');
+      esito.innerHTML = `<div class="alert a-bad">${I.block}
+        <span><b>Non possiamo trasmettere questo documento, e non è un nostro limite.</b>
+        In Italia è <b>vietato in modo permanente</b> emettere per via elettronica una fattura per prestazioni
+        sanitarie rese a una persona fisica: va emessa su carta o in formato non elettronico.
+        <span class="codice">IT-SAN-01</span> — regola bloccante della giurisdizione italiana.</span></div>`;
+      esito.scrollIntoView({block:'nearest'});
+      return;
+    }
+    if(!inputNum.value.trim()){
+      campoNum.classList.add('invalid');
+      campoNum.insertAdjacentHTML('beforeend','<span class="err">Il numero del documento è obbligatorio: senza, l’autorità lo rifiuta.</span>');
+      inputNum.focus();
+      return;
+    }
+    vai('elenco');
+  });
+
+  /* apertura della finestra di conferma: il testo viene dal bottone stesso,
+     così ogni azione irreversibile spiega la SUA conseguenza. */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale(b.dataset.mt ?? 'Confermi l’operazione?', b.dataset.mx ?? '', b.dataset.mok ?? 'Conferma')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo, etichetta) */
+function apriModale(titolo, testo, ok){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale-ok').textContent = ok ?? 'Conferma';
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>

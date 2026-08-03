@@ -21,7 +21,14 @@ cartella dell'app.
 
 ## Cosa deve esistere a fine change
 
-Per **ciascuna** delle 60 applicazioni del catalogo, una sottocartella `docs/usecases/_catalogo/NN-<slug>/`
+> **Restrizione d'ambito decisa in corso d'opera dallo sviluppatore.** Delle 60 applicazioni del catalogo
+> ne sono state **escluse venti** per peso normativo: quelle la cui conformità richiede un albo, una
+> licenza, una certificazione di prodotto o la custodia di dati altrui, e quelle il cui obbligo cambia più
+> in fretta di quanto una persona sola possa inseguirlo. Criterio, elenco e motivazioni una per una:
+> [`docs/usecases/_catalogo/_escluse/README.md`](../../docs/usecases/_catalogo/_escluse/README.md).
+> **Le applicazioni in ambito sono quindi 40.**
+
+Per **ciascuna** delle 40 applicazioni in ambito, una sottocartella `docs/usecases/_catalogo/NN-<slug>/`
 (dove `NN` è il numero d'ordine dell'app nel catalogo, da `01` a `60`) contenente:
 
 1. **`application-description.md`** — descrizione completa e indice dell'applicazione. È il documento

@@ -3,7 +3,10 @@
     "id": 1,
     "decision": "(autopilot) La change è documentale: produce il drill-down delle 60 applicazioni del catalogo sotto docs/usecases/_catalogo/, non scaffolda nulla. Motivo: la richiesta chiede i documenti che rendono invocabile la skill new-application, non l'invocazione stessa; scaffoldare 60 app sarebbe una decisione di prodotto (quali app costruire) che l'autopilot non prende.",
     "files": [
-      { "file": "changes/0086-catalogo-app-drill-down/requirements.md", "description": "Ambito, vincoli e fuori-ambito della change." }
+      {
+        "file": "changes/0086-catalogo-app-drill-down/requirements.md",
+        "description": "Ambito, vincoli e fuori-ambito della change."
+      }
     ]
   },
   {
@@ -34,6 +37,44 @@
   {
     "id": 7,
     "decision": "(autopilot) Listino e classificazione dei dati personali sono scritti nelle descrizioni come PROPOSTE motivate, mai come decisioni prese. Motivo: prezzi/quote e dati personali sono fermate di escalation non derogabili — restano dello sviluppatore e la skill new-application le fa confermare comunque prima di generare.",
+    "files": []
+  },
+  {
+    "id": 8,
+    "decision": "Ambito ristretto da 60 a 40 applicazioni: escluse venti per peso normativo. Decisione DELLO SVILUPPATORE, presa in corso d'opera dopo l'ondata 1, su domanda esplicita con tre soglie proposte; ha scelto la più prudente. Criterio: non la complessità del codice ma quanto costa restare conformi a chi sviluppa da solo — albo professionale, licenza, certificazione di prodotto, custodia di dati altrui, oppure obbligo che cambia più in fretta di quanto una persona sola possa inseguirlo. Le escluse: 01, 05, 09, 10, 11, 15, 18, 22, 23, 27, 29, 35, 42, 44, 46, 49, 52, 57, 58, 60.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/_escluse/README.md",
+        "description": "Criterio, elenco delle venti e motivazione una per una; dichiara la condizione che le farebbe rientrare (un fornitore che si assume l'onere della conformità)."
+      },
+      {
+        "file": "changes/0086-catalogo-app-drill-down/requirements.md",
+        "description": "Restrizione d'ambito annotata in testa alla sezione dei deliverabili."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "Le due applicazioni già scritte per intero prima della restrizione (01 InvoiceGrove, 05 ChatGrove) sono state SPOSTATE in docs/usecases/_catalogo/_escluse/ invece di essere cancellate; le due iniziate e interrotte (09 PeopleGrove, 10 PayGrove) sono state rimosse. Motivo: il lavoro finito resta consultabile e riusabile se la valutazione cambia, ma fuori dal catalogo attivo non può essere scambiato per piano di costruzione; un documento a metà, invece, è più dannoso di uno assente.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/_escluse/01-invoicegrove/",
+        "description": "6 epiche, 30 storie, artefatto a 9 schermate — completo, conservato fuori ambito."
+      },
+      {
+        "file": "docs/usecases/_catalogo/_escluse/05-chatgrove/",
+        "description": "6 epiche, 29 storie, artefatto — completo, conservato fuori ambito."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Ampiezza dell'ondata ridotta da sei a quattro agenti-applicazione in parallelo, con commit dopo ogni ondata. Motivo: la prima ondata da sei ha esaurito il limite di sessione e ha ucciso quattro agenti in coda al compito; il commit per ondata limita la perdita di un'interruzione all'ondata in corso invece che a tutto il lavoro non salvato.",
+    "files": []
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Punto trasversale emerso dall'ondata 1, da portare in docs/_BACKLOG.md alla chiusura della change: le applicazioni con una superficie rivolta a un destinatario esterno non autenticato (accettazione di un preventivo, prenotazione da parte del cliente finale, firma) deviano dall'invariante «identificativo dell'account solo dal token verificato». Impostazione proposta dall'agente dell'app 06 e da allineare per tutte: gettone di capacità firmato dal server, monouso nello scopo, a scadenza e revocabile. Approvazione dello sviluppatore, non dell'autopilot.",
     "files": []
   }
 ]
