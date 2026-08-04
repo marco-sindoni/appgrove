@@ -2,7 +2,7 @@
 
 **Numero di catalogo**: 32 · **Tipo**: orizzontale · controllo dei costi delle chiamate ai modelli linguistici · **Stato del documento**: 🟡 bozza d'autore
 **Scheda d'origine**: [catalogo, scheda 32](../appgrove-catalogo-applicazioni.md)
-**Ultimo aggiornamento**: 2026-08-03
+**Ultimo aggiornamento**: 2026-08-04
 **Autore**: agente di catalogo (kit d'autore `_kit/`)
 
 > Documento **di proposta**. Prezzi e classificazione dei dati personali sono proposte da confermare dallo

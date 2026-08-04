@@ -716,3 +716,109 @@ c'è una tabella esportata, l'asimmetria è visibile e va sciolta in un verso o 
 della revisione legale (`docs/_REVISIONE-LEGALE.md`). Non è stato deciso nella change 0077 perché
 allargare il contratto di esportazione a un'entità che quella change non introduce sarebbe stato uscire
 dal suo scope scritto.
+
+## Superfici pubbliche senza autenticazione: chi dice qual è il conto (change `0086`, 2026-08-04)
+
+**Contesto.** Il drill-down del catalogo applicazioni (change `0086`) ha fatto scrivere epiche e storie a
+diciassette applicazioni proposte. Tre di esse hanno una **pagina rivolta a un destinatario che non è un
+utente della piattaforma**: chi riceve un preventivo e lo accetta (app 06), chi prenota un appuntamento
+dalla pagina pubblica di un salone o di uno studio (app 07), chi consulta il proprio abbonamento dal
+portale dell'abbonato (app 19). Su quelle pagine **non esiste un token verificato**, e l'invariante numero
+uno della costituzione dice che l'identificativo del conto si ricava **solo** da lì.
+
+**Il punto aperto.** Le tre applicazioni hanno proposto, indipendentemente, due meccanismi distinti — e la
+distinzione è la parte interessante, perché non è la stessa situazione:
+
+- **gettone di capacità**, quando il destinatario è **noto prima**: firmato dal server, valido per un solo
+  scopo, a scadenza, revocabile, conservato come impronta, mai convertito in una sessione. È il caso
+  dell'accettazione di un preventivo, del portale dell'abbonato, della singola prenotazione confermata;
+- **identificativo pubblico di sede**, quando il visitatore è **ignoto e la pagina va pubblicata**: non è un
+  segreto e non è una credenziale, il server lo risolve da sé nel conto, e concede soltanto ciò che è già
+  pubblico più il diritto di *proporre* qualcosa. Le difese non sono la segretezza ma la verifica del
+  contatto, i limiti di frequenza, le risposte indistinguibili e il divieto di enumerazione.
+
+Nessuno dei due è stato approvato: sono proposte di agenti che scrivevano documenti. Servono una decisione
+di piattaforma e **un'unica implementazione condivisa** — se ogni applicazione se lo costruisce da sé, la
+prima che sbaglia apre un varco sull'isolamento fra conti, e nessun collaudo di piattaforma se ne accorge.
+
+**Chi possiede il tema**: gli use case di autenticazione (area `05-auth`, in particolare UC 0017 sui flussi)
+insieme all'architettura applicativa (`docs/01-architettura.md`, invariante 1). Va chiuso **prima** che
+venga scaffoldata la prima applicazione con una superficie pubblica.
+
+## Autenticazione di una macchina: il conto quando il chiamante non è una persona (change `0086`, 2026-08-04)
+
+**Contesto.** L'app 31 del catalogo (registro e governo delle azioni degli agenti automatici) riceve eventi
+da **sorgenti che non sono persone**: un agente, un servizio, un processo del cliente. La piattaforma oggi
+ricava il conto dal claim di un token emesso per una persona; una sorgente non ne ha uno e non può averne.
+
+**Il punto aperto.** La proposta scritta nella storia è una **chiave di sorgente** verificata lato server,
+da cui il conto si deriva — mai dal corpo della richiesta, per non rompere l'invariante. Ma la proposta
+eccede la singola applicazione: tocca l'emissione, la rotazione e la revoca delle credenziali, e il modello
+di identità della piattaforma. Non è stata decisa.
+
+Il tema è più generale del registro delle azioni: qualunque applicazione che riceva dati da un sistema del
+cliente — sincronizzazione, importazioni automatiche, ricezione di eventi — incontra lo stesso muro.
+
+**Chi possiede il tema**: gli use case di autenticazione (area `05-auth`), con il bordo su UC 0014 e UC 0016.
+
+## «Prospetto sì, classifica no»: una regola emersa dal basso (change `0086`, 2026-08-04)
+
+**Contesto.** Tre applicazioni del catalogo, scritte da agenti diversi che non si vedevano fra loro, sono
+arrivate alla stessa conclusione su un punto che nessuno aveva posto come regola: le note spese (app 08), i
+progetti e le ore (app 13) e il salone con le provvigioni (app 21) trattano tutte **dati riferiti a singoli
+lavoratori** e tutte e tre hanno deciso di **non produrre aggregati per persona a fini di valutazione**.
+
+La distinzione che hanno tracciato è netta e regge: il dato per persona esiste dove serve a un **fatto
+dovuto** — si paga una provvigione a qualcuno, si rimborsa una spesa a qualcuno, quindi il prospetto
+individuale è legittimo e necessario — ma **nessuna vista affianca più prospetti**, e chiedere di
+raggruppare gli indicatori per operatore restituisce un rifiuto motivato. Nell'app 21 è diventato codice:
+`operatore` come chiave di raggruppamento risponde `400`, con prova negativa su rotte ed esportazioni e un
+passo dedicato nel percorso end-to-end. La stessa regola è stata estesa alla console di amministrazione, che
+aggrega per conto e mai per operatore — perché una sorveglianza non diventa lecita solo perché a guardarla è
+chi amministra la piattaforma.
+
+**Il punto aperto.** Oggi è una convenzione ripetuta tre volte, non una regola di piattaforma: la quarta
+applicazione che tratterà dati di lavoratori potrà ignorarla senza che nulla diventi rosso. Va deciso se
+promuoverla a **invariante** — con un collaudo condiviso che la faccia valere — o lasciarla come buona
+pratica documentata. La promozione ha un costo: va definita con precisione, perché «aggregato per persona»
+non è un concetto che un collaudo riconosce da solo.
+
+**Chi possiede il tema**: compliance e privacy (`docs/13-compliance-privacy.md`) insieme all'architettura
+applicativa; il collaudo eventuale appartiene all'area `20-test-e2e-piattaforma`.
+
+## La suite frontend è rossa fuori dal locale inglese (rilevato nella change `0086`, 2026-08-04)
+
+**Contesto.** Eseguendo `./run-tests.sh` a chiusura della change `0086` — che è **documentale** e non tocca
+una riga di frontend — l'area `frontend` è risultata rossa: due prove di
+`frontend/apps/admin/src/pages/reconciliation.test.tsx` (riconciliazione netto/revenue, UC 0071). Verificato
+su un albero di lavoro separato che **le stesse due prove falliscono identicamente su `main`**: il rosso è
+preesistente, introdotto dalla change `0083`, e non ha nulla a che vedere con la `0086`.
+
+**La causa.** `Reconciliation.tsx:24` formatta gli importi con
+`value.toLocaleString(undefined, { style: 'currency', … })`. Il primo argomento `undefined` significa
+«usa il locale della macchina». Le prove si aspettano il formato inglese (`€1,000.00`), che è quello che
+esce dove il locale è inglese — presumibilmente l'integrazione continua. Su una macchina italiana lo stesso
+codice produce `1000,00 €` e le prove falliscono.
+
+**Perché conta più di due prove rosse.** Due difetti distinti, e il secondo è il peggiore:
+
+1. **di prodotto** — l'importo è formattato secondo il locale del sistema operativo di chi guarda, non
+   secondo la lingua scelta nell'applicazione. In un prodotto che si impegna a cinque lingue è una
+   discrepanza, per quanto attenuata dal fatto che la console di amministrazione ha un solo utilizzatore;
+2. **di fiducia nel cancello** — chiunque sviluppi su una macchina non inglese vede
+   `./run-tests.sh` rosso per una ragione che non riguarda il proprio lavoro. Un cancello che mente
+   sistematicamente smette di essere letto, ed è così che passano i rossi veri. È anche il motivo per cui
+   questa voce non è un dettaglio estetico: oggi `run-tests.sh`, che la costituzione dichiara **sorgente di
+   verità unica**, non lo è su metà delle macchine possibili.
+
+**Che cosa va deciso.** Se la formattazione debba prendere la lingua dell'applicazione (probabile: coerente
+con l'impegno alle cinque lingue), e in ogni caso **le prove non devono dipendere dal locale della macchina**
+— o fissano il locale esplicitamente, o verificano il valore invece della sua resa.
+
+Non è stato corretto dentro la change `0086`, che è documentale: toccare codice di produzione di un altro
+use case per far tornare verde un cancello sarebbe esattamente il genere di sconfinamento che le regole del
+repository vietano. Il rosso è **dimostrato preesistente** e segnalato, non ereditato in silenzio.
+
+**Chi possiede il tema**: UC 0071 (riconciliazione) per il difetto di prodotto, UC 0060 (localizzazione a
+cinque lingue) per la regola generale sulla formattazione, e la strategia di collaudo
+(`docs/10-testing.md`) per la dipendenza delle prove dal locale.
