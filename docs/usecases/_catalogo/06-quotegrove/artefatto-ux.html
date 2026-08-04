@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuoteGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  QUOTEGROVE (catalogo #06) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/06-quotegrove/artefatto-ux.html
+================================================================================
+
+  COS'E'. Il mockup che accompagna la cartella dell'applicazione 06 del catalogo
+  (vedi application-description.md). Si apre con un doppio clic, funziona da
+  `file://` senza rete, e mostra come si presenterebbe QuoteGrove dentro il
+  backoffice appgrove. Guscio e token del sistema di design vengono dal kit
+  d'autore (_kit/TEMPLATE-artefatto-ux.html) e dai token reali del prodotto
+  (frontend/packages/design-system/src/tokens/tokens.css, UC 0019).
+
+  NESSUNA RISORSA REMOTA: niente caratteri, librerie o immagini dalla rete.
+
+  I DATI SONO INVENTATI. Nomi di fantasia, indirizzi su dominio `.test`, importi
+  tondi: non assomigliano ai dati di nessun cliente vero, e non devono.
+
+  LE SEI SCHERMATE E PERCHE' CI SONO
+  ----------------------------------
+  · panoramica ... come sta andando: conversione, valore in trattativa, quota
+  · elenco ....... i preventivi, con ricerca e filtro di stato
+  · dettaglio .... un preventivo accettato, con righe, versioni e PROVA
+  · nuovo ........ la composizione dell'offerta, riga per riga
+  · pubblica ..... LA PAGINA CHE VEDE IL CLIENTE, senza accesso: e' la schermata
+                   piu' importante di questa proposta e quella che nessun
+                   concorrente italiano esaminato mostra bene
+  · vuoto ........ primo avvio e quota esaurita: i due stati che si dimenticano
+
+  I riquadri tratteggiati sono le note per lo sviluppatore; il pulsante «Note»
+  in alto le nasconde per vedere l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+h2.sec svg{width:18px;height:18px;flex:none;stroke:currentColor}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+/* … */
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · QuoteGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="elenco">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Preventivi
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo preventivo
+    </button>
+    <button class="nav-item" data-nav="pubblica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg>
+      Pagina del cliente <span class="pill">FUORI</span>
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>QuoteGrove</b> (catalogo #06). Dati inventati, nessuna rete. La voce <b>Pagina del cliente</b> non è una sezione del backoffice: è la pagina pubblica che riceve il destinatario, mostrata qui per comodità.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>QuoteGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #06 QuoteGrove (<span class="mono">preventivi</span>) · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Confermi?</h3>
+    <p id="modale-testo">Le azioni irreversibili chiedono sempre una conferma esplicita.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI — sostituire con quelli dell'app.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'QuoteGrove',
+  id: 'preventivi',
+  categoria: 'violet',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'Q',
+  claim: 'Preventivi professionali inviati in pochi minuti, accettati online, con la prova di cosa è stato accettato.',
+  metrica: 'preventivi inviati',
+  quota: { usato: 47, tetto: 60, finestra: 'questo mese' }
+};
+
+/* Preventivi finti. Gli stati sono quelli della macchina a stati descritta in
+   application-description.md §4: bozza → inviato → visto → accettato/rifiutato,
+   più in_revisione e scaduto. */
+const RIGHE = [
+  { id:'2026/041', titolo:'Sostituzione quadro elettrico',        refe:'Fornitura Alfa',      data:'01/08/2026', valore:4280.00, stato:'accettato' },
+  { id:'2026/040', titolo:'Manutenzione annuale impianti',        refe:'Studio Beta',         data:'31/07/2026', valore:1950.00, stato:'visto'     },
+  { id:'2026/039', titolo:'Fornitura e posa illuminazione',       refe:'Panificio Gamma',     data:'29/07/2026', valore: 860.50, stato:'inviato'   },
+  { id:'2026/038', titolo:'Ampliamento rete dati uffici',         refe:'Delta Servizi',       data:'27/07/2026', valore:7120.00, stato:'inviato'   },
+  { id:'2026/037', titolo:'Rifacimento bagno del laboratorio',    refe:'Officina Zeta',       data:'24/07/2026', valore:3400.00, stato:'rifiutato' },
+  { id:'2026/036', titolo:'Consulenza avvio nuovo punto vendita', refe:'Epsilon Commercio',   data:'21/07/2026', valore:2200.00, stato:'scaduto'   },
+  { id:'2026/035', titolo:'Impianto di allarme magazzino',        refe:'Fornitura Alfa',      data:'18/07/2026', valore:5640.00, stato:'accettato' },
+  { id:'2026/034', titolo:'Revisione preventivo climatizzazione', refe:'Studio Beta',         data:'15/07/2026', valore:9800.00, stato:'revisione' },
+  { id:'2026/033', titolo:'Piccole opere murarie',                refe:'Panificio Gamma',     data:'12/07/2026', valore: 640.00, stato:'bozza'     },
+];
+
+const STATI = {
+  bozza:     { et:'Bozza',        cl:'b-neutral' },
+  inviato:   { et:'Inviato',      cl:'b-info'    },
+  visto:     { et:'Visto',        cl:'b-info'    },
+  accettato: { et:'Accettato',    cl:'b-ok'      },
+  rifiutato: { et:'Rifiutato',    cl:'b-bad'     },
+  revisione: { et:'In revisione', cl:'b-warn'    },
+  scaduto:   { et:'Scaduto',      cl:'b-warn'    },
+};
+
+/* Righe del preventivo mostrato nel dettaglio e nel modulo di inserimento. */
+const VOCI = [
+  { desc:'Quadro elettrico 24 moduli, fornitura', um:'pz',  q:1,  pu:1180.00, sc:0,  iva:22 },
+  { desc:'Installazione e cablaggio',             um:'ora', q:16, pu:  45.00, sc:5,  iva:22 },
+  { desc:'Materiale di consumo',                  um:'a corpo', q:1, pu: 240.00, sc:0, iva:22 },
+  { desc:'Verifica strumentale e collaudo',       um:'ora', q:4,  pu:  55.00, sc:0,  iva:22 },
+];
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota raggiunta.
+   `livello`: 'vicino' (avviso giallo) oppure 'raggiunto' (blocco rosso).
+   Il testo deve dire SEMPRE tre cose: cosa è successo, cosa non si può
+   più fare, come si rimedia. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Non puoi creare nuovi elementi finché non passi a un piano superiore.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Hai usato <b>${APP.quota.usato}</b> di <b>${APP.quota.tetto}</b> ${esc(APP.metrica)} ${esc(APP.quota.finestra)}.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Calcolo dei totali del preventivo mostrato: è lo stesso ordine descritto
+   nella storia 0013 (prezzo × quantità → sconto di riga → imponibile →
+   somma per aliquota → imposta → totale). Qui serve solo a far vedere la
+   forma del riepilogo. */
+function totali(){
+  let imponibile = 0;
+  VOCI.forEach(v => { imponibile += v.q * v.pu * (1 - v.sc/100); });
+  const imposta = imponibile * 0.22;
+  return { imponibile, imposta, totale: imponibile + imposta };
+}
+
+/* SCHERMATA — Panoramica: come sta andando la vendita, non quanti record ci sono. */
+function vPanoramica(){
+  const t = totali();
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> I quattro indicatori non sono conteggi di righe ma le domande che si fa
+    chi vende: <i>quanti ne chiudo</i>, <i>quanto vale ciò che è in ballo</i>, <i>quanto ci mettono a rispondermi</i>,
+    <i>quanto ho vinto</i>. Ogni numero dice su quanti documenti è calcolato — una percentuale su tre preventivi non
+    è una percentuale (storia 0026). Nessun confronto con «medie di settore»: non ne abbiamo trovate di affidabili
+    e non le inventiamo.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo preventivo</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Tasso di accettazione', v:'62%',       d:'su 21 preventivi chiusi', tono:'up'},
+    {k:'Valore in trattativa',  v:eur(9930),   d:'4 preventivi in attesa'},
+    {k:'Risposta media',        v:'4,2 g',     d:'dall’invio alla prima risposta'},
+    {k:'Vinto questo mese',     v:eur(9920),   d:'2 preventivi accettati',  tono:'up'},
+  ])}
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Preventivi da seguire">
+      <div class="card-pad">
+        <h2 class="sec">Da seguire</h2>
+        <p class="sec-sub">Inviati e ancora senza risposta: è la lista su cui si perdono i lavori.</p>
+      </div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Numero</th><th>Oggetto</th><th>Cliente</th><th class="num">Importo</th><th>Stato</th></tr></thead>
+        <tbody>${RIGHE.filter(r=>['inviato','visto'].includes(r.stato)).map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td>
+            <td>${esc(r.refe)}</td><td class="num">${eur(r.valore)}</td><td>${badge(r.stato)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      <div class="card-pad" style="padding-top:0">
+        <div class="alert a-warn" style="margin-top:4px">${I.clock}
+          <span><b>2 preventivi</b> sono senza risposta da più di sette giorni. Il sollecito automatico è attivo e
+          ne manderà uno domani (al massimo tre per preventivo).</span>
+          <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi la sequenza</button>
+        </div>
+      </div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Si conta l’<b>invio</b>, non la stesura: le bozze e le revisioni sono libere.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm">${I.scarica} Esporta</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni sono richiamabili a voce. Esempi: «chi non mi ha risposto da più di
+        una settimana?», «fai un preventivo a Fornitura Alfa per 10 ore di installazione».
+        Le azioni che scrivono producono una <b>bozza</b> e chiedono conferma; quelle che escono dall’azienda —
+        inviare, sollecitare — la chiedono <b>sempre</b>. Nessuno strumento può accettare un preventivo al posto
+        del cliente: sarebbe fabbricare una prova.</p>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:6px">
+        <h2 class="sec">Riepilogo dell’offerta aperta</h2>
+        <div class="dl">
+          <div class="dl-row"><span class="k">Imponibile</span><span class="v mono">${eur(t.imponibile)}</span></div>
+          <div class="dl-row"><span class="k">IVA 22%</span><span class="v mono">${eur(t.imposta)}</span></div>
+          <div class="dl-row"><span class="k">Totale</span><span class="v mono">${eur(t.totale)}</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Elenco: ricerca, filtro di stato, tabella, paginazione, stato vuoto. */
+function vElenco(){
+  const q = S.q.trim().toLowerCase();
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.titolo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.refe.toLowerCase().includes(q))
+  );
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Elenco.</b> Un solo asse di filtro davvero usato: lo <i>stato</i>, perché è la domanda
+    quotidiana («cosa devo ancora seguire?»). La ricerca lavora su numero, oggetto e cliente. Il numero del
+    preventivo è progressivo per account e per anno, e non si riusa mai — nemmeno dopo una cancellazione
+    (storia 0002). La riga si apre sul dettaglio.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Preventivi</h1><p>Tutte le offerte di questo spazio di lavoro.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per numero, oggetto o cliente…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} preventiv${trovate.length===1?'o':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Numero</th><th>Oggetto</th><th>Cliente</th><th>Data</th><th class="num">Importo</th><th>Stato</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.titolo)}</td><td>${esc(r.refe)}</td>
+          <td>${esc(r.data)}</td><td class="num">${eur(r.valore)}</td><td>${badge(r.stato)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessun preventivo corrisponde ai filtri',
+      'Prova con un’altra parola chiave, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio: righe, totali, versioni e — la parte che conta — la PROVA dell'accettazione. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const t = totali();
+  return `
+  ${nota(`<b>Proposta — Dettaglio del preventivo.</b> Tre cose che i concorrenti a basso prezzo esaminati non
+    mostrano: le <b>versioni congelate</b> con la loro impronta, la <b>prova dell’accettazione</b> e l’<b>acconto</b>
+    atteso. La prova è il motivo per cui questa app vale più di un documento stampabile: il regolamento europeo
+    eIDAS dice che il clic vale come firma elettronica, e la legge italiana aggiunge che quanto vale lo decide il
+    giudice guardando <i>quanto è solida la prova conservata</i> — perciò la conserviamo tutta e la si può esportare.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.titolo)}</h1>${badge(r.stato)}</div>
+      <p class="mono">Preventivo n. ${esc(r.id)} · ${esc(r.refe)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna all'elenco</button>
+  </div>
+
+  <div class="card">
+    <div class="card-pad"><h2 class="sec">Righe dell’offerta</h2><p class="sec-sub">Prese dal catalogo, con il prezzo risolto dal listino del cliente.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Descrizione</th><th>U.m.</th><th class="num">Qtà</th><th class="num">Prezzo</th><th class="num">Sconto</th><th class="num">Imponibile</th></tr></thead>
+      <tbody>${VOCI.map(v=>`
+        <tr>
+          <td>${esc(v.desc)}</td><td>${esc(v.um)}</td>
+          <td class="num">${v.q}</td><td class="num">${eur(v.pu)}</td>
+          <td class="num">${v.sc ? v.sc+'%' : '—'}</td>
+          <td class="num">${eur(v.q*v.pu*(1-v.sc/100))}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="card-pad" style="display:flex;justify-content:flex-end">
+      <div class="dl" style="min-width:280px">
+        <div class="dl-row"><span class="k">Imponibile</span><span class="v mono">${eur(t.imponibile)}</span></div>
+        <div class="dl-row"><span class="k">IVA 22%</span><span class="v mono">${eur(t.imposta)}</span></div>
+        <div class="dl-row"><span class="k">Totale</span><span class="v mono">${eur(t.totale)}</span></div>
+        <div class="dl-row"><span class="k">Acconto richiesto (30%)</span><span class="v mono">${eur(t.totale*0.30)}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Prova dell’accettazione</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Accettato da</span><span class="v">Giulia Fantini (dichiarato)</span></div>
+        <div class="dl-row"><span class="k">Recapito usato</span><span class="v mono">g.fantini@fornitura-alfa.test</span></div>
+        <div class="dl-row"><span class="k">Momento</span><span class="v mono">02/08/2026 · 10:41:07</span></div>
+        <div class="dl-row"><span class="k">Indirizzo di rete</span><span class="v mono">198.51.100.24</span></div>
+        <div class="dl-row"><span class="k">Versione accettata</span><span class="v mono">v2</span></div>
+        <div class="dl-row"><span class="k">Impronta del documento</span><span class="v mono">a3f1…9c07</span></div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn-primary">${I.scarica} Esporta la prova</button>
+        <button class="btn btn-ghost">Scarica il documento</button>
+        <button class="btn btn-ghost" data-modale="apri">Revoca il collegamento</button>
+      </div>
+      <p class="sec-sub" style="margin-top:10px">Un preventivo accettato non si modifica più: per cambiarlo si
+      emette un documento nuovo. È ciò che rende l’impronta verificabile.</p>
+    </div>
+    <aside class="card card-pad">
+      <h2 class="sec" style="padding-bottom:6px">Storia del documento</h2>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Creato da Marco Sindoni</div><div class="when">28/07/2026 · 09:14</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Inviato — versione <b>v1</b> congelata</div><div class="when">28/07/2026 · 11:02</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Aperto dal cliente</div><div class="when">28/07/2026 · 17:35</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Richiesta di modifica: «tempi più stretti»</div><div class="when">29/07/2026 · 08:20</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Inviata la revisione — versione <b>v2</b></div><div class="when">30/07/2026 · 15:48</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div><b>Accettato</b> dal cliente</div><div class="when">02/08/2026 · 10:41</div></div></div>
+        <div class="tl-item"><span class="tl-dot"></span><div><div>Evento «preventivo accettato» pubblicato</div><div class="when">02/08/2026 · 10:41</div></div></div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Nuovo preventivo: la composizione dell'offerta. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo preventivo.</b> L’ordine dei campi segue il modo in cui si ragiona: <i>a chi</i>,
+    <i>che cosa</i>, <i>fino a quando</i>. Il listino del cliente si risolve da solo e l’interfaccia dice
+    <b>da dove viene</b> ogni prezzo, perché un prezzo che compare senza spiegazione non lo si corregge mai.
+    L’avviso di quota sta <i>prima</i> del modulo: la quota si consuma all’invio, e chi comincia a scrivere deve
+    sapere se potrà mandarlo.`)}
+  <div class="page-h"><div class="txt"><h1>Nuovo preventivo</h1><p>Compila l’essenziale: il resto si aggiunge mentre si lavora.</p></div></div>
+
+  ${avvisoQuota('vicino')}
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field" id="f-titolo">
+        <label for="i-titolo">Oggetto dell’offerta *</label>
+        <input id="i-titolo" name="titolo" placeholder="Es. Sostituzione quadro elettrico">
+        <span class="hint">È il titolo che il cliente legge per primo.</span>
+      </div>
+      <div class="field">
+        <label for="i-refe">Cliente</label>
+        <select id="i-refe"><option>Fornitura Alfa</option><option>Studio Beta</option><option>Panificio Gamma</option><option>Delta Servizi</option></select>
+        <span class="hint">Listino dedicato attivo: i prezzi arrivano da lì.</span>
+      </div>
+      <div class="field">
+        <label for="i-data">Valido fino al</label>
+        <input id="i-data" type="date" value="2026-09-02">
+        <span class="hint">Trenta giorni, dal modello. Dopo la scadenza il cliente non può più accettare.</span>
+      </div>
+      <div class="field">
+        <label for="i-acconto">Acconto richiesto</label>
+        <input id="i-acconto" type="text" value="30% alla firma">
+        <span class="hint">Si scrive nel documento come condizione. L’app non incassa denaro: l’avvenuto pagamento si registra a mano.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-modello">Modello</label>
+        <select id="i-modello"><option>Impianti — standard (italiano)</option><option>Impianti — cliente consumatore</option><option>Consulenza — standard</option></select>
+        <span class="hint">Porta intestazione, condizioni e testi. Per i clienti consumatori il modello include l’informativa e il diritto di recesso di quattordici giorni.</span>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="sec">Righe</h2>
+      <p class="sec-sub">Scegli dal catalogo o scrivi una riga libera. Le righe di solo testo non entrano nel totale.</p>
+      <div class="table-wrap" style="margin-top:10px"><table class="tbl">
+        <thead><tr><th>Descrizione</th><th>U.m.</th><th class="num">Qtà</th><th class="num">Prezzo</th><th>Origine del prezzo</th></tr></thead>
+        <tbody>${VOCI.slice(0,3).map((v,idx)=>`
+          <tr>
+            <td>${esc(v.desc)}</td><td>${esc(v.um)}</td><td class="num">${v.q}</td><td class="num">${eur(v.pu)}</td>
+            <td>${idx===1 ? '<span class="badge b-info">listino dedicato</span>' : idx===2 ? '<span class="badge b-neutral">prezzo base</span>' : '<span class="badge b-info">listino dedicato</span>'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="btn btn-ghost btn-sm">${I.piu} Riga dal catalogo</button>
+        <button type="button" class="btn btn-ghost btn-sm">${I.piu} Riga libera</button>
+        <button type="button" class="btn btn-ghost btn-sm">${I.piu} Riga di solo testo</button>
+      </div>
+    </div>
+
+    <div class="field wide">
+      <label for="i-note">Note interne</label>
+      <textarea id="i-note" placeholder="Annotazioni che restano dentro…"></textarea>
+      <span class="hint">Non compaiono sul documento del cliente. Campo a testo libero: non inserire dati sensibili.</span>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="elenco">Annulla</button>
+      <button type="button" class="btn btn-ghost">Anteprima del documento</button>
+      <button type="submit" class="btn btn-primary">Salva la bozza</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Pagina pubblica: quello che vede il CLIENTE, senza alcun accesso.
+   È la superficie esposta dell'app e la schermata su cui si gioca l'accettazione. */
+function vPubblica(){
+  const t = totali();
+  return `
+  ${nota(`<b>Proposta — Pagina del cliente (fuori dal backoffice).</b> Il destinatario apre un <b>collegamento
+    riservato</b> ricevuto per posta: non si registra, non ha un account. È l’unica parte di appgrove raggiungibile
+    da fuori, quindi il collegamento è lungo e casuale, vale per <i>un solo</i> preventivo, ha una scadenza propria
+    e si può revocare. L’accettazione è in due passi — non un clic distratto — e registra la prova.
+    <ul>
+      <li>l’informativa breve è visibile senza cercarla: il destinatario non è nostro cliente e ha diritto di sapere;</li>
+      <li>un collegamento scaduto, revocato, manomesso o di un altro account porta alla <b>stessa</b> pagina neutra:
+          non si deve poter capire se il documento esista;</li>
+      <li>nessun modulo di pagamento: l’acconto è una condizione scritta, non un incasso.</li>
+    </ul>`)}
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:6px">
+    <div class="row" style="justify-content:space-between">
+      <div class="row"><span class="tile" style="background:rgb(var(--surface-3));color:rgb(var(--muted))" aria-hidden="true">IR</span><div><div style="font-weight:800">Impianti Rossi s.r.l.</div><div class="sec-sub">ti ha inviato un preventivo</div></div></div>
+      <span class="badge b-info">Valido fino al 02/09/2026</span>
+    </div>
+  </div>
+
+  <div class="page-h">
+    <div class="txt">
+      <h1>Sostituzione quadro elettrico</h1>
+      <p class="mono">Preventivo n. 2026/041 — versione 2 del 30/07/2026</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-pad">
+      <h2 class="sec">Che cosa comprende</h2>
+      <p class="sec-sub">Il dettaglio delle voci offerte.</p>
+    </div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Descrizione</th><th>U.m.</th><th class="num">Qtà</th><th class="num">Prezzo</th><th class="num">Imponibile</th></tr></thead>
+      <tbody>${VOCI.map(v=>`
+        <tr>
+          <td>${esc(v.desc)}</td><td>${esc(v.um)}</td><td class="num">${v.q}</td>
+          <td class="num">${eur(v.pu)}</td><td class="num">${eur(v.q*v.pu*(1-v.sc/100))}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="card-pad" style="display:flex;justify-content:flex-end">
+      <div class="dl" style="min-width:280px">
+        <div class="dl-row"><span class="k">Imponibile</span><span class="v mono">${eur(t.imponibile)}</span></div>
+        <div class="dl-row"><span class="k">IVA 22%</span><span class="v mono">${eur(t.imposta)}</span></div>
+        <div class="dl-row"><span class="k">Totale</span><span class="v mono">${eur(t.totale)}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+    <h2 class="sec">Condizioni</h2>
+    <p class="sec-sub">Acconto del 30% (${eur(t.totale*0.30)}) alla firma, saldo alla consegna. Tempi di esecuzione:
+    dieci giorni lavorativi dall’accettazione. Il preventivo resta valido fino al 02/09/2026.</p>
+  </div>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+    <h2 class="sec">Accetti questa offerta?</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="p-nome">Nome e cognome di chi accetta *</label>
+        <input id="p-nome" placeholder="Come sei indicato nei documenti">
+      </div>
+      <div class="field">
+        <label for="p-mail">Recapito a cui è arrivato il collegamento</label>
+        <input id="p-mail" value="g.fantini@fornitura-alfa.test" disabled>
+        <span class="hint">Non modificabile: fa parte della prova.</span>
+      </div>
+      <div class="field wide">
+        <label style="display:flex;gap:8px;align-items:flex-start;font-weight:600">
+          <input type="checkbox" style="width:auto;margin-top:3px"> Ho letto il preventivo e ne accetto le condizioni.
+        </label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost">Chiedi una modifica</button>
+      <button class="btn btn-ghost">Rifiuta</button>
+      <button class="btn btn-primary" data-modale="apri">Accetta il preventivo</button>
+    </div>
+    <div class="alert a-ok">${I.check}
+      <span>L’accettazione registra <b>nome dichiarato, momento, indirizzo di rete e impronta della versione</b>:
+      è la prova di cosa hai accettato, e ne riceverai una copia per posta.</span>
+    </div>
+  </div>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:6px">
+    <h2 class="sec">Informativa breve</h2>
+    <p class="sec-sub">I tuoi dati (nome, recapito, momento e indirizzo di rete dell’apertura e dell’accettazione)
+    sono trattati da <b>Impianti Rossi s.r.l.</b> per gestire questa offerta e conservarne la prova.
+    <b>appgrove</b> è il fornitore che tratta i dati per suo conto. Non c’è alcun tracciamento pubblicitario,
+    nessun cookie di profilazione e nessun uso dei tuoi dati per altri scopi.</p>
+  </div>`;
+}
+
+/* SCHERMATA — Primo avvio e quota esaurita: i due stati che si incontrano per primi. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Due stati che si dimenticano sempre. Il primo giorno
+    l’app è vuota e deve dire <i>da dove si comincia</i>: qui la prima mossa non è «crea un preventivo» ma
+    <b>metti dentro quello che vendi</b>, perché è ciò che rende veloce tutto il resto. Il giorno in cui il piano
+    finisce, il messaggio deve dire tre cose: cosa è successo, cosa non si può più fare, come si rimedia —
+    e le bozze devono restare libere, altrimenti l’app si blocca invece di limitarsi.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1><p>Come si presenta QuoteGrove appena attivata.</p></div></div>
+  ${statoVuoto(
+    'Non c’è ancora nessun preventivo',
+    'Comincia dal catalogo: aggiungi le voci che vendi con la loro unità di misura e il prezzo. Da lì un preventivo si compone in due minuti, e i prezzi smettono di dipendere da chi lo prepara.',
+    `<div class="row" style="justify-content:center"><button class="btn btn-primary">${I.piu} Aggiungi le prime voci</button><button class="btn btn-ghost" data-nav="nuovo">Crea comunque un preventivo</button></div>`)}
+  <h2 class="sec">Quota esaurita</h2>
+  ${avvisoQuota('raggiunto')}
+  <div class="alert a-ok">${I.check}
+    <span>Puoi comunque <b>scrivere, modificare e rivedere</b> le bozze: la quota si consuma quando un preventivo
+    <b>parte</b> verso il cliente.</span>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica: ['Panoramica',          vPanoramica],
+  elenco:     ['Preventivi',          vElenco],
+  dettaglio:  ['Dettaglio',           vDettaglio],
+  nuovo:      ['Nuovo preventivo',    vNuovo],
+  pubblica:   ['Pagina del cliente',  vPubblica],
+  vuoto:      ['Primo avvio',         vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-titolo'), input = document.getElementById('i-titolo');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il titolo è obbligatorio.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('elenco');
+  });
+
+  /* apertura della modale dal dettaglio */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale('Confermi?', 'Le azioni che escono dall’azienda — inviare, sollecitare, accettare, revocare un collegamento — chiedono sempre una conferma esplicita e non si possono annullare. È la stessa regola che vale per il livello conversazionale: la macchina prepara, la persona approva.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>

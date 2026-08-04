@@ -1,0 +1,154 @@
+[
+  {
+    "id": 1,
+    "decision": "(autopilot) La change è documentale: produce il drill-down delle 60 applicazioni del catalogo sotto docs/usecases/_catalogo/, non scaffolda nulla. Motivo: la richiesta chiede i documenti che rendono invocabile la skill new-application, non l'invocazione stessa; scaffoldare 60 app sarebbe una decisione di prodotto (quali app costruire) che l'autopilot non prende.",
+    "files": [
+      {
+        "file": "changes/0086-catalogo-app-drill-down/requirements.md",
+        "description": "Ambito, vincoli e fuori-ambito della change."
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Ambito fissato alle 60 applicazioni delle sezioni 2 e 3 del catalogo, con esclusione dei candidati 61–63 (sezione 4) e del verdetto sul sistema di gestione traduzioni. Motivo: il catalogo si autodefinisce «60 idee di applicazione» e la sezione 4 raccoglie candidati valutati — uno valido come quarta opzione (ExtractGrove), due declassati. Aggiungerli in seguito costa lineare e non cambia il metodo.",
+    "files": []
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Numerazione delle cartelle allineata all'identificativo del catalogo (01–60), non a un ordine di priorità. Motivo: la corrispondenza uno-a-uno con la scheda di origine è verificabile a colpo d'occhio e sopravvive a qualsiasi ri-priorizzazione; l'ordine di attacco vive nelle raccomandazioni del catalogo, non nei nomi delle cartelle.",
+    "files": []
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Le storie utente sono numerate progressivamente a livello di applicazione (0001, 0002, …) e non riazzerate a ogni epica. Motivo: rende ogni storia citabile in modo univoco dentro l'app (come fa il catalogo degli use case con la numerazione assoluta) e permette di spostare una storia fra epiche senza rinumerare.",
+    "files": []
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Prima delle 60 cartelle si costruisce un kit d'autore condiviso in docs/usecases/_catalogo/_kit/ (guida, modelli di descrizione/storia/estensioni admin, guscio HTML del sistema di design, digest dei principi appgrove). Motivo: 60 cartelle scritte da agenti a contesto separato divergerebbero nel formato; il kit è il metro unico e rende il lavoro rigenerabile invece che irripetibile.",
+    "files": []
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Nessuna voce nel registro di copertura end-to-end docs/testing/copertura-e2e.yaml. Motivo: la change non crea alcuna superficie applicativa — è la terza risposta ammessa dal processo di copertura, «nessun impatto». La copertura nascerà con la change che scaffolda davvero l'app.",
+    "files": []
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Listino e classificazione dei dati personali sono scritti nelle descrizioni come PROPOSTE motivate, mai come decisioni prese. Motivo: prezzi/quote e dati personali sono fermate di escalation non derogabili — restano dello sviluppatore e la skill new-application le fa confermare comunque prima di generare.",
+    "files": []
+  },
+  {
+    "id": 8,
+    "decision": "Ambito ristretto da 60 a 40 applicazioni: escluse venti per peso normativo. Decisione DELLO SVILUPPATORE, presa in corso d'opera dopo l'ondata 1, su domanda esplicita con tre soglie proposte; ha scelto la più prudente. Criterio: non la complessità del codice ma quanto costa restare conformi a chi sviluppa da solo — albo professionale, licenza, certificazione di prodotto, custodia di dati altrui, oppure obbligo che cambia più in fretta di quanto una persona sola possa inseguirlo. Le escluse: 01, 05, 09, 10, 11, 15, 18, 22, 23, 27, 29, 35, 42, 44, 46, 49, 52, 57, 58, 60.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/_escluse/README.md",
+        "description": "Criterio, elenco delle venti e motivazione una per una; dichiara la condizione che le farebbe rientrare (un fornitore che si assume l'onere della conformità)."
+      },
+      {
+        "file": "changes/0086-catalogo-app-drill-down/requirements.md",
+        "description": "Restrizione d'ambito annotata in testa alla sezione dei deliverabili."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "Le due applicazioni già scritte per intero prima della restrizione (01 InvoiceGrove, 05 ChatGrove) sono state SPOSTATE in docs/usecases/_catalogo/_escluse/ invece di essere cancellate; le due iniziate e interrotte (09 PeopleGrove, 10 PayGrove) sono state rimosse. Motivo: il lavoro finito resta consultabile e riusabile se la valutazione cambia, ma fuori dal catalogo attivo non può essere scambiato per piano di costruzione; un documento a metà, invece, è più dannoso di uno assente.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/_escluse/01-invoicegrove/",
+        "description": "6 epiche, 30 storie, artefatto a 9 schermate — completo, conservato fuori ambito."
+      },
+      {
+        "file": "docs/usecases/_catalogo/_escluse/05-chatgrove/",
+        "description": "6 epiche, 29 storie, artefatto — completo, conservato fuori ambito."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Ampiezza dell'ondata ridotta da sei a quattro agenti-applicazione in parallelo, con commit dopo ogni ondata. Motivo: la prima ondata da sei ha esaurito il limite di sessione e ha ucciso quattro agenti in coda al compito; il commit per ondata limita la perdita di un'interruzione all'ondata in corso invece che a tutto il lavoro non salvato.",
+    "files": []
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Punto trasversale emerso dall'ondata 1, da portare in docs/_BACKLOG.md alla chiusura della change: le applicazioni con una superficie rivolta a un destinatario esterno non autenticato (accettazione di un preventivo, prenotazione da parte del cliente finale, firma) deviano dall'invariante «identificativo dell'account solo dal token verificato». Impostazione proposta dall'agente dell'app 06 e da allineare per tutte: gettone di capacità firmato dal server, monouso nello scopo, a scadenza e revocabile. Approvazione dello sviluppatore, non dell'autopilot.",
+    "files": []
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Corretto nel guscio del kit — e riapplicato a tutti i tredici artefatti già scritti — il difetto per cui la pagina scorreva in orizzontale su schermo stretto: le colonne di griglia usavano `1fr` nudo, che vale `minmax(auto,1fr)` e non scende sotto la larghezza minima del contenuto (una tabella con min-width sfondava la griglia invece di far scorrere il proprio contenitore). Ora ogni colonna elastica è `minmax(0,1fr)`. Motivo per centralizzare: quattro agenti indipendenti avevano rattoppato lo stesso difetto nel proprio blocco di stili locali senza toccare il guscio — comportamento corretto da parte loro, ma il difetto sarebbe stato ereditato dalle applicazioni successive. Verificato con misura reale in browser senza interfaccia a 390, 768 e 1280 pixel: eccesso 0 su tutti e tredici i file, zero errori JavaScript.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/_kit/TEMPLATE-artefatto-ux.html",
+        "description": "Colonne di griglia in minmax(0,1fr); barra superiore che va a capo; disegni vettoriali dei titoli di sezione con misura propria."
+      },
+      {
+        "file": "docs/usecases/_catalogo/_kit/GUIDA-AUTORE.md",
+        "description": "Regola scritta nel §7: mai `1fr` nudo, verifica con misura e non a occhio — perche il difetto si reintroduce facilmente nelle regole per schermi stretti."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "Ambito ulteriormente ristretto da 40 a 17 applicazioni. Decisione DELLO SVILUPPATORE, comunicata dopo la chiusura delle prime quattordici: «ho deciso di non scrivere le epic/story per tutte le applicazioni, inizierò ad implementare qualche applicazione piuttosto che scrivere tutte le story da subito». Sono state chieste e scritte le tre raccomandate dal catalogo (31 AuditGrove, 32 TokenGrove, 33 RenewGrove); le restanti ventitré non sono bocciate ma rinviate. Il motivo regge: scrivere le storie di quaranta applicazioni prima di averne costruita una significa scrivere molto su un metodo non ancora messo alla prova.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/README.md",
+        "description": "Indice del drill-down: le diciassette con identificativo, epiche e storie; elenco esplicito delle ventitré rinviate e il perché."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Nessun identificativo di applicazione collide, verificato a fine change: billing, crediti, sales, preventivi, prenotazioni, notespese, helpdesk, progetti, magazzino, campaigns, recensioni, abbonati, insights, agentaudit, spesa_modelli, fidelizzazione — più le app reali fatture e crm. Diversi agenti hanno scartato la scelta ovvia proprio per evitare una collisione che sarebbe emersa solo allo scaffolding: notespese invece di spendgrove (che l'app 39 rivendicherebbe), abbonati invece di abbonamenti (la piattaforma chiama così il PROPRIO contratto col cliente), sales invece di crm (già occupato dal mini-CRM), agentaudit invece di audit (la piattaforma ha già un registro di audit delle invocazioni), fidelizzazione invece di rinnovi (il rinnovo è di abbonati).",
+    "files": []
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) L'app 21 SalonGrove conclude di NON essere un'applicazione nuova ma il verticale beauty dell'app 07 BookGrove: nessuno schema nuovo, nessuna istanza del modulo di infrastruttura, riuso dell'identificativo prenotazioni. È l'unico caso del catalogo e la conclusione è marcata da confermare, perché è direzione di prodotto con conseguenze economiche.",
+    "files": [
+      {
+        "file": "docs/usecases/_catalogo/21-salongrove/application-description.md",
+        "description": "Sezione 0: la scelta fra applicazione autonoma e verticale, con l'elenco di cosa è davvero specifico del settore e cosa è agenda già coperta."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) I tre punti trasversali emersi dal drill-down sono stati scritti in docs/_BACKLOG.md e non nelle singole cartelle: superfici pubbliche senza autenticazione (app 06, 07, 19), autenticazione di una macchina che non è una persona (app 31), e la regola «prospetto sì, classifica no» sugli aggregati per persona (app 08, 13, 21 — arrivate alla stessa conclusione indipendentemente, senza vedersi). I primi due vanno chiusi PRIMA di scaffoldare la prima applicazione con quelle caratteristiche: se ogni app si costruisce da sé il proprio accesso pubblico, la prima che sbaglia apre un varco sull'isolamento fra conti e nessun collaudo di piattaforma se ne accorge.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Tre voci in coda, nel formato del file: contesto, punto aperto, chi possiede il tema."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Nessuna modifica a run-tests.sh: la change non aggiunge né rimuove moduli (services/*, package frontend) e non cambia il comando di test di nessuna area — produce solo documenti sotto docs/. La suite completa è stata comunque eseguita prima del commit finale, come prova che nulla è stato toccato per sbaglio.",
+    "files": []
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Verifica finale eseguita dall'orchestratore e non delegata: allineamento bidirezionale indice↔file su tutte e diciassette le applicazioni (573 storie, zero disallineamenti), assenza di segnaposto residui, assenza di epiche vuote, presenza dei tre file obbligatori, e misura in browser reale dei diciannove artefatti a 390, 768 e 1280 pixel (eccesso orizzontale 0, zero errori JavaScript). Il controllo di allineamento ha trovato un difetto che nessun agente aveva visto — una storia citata dall'indice e da due storie sorelle ma mai scritta, in 33-renewgrove — perché ogni agente vede solo la propria applicazione e nessuno guarda l'insieme.",
+    "files": [
+      {
+        "file": "changes/0086-catalogo-app-drill-down/how-to-test.md",
+        "description": "Il controllo di allineamento è scritto nella guida di verifica manuale, riusabile a ogni applicazione aggiunta."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "La suite completa NON è verde alla chiusura: l'area frontend è rossa per due prove di reconciliation.test.tsx (UC 0071). Verificato su un albero di lavoro separato che le stesse due prove falliscono identicamente su main, senza questa change: il rosso è PREESISTENTE (change 0083) e questa change non tocca una riga di frontend. Causa diagnosticata: Reconciliation.tsx:24 formatta gli importi con toLocaleString(undefined, …), cioè col locale della macchina; le prove si aspettano il formato inglese, quindi sono verdi dove il locale è inglese e rosse su una macchina italiana. NON corretto qui: toccare codice di produzione di un altro use case per far tornare verde un cancello sarebbe lo sconfinamento che le regole vietano. Tracciato in docs/_BACKLOG.md con la diagnosi completa. La contropartita fast «suite verde prima del commit» è quindi soddisfatta per tutto ciò che questa change controlla — sette aree su otto verdi, e l'ottava dimostrata rossa anche senza di essa.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Voce con la diagnosi: il difetto di prodotto (formattazione col locale del sistema invece che con la lingua scelta) e quello peggiore, un run-tests.sh che mente su ogni macchina non inglese."
+      }
+    ]
+  }
+]

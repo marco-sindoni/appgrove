@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CashGrove — proposta di interfaccia (mockup navigabile)</title>
+
+<!--
+================================================================================
+  CASHGROVE (catalogo #03) — MOCKUP NAVIGABILE DELLA PROPOSTA DI INTERFACCIA
+  docs/usecases/_catalogo/03-cashgrove/artefatto-ux.html
+================================================================================
+
+  A COSA SERVE
+  ------------
+  Mostra allo sviluppatore come si presenterebbe CashGrove — cash flow e
+  incasso crediti — dentro il backoffice appgrove. Si apre con un doppio clic
+  (funziona da `file://`, senza rete). Guscio e token vengono dal kit d'autore
+  del catalogo (docs/usecases/_catalogo/_kit/TEMPLATE-artefatto-ux.html), che a
+  sua volta usa i token REALI del sistema di design
+  (frontend/packages/design-system/src/tokens/tokens.css, UC 0019).
+
+  Documento capofila: ../03-cashgrove/application-description.md
+
+  NESSUNA RISORSA REMOTA
+  ----------------------
+  Niente caratteri, librerie o immagini dalla rete, nessuna chiamata.
+  Solo stile e script in linea e disegni vettoriali incorporati.
+
+  I DATI SONO INVENTATI
+  ---------------------
+  Denominazioni di fantasia, importi verosimili ma finti, nessun dato reale.
+  Servono a far vedere la forma dell'interfaccia, non a sembrare veri.
+
+  LE SCHERMATE
+  ------------
+  · panoramica ....... anzianità dei crediti, indicatori, quota, prossimi solleciti
+  · elenco ........... i crediti, con ricerca, filtro di stato e paginazione
+  · dettaglio ........ scheda del credito: importi, mora, registro dei solleciti
+  · sequenza ......... la scala dei passi, ciò che la ferma, i limiti del motore
+  · nuovo ............ registrazione di un credito a mano
+  · vuoto ............ primo avvio e quota esaurita
+
+  «Oggi» del mockup è lunedì 3 agosto 2026: date, ritardi e avanzamento della
+  sequenza sono coerenti fra loro a partire da quella giornata.
+
+  LE NOTE DI PROPOSTA
+  -------------------
+  I riquadri tratteggiati spiegano PERCHÉ una schermata è fatta così. Il
+  pulsante «Note» in alto le nasconde, per vedere l'interfaccia pulita.
+================================================================================
+-->
+
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   TOKEN DEL SISTEMA DI DESIGN — copiati da
+   frontend/packages/design-system/src/tokens/tokens.css (UC 0019).
+   NON MODIFICARE i valori: farlo fa divergere il mockup dal prodotto.
+   I colori sono triplette "R G B" così si può applicare l'opacità con
+   rgb(var(--accent) / .12), esattamente come nel prodotto.
+   ══════════════════════════════════════════════════════════════════════ */
+:root{
+  /* neutri caldi — tema chiaro */
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  /* accento (predefinito: corallo) */
+  --accent:236 90 114; --accent-c:255 255 255;
+  /* colori funzionali */
+  --success:58 174 115; --warning:221 155 52; --danger:227 101 79;
+  /* colori-categoria assegnati per-app da new-application (UC 0046) */
+  --cat-green:58 174 115; --cat-amber:221 155 52; --cat-red:227 101 79;
+  --cat-blue:91 141 239; --cat-violet:138 118 240; --cat-teal:31 182 166;
+  /* raggi */
+  --r-sm:9px; --r-md:11px; --r-lg:18px; --r-xl:20px; --r-pill:999px;
+  /* ombre soffici a tinta calda */
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+  /* tipografia: i caratteri del prodotto se presenti sul sistema,
+     altrimenti quelli di sistema — nessun download, mai */
+  --font-sans:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  /* spaziature (scala del guscio) */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:22px; --sp-6:26px;
+}
+/* tema scuro: preferenza di sistema … */
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}}
+/* … e interruttore esplicito, che vince sempre sulla preferenza */
+:root[data-theme="dark"]{
+  --bg:22 21 18; --surface:33 31 27; --surface-2:27 26 22; --surface-3:42 40 35;
+  --border:50 47 41; --border-strong:64 60 52;
+  --text:241 239 233; --muted:168 164 155; --faint:118 114 106;
+  --sh-sm:0 1px 2px rgba(0,0,0,.25);
+  --sh:0 1px 2px rgba(0,0,0,.3),0 12px 30px -16px rgba(0,0,0,.55);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 30px 60px -24px rgba(0,0,0,.7);
+}
+:root[data-theme="light"]{
+  --bg:244 244 241; --surface:255 255 255; --surface-2:250 250 248; --surface-3:240 239 235;
+  --border:233 231 225; --border-strong:220 217 209;
+  --text:38 36 32; --muted:110 107 99; --faint:165 161 153;
+  --sh-sm:0 1px 2px rgba(30,25,15,.05);
+  --sh:0 1px 2px rgba(30,25,15,.04),0 10px 30px -16px rgba(30,25,15,.22);
+  --sh-lg:0 2px 6px rgba(30,25,15,.05),0 26px 60px -24px rgba(30,25,15,.3);
+}
+/* accento configurabile a runtime, come nel prodotto */
+:root[data-accent="coral"]{--accent:236 90 114}
+:root[data-accent="violet"]{--accent:123 110 240}
+:root[data-accent="teal"]{--accent:22 182 164}
+:root[data-accent="blue"]{--accent:79 134 224}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE
+   ══════════════════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font-sans);
+  background:rgb(var(--bg));color:rgb(var(--text));
+  font-size:14.5px;line-height:1.55;min-height:100vh;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+a{color:rgb(var(--accent));text-decoration:none}
+a:hover{text-decoration:underline}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid rgb(var(--accent));outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GUSCIO: barra laterale + intestazione + contenuto
+   Rispecchia la struttura del backoffice appgrove.
+   ══════════════════════════════════════════════════════════════════════ */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:100vh}
+.sidebar{
+  background:rgb(var(--surface));border-right:1px solid rgb(var(--border));
+  padding:20px 14px;display:flex;flex-direction:column;gap:4px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{display:flex;align-items:center;gap:11px;padding:2px 8px 18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:rgb(var(--accent));display:grid;place-items:center;box-shadow:var(--sh-sm)}
+.brand-mark svg{width:20px;height:20px;stroke:rgb(var(--accent-c))}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.14em;color:rgb(var(--faint))}
+.nav-group{font-size:10px;font-weight:700;letter-spacing:.13em;color:rgb(var(--faint));padding:14px 10px 6px;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:11px;padding:8.5px 10px;border-radius:var(--r-md);
+  font-weight:600;font-size:13.5px;color:rgb(var(--muted));width:100%;text-align:left;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:19px;height:19px;stroke:currentColor;flex:none}
+.nav-item:hover{background:rgb(var(--surface-3));color:rgb(var(--text));text-decoration:none}
+.nav-item[aria-current="page"]{background:rgb(var(--accent)/.1);color:rgb(var(--accent))}
+.nav-item[disabled]{opacity:.5;cursor:default}
+.nav-item .pill{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;background:rgb(var(--accent));color:rgb(var(--accent-c));border-radius:var(--r-pill);padding:2px 7px}
+.nav-note{margin:10px 10px 0;font-size:11px;color:rgb(var(--faint));border-left:2px solid rgb(var(--accent)/.4);padding-left:8px}
+
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{
+  display:flex;flex-wrap:wrap;min-width:0;align-items:center;gap:14px;padding:13px 26px;
+  background:rgb(var(--surface));border-bottom:1px solid rgb(var(--border));
+  position:sticky;top:0;z-index:20;
+}
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:rgb(var(--faint));font-weight:600}
+.crumb b{color:rgb(var(--text));font-weight:700}
+.topbar-right{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.accent-dots{display:flex;gap:6px;padding:6px 9px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-pill)}
+.dot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;padding:0}
+.dot[aria-pressed="true"]{border-color:rgb(var(--text)/.55)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6.5px 11px;background:rgb(var(--surface-2));border:1px solid rgb(var(--border));border-radius:var(--r-md);font-weight:700;font-size:12.5px}
+.chip svg{width:16px;height:16px;stroke:currentColor}
+.icon-btn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgb(var(--border));border-radius:var(--r-md);background:rgb(var(--surface-2))}
+.icon-btn svg{width:17px;height:17px;stroke:currentColor}
+.icon-btn:hover,.chip:hover,.dot:hover{border-color:rgb(var(--border-strong))}
+
+.content{padding:var(--sp-6);max-width:1120px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.page-h{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.page-h .txt{display:flex;flex-direction:column;gap:3px;flex:1;min-width:240px}
+.page-h h1{font-size:27px;font-weight:800;letter-spacing:-.025em;text-wrap:balance}
+.page-h p{color:rgb(var(--muted));font-size:14px}
+.card{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-lg);box-shadow:var(--sh-sm)}
+.card-pad{padding:20px 22px}
+h2.sec{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.sec-sub{font-size:13px;color:rgb(var(--muted));margin-top:2px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mock-foot{padding:10px 26px 24px;text-align:center;font-size:11.5px;color:rgb(var(--faint))}
+
+/* nota di proposta (annotazione per lo sviluppatore) */
+.nota{
+  border:1px dashed rgb(var(--accent)/.5);background:rgb(var(--accent)/.06);
+  border-radius:var(--r-lg);padding:14px 18px;font-size:13px;color:rgb(var(--text));
+  display:flex;gap:10px;align-items:flex-start;
+}
+.nota svg{width:17px;height:17px;stroke:rgb(var(--accent));flex:none;margin-top:2px}
+.nota b{color:rgb(var(--accent))}
+.nota ul{margin:4px 0 0 16px;display:flex;flex-direction:column;gap:3px}
+body[data-note="off"] .nota,body[data-note="off"] .nav-note{display:none}
+
+/* etichette di stato */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:var(--r-pill);padding:3.5px 10px;white-space:nowrap}
+.badge svg{width:12px;height:12px;stroke:currentColor}
+.b-ok{background:rgb(var(--success)/.13);color:rgb(var(--success))}
+.b-info{background:rgb(var(--cat-blue)/.13);color:rgb(var(--cat-blue))}
+.b-warn{background:rgb(var(--warning)/.15);color:rgb(var(--warning))}
+.b-neutral{background:rgb(var(--surface-3));color:rgb(var(--muted))}
+.b-bad{background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+
+/* bottoni */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;border-radius:var(--r-md);padding:8.5px 15px;transition:filter .12s;border:1px solid transparent}
+.btn svg{width:15px;height:15px;stroke:currentColor}
+.btn-primary{background:rgb(var(--accent));color:rgb(var(--accent-c));box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{border-color:rgb(var(--border-strong));background:rgb(var(--surface));color:rgb(var(--text))}
+.btn-ghost:hover{background:rgb(var(--surface-2))}
+.btn-danger{background:rgb(var(--danger));color:#fff}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:6px 11px;font-size:12.5px}
+
+/* piastrella-icona dell'app */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:16px;flex:none}
+
+/* avvisi in linea */
+.alert{display:flex;align-items:center;gap:12px;border-radius:var(--r-lg);padding:12px 18px;font-weight:600;font-size:13.5px}
+.alert svg{width:18px;height:18px;stroke:currentColor;flex:none}
+.alert .spacer{margin-left:auto}
+.a-warn{background:rgb(var(--warning)/.12);color:rgb(var(--warning))}
+.a-bad{background:rgb(var(--danger)/.1);color:rgb(var(--danger))}
+.a-ok{background:rgb(var(--success)/.11);color:rgb(var(--success))}
+
+/* ── COMPONENTE: indicatori sintetici ───────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:rgb(var(--faint))}
+.kpi .v{font-family:var(--font-mono);font-size:25px;font-weight:700;letter-spacing:-.02em}
+.kpi .d{font-size:12px;color:rgb(var(--muted))}
+.kpi .d.up{color:rgb(var(--success))}
+.kpi .d.down{color:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra di consumo quota ─────────────────────────────── */
+.quota{display:flex;flex-direction:column;gap:5px;font-size:12px;color:rgb(var(--muted))}
+.quota-bar{height:7px;border-radius:var(--r-pill);background:rgb(var(--surface-3));overflow:hidden}
+.quota-bar i{display:block;height:100%;border-radius:var(--r-pill);background:rgb(var(--accent))}
+.quota-bar i.warn{background:rgb(var(--warning))}
+.quota-bar i.full{background:rgb(var(--danger))}
+
+/* ── COMPONENTE: barra filtri ───────────────────────────────────────── */
+.tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.search{position:relative;flex:1;min-width:220px;max-width:400px}
+.search svg{position:absolute;left:12px;top:50%;translate:0 -50%;width:16px;height:16px;stroke:rgb(var(--faint))}
+.search input{width:100%;padding:9.5px 12px 9.5px 38px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px}
+.search input::placeholder{color:rgb(var(--faint))}
+.search input:focus{outline:2px solid rgb(var(--accent));outline-offset:0;border-color:transparent}
+.select{padding:9.5px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;font-weight:600}
+.result-count{font-size:12.5px;color:rgb(var(--muted));font-weight:600}
+
+/* ── COMPONENTE: tabella ────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto;min-width:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+table.tbl th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;font-weight:700;color:rgb(var(--faint));
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid rgb(var(--border));white-space:nowrap;
+}
+table.tbl td{padding:11px 14px;border-bottom:1px solid rgb(var(--border));vertical-align:middle}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:rgb(var(--surface-2));cursor:pointer}
+table.tbl .num{font-family:var(--font-mono);font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pager{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px}
+.pager .info{font-size:12.5px;font-weight:700;color:rgb(var(--muted))}
+
+/* ── COMPONENTE: stato vuoto ────────────────────────────────────────── */
+.empty{padding:48px 24px;text-align:center;color:rgb(var(--muted));display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty svg{width:34px;height:34px;stroke:rgb(var(--faint))}
+.empty b{font-size:15.5px;color:rgb(var(--text))}
+.empty p{max-width:420px;font-size:13px}
+
+/* ── COMPONENTE: scheda di dettaglio ────────────────────────────────── */
+.detail-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px;align-items:start}
+.dl{display:flex;flex-direction:column}
+.dl-row{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid rgb(var(--border));font-size:13px}
+.dl-row:last-child{border-bottom:none}
+.dl-row .k{color:rgb(var(--muted));font-weight:600}
+.dl-row .v{font-weight:700;text-align:right}
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:12px;padding:10px 0;font-size:13px}
+.tl-dot{width:9px;height:9px;border-radius:50%;background:rgb(var(--accent));margin-top:6px;flex:none}
+.tl-item .when{color:rgb(var(--faint));font-size:12px}
+
+/* ── COMPONENTE: modulo di inserimento ──────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.wide{grid-column:1 / -1}
+.field label{font-size:12px;font-weight:700;color:rgb(var(--muted))}
+.field input,.field select,.field textarea{padding:9px 12px;border:1px solid rgb(var(--border-strong));border-radius:var(--r-md);background:rgb(var(--surface));font-size:13.5px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.field .hint{font-size:11.5px;color:rgb(var(--faint))}
+.field .err{font-size:11.5px;color:rgb(var(--danger));font-weight:700}
+.field.invalid input,.field.invalid select{border-color:rgb(var(--danger))}
+.form-actions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── COMPONENTE: finestra modale ────────────────────────────────────── */
+.modal-back{position:fixed;inset:0;background:rgba(20,17,12,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal-back[hidden]{display:none}
+.modal{background:rgb(var(--surface));border:1px solid rgb(var(--border));border-radius:var(--r-xl);box-shadow:var(--sh-lg);max-width:460px;width:100%;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.modal h3{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.modal p{font-size:13.5px;color:rgb(var(--muted))}
+.modal .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:4px}
+
+/* ══════════════════════════════════════════════════════════════════════
+   STILI PROPRI DELL'APP — aggiungere qui sotto, mai sopra.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── La scala dei passi di sollecito (schermata «Sequenza») ──────────────
+   Una riga per passo: quando scatta, il numero, che cosa dice. I passi già
+   partiti su un dato credito si distinguono per COLORE **e** per etichetta,
+   mai per il solo colore. */
+.scala{display:flex;flex-direction:column}
+.passo{display:grid;grid-template-columns:104px 26px minmax(0,1fr);gap:13px;padding:15px 0;align-items:start}
+.passo + .passo{border-top:1px solid rgb(var(--border))}
+.passo .quando{text-align:right;font-family:var(--font-mono);font-weight:700;font-size:13.5px;padding-top:1px}
+.passo .quando small{display:block;font-family:var(--font-sans);font-weight:600;font-size:11px;color:rgb(var(--faint));letter-spacing:0}
+.passo .segno{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;background:rgb(var(--accent)/.14);color:rgb(var(--accent))}
+.passo .corpo{display:flex;flex-direction:column;gap:5px;min-width:0}
+.passo .corpo .titolo{font-weight:700}
+.passo .corpo .testo{font-size:12.5px;color:rgb(var(--muted))}
+.passo-fine{display:grid;grid-template-columns:104px 26px minmax(0,1fr);gap:13px;padding:15px 0;border-top:1px dashed rgb(var(--border-strong));font-size:13px;color:rgb(var(--muted))}
+.passo-fine .segno{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgb(var(--danger)/.12);color:rgb(var(--danger))}
+.passo-fine .segno svg{width:14px;height:14px;stroke:currentColor}
+
+/* avanzamento di un credito lungo la scala: barra + «2 di 4» */
+.avanz{display:flex;align-items:center;gap:9px;min-width:118px}
+.avanz .quota-bar{flex:1;min-width:56px}
+.avanz .mono{font-size:12px;font-weight:700;color:rgb(var(--muted));white-space:nowrap}
+
+/* elenco dei freni e dei limiti: voce a capo, motivo sotto */
+.regole{display:flex;flex-direction:column;gap:11px;font-size:13px}
+.regole li{list-style:none;display:flex;gap:9px;align-items:flex-start}
+.regole li svg{width:15px;height:15px;flex:none;margin-top:3px;stroke:rgb(var(--accent))}
+.regole li b{display:block}
+.regole li span{color:rgb(var(--muted));font-size:12.5px}
+
+/* collegamenti interni scritti dentro al testo */
+a[data-nav]{cursor:pointer;font-weight:700}
+
+/* icona in linea dentro un titolo di sezione: senza misure esplicite un
+   disegno vettoriale prende tutta la larghezza disponibile e sfonda la scheda */
+h2.sec svg{width:17px;height:17px;stroke:currentColor;vertical-align:-3px}
+
+/* il bottone di un avviso non va mai mandato a capo a metà */
+.alert .btn{white-space:nowrap}
+
+/* ── Adattamento agli schermi stretti ───────────────────────────────── */
+@media (max-width:900px){
+  .topbar{padding:10px 16px;gap:10px}
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:12px}
+  .brand{padding:0 10px 0 4px}
+  .nav-group{padding:0 8px;width:auto}
+  .nav-note{display:none}
+  .nav-item{width:auto;padding:7px 10px}
+  .detail-grid,.form-grid{grid-template-columns:minmax(0,1fr)}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body data-note="on">
+
+<div class="shell">
+  <!-- ───────────────── BARRA LATERALE ───────────────── -->
+  <aside class="sidebar" aria-label="Navigazione principale">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-4 3.5-6 7-6 10a6 6 0 0 0 12 0c0-3-2-6.5-6-10Z"/><path d="M12 21v-8"/></svg>
+      </div>
+      <div><div class="brand-name">appgrove</div><div class="brand-sub">SPAZIO DI LAVORO</div></div>
+    </div>
+
+    <!-- Voci di piattaforma: sono ESATTAMENTE quelle del backoffice reale
+         (frontend/apps/backoffice/src/shell/Sidebar.tsx, chiavi `nav` in
+         frontend/packages/i18n/src/resources/it.ts). Restano disattivate:
+         questo mockup racconta l'app, non la piattaforma. -->
+    <div class="nav-group">Piattaforma</div>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 6 3h12l2 4"/><path d="M4 7h16v3a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z"/><path d="M6 13v8h12v-8"/></svg>
+      Catalogo app
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>
+      Account
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>
+      Fatturazione
+    </button>
+    <button class="nav-item" disabled title="Fuori dal perimetro di questo mockup">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></svg>
+      I miei dati
+    </button>
+
+    <!-- ▼▼▼ VOCI DELL'APP — è QUI che l'agente-app lavora ▼▼▼
+         Nel backoffice reale queste sono le `sections[]` del manifesto del
+         modulo (frontend/apps/backoffice/src/registry/types.ts), mostrate
+         sotto il gruppo «Le tue app» quando l'account ha l'abilitazione.
+         Ogni bottone porta `data-nav="<chiave della schermata>"`. -->
+    <div class="nav-group">Le tue app · CashGrove</div>
+    <button class="nav-item" data-nav="panoramica">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+      Panoramica
+    </button>
+    <button class="nav-item" data-nav="elenco">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Crediti
+    </button>
+    <button class="nav-item" data-nav="sequenza">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h6"/><circle cx="19" cy="17" r="2"/></svg>
+      Sequenza di sollecito
+    </button>
+    <button class="nav-item" data-nav="nuovo">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuovo credito <span class="pill">DEMO</span>
+    </button>
+    <button class="nav-item" data-nav="vuoto">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg>
+      Primo avvio
+    </button>
+    <!-- ▲▲▲ fine voci dell'app ▲▲▲ -->
+
+    <p class="nav-note">Mockup navigabile dell'app <b>CashGrove</b> (catalogo #03). Dati inventati, nessuna rete.</p>
+  </aside>
+
+  <!-- ───────────────── INTESTAZIONE + CONTENUTO ───────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <nav class="crumb" aria-label="Percorso">
+        <span>CashGrove</span><span aria-hidden="true">&rsaquo;</span><b id="crumb-qui">Panoramica</b>
+      </nav>
+      <div class="topbar-right">
+        <button class="chip" id="note-toggle" aria-pressed="true" title="Mostra o nasconde le note di proposta">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/></svg>
+          Note
+        </button>
+        <div class="accent-dots" role="group" aria-label="Colore d'accento">
+          <button class="dot" data-accent-pick="coral"  style="background:#ec5a72" aria-label="Accento corallo" aria-pressed="true"></button>
+          <button class="dot" data-accent-pick="violet" style="background:#7b6ef0" aria-label="Accento viola" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="teal"   style="background:#16b6a4" aria-label="Accento verde acqua" aria-pressed="false"></button>
+          <button class="dot" data-accent-pick="blue"   style="background:#4f86e0" aria-label="Accento blu" aria-pressed="false"></button>
+        </div>
+        <span class="chip" aria-label="Lingua dell'interfaccia">IT</span>
+        <button class="icon-btn" id="theme-toggle" aria-label="Cambia tema chiaro o scuro">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="content" id="vista"><!-- disegnata dallo script --></main>
+    <p class="mock-foot">Mockup navigabile — dati inventati · app #03 CashGrove · guscio dal kit d'autore del catalogo</p>
+  </div>
+</div>
+
+<!-- ───────────────── COMPONENTE: finestra modale ───────────────── -->
+<div class="modal-back" id="modale" hidden role="dialog" aria-modal="true" aria-labelledby="modale-titolo">
+  <div class="modal">
+    <h3 id="modale-titolo">Inviare adesso il sollecito?</h3>
+    <p id="modale-testo">Il messaggio parte subito verso il debitore e non si richiama indietro.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-modale="chiudi">Annulla</button>
+      <button class="btn btn-primary" data-modale="conferma">Sì, invia adesso</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   1. DATI FINTI DI CASHGROVE — denominazioni di fantasia, importi inventati.
+      Servono solo a far vedere la forma dell'interfaccia: non devono
+      essere realistici al punto da sembrare dati veri di un cliente.
+      Sono però COERENTI fra loro — date, ritardi, fasce di anzianità e
+      avanzamento della sequenza tornano — perché un mockup che si contraddice
+      da solo fa perdere tempo a chi lo legge.
+   ══════════════════════════════════════════════════════════════════════ */
+const APP = {
+  nome: 'CashGrove',
+  id: 'crediti',
+  categoria: 'amber',   /* green | amber | red | blue | violet | teal */
+  iniziale: 'C',
+  claim: 'Chi ti deve dei soldi, da quanto, e che cosa parte da solo per farteli rientrare.',
+  metrica: 'crediti monitorati',
+  /* metrica a GIACENZA: il tetto riguarda i crediti aperti ADESSO, non un consumo mensile */
+  quota: { usato: 128, tetto: 150, finestra: 'in questo momento' }
+};
+
+/* «Oggi» del mockup: lunedì 3 agosto 2026. Tutte le date qui sotto sono
+   coerenti con questa giornata e con la sequenza predefinita (−3, +7, +21, +45),
+   così che l'avanzamento raccontato nella schermata «Sequenza» torni davvero. */
+const OGGI = 'lunedì 3 agosto 2026';
+
+/* La sequenza predefinita dell'account (storia 0011, RF-6): quattro passi, il
+   primo PRIMA della scadenza. Lo scarto è in giorni rispetto alla scadenza. */
+const SEQUENZA = {
+  nome: 'Sequenza predefinita dell’account',
+  attiva: true,
+  passi: [
+    { n:1, scarto:-3, canale:'Posta elettronica', tono:'Cortese', modello:'Promemoria di cortesia',
+      testo:'Non è ancora un sollecito: ricorda una scadenza che sta arrivando. Intercetta i ritardi per dimenticanza, che sono la maggior parte.' },
+    { n:2, scarto:7,  canale:'Posta elettronica', tono:'Cortese', modello:'Primo sollecito',
+      testo:'Dà per scontata la buona fede e chiede una data. Se il debitore ha più documenti scaduti, ne porta l’elenco in un messaggio solo.' },
+    { n:3, scarto:21, canale:'Posta elettronica + messaggio breve', tono:'Fermo', modello:'Secondo sollecito',
+      testo:'Cambia registro: nomina importo, scadenza superata e il fatto che gli interessi di mora maturano. Il messaggio breve non è mai il primo passo (storia 0015).' },
+    { n:4, scarto:45, canale:'Posta elettronica', tono:'Formale', modello:'Ultimo avviso',
+      testo:'Annuncia la messa in mora. Dopo questo passo il credito va in escalation e l’automatismo tace: si decide a mano.' },
+  ]
+};
+const TONI = { Cortese:'b-info', Fermo:'b-warn', Formale:'b-bad' };
+
+/* Crediti finti: denominazioni di fantasia, importi verosimili ma inventati.
+   `ritardo` = giorni oltre la scadenza (negativo = non ancora scaduto);
+   `orig` = importo di fattura, `valore` = residuo ancora dovuto;
+   `passi` = quanti passi della sequenza sono già partiti;
+   `sosp` = perché la sequenza è ferma (null se corre);
+   `prossimo` = che cosa parte, e quando;
+   `invii` = le date del registro dei solleciti (storia 0017, sola aggiunta);
+   `eventi` = gli altri fatti della cronologia. */
+const RIGHE = [
+  { id:'2026/114', refe:'Officine Vallelunga', emesso:'12/04/2026', data:'12/05/2026', orig:4820.00, valore:4820.00, ritardo:83, stato:'escalation', passi:4,
+    sosp:null, prossimo:'Sequenza esaurita: nessun sollecito automatico',
+    invii:['09/05/2026','19/05/2026','02/06/2026','26/06/2026'],
+    eventi:[
+      { t:'Sollecito inviato a mano, fuori sequenza', q:'02/08/2026 · 11:20 · Marco Sindoni' },
+      { t:'Credito portato in escalation: ultimo passo consumato', q:'27/06/2026 · 06:00 · sistema' },
+    ] },
+  { id:'2026/131', refe:'Studio Pergolesi', emesso:'14/06/2026', data:'14/07/2026', orig:1290.00, valore:1290.00, ritardo:20, stato:'scaduto', passi:2,
+    sosp:null, prossimo:'3° passo — fermo, domani alle 09:10', invii:['11/07/2026','21/07/2026'], eventi:[] },
+  { id:'2026/147', refe:'Carpenteria Rovito', emesso:'21/05/2026', data:'21/06/2026', orig:940.00, valore:940.00, ritardo:43, stato:'contestato', passi:3,
+    sosp:'Contestazione aperta il 15/07 — merce non conforme', prossimo:'Fermo: si riprende alla chiusura della contestazione',
+    invii:['18/06/2026','28/06/2026','12/07/2026'],
+    eventi:[
+      { t:'Contestazione aperta — merce non conforme, 940,00 €', q:'15/07/2026 · 15:40 · Marco Sindoni' },
+      { t:'Solleciti sospesi finché la contestazione resta aperta', q:'15/07/2026 · 15:40 · sistema' },
+    ] },
+  { id:'2026/158', refe:'Panificio Sant’Erasmo', emesso:'04/06/2026', data:'04/07/2026', orig:2310.50, valore:2310.50, ritardo:30, stato:'promessa', passi:3,
+    sosp:'Promessa di pagamento per il 14/08', prossimo:'Fermo: si riprende il 15/08 se l’incasso non arriva',
+    invii:['01/07/2026','11/07/2026','25/07/2026'],
+    eventi:[
+      { t:'Promessa di pagamento per il 14/08/2026 — 2.310,50 €', q:'28/07/2026 · 09:55 · Anna Ferretti' },
+      { t:'Solleciti sospesi fino al 15/08/2026', q:'28/07/2026 · 09:55 · sistema' },
+    ] },
+  { id:'2026/166', refe:'Officine Vallelunga', emesso:'27/06/2026', data:'27/07/2026', orig:1215.20, valore:615.20, ritardo:7, stato:'scaduto', passi:1,
+    sosp:null, prossimo:'2° passo — cortese, slittato a mercoledì 05/08', invii:['24/07/2026'],
+    eventi:[
+      { t:'2° passo slittato al 05/08: distanza minima fra due messaggi allo stesso debitore', q:'03/08/2026 · 09:10 · sistema' },
+      { t:'Incasso parziale di 600,00 € — bonifico', q:'30/07/2026 · 08:10 · Anna Ferretti' },
+    ] },
+  { id:'2026/171', refe:'Vivai Costamagna', emesso:'30/06/2026', data:'30/07/2026', orig:380.00, valore:380.00, ritardo:4, stato:'scaduto', passi:1,
+    sosp:null, prossimo:'2° passo — cortese, giovedì alle 09:10', invii:['27/07/2026'], eventi:[] },
+  { id:'2026/178', refe:'Studio Pergolesi', emesso:'07/07/2026', data:'07/08/2026', orig:1120.00, valore:1120.00, ritardo:-4, stato:'aperto', passi:0,
+    sosp:null, prossimo:'1° passo — promemoria, domani alle 09:10', invii:[], eventi:[] },
+  { id:'2026/180', refe:'Carpenteria Rovito', emesso:'12/07/2026', data:'12/08/2026', orig:745.00, valore:745.00, ritardo:-9, stato:'aperto', passi:0,
+    sosp:null, prossimo:'1° passo — promemoria, slittato a lunedì 10/08', invii:[],
+    eventi:[{ t:'1° passo slittato al 10/08: maturava di domenica, fuori finestra di invio', q:'03/08/2026 · 06:00 · sistema' }] },
+  { id:'2026/109', refe:'Vivai Costamagna', emesso:'28/03/2026', data:'28/04/2026', orig:1980.00, valore:0, ritardo:0, stato:'incassato', passi:2,
+    sosp:null, prossimo:'Chiuso', invii:['25/04/2026','05/05/2026'],
+    eventi:[
+      { t:'Incasso totale di 1.980,00 € — bonifico', q:'26/06/2026 · 07:30 · Anna Ferretti' },
+      { t:'Credito chiuso: incassato — una unità di quota liberata', q:'26/06/2026 · 07:30 · sistema' },
+    ] },
+];
+/* Ogni credito porta il titolo che si legge nell'intestazione della scheda. */
+RIGHE.forEach(r => r.titolo = `Fattura ${r.id}`);
+
+const STATI = {
+  aperto:     { et:'Non scaduto',      cl:'b-info'    },
+  scaduto:    { et:'Scaduto',          cl:'b-warn'    },
+  promessa:   { et:'Promessa attiva',  cl:'b-neutral' },
+  contestato: { et:'In contestazione', cl:'b-neutral' },
+  escalation: { et:'In escalation',    cl:'b-bad'     },
+  incassato:  { et:'Incassato',        cl:'b-ok'      },
+};
+
+/* I crediti che pesano ancora sul portafoglio: sono quelli che l'anzianità
+   conta e quelli che occupano quota. */
+const APERTI = RIGHE.filter(r => r.stato !== 'incassato');
+
+/* Fasce di anzianità: il prospetto che il titolare guarda per primo.
+   Sono CALCOLATE dai crediti, non scritte a mano: così il totale della
+   panoramica e l'elenco non possono raccontare due storie diverse. */
+const FASCE = [
+  { et:'Non scaduto',  test:r => r.ritardo <= 0 },
+  { et:'1-30 giorni',  test:r => r.ritardo > 0  && r.ritardo <= 30 },
+  { et:'31-60 giorni', test:r => r.ritardo > 30 && r.ritardo <= 60 },
+  { et:'61-90 giorni', test:r => r.ritardo > 60 && r.ritardo <= 90 },
+  { et:'Oltre 90',     test:r => r.ritardo > 90 },
+].map(f => {
+  const gruppo = APERTI.filter(f.test);
+  return { et:f.et, n:gruppo.length, imp:gruppo.reduce((s,r) => s + r.valore, 0) };
+});
+
+/* ══════════════════════════════════════════════════════════════════════
+   2. UTILITÀ DEL GUSCIO — non toccare.
+   ══════════════════════════════════════════════════════════════════════ */
+const CAT = {green:'--cat-green',amber:'--cat-amber',red:'--cat-red',blue:'--cat-blue',violet:'--cat-violet',teal:'--cat-teal'};
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I = {
+  info:  svg('<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11v5"/>'),
+  check: svg('<path d="m5 13 4 4 10-10"/>'),
+  warn:  svg('<path d="M12 3 2 21h20L12 3Z"/><path d="M12 10v5M12 18h.01"/>'),
+  block: svg('<circle cx="12" cy="12" r="9"/><path d="m5.5 5.5 13 13"/>'),
+  clock: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  cerca: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/>'),
+  piu:   svg('<path d="M12 5v14M5 12h14"/>'),
+  sx:    svg('<path d="m14 6-6 6 6 6"/>'),
+  dx:    svg('<path d="m10 6 6 6-6 6"/>'),
+  vuoto: svg('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/>'),
+  scarica:svg('<path d="M12 4v10m0 0 4-4m-4 4-4-4"/><path d="M5 19h14"/>'),
+  chat:  svg('<path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z"/>'),
+};
+const piastrella = () => `<span class="tile" style="background:rgb(var(${CAT[APP.categoria]??'--cat-blue'})/.14);color:rgb(var(${CAT[APP.categoria]??'--cat-blue'}))" aria-hidden="true">${APP.iniziale}</span>`;
+const nota = html => `<div class="nota">${I.info}<div>${html}</div></div>`;
+const eur = n => new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(n);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const badge = st => `<span class="badge ${STATI[st].cl}">${STATI[st].et}</span>`;
+
+/* Interessi di mora del decreto legislativo 231/2002, calcolati sul RESIDUO:
+   tasso di riferimento della Banca centrale europea + 8 punti (10,15% nel primo
+   semestre 2026) più il forfait di 40 euro. Il numero è calcolato, non scritto:
+   un importo che non si sa spiegare non si mette in una lettera (storia 0020). */
+const TASSO_MORA = 0.1015, FORFAIT_MORA = 40;
+const mora = r => {
+  const giorni = Math.max(0, r.ritardo);
+  const interessi = r.valore * TASSO_MORA * giorni / 365;
+  return { giorni, interessi, forfait: giorni > 0 ? FORFAIT_MORA : 0, totale: interessi + (giorni > 0 ? FORFAIT_MORA : 0) };
+};
+
+/* Come sta messa la sequenza di quel credito: è la stessa etichetta ovunque —
+   elenco, scheda, schermata della sequenza (storia 0016, RF-4). */
+function statoSequenza(r){
+  if(r.stato === 'incassato')  return `<span class="badge b-ok">Chiusa — incassato</span>`;
+  if(r.stato === 'escalation') return `<span class="badge b-bad">Esaurita — in escalation</span>`;
+  if(r.sosp)                   return `<span class="badge b-neutral">Sospesa</span>`;
+  return `<span class="badge b-info">In corso</span>`;
+}
+
+/* Avanzamento lungo la scala dei passi: «2 di 4», con la barra. */
+function avanzamento(r){
+  const tot = SEQUENZA.passi.length;
+  return `<span class="avanz">
+    <span class="quota-bar"><i class="${r.sosp?'warn':''}" style="width:${Math.round(r.passi/tot*100)}%"></i></span>
+    <span class="mono">${r.passi} di ${tot}</span>
+  </span>`;
+}
+
+/* stato dell'interfaccia (ricerca, filtro, pagina, riga selezionata) */
+const S = { vista:'panoramica', q:'', filtro:'tutti', pagina:1, sel:RIGHE[0].id };
+const PER_PAGINA = 5;
+
+/* ══════════════════════════════════════════════════════════════════════
+   3. COMPONENTI RIUTILIZZABILI
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* COMPONENTE — indicatori sintetici.
+   Da 2 a 4 numeri, non di più: se sono sette, non sono indicatori. */
+function bloccoIndicatori(voci){
+  return `<div class="kpis">${voci.map(v=>`
+    <div class="card kpi">
+      <span class="k">${esc(v.k)}</span>
+      <span class="v">${esc(v.v)}</span>
+      ${v.d ? `<span class="d ${v.tono??''}">${esc(v.d)}</span>` : ''}
+    </div>`).join('')}</div>`;
+}
+
+/* COMPONENTE — avviso di quota raggiunta.
+   `livello`: 'vicino' (avviso giallo) oppure 'raggiunto' (blocco rosso).
+   Il testo deve dire SEMPRE tre cose: cosa è successo, cosa non si può
+   più fare, come si rimedia. */
+function avvisoQuota(livello){
+  if(livello === 'raggiunto') return `
+    <div class="alert a-bad">${I.block}
+      <span>Hai raggiunto il limite del tuo piano: <b>${APP.quota.tetto} ${esc(APP.metrica)}</b> ${esc(APP.quota.finestra)}.
+      Per portarne dentro un altro devi chiuderne uno — incassato o stralciato — oppure passare a un piano superiore.</span>
+      <span class="spacer"></span><button class="btn btn-primary btn-sm">Cambia piano</button>
+    </div>`;
+  return `
+    <div class="alert a-warn">${I.warn}
+      <span>Stai monitorando <b>${APP.quota.usato}</b> crediti su <b>${APP.quota.tetto}</b> ${esc(APP.quota.finestra)}.
+      Ogni credito incassato libera un posto.</span>
+      <span class="spacer"></span><button class="btn btn-ghost btn-sm">Vedi il piano</button>
+    </div>`;
+}
+
+/* COMPONENTE — barra di consumo della quota. */
+function barraQuota(){
+  const pct = Math.min(100, Math.round(APP.quota.usato / APP.quota.tetto * 100));
+  const cl = pct >= 100 ? 'full' : pct > 80 ? 'warn' : '';
+  return `<div class="quota">
+    <span>${APP.quota.usato} di ${APP.quota.tetto} ${esc(APP.metrica)} — ${esc(APP.quota.finestra)}</span>
+    <span class="quota-bar"><i class="${cl}" style="width:${pct}%"></i></span>
+  </div>`;
+}
+
+/* COMPONENTE — stato vuoto.
+   Tre parti obbligatorie: titolo, spiegazione, azione. Uno stato vuoto
+   senza azione è un vicolo cieco. */
+function statoVuoto(titolo, testo, azione){
+  return `<div class="card empty">${I.vuoto}
+    <b>${esc(titolo)}</b>
+    <p>${esc(testo)}</p>
+    ${azione ?? ''}
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   4. SCHERMATE — una funzione per schermata, restituisce HTML.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* SCHERMATA — Panoramica: anzianità dei crediti, indicatori, quota, prossimi solleciti.
+   Gli indicatori sono quattro e non sette: rispondono alle sole domande che il titolare
+   si fa davvero — quanto è fermo, da quanto, quando rientra, sta migliorando? */
+function vPanoramica(){
+  const totale = FASCE.reduce((s,f)=>s+f.imp,0);
+  /* «vecchio» = quello che sta oltre i 60 giorni: la parte che si incassa peggio */
+  const vecchio = FASCE.slice(3).reduce((s,f)=>s+f.imp,0);
+  return `
+  ${nota(`<b>Proposta — Panoramica.</b> In tre secondi deve dire <i>quanto denaro è fermo</i> e <i>su chi insistere
+    oggi</i>. Le fasce di anzianità stanno in alto perché sono la domanda numero uno; l'indicatore dei giorni medi di
+    incasso sta accanto perché è la prova che l'app serve a qualcosa (storia 0024 — è anche la ragione per cui la
+    proposta di listino rinuncia alla componente a percentuale sul recuperato: il risultato si mostra, non si fa
+    pagare). Le fasce si distinguono per etichetta e valore, non solo per colore.`)}
+  <div class="page-h">
+    ${piastrella()}
+    <div class="txt"><h1>${esc(APP.nome)}</h1><p>${esc(APP.claim)}</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo credito</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  ${bloccoIndicatori([
+    {k:'Denaro fermo',              v:eur(totale),  d:`${APERTI.length} crediti aperti`},
+    {k:'Scaduto oltre 60 giorni',   v:eur(vecchio), d:'1 credito, in escalation', tono:'down'},
+    {k:'Giorni medi di incasso',    v:'52 g',       d:'−9 rispetto al trimestre precedente', tono:'up'},
+    {k:'Atteso nelle 4 settimane',  v:eur(4180),    d:'di cui 2.310,50 € da una promessa di pagamento'},
+  ])}
+
+  <section class="card" aria-label="Anzianità dei crediti">
+    <div class="card-pad"><h2 class="sec">Anzianità dei crediti</h2>
+      <p class="sec-sub">Quanto denaro è fermo, e da quanto tempo. Tocca una fascia per andare all'elenco dei crediti.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Fascia di ritardo</th><th class="num">Crediti</th><th class="num">Importo</th><th>Peso</th></tr></thead>
+      <tbody>${FASCE.map(f=>`
+        <tr data-nav="elenco">
+          <td>${esc(f.et)}</td>
+          <td class="num">${f.n}</td>
+          <td class="num">${eur(f.imp)}</td>
+          <td style="min-width:130px">
+            <span class="quota-bar"><i class="${f.imp/totale>.4?'warn':''}" style="width:${Math.round(f.imp/totale*100)}%"></i></span>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="detail-grid">
+    <section class="card" aria-label="Prossimi solleciti">
+      <div class="card-pad"><h2 class="sec">Prossimi solleciti</h2>
+        <p class="sec-sub">Cosa parte da solo, e cosa è fermo — con il motivo. Il piano completo sta nella
+          <a data-nav="sequenza" role="button" tabindex="0">sequenza di sollecito</a>.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Credito</th><th>Debitore</th><th>Che cosa parte, e quando</th><th>Sequenza</th></tr></thead>
+        <tbody>${APERTI.filter(r => r.stato !== 'escalation').map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td>
+            <td>${esc(r.refe)}</td>
+            <td>${esc(r.sosp ?? r.prossimo)}</td>
+            <td>${statoSequenza(r)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="sec">Il tuo piano</h2>
+        ${barraQuota()}
+        <p class="sec-sub">Il limite è a giacenza: riguarda i crediti aperti adesso, non quanti ne apri in un mese.</p>
+        <div class="row"><button class="btn btn-ghost btn-sm">Cambia piano</button><button class="btn btn-ghost btn-sm">${I.scarica} Esporta per il commercialista</button></div>
+      </div>
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">${I.chat} Dalla chat</h2>
+        <p class="sec-sub">Le stesse funzioni si comandano a voce. In lettura: «chi mi deve soldi da più di 60 giorni?»,
+        «quanto rientra nelle prossime tre settimane?». In scrittura: «Pergolesi ha promesso di pagare venerdì» —
+        che prepara una <b>bozza</b> e chiede conferma. L'invio di un sollecito non parte mai senza un sì umano.</p>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Elenco: ricerca, filtro di stato, tabella, paginazione, stato vuoto. */
+function vElenco(){
+  const q = S.q.trim().toLowerCase();
+  /* ordinamento predefinito: giorni di ritardo decrescenti — la domanda è
+     «chi è più indietro», non «qual è la fattura più recente» */
+  const trovate = RIGHE.filter(r =>
+    (S.filtro === 'tutti' || r.stato === S.filtro) &&
+    (!q || r.titolo.toLowerCase().includes(q) || r.id.toLowerCase().includes(q) || r.refe.toLowerCase().includes(q))
+  ).sort((a,b) => b.ritardo - a.ritardo);
+  const pagine = Math.max(1, Math.ceil(trovate.length / PER_PAGINA));
+  if(S.pagina > pagine) S.pagina = pagine;
+  const fetta = trovate.slice((S.pagina-1)*PER_PAGINA, S.pagina*PER_PAGINA);
+
+  return `
+  ${nota(`<b>Proposta — Elenco dei crediti.</b> Ricerca su numero del documento e debitore, filtro per stato,
+    ordinamento predefinito per <i>giorni di ritardo</i> decrescenti — non per data, perché la domanda è «chi è più
+    indietro». Il residuo è la colonna che conta: l'importo di fattura, dopo un pagamento parziale, mente. L'ultima
+    colonna dice a che punto è arrivata la <a data-nav="sequenza">sequenza di sollecito</a>, così non serve aprire la
+    scheda per sapere se sta per partire qualcosa. La riga si apre sul dettaglio.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Crediti</h1><p>Tutto quello che hai fatturato e non ancora incassato.</p></div>
+    <button class="btn btn-primary" data-nav="nuovo">${I.piu} Nuovo credito</button>
+  </div>
+
+  <div class="tools">
+    <div class="search">${I.cerca}
+      <input id="q" type="search" placeholder="Cerca per numero di documento o debitore…" value="${esc(S.q)}" aria-label="Cerca">
+    </div>
+    <select class="select" id="filtro" aria-label="Filtra per stato">
+      <option value="tutti"${S.filtro==='tutti'?' selected':''}>Tutti gli stati</option>
+      ${Object.entries(STATI).map(([k,v])=>`<option value="${k}"${S.filtro===k?' selected':''}>${v.et}</option>`).join('')}
+    </select>
+    <span class="result-count">${trovate.length} credit${trovate.length===1?'o':'i'}</span>
+  </div>
+
+  ${fetta.length ? `
+  <div class="card">
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Documento</th><th>Debitore</th><th>Scadenza</th><th class="num">Residuo</th><th class="num">Ritardo</th><th>Stato</th><th>Sequenza</th></tr></thead>
+      <tbody>${fetta.map(r=>`
+        <tr data-nav="dettaglio" data-id="${r.id}">
+          <td class="mono">${esc(r.id)}</td><td>${esc(r.refe)}</td>
+          <td>${esc(r.data)}</td><td class="num">${r.stato==='incassato' ? '—' : eur(r.valore)}</td>
+          <td class="num">${r.stato==='incassato' ? '—' : (r.ritardo>0 ? r.ritardo+' g' : 'fra '+(-r.ritardo)+' g')}</td>
+          <td>${badge(r.stato)}</td>
+          <td title="${esc(r.sosp ?? r.prossimo)}">${avanzamento(r)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <nav class="pager" aria-label="Pagine dell'elenco">
+      <button class="btn btn-ghost btn-sm" id="pg-prev"${S.pagina<=1?' disabled':''}>${I.sx} Precedente</button>
+      <span class="info">Pagina ${S.pagina} di ${pagine}</span>
+      <button class="btn btn-ghost btn-sm" id="pg-next"${S.pagina>=pagine?' disabled':''}>Successiva ${I.dx}</button>
+    </nav>
+  </div>` : statoVuoto(
+      'Nessun credito corrisponde ai filtri',
+      'Prova con un’altra parola chiave, oppure azzera i filtri per rivedere tutto l’elenco.',
+      `<button class="btn btn-ghost" id="azzera">Azzera i filtri</button>`)}`;
+}
+
+/* SCHERMATA — Dettaglio del credito: i fatti a sinistra, la prova a destra.
+   La cronologia è il registro dei solleciti (storia 0017): sola aggiunta, con
+   gli invii riusciti E quelli slittati o annullati — un registro che mostra
+   solo i successi non è una prova, è una vetrina. */
+function vDettaglio(){
+  const r = RIGHE.find(x => x.id === S.sel) ?? RIGHE[0];
+  const m = mora(r);
+  const incassato = r.orig - r.valore;
+  /* il registro: prima i fatti recenti, poi i solleciti dal più nuovo al più vecchio */
+  const cronologia = [
+    ...r.eventi,
+    ...r.invii.map((d,i) => {
+      const p = SEQUENZA.passi[i];
+      return { t:`${p.n}° passo — ${p.modello.toLowerCase()} (${p.tono.toLowerCase()}) · ${p.canale.toLowerCase()}`,
+               q:`${d} · 09:10 · accettato dal fornitore` };
+    }).reverse(),
+  ];
+
+  return `
+  ${nota(`<b>Proposta — Scheda del credito.</b> A sinistra i fatti che rendono l'importo <i>indiscutibile</i>: importo
+    di fattura, incassato, residuo, giorni di ritardo, interessi di mora calcolati con il tasso del semestre più il
+    forfait di 40 euro (storia 0020) — un numero che non si sa spiegare non si può mettere in una lettera. A destra la
+    <b>prova</b>: il registro dei solleciti in sola aggiunta, con gli invii riusciti e quelli slittati o annullati
+    (storia 0017). «Invia adesso il sollecito» è l'unica azione che esce verso una persona che non è nostro utente:
+    passa da una conferma esplicita e non è aggirabile, nemmeno dalla chat.`)}
+  <div class="page-h">
+    <div class="txt">
+      <div class="row"><h1>${esc(r.titolo)}</h1>${badge(r.stato)}</div>
+      <p>${esc(r.refe)} · documento emesso il ${esc(r.emesso)}</p>
+    </div>
+    <button class="btn btn-ghost" data-nav="elenco">${I.sx} Torna all'elenco</button>
+  </div>
+
+  ${r.sosp ? `<div class="alert a-warn">${I.warn}<span>I solleciti automatici su questo credito sono <b>fermi</b>:
+      ${esc(r.sosp)}.</span><span class="spacer"></span><button class="btn btn-ghost btn-sm">Riprendi i solleciti</button></div>` : ''}
+
+  <div class="detail-grid">
+    <div class="card card-pad">
+      <h2 class="sec" style="padding-bottom:8px">Il credito</h2>
+      <div class="dl">
+        <div class="dl-row"><span class="k">Debitore</span><span class="v">${esc(r.refe)}</span></div>
+        <div class="dl-row"><span class="k">Scadenza</span><span class="v">${esc(r.data)}</span></div>
+        <div class="dl-row"><span class="k">Giorni di ritardo</span><span class="v mono">${r.stato==='incassato' ? '—' : (r.ritardo>0 ? r.ritardo+' g' : 'non ancora scaduto')}</span></div>
+        <div class="dl-row"><span class="k">Importo di fattura</span><span class="v mono">${eur(r.orig)}</span></div>
+        <div class="dl-row"><span class="k">Incassato</span><span class="v mono">${eur(incassato)}</span></div>
+        <div class="dl-row"><span class="k">Residuo dovuto</span><span class="v mono">${eur(r.valore)}</span></div>
+        <div class="dl-row"><span class="k">Interessi di mora maturati</span><span class="v mono">${eur(m.interessi)}</span></div>
+        <div class="dl-row"><span class="k">Rimborso forfettario</span><span class="v mono">${eur(m.forfait)}</span></div>
+      </div>
+      <p class="sec-sub" style="margin-top:10px">Mora calcolata sul residuo, ${m.giorni} giorni al 10,15% (tasso della
+        Banca centrale europea del primo semestre 2026 più 8 punti) più il forfait previsto per le transazioni
+        commerciali. Decidi tu se metterla nel sollecito, se rinunciarvi o se tenerla come informazione interna.</p>
+      <div class="row" style="margin-top:16px">
+        <button class="btn btn-primary">Registra un incasso</button>
+        <button class="btn btn-ghost">Registra una promessa</button>
+        <button class="btn btn-ghost">Apri una contestazione</button>
+        <button class="btn btn-ghost">Sospendi i solleciti</button>
+        <button class="btn btn-ghost">${I.scarica} Prepara la messa in mora</button>
+        <button class="btn btn-danger" data-modale="apri">Invia adesso il sollecito</button>
+      </div>
+    </div>
+
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+        <h2 class="sec">La sequenza</h2>
+        <div class="row" style="justify-content:space-between">${avanzamento(r)}${statoSequenza(r)}</div>
+        <p class="sec-sub">${esc(r.sosp ?? r.prossimo)}</p>
+        <button class="btn btn-ghost btn-sm" data-nav="sequenza">Vedi la sequenza intera</button>
+      </div>
+      <div class="card card-pad">
+        <h2 class="sec" style="padding-bottom:6px">Registro dei solleciti</h2>
+        <p class="sec-sub" style="margin-bottom:6px">Sola aggiunta: non si modifica e non si cancella riga per riga.</p>
+        <div class="timeline">${cronologia.length ? cronologia.map(e=>`
+          <div class="tl-item"><span class="tl-dot"></span><div><div>${esc(e.t)}</div><div class="when">${esc(e.q)}</div></div></div>`).join('')
+          : `<p class="sec-sub">Ancora nessun messaggio partito: il primo passo di questo credito deve ancora maturare.</p>`}
+        </div>
+      </div>
+    </aside>
+  </div>`;
+}
+
+/* SCHERMATA — Sequenza di sollecito: è il cuore dell'app.
+   Quattro cose, in quest'ordine: (1) la SCALA dei passi con i loro tempi e il
+   loro tono; (2) a che punto è ogni credito lungo la scala; (3) che cosa la
+   FERMA — è la condizione per fidarsi dell'automatismo (storia 0016); (4) i
+   limiti che il motore impone all'utente e che l'utente non può allargare
+   (storie 0011 RT-10 e 0013 RT-10, vademecum del Garante).
+   La coda dei prossimi invii chiude la schermata (storia 0013, RF-6). */
+function vSequenza(){
+  const scala = SEQUENZA.passi.map(p => `
+    <div class="passo">
+      <div class="quando">${p.scarto < 0 ? '−'+Math.abs(p.scarto) : '+'+p.scarto} g
+        <small>${p.scarto < 0 ? 'prima della scadenza' : 'dopo la scadenza'}</small></div>
+      <div class="segno">${p.n}</div>
+      <div class="corpo">
+        <div class="titolo">${esc(p.modello)}</div>
+        <div class="row">
+          <span class="badge ${TONI[p.tono]}">Tono ${esc(p.tono.toLowerCase())}</span>
+          <span class="badge b-neutral">${esc(p.canale)}</span>
+        </div>
+        <div class="testo">${esc(p.testo)}</div>
+      </div>
+    </div>`).join('');
+
+  /* La coda: data, ora prevista, destinatario, passo — e il motivo quando slitta. */
+  const CODA = [
+    { quando:'martedì 04/08 · 09:10', chi:'Studio Pergolesi',      cosa:'3° passo — fermo',      doc:'2026/131', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'martedì 04/08 · 09:10', chi:'Studio Pergolesi',      cosa:'1° passo — promemoria', doc:'2026/178', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'mercoledì 05/08 · 09:10', chi:'Officine Vallelunga', cosa:'2° passo — cortese',    doc:'2026/166', nota:'slittato: distanza minima di 3 giorni dall’ultimo messaggio a questo debitore', st:'b-warn' },
+    { quando:'giovedì 06/08 · 09:10', chi:'Vivai Costamagna',      cosa:'2° passo — cortese',    doc:'2026/171', nota:'in coda',                                                                 st:'b-info' },
+    { quando:'lunedì 10/08 · 09:10',  chi:'Carpenteria Rovito',    cosa:'1° passo — promemoria', doc:'2026/180', nota:'slittato: maturava di domenica, fuori finestra di invio',                 st:'b-warn' },
+  ];
+
+  return `
+  ${nota(`<b>Proposta — Sequenza di sollecito.</b> È il cuore dell'app: il titolare decide <i>una volta</i> quanti
+    messaggi partono, quando e con che tono, e poi non ci pensa più. La scala si legge dall'alto verso il basso come
+    una linea del tempo, con il primo passo <i>prima</i> della scadenza — non è ancora un sollecito, ed è quello che
+    intercetta i ritardi per dimenticanza. Il riquadro «Quando la sequenza si ferma» è la parte che decide se il
+    prodotto verrà usato o spento: un messaggio mandato a chi ha appena pagato fa più danno del ritardo che voleva
+    risolvere. I limiti del motore <b>non</b> sono impostazioni: la sollecitazione ripetuta è considerata invasiva dal
+    Garante, e un prodotto che permettesse dodici solleciti in dieci giorni metterebbe nei guai chi lo usa.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Sequenza di sollecito</h1><p>Quanti messaggi partono, quando, con che tono — e cosa li ferma.</p></div>
+    <button class="btn btn-ghost">Modifica la sequenza</button>
+  </div>
+
+  <section class="card" aria-label="La scala dei passi">
+    <div class="card-pad" style="display:flex;flex-direction:column;gap:8px">
+      <div class="row" style="justify-content:space-between">
+        <h2 class="sec">${esc(SEQUENZA.nome)}</h2>
+        <span class="badge ${SEQUENZA.attiva ? 'b-ok' : 'b-neutral'}">${SEQUENZA.attiva ? 'Attiva' : 'Non attiva'}</span>
+      </div>
+      <p class="sec-sub">Il cliente riceverà: 3 giorni <b>prima</b> della scadenza, poi 7, 21 e 45 giorni dopo.
+        Si applica a tutti i crediti che non hanno una sequenza propria — quella del debitore o quella del singolo
+        credito, dove la più specifica vince.</p>
+    </div>
+    <div class="card-pad" style="padding-top:0">
+      <div class="scala">${scala}</div>
+      <div class="passo-fine">
+        <div class="quando" style="text-align:right;font-family:var(--font-mono);font-weight:700">fine</div>
+        <div class="segno">${I.block}</div>
+        <div><b>Sequenza esaurita: il credito va in escalation.</b> Nessun altro sollecito automatico parte, e la
+          decisione torna a una persona: messa in mora, legale, stralcio. L'automatismo sa quando tacere.</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="detail-grid">
+    <section class="card" aria-label="A che punto è ogni credito">
+      <div class="card-pad"><h2 class="sec">A che punto è ogni credito</h2>
+        <p class="sec-sub">Dove si trova ciascun credito lungo la scala, oggi — ${esc(OGGI)}.</p></div>
+      <div class="table-wrap"><table class="tbl">
+        <thead><tr><th>Documento</th><th>Debitore</th><th>Avanzamento</th><th>Che cosa succede adesso</th></tr></thead>
+        <tbody>${APERTI.map(r=>`
+          <tr data-nav="dettaglio" data-id="${r.id}">
+            <td class="mono">${esc(r.id)}</td>
+            <td>${esc(r.refe)}</td>
+            <td>${avanzamento(r)}</td>
+            <td>${statoSequenza(r)}<div class="sec-sub">${esc(r.sosp ?? r.prossimo)}</div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+    </section>
+
+    <aside style="display:flex;flex-direction:column;gap:14px">
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <h2 class="sec">Quando la sequenza si ferma</h2>
+          <p class="sec-sub">I freni stanno in un punto solo, così nessun percorso di invio può aggirarli.</p>
+        </div>
+        <ul class="regole">
+          <li>${I.check}<div><b>Il residuo è zero</b><span>Il credito è stato pagato: non c’è più niente da chiedere.</span></div></li>
+          <li>${I.clock}<div><b>C’è una promessa di pagamento attiva</b><span>Si tace fino al giorno dopo la data promessa. Se l’incasso non arriva, la promessa risulta mancata e i solleciti riprendono.</span></div></li>
+          <li>${I.warn}<div><b>C’è una contestazione aperta</b><span>Si tace finché non si chiude — accolta, respinta o risolta con accordo — poi si riprende sul residuo aggiornato.</span></div></li>
+          <li>${I.block}<div><b>Qualcuno ha sospeso a mano</b><span>Sul singolo credito o sull’intero debitore, con un motivo e — se si vuole — una data di ripresa.</span></div></li>
+          <li>${I.block}<div><b>Il credito è incassato, stralciato o già in escalation</b><span>Stati da cui nessun sollecito automatico parte mai.</span></div></li>
+          <li>${I.check}<div><b>Il controllo si fa due volte</b><span>Quando l’invio entra in coda e di nuovo un istante prima di trasmettere: fra i due momenti può arrivare un pagamento. L’invio bloccato non sparisce, resta registrato come annullato con la ragione.</span></div></li>
+        </ul>
+        <p class="sec-sub">Alla ripresa si riparte dal <b>passo dovuto oggi</b>: i passi saltati durante la
+          sospensione non si recuperano, altrimenti il debitore riceverebbe tre messaggi in un’ora.</p>
+      </div>
+
+      <div class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <h2 class="sec">Limiti del motore</h2>
+          <p class="sec-sub">Si possono <b>restringere</b>, non allargare: non sono preferenze, sono un presidio.</p>
+        </div>
+        <ul class="regole">
+          <li>${I.clock}<div><b>Giorni feriali, dalle 9 alle 18</b><span>Nel fuso orario dell’account. Fuori finestra l’invio resta in coda fino alla prima ora utile.</span></div></li>
+          <li>${I.clock}<div><b>Almeno 3 giorni fra due messaggi allo stesso debitore</b><span>Vale fra crediti diversi dello stesso debitore, non solo dentro un credito.</span></div></li>
+          <li>${I.check}<div><b>Un messaggio per debitore, non uno per fattura</b><span>Se più documenti maturano lo stesso giorno, parte un solo messaggio con l’elenco.</span></div></li>
+          <li>${I.warn}<div><b>Il messaggio breve non è mai il primo passo</b><span>Si usa dopo che la posta elettronica non ha prodotto effetto, e con le credenziali del cliente: appgrove non rivende messaggi.</span></div></li>
+          <li>${I.block}<div><b>Il messaggio va al debitore e a nessun altro</b><span>Niente copie di cortesia ad altri indirizzi, e l’oggetto non rivela il motivo a chi guarda lo schermo di sfuggita.</span></div></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <section class="card" aria-label="Coda dei prossimi invii">
+    <div class="card-pad"><h2 class="sec">Coda dei prossimi invii</h2>
+      <p class="sec-sub">Cosa è già stato calcolato e sta per uscire. Ogni invio si può annullare finché non è partito;
+        il passo risulterà saltato nella cronologia del credito e il successivo resta programmato.</p></div>
+    <div class="table-wrap"><table class="tbl">
+      <thead><tr><th>Quando</th><th>Destinatario</th><th>Passo</th><th>Documento</th><th>Situazione</th><th></th></tr></thead>
+      <tbody>${CODA.map(c=>`
+        <tr>
+          <td>${esc(c.quando)}</td><td>${esc(c.chi)}</td><td>${esc(c.cosa)}</td>
+          <td class="mono" data-nav="dettaglio" data-id="${c.doc}">${esc(c.doc)}</td>
+          <td><span class="badge ${c.st}">${esc(c.nota)}</span></td>
+          <td><button class="btn btn-ghost btn-sm">Annulla</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </section>
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+    <h2 class="sec">${I.chat} Dalla chat</h2>
+    <p class="sec-sub">La sequenza <b>non</b> si configura a voce: è una scelta che si fa una volta, guardandola.
+      Dalla chat si legge («cosa parte domani?», «cosa è stato mandato a Vallelunga?») e si frena
+      («sospendi i solleciti a Rovito, contestazione aperta») — con una bozza da confermare. L'invio vero di un
+      sollecito chiede sempre un sì umano, perché esce verso una persona che non è nostro utente e non si richiama
+      indietro.</p>
+  </div>`;
+}
+
+/* SCHERMATA — Modulo di inserimento: campi, aiuti, errore mostrato in linea. */
+function vNuovo(){
+  return `
+  ${nota(`<b>Proposta — Nuovo credito.</b> Si registra una fattura già emessa: l'app non fattura, parte da lì. I campi
+    obbligatori sono quattro — debitore, numero, scadenza, importo — perché è il minimo che serve a far partire una
+    sequenza; tutto il resto si aggiunge dopo. Il debitore si può creare al volo senza perdere quello che si è già
+    scritto. L'avviso di quota sta <i>prima</i> del modulo, non dopo il salvataggio: scoprire che il piano è pieno
+    quando si preme «salva» è il modo migliore per far arrabbiare qualcuno. Chi ha un elenco già pronto non passa da
+    qui: usa l'importazione da file.`)}
+  <div class="page-h">
+    <div class="txt"><h1>Nuovo credito</h1><p>Una fattura emessa e non ancora incassata. Da qui in poi ci pensa la sequenza.</p></div>
+    <button class="btn btn-ghost">${I.scarica} Importa da file</button>
+  </div>
+
+  ${avvisoQuota('vicino')}
+
+  <form class="card card-pad" id="form-nuovo" style="display:flex;flex-direction:column;gap:18px" novalidate>
+    <div class="form-grid">
+      <div class="field">
+        <label for="i-refe">Debitore *</label>
+        <select id="i-refe">
+          <option>Officine Vallelunga</option><option>Studio Pergolesi</option>
+          <option>Carpenteria Rovito</option><option>Panificio Sant’Erasmo</option><option>Vivai Costamagna</option>
+          <option>+ Nuovo debitore…</option>
+        </select>
+        <span class="hint">Se non c’è, si crea qui senza perdere il resto del modulo.</span>
+      </div>
+      <div class="field" id="f-doc">
+        <label for="i-doc">Numero del documento *</label>
+        <input id="i-doc" name="documento" placeholder="es. 2026/181">
+        <span class="hint">Come lo riconoscerai nell’elenco e come lo leggerà il debitore nel sollecito.</span>
+      </div>
+      <div class="field">
+        <label for="i-emesso">Data del documento</label>
+        <input id="i-emesso" type="date" value="2026-08-03">
+      </div>
+      <div class="field">
+        <label for="i-scadenza">Data di scadenza *</label>
+        <input id="i-scadenza" type="date" value="2026-09-02">
+        <span class="hint">Fra imprese il termine massimo di legge è 60 giorni; l’app usa 30 giorni come predefinito dell’account.</span>
+      </div>
+      <div class="field">
+        <label for="i-valore">Importo *</label>
+        <input id="i-valore" type="number" step="0.01" placeholder="0,00">
+        <span class="hint">Il residuo nasce uguale all’importo e cala con gli incassi.</span>
+      </div>
+      <div class="field">
+        <label for="i-valuta">Valuta</label>
+        <select id="i-valuta"><option>EUR — euro</option><option>CHF — franco svizzero</option><option>GBP — sterlina</option></select>
+      </div>
+      <div class="field wide">
+        <label for="i-sequenza">Sequenza di sollecito</label>
+        <select id="i-sequenza">
+          <option>Predefinita dell’account — promemoria −3, poi +7, +21, +45</option>
+          <option>Quella assegnata al debitore, se esiste</option>
+          <option>Nessuna: sollecito solo a mano</option>
+        </select>
+        <span class="hint">Vale la più specifica: credito, poi debitore, poi account.</span>
+      </div>
+      <div class="field wide">
+        <label for="i-note">Note</label>
+        <textarea id="i-note" placeholder="Annotazioni libere…"></textarea>
+        <span class="hint">Campo a testo libero: non scriverci dati delicati sul debitore. Nel sollecito non finisce.</span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" data-nav="elenco">Annulla</button>
+      <button type="submit" class="btn btn-primary">Salva il credito</button>
+    </div>
+  </form>`;
+}
+
+/* SCHERMATA — Primo avvio: com'è l'app quando non c'è ancora nulla dentro,
+   e come si presenta il blocco per quota esaurita. */
+function vVuoto(){
+  return `
+  ${nota(`<b>Proposta — Primo avvio e quota esaurita.</b> Due stati che si dimenticano sempre e che l'utente incontra
+    per primi. Il primo giorno l'app è vuota: deve dire cosa fare. Il giorno in cui il piano finisce, deve dire come si sblocca.`)}
+  <div class="page-h"><div class="txt"><h1>Primo avvio</h1>
+    <p>Come si presenta ${esc(APP.nome)} il giorno in cui viene attivata, e il giorno in cui il piano si riempie.</p></div></div>
+  ${statoVuoto(
+    'Non c’è ancora nessun credito da tenere d’occhio',
+    'Registra la prima fattura non incassata, oppure porta dentro in un colpo solo l’elenco che tieni nel foglio di calcolo. Bastano pochi minuti: da lì l’anzianità dei crediti comincia a dirti quanto denaro è fermo e da quanto.',
+    `<div class="row" style="justify-content:center">
+       <button class="btn btn-primary" data-nav="nuovo">${I.piu} Registra il primo credito</button>
+       <button class="btn btn-ghost">${I.scarica} Importa da file</button>
+     </div>`)}
+
+  <div class="card card-pad" style="display:flex;flex-direction:column;gap:8px">
+    <h2 class="sec">Non c'è niente da configurare</h2>
+    <p class="sec-sub">La <a data-nav="sequenza">sequenza di sollecito</a> è già pronta e attiva — promemoria 3 giorni
+      prima della scadenza, poi solleciti a 7, 21 e 45 giorni — e i testi dei messaggi esistono già nei tre toni e
+      nelle cinque lingue. Si possono cambiare quando si vuole, ma non è un lavoro da fare prima di cominciare: chi
+      deve collegare il gestionale, mappare i clienti e disegnare tre sequenze prima di vedere un risultato,
+      abbandona il prodotto.</p>
+    <div class="row"><button class="btn btn-ghost btn-sm" data-nav="sequenza">Guarda la sequenza predefinita</button></div>
+  </div>
+
+  <h2 class="sec">Quota esaurita</h2>
+  ${nota(`<b>Perché questo stato conta.</b> La metrica è a <i>giacenza</i>: il tetto riguarda i crediti aperti adesso.
+    Il messaggio deve dire tre cose — cosa è successo, cosa non si può più fare, come si rimedia — e la via d'uscita
+    non è solo «paga di più»: chiudere un credito incassato o stralciato libera un posto.`)}
+  ${avvisoQuota('raggiunto')}`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   5. INSTRADATORE E COLLEGAMENTI — non toccare.
+      Per aggiungere una schermata basta registrarla qui sotto.
+   ══════════════════════════════════════════════════════════════════════ */
+const SCHERMATE = {
+  panoramica: ['Panoramica',              vPanoramica],
+  elenco:     ['Crediti',                 vElenco],
+  dettaglio:  ['Dettaglio del credito',   vDettaglio],
+  sequenza:   ['Sequenza di sollecito',   vSequenza],
+  nuovo:      ['Nuovo credito',           vNuovo],
+  vuoto:      ['Primo avvio',             vVuoto],
+};
+
+function disegna(){
+  const [titolo, fn] = SCHERMATE[S.vista] ?? SCHERMATE.panoramica;
+  document.getElementById('vista').innerHTML = fn();
+  document.getElementById('crumb-qui').textContent = titolo;
+
+  document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => {
+    if(b.dataset.nav === S.vista) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+  });
+
+  /* collegamenti interni: qualunque elemento con data-nav */
+  document.querySelectorAll('#vista [data-nav]').forEach(el => el.addEventListener('click', () => {
+    if(el.dataset.id) S.sel = el.dataset.id;
+    vai(el.dataset.nav);
+  }));
+
+  /* ricerca e filtro dell'elenco */
+  const q = document.getElementById('q');
+  if(q) q.addEventListener('input', e => {
+    S.q = e.target.value; S.pagina = 1;
+    const pos = e.target.selectionStart; disegna();
+    const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);
+  });
+  const f = document.getElementById('filtro');
+  if(f) f.addEventListener('change', e => { S.filtro = e.target.value; S.pagina = 1; disegna(); });
+  const az = document.getElementById('azzera');
+  if(az) az.addEventListener('click', () => { S.q=''; S.filtro='tutti'; S.pagina=1; disegna(); });
+
+  /* paginazione */
+  const p = document.getElementById('pg-prev'), n = document.getElementById('pg-next');
+  if(p) p.addEventListener('click', () => { S.pagina--; disegna(); });
+  if(n) n.addEventListener('click', () => { S.pagina++; disegna(); });
+
+  /* modulo: validazione finta, solo per mostrare lo stato di errore */
+  const form = document.getElementById('form-nuovo');
+  if(form) form.addEventListener('submit', e => {
+    e.preventDefault();
+    const campo = document.getElementById('f-doc'), input = document.getElementById('i-doc');
+    campo.querySelectorAll('.err').forEach(x => x.remove());
+    if(!input.value.trim()){
+      campo.classList.add('invalid');
+      campo.insertAdjacentHTML('beforeend','<span class="err">Il numero del documento è obbligatorio.</span>');
+      input.focus();
+      return;
+    }
+    campo.classList.remove('invalid');
+    vai('elenco');
+  });
+
+  /* apertura della modale dal dettaglio */
+  document.querySelectorAll('#vista [data-modale="apri"]').forEach(b => b.addEventListener('click', () =>
+    apriModale('Inviare adesso il sollecito?',
+      'Il messaggio parte subito verso il debitore, fuori dalla sequenza, e non si richiama indietro. Resta nel registro con il testo esatto, il destinatario e l’istante. È la sola azione dell’app che esce verso una persona che non è nostro utente: per questo la conferma non si può disattivare.')));
+
+  window.scrollTo({top:0});
+}
+
+function vai(v){ if(!SCHERMATE[v]) return; S.vista = v; location.hash = v; disegna(); }
+window.addEventListener('hashchange', () => {
+  const v = location.hash.slice(1);
+  if(SCHERMATE[v] && v !== S.vista){ S.vista = v; disegna(); }
+});
+document.querySelectorAll('.sidebar .nav-item[data-nav]').forEach(b => b.addEventListener('click', () => vai(b.dataset.nav)));
+
+/* COMPONENTE — finestra modale: apriModale(titolo, testo) */
+function apriModale(titolo, testo){
+  document.getElementById('modale-titolo').textContent = titolo;
+  document.getElementById('modale-testo').textContent = testo;
+  document.getElementById('modale').hidden = false;
+}
+function chiudiModale(){ document.getElementById('modale').hidden = true; }
+document.querySelectorAll('[data-modale="chiudi"],[data-modale="conferma"]').forEach(b => b.addEventListener('click', chiudiModale));
+document.getElementById('modale').addEventListener('click', e => { if(e.target.id === 'modale') chiudiModale(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') chiudiModale(); });
+
+/* note di proposta acceso/spento */
+const nt = document.getElementById('note-toggle');
+nt.addEventListener('click', () => {
+  const spente = document.body.dataset.note === 'off';
+  document.body.dataset.note = spente ? 'on' : 'off';
+  nt.setAttribute('aria-pressed', String(spente));
+});
+
+/* tema chiaro/scuro */
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const scuro = root.dataset.theme === 'dark' || (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.dataset.theme = scuro ? 'light' : 'dark';
+});
+
+/* colore d'accento */
+document.querySelectorAll('[data-accent-pick]').forEach(d => d.addEventListener('click', () => {
+  document.documentElement.dataset.accent = d.dataset.accentPick;
+  document.querySelectorAll('[data-accent-pick]').forEach(x => x.setAttribute('aria-pressed', String(x === d)));
+}));
+
+/* avvio */
+const primo = location.hash.slice(1);
+if(SCHERMATE[primo]) S.vista = primo;
+disegna();
+</script>
+</body>
+</html>
