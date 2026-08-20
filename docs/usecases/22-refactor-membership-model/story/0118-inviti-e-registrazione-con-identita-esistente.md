@@ -176,6 +176,21 @@ nascondiamo meglio, ma perché non è più un caso possibile.
   rifiuto di indice, non un messaggio. Rientra nel tema di questa storia: messaggi comprensibili senza
   rivelare l'esistenza di un'identità.
 
+- **Lasciato indietro dalla change `0089` (UC 0117), perché è di questo use case — la schermata per
+  scegliere l'account quando non si ha una sessione.** UC 0117 ha implementato l'esito «più appartenenze
+  attive e nessuna scelta valida»: è tipizzato, a chiusura in entrambe le attuazioni che compongono i
+  claim, e all'accesso produce un `409` con un messaggio comprensibile («appartieni a più account e
+  nessuno è impostato come attivo») invece di «credenziali non valide». Manca la **superficie** per
+  rispondere a quella richiesta senza avere ancora un token. È di questa storia per due ragioni: è
+  questa storia a creare le seconde appartenenze (finché non esiste, il caso non è raggiungibile da
+  nessun percorso di prodotto), ed è questa storia a decidere **dove atterra** chi entra da un percorso
+  d'ingresso. Nota tecnica utile: costruirla richiede rendere navigabile una sessione **priva** del claim
+  dell'account, oppure un token di scelta a breve durata sul modello di quello del secondo fattore.
+- **Conseguenza operativa della change `0089`, da rispettare qui**: ogni appartenenza creata dal servizio
+  di autenticazione imposta anche `identity.active_membership_id` sulla nuova appartenenza (si è appena
+  entrati lì, ed è lì che si atterra). I percorsi d'ingresso di questa storia devono fare lo stesso,
+  altrimenti la persona che accetta un invito avendo già un account si troverebbe, al prossimo accesso,
+  senza account attivo e senza modo di scegliere.
 - **Rimborso del posto se l'invito viene rifiutato o scade**: non deciso. La linea coerente col modello a
   mese intero è che il posto resti pagato per il periodo in corso e torni disponibile per un altro invito.
   Va confermato perché **riguarda denaro**. Proprietario: [UC 0103](0103-acquisto-anticipato-posto-invito.md).

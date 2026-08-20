@@ -83,12 +83,22 @@ public class PlatformDataContract implements AppDataContract {
         entities.put("identities", query(
                 // `locale` (UC 0018) è un dato personale della persona: va esportato come gli altri,
                 // o la portabilità (art. 20) restituirebbe un profilo incompleto.
-                "select i.id, i.cognito_sub, i.email, i.display_name, i.locale, i.status, i.created_at"
+                //
+                // `active_membership_id` (UC 0117) è esportato RISTRETTO a questo account, e la
+                // restrizione è la parte importante: il valore grezzo può puntare all'appartenenza
+                // della persona in un ALTRO account, e restituirlo qui rivelerebbe l'esistenza di
+                // quell'account — esattamente ciò che questo export non deve fare. Il confronto con
+                // `m.id` (l'appartenenza di QUESTO account) risponde alla sola domanda lecita: «la
+                // persona stava lavorando qui?». Null quando la risposta è no, indistinguibile da
+                // «non aveva alcun account attivo».
+                "select i.id, i.cognito_sub, i.email, i.display_name, i.locale, i.status, i.created_at,"
+                        + " case when i.active_membership_id = m.id then m.id end as active_membership_id"
                         + " from platform.identity i"
                         + " join platform.membership m on m.identity_id = i.id"
                         + " where m.tenant_id = ? order by i.email",
                 scope.tenantId(),
-                "id", "cognito_sub", "email", "display_name", "locale", "status", "created_at"));
+                "id", "cognito_sub", "email", "display_name", "locale", "status", "created_at",
+                "active_membership_id"));
 
         entities.put("memberships", query(
                 "select id, identity_id, role, status, created_at, deleted_at"

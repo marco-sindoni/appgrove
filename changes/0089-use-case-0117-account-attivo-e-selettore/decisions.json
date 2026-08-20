@@ -1,0 +1,318 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie sono la suite completa ./run-tests.sh verde prima del commit, il registro delle decisioni integrale e how-to-test.md nella cartella della change. Merge e push restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0117 «Account attivo nella sessione e selettore» (area 22-refactor-membership-model, epica E22.5, seconda storia dell'epica 22). Da qui il nome del branch 0089-use-case-0117-account-attivo-e-selettore; il numero 0089 è il progressivo di changes/ (ultima esistente: 0088), verificato coincidere con quello atteso dall'orchestratore."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) L'account attivo è una colonna `active_membership_id` (annullabile) su platform.identity, e NON un attributo personalizzato del gruppo di utenti Cognito. Ragione tecnica verificata in infra/modules/platform_shared/auth.tf: il gruppo non dichiara attributi personalizzati e aggiungerne uno per via dichiarativa può forzare la ricreazione del gruppo, cioè la perdita degli utenti. La funzione che compone il token interroga già la banca dati: una colonna in più non costa nulla e non tocca l'infrastruttura. La ragione è scritta nel commento della colonna, altrimenti qualcuno riproverà la via «più elegante».",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V18__active_account.sql",
+        "description": "Colonna active_membership_id su platform.identity + tabella della traccia di controllo del cambio."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/Identity.java",
+        "description": "Campo activeMembershipId con la classificazione privacy e il perché non è un attributo del fornitore di identità."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La funzione pura che scegli l'account vive in `services/commons` e non in `services/core` come indicava il piano di lavoro. Motivo: la regola serve al servizio che compone i token in locale (services/auth) e al servizio di piattaforma che scrive la scelta (services/core), e `auth` non dipende da `core` — far chiamare il core dal percorso di accesso aggiungerebbe una dipendenza di rete su un percorso che deve sempre funzionare (alternativa già scartata dal piano). `commons` è l'unico posto in cui la regola si può scrivere UNA volta per entrambi.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/membership/ActiveAccount.java",
+        "description": "Funzione pura `choose` con esito tipizzato a tre valori (None / Chosen / MustChoose) e la tabella dei casi in javadoc."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'esito della scelta è un tipo sigillato a TRE valori e non un Optional: «nessuna appartenenza attiva» e «più appartenenze e nessuna scelta valida» sono casi diversi e vanno trattati diversamente. Il primo è una persona inutilizzabile (è uscita dal suo ultimo account), il secondo è una persona che può lavorare ma per conto di nessuno in particolare — e merita un messaggio diverso da «credenziali non valide», che sarebbe una bugia. Con un Optional i due casi si sarebbero fusi in silenzio."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il ripiego di UC 0116 («con più appartenenze si prende la più antica») è stato sostituito nelle DUE implementazioni insieme, come il rimando pretendeva: la funzione Java in commons (usata dal fornitore locale via UserDirectory) e la funzione Python della Lambda che compone il token. La query non fa più `LIMIT 1`: legge TUTTE le appartenenze attive più il valore conservato, perché è la scelta a stabilire quale vale e per riverificarla servono tutte. Il collaudo `test_piu_appartenenze_prende_la_piu_antica` è stato riscritto (non cancellato) come tabella di casi.",
+    "files": [
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/handler.py",
+        "description": "choose_active_account (funzione pura, gemella di ActiveAccount.choose) + query senza LIMIT 1 + due esiti fail-closed distinti nei log."
+      },
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/local/UserDirectory.java",
+        "description": "Risoluzione della persona con tutte le appartenenze vive; applica ActiveAccount.choose e ritorna un esito tipizzato (Resolution con mustChooseAccount)."
+      },
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/test_handler.py",
+        "description": "Classe ScegliAccountAttivoTest: la stessa tabella di casi di ActiveAccountTest (Java), più i casi passanti dal database."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Comportamento preservato riga per riga per i flussi che partono da un solo indirizzo (rinvio verifica, password dimenticata) e per la persona sospesa: se non esiste alcuna appartenenza viva la lettura resta vuota (come faceva la giunzione interna di prima), se ne esiste una viva ma sospesa — o è sospesa l'identità — si risponde con quella e stato `suspended`. Serve a distinguere «sospesa» da «non esiste», che è la differenza fra un rifiuto e un silenzio: fonderli avrebbe cambiato in silenzio il comportamento di percorsi che questa storia non possiede."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'esito «scegli l'account» produce all'accesso un 409 con messaggio comprensibile, controllato ESATTAMENTE dove nascerebbe la sessione (dopo la verifica completa delle credenziali, secondo fattore incluso): così il messaggio non rivela nulla a chi non è la persona. Lo stesso controllo vale sul rinnovo e sui percorsi che auto-loggano. Il frontend traduce quel 409 con una chiave dedicata (`errors.accountSelectionRequired`) sulla pagina di accesso: senza l'override, 409 avrebbe significato «email già registrata» e avrebbe mandato la persona a cercare un problema che non ha.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/local/LocalIdentityProvider.java",
+        "description": "requireChosenAccount(): 409 al posto della sessione; chiamato da login, refresh, verifica email e secondo fattore."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/auth/LoginPage.tsx",
+        "description": "Override 409 → errors.accountSelectionRequired su entrambi i passi dell'accesso."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) RIMANDO a UC 0118: la SCHERMATA per scegliere l'account quando non si ha una sessione. L'esito tipizzato, il fail-closed in entrambe le attuazioni e il messaggio comprensibile sono in questa change; la superficie no. Tre ragioni: (a) oggi nessun percorso di prodotto crea una seconda appartenenza — è UC 0118 a introdurli, quindi il caso non è raggiungibile; (b) costruirla richiede rendere navigabile una sessione priva del claim dell'account, cioè allargare il raggio d'azione del percorso più delicato del prodotto per un caso che nessuno può raggiungere; (c) è UC 0118 a decidere dove atterra chi entra da un percorso d'ingresso. Il caso è inoltre raro per costruzione (vedi decisione 10). Tracciato nei punti aperti di 0117 e in quelli di 0118."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Ogni appartenenza creata dal servizio di autenticazione imposta anche `identity.active_membership_id` sulla nuova appartenenza: si è appena entrati lì, ed è lì che si atterra. Non cambia nulla per chi ha una sola appartenenza (la regola ignora il valore conservato in quel caso), ma rende RARO l'esito «scegli l'account»: perché si presenti servono almeno tre appartenenze con la attiva revocata — con due, revocata quella attiva, ne resta una sola e la regola la scegli da sé. È la mitigazione che rende accettabile il rimando della decisione 9.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/PlatformWriter.java",
+        "description": "insertMembership: l'appartenenza appena creata diventa l'account attivo della persona."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Lo stato dell'ACCOUNT non filtra i candidati: un account sospeso o in eliminazione resta selezionabile. La storia elencava l'edge («un account non utilizzabile non è un account attivo») ma applicarlo qui sarebbe una regressione in un percorso che questa storia non possiede — è da DENTRO l'account in eliminazione che l'eliminazione si annulla (periodo di grazia, UC 0033), ed escluderlo chiuderebbe fuori la persona proprio quando deve poter tornare indietro. È anche esattamente l'insieme di candidati che la funzione del token vedeva prima di questa change: nessun accesso che funzionava smette di funzionare. Rimando tracciato in UC 0033.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MembershipRepository.java",
+        "description": "activeAccountsOf(): lettura di piattaforma senza filtro per account, con la ragione dell'assenza del filtro sullo stato dell'account scritta nel commento."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Interfaccia del cambio: `GET /api/platform/v1/me/memberships` (gli account della persona con il nome, più quale è attivo) e `POST /api/platform/v1/me/active-account` (scrive la scelta, 204). I percorsi sono quelli già dichiarati nella tabella di mappatura dei prototipi dell'epica. Il cambio NON restituisce token: il rinnovo passa dal percorso esistente, così l'account si stabilisce in un posto solo — un endpoint che restituisse un token sarebbe un secondo posto in cui si può sbagliare. Rifiuto 404 (non 403) per un account che non è proprio: l'esistenza di un account non è un'informazione di chi la chiede.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MeMembershipsResource.java",
+        "description": "Le due operazioni; il perimetro è sempre il `sub` del token, mai un identificativo dal chiamante."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MembershipDtos.java",
+        "description": "MyMembershipsView / MembershipRef / SetActiveAccount — nessuna etichetta di ruolo."
+      },
+      {
+        "file": "services/core/src/main/resources/META-INF/openapi/openapi.yaml",
+        "description": "Spec rigenerato dal build (store-schema-directory), non scritto a mano."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) `activeAccountId` nella risposta è l'account attivo EFFETTIVO — calcolato con la stessa funzione che compone il token — e non il valore grezzo conservato. Serve a due scopi: marcare nel selettore l'account su cui si sta lavorando, e permettere all'interfaccia di accorgersi che l'account attivo è cambiato in un'altra scheda confrontandolo con il claim del token in mano. È nullo quando la scelta non è determinata: lo stesso caso in cui il token nasce senza claim, e non si inventa un account."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) L'idempotenza del cambio si misura sull'account attivo EFFETTIVO, non sull'account del token: chiedere l'account su cui si è già non scrive nulla e non lascia riga di registro (una prova di cambio senza cambio è una prova falsa, stessa regola di UC 0076). Di conseguenza `from_tenant_id` della traccia è l'account attivo precedente secondo il valore conservato — nullo quando non ce n'era nessuno — e non l'account del token: il registro dice cosa è cambiato, non da dove si stava guardando.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/MeMembershipsApiTest.java",
+        "description": "Collaudi di idempotenza e della prima scelta registrata come «nessuno → account»."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) La chiave esterna dell'account attivo è `ON DELETE SET NULL`, e non è un dettaglio estetico: la cancellazione di un account (UC 0033) elimina FISICAMENTE le sue appartenenze, e senza quella regola la purga si sarebbe rotta contro il vincolo ogni volta che qualcuno stava lavorando in quell'account. Difetto trovato da un collaudo che tentava di cancellare un'appartenenza indicata come attiva. Per la stessa ragione la traccia di controllo ha `ON DELETE CASCADE` sull'identità: non è una prova di adempimento come gdpr_purge_audit (che deve sopravvivere alla cancellazione perché prova che è avvenuta) ma una traccia operativa il cui unico soggetto è la persona, e se ne va con lei."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Traccia di controllo del cambio: tabella `platform.active_account_audit` con soli identificativi opachi (persona, account di partenza, account di arrivo, istante), non tenant-scoped perché l'atto attraversa gli account per costruzione. Conservazione 12 mesi come le altre prove di audit nella banca dati: aggiunta all'elenco di AuditRetentionSweeper — un'altra tabella di prova senza sweeper sarebbe una conservazione dichiarata e non applicata, che è il difetto che quel job esiste per chiudere.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AuditRetentionSweeper.java",
+        "description": "platform.active_account_audit fra le tabelle spazzate a 12 mesi."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Classificazione privacy della change: MINORE. Nessuna finalità nuova, nessuna base giuridica nuova, nessun responsabile esterno nuovo, nessuna categoria particolare; nessun aumento di versione di privacy policy o termini. Il campo `identity.active_membership_id` è però stato DICHIARATO nel manifesto dati come preferenza della persona, della stessa natura di `identity.locale`, benché lo use case lo descrivesse come «preferenza tecnica di sessione» e non come dato personale nuovo: la coerenza col trattamento della lingua vale più della distinzione fine, e un campo non dichiarato è un campo che nessuno riesamina. La tabella di audit segue invece il precedente delle altre tabelle di prova (gdpr_restriction_audit, app_status_audit), che non hanno voce di manifesto perché non hanno entità e la loro conservazione è governata dallo sweeper. Registro dei trattamenti rigenerato con `npm run assemble`; il rilevatore di segnali privacy è stato eseguito e ha segnalato esattamente le voci attese.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "Voce identity.active_membership_id (categoria: preferenza tecnica di sessione)."
+      },
+      {
+        "file": "docs/compliance/ropa.it.md",
+        "description": "Registro dei trattamenti rigenerato (non si edita a mano)."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Il selettore vive nella barra laterale sotto il marchio (non nell'intestazione): l'account è il CONTESTO del lavoro, come il menu che gli sta sotto, non un comando accessorio come la lingua o il tema. Con una sola appartenenza il selettore NON viene reso affatto — non «reso disabilitato» — mentre il nome dell'account resta sempre visibile, perché con più account è un elemento di sicurezza percepita. L'avviso «l'account è cambiato in un'altra scheda» sta nello ShellLayout, accanto agli altri avvisi globali.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/shell/AccountSwitcher.tsx",
+        "description": "Nome sempre visibile, comando solo con più di una appartenenza, cambio con ricaricamento completo."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/shell/AccountChangedBanner.tsx",
+        "description": "Confronto fra l'account del token in uso e l'account attivo lato server; invito a ricaricare."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/shell/Sidebar.tsx",
+        "description": "Il selettore montato sotto il blocco del marchio."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Il cambio di account RICARICA l'applicazione (`window.location.assign('/')`) e non aggiorna lo stato in memoria: mezza applicazione con l'account nuovo e mezza col vecchio è il modo peggiore di sbagliare. È il ricaricamento stesso a rinnovare il token — la ripresa della sessione al caricamento chiede un token nuovo, che nasce con l'account appena scelto — quindi non serve un rinnovo esplicito prima di ricaricare, e il claim continua a essere calcolato in un posto solo. Si atterra sulla radice e non sulla rotta corrente, perché quella rotta può non esistere nell'account nuovo."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Nessuna etichetta di ruolo nel selettore, in deroga esplicita ai prototipi dell'epica (che mostrano «Sei il titolare / Sei collaboratore»): §4.6 della storia vieta le etichette di ruolo nell'interfaccia di piattaforma, perché il ruolo è per applicazione e una etichetta globale sarebbe falsa appena una persona è abilitata a più di una applicazione. Sotto il nome si mostra «N account · cambia», che non è un ruolo. La distinzione owner/collaboratore arriva con UC 0107: rimando tracciato nei punti aperti di 0117.",
+    "files": [
+      {
+        "file": "frontend/packages/i18n/src/resources/en.ts",
+        "description": "Chiavi accountSwitch.* e errors.accountSelectionRequired nelle 5 lingue (en, it, fr, es, de)."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Il contesto della shell (ShellContext, contratto shell↔modulo) NON è stato toccato, benché il piano di lavoro lo nominasse: aggiungere campi a quel contratto significa cambiare un'interfaccia pubblica verso i moduli delle app, e nessun modulo ha bisogno dell'elenco delle appartenenze. Le letture vivono in un hook dedicato (api/hooks.ts) usato dai soli componenti della shell. Se un modulo ne avrà bisogno, il contratto si estenderà allora — con un consumatore vero.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/api/hooks.ts",
+        "description": "useMyMemberships (con rilettura al ritorno sulla scheda, che è ciò che rende possibile accorgersi del cambio) e useSetActiveAccount."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Copertura end-to-end: DUE percorsi nuovi. `J-ACCOUNT-SWITCH` (suite di piattaforma, stack vero) — la stessa persona nel proprio account vede tutti i menu, passa all'account dell'altra azienda dove è collaboratrice e la voce di gestione delle persone scompare, torna indietro; `L2-ACCOUNT-SWITCH` (livello 2) — assenza del selettore con una sola appartenenza, cambio con ricaricamento e ruolo che segue l'account, avviso di account cambiato in un'altra scheda. Lo use case 0117 passa da esenzione `non-implementato` a use case CON superficie; la voce di 0116 resta `senza-superficie` con il motivo aggiornato, perché il modello «una persona, due account» è ora esercitato dal vero dentro un percorso che però appartiene a 0117. Il collaudo end-to-end usa la differenza di menu GIÀ vera oggi (Account/Billing/Members sono di owner e admin) e non anticipa UC 0107.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0117 fra gli use case con superficie; percorsi J-ACCOUNT-SWITCH e L2-ACCOUNT-SWITCH; esenzione 0117 rimossa."
+      },
+      {
+        "file": "tools/platform-e2e/journeys/J-ACCOUNT-SWITCH.spec.ts",
+        "description": "Percorso di piattaforma con due account veri creati dalle API pubbliche."
+      },
+      {
+        "file": "frontend/apps/backoffice/e2e/accountSwitch.spec.ts",
+        "description": "Percorso di livello 2 con finto server CON STATO: l'account attivo cambia davvero, altrimenti il ricaricamento non proverebbe nulla."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) La seconda appartenenza del percorso di piattaforma nasce da una LEVA D'AMBIENTE (`dbExec`) e non da un percorso di prodotto, perché nessun percorso ne crea una finché non esiste UC 0118. È il terzo uso sanzionato di quella leva ed è stato aggiunto al suo elenco, con la nota che sparirà quando l'invito a un'identità esistente esisterà: la lista corta è il presidio che impedisce a `dbExec` di diventare la via comoda per costruire stato.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/helpers/db.ts",
+        "description": "Terzo uso sanzionato di dbExec, motivato e con la sua data di scadenza logica."
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Il seme di sviluppo NON cambia: ogni persona continua ad avere una sola appartenenza, perché il seme deve restare la fotografia del caso normale (decisione 21 della change 0088). Il caso «una persona, due account» si costruisce nei collaudi, e per la verifica manuale how-to-test.md riporta il comando esatto — è più onesto di un seme che mostra come normale una situazione che nessun percorso di prodotto produce ancora."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) La prova di sicurezza — «un valore conservato che non corrisponde a un'appartenenza attiva non produce mai un claim» — manomette la colonna puntandola all'appartenenza di UN'ALTRA persona, e non a un identificativo inventato: la chiave esterna già impedisce di puntare a un'appartenenza inesistente, quindi il collaudo con un identificativo casuale avrebbe provato il vincolo del database e non la riverifica. Ciò che il vincolo NON può impedire — puntare a un'appartenenza che esiste ma non è tua — è esattamente ciò che la riverifica deve impedire.",
+    "files": [
+      {
+        "file": "services/auth/src/test/java/app/appgrove/auth/ActiveAccountTokenTest.java",
+        "description": "Tabella dei casi vista attraverso i token realmente emessi, prova di manomissione, e il token precedente che resta valido per il suo account dopo il rinnovo."
+      },
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/membership/ActiveAccountTest.java",
+        "description": "La tabella dei casi sulla funzione pura, gemella della classe Python."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Il fatto che il token PRECEDENTE resti valido per il suo account fino alla scadenza è scritto in un collaudo, non lasciato da scoprire: è un comportamento atteso (quel token vale per un account a cui la persona appartiene davvero) e senza un collaudo qualcuno lo troverà un giorno e lo chiamerà varco. Il legame «durata del token = ritardo massimo di una revoca» è stato scritto in docs/02 §10, come la storia pretendeva; la SCELTA della durata resta di UC 0017 e la stretta per le operazioni che modificano dati di UC 0099.",
+    "files": [
+      {
+        "file": "docs/02-auth-sicurezza.md",
+        "description": "Punto 10: la tabella dei casi dell'account attivo e il legame fra durata del token e ritardo della revoca."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Rimandi tracciati prima di chiudere, ognuno nello use case che lo possiede: UC 0118 riceve la schermata di scelta dell'account senza sessione e l'obbligo di impostare l'account attivo quando crea una seconda appartenenza; UC 0033 riceve la domanda se il selettore debba DIRE che un account è in eliminazione; UC 0107 riceve l'etichetta owner/collaboratore del selettore; UC 0017 e UC 0099 restano proprietari, rispettivamente, della durata del token e della revoca a effetto immediato. Nessuna voce nuova in docs/_BACKLOG.md: tutti i punti hanno uno use case proprietario."
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Il campo `identity.active_membership_id`, essendo dichiarato nel manifesto dati (decisione 17), deve comparire anche nell'export GDPR di piattaforma: il collaudo di contratto `PlatformGdprContractTest.exportCoversEveryManifestEntity` pretende che ogni voce del manifesto sia coperta, e la prima esecuzione della suite era rossa proprio lì. È esportato RISTRETTO a questo account — `case when i.active_membership_id = m.id then m.id end`, dove `m` è l'appartenenza dell'account che sta esportando — e la restrizione è la parte importante: il valore grezzo può puntare all'appartenenza della persona in un ALTRO account, e restituirlo rivelerebbe l'esistenza di quell'account, che è esattamente ciò che l'export non deve fare (UC 0116 §8). Nullo quando la risposta è «no», indistinguibile da «non aveva alcun account attivo».",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "Colonna active_membership_id nell'export delle identità, ristretta all'appartenenza di questo account."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "(autopilot) La tabella `platform.active_account_audit` è stata aggiunta anche al COLLAUDO dello sweeper di conservazione, non solo al suo elenco: senza una riga per tabella, togliere una tabella dall'elenco non farebbe diventare rosso nulla — cioè la conservazione resterebbe dichiarata e non applicata, che è il difetto che quel collaudo esiste per impedire. L'obbligo è scritto nel javadoc del collaudo, così chi aggiunge la prossima tabella di prova lo trova.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/platform/AuditRetentionSweeperTest.java",
+        "description": "Riga retrodatata e riga recente per active_account_audit; l'obbligo per le tabelle future scritto nel javadoc."
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "decision": "(autopilot) Il percorso di piattaforma `J-ACCOUNT-SWITCH` attende l'evento di CARICAMENTO della pagina dopo il cambio e poi attraversa il gate legale del nuovo account. Due difetti trovati dalla prima esecuzione reale della suite, entrambi nel collaudo e non nel prodotto: (a) senza attendere il ricaricamento l'asserzione guardava ancora il documento vecchio, quindi leggeva il nome dell'account di prima — il ricaricamento è parte del comportamento (decisione 19) e va atteso, non sperato; (b) entrando per la prima volta nel secondo account il gate legale è pendente, perché l'accettazione dei documenti è per ACCOUNT e non per persona (ogni account è un contratto a sé). Attraversarlo come farebbe l'utente è il percorso vero, non un artificio.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-ACCOUNT-SWITCH.spec.ts",
+        "description": "Helper switchAccountTo: attesa del caricamento + attraversamento del gate legale del nuovo account."
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "decision": "(autopilot) Rimandi aggiunti dopo la prima esecuzione reale della suite, ognuno allo use case proprietario: (a) UC 0056 — il gate legale ricompare entrando in un account nuovo (esito ATTESO, perché l'accettazione è per account) ma la schermata non spiega che sta chiedendo l'accettazione per QUELL'account, e chi ha appena cambiato account può crederla una ripetizione inutile; (b) UC 0011 — il ri-seed delle appartenenze stampa `ERROR: duplicate key value violates unique constraint ux_membership_tenant_identity` e non aggiorna le righe, perché `ON CONFLICT (id)` non è l'arbitro dell'indice violato: difetto lasciato dalla change 0088, fuori dal perimetro di questa storia, tracciato nei punti aperti di UC 0116 (che ne è la causa). Nessuno dei due è stato corretto qui: non appartengono a questa storia."
+  },
+  {
+    "id": 32,
+    "decision": "(autopilot) Rimossa la chiave di traduzione `accountSwitch.active` dalle cinque lingue: non era usata da nessun componente — l'account attivo nel menu è marcato dall'icona di spunta e da `aria-current`, che è ciò che un lettore di schermo annuncia. Una chiave di traduzione senza consumatore è cinque stringhe da mantenere per nulla, e fa credere a chi legge le risorse che esista un'etichetta che non c'è.",
+    "files": [
+      {
+        "file": "frontend/packages/i18n/src/resources/en.ts",
+        "description": "Blocco accountSwitch senza la chiave `active` (idem it, fr, es, de)."
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "decision": "(autopilot) Il percorso `J-ACCOUNT-SWITCH` non usa il passo condiviso `browserLogin` e non si affida a `acceptLegalGateIfPresent` da solo: attende la risposta che DECIDE il gate legale (`/me/legal/status`) e poi insiste sull'esito (il nome dell'account atteso nella barra laterale). Il gate è fail-open mentre il suo stato carica — `LegalGate` rende i figli finché la lettura non risponde — quindi per un istante la shell è navigabile e solo dopo il gate la sostituisce: chiedere «gate oppure shell» una volta sola perde la corsa, e il percorso è rimasto rosso due volte per questo. Il passo CONDIVISO non è stato toccato di proposito: sistemarlo lì gioverebbe a tutti i tredici percorsi ma non tutti gli accessi arrivano alla shell nello stesso modo (il secondo fattore ne è un esempio), e non è lavoro di questa storia. Rimando tracciato in docs/_BACKLOG.md.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-ACCOUNT-SWITCH.spec.ts",
+        "description": "login/switchAccountTo/expectInsideAccount locali: attesa della risposta che decide il gate + insistenza sull'esito."
+      },
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Il passo condiviso perde la corsa col fail-open del gate: owner #10 con UC 0091/0092."
+      }
+    ]
+  }
+]

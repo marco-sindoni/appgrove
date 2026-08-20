@@ -219,3 +219,12 @@ segnali privacy: non è un cambio di scopo, ma è un cambio di **chi risponde pe
 - **Rimozione fisica di `platform.users`**: la tabella resta come rete di ritorno, fredda. Chi la
   rimuove lo fa con una migrazione dedicata, dopo un periodo di esercizio. Tracciato in
   [docs/_BACKLOG.md](../../../_BACKLOG.md).
+- **Il ri-seed delle appartenenze stampa un errore e non aggiorna le righe** (rilevato dalla change
+  `0089`, UC 0117, fuori dal suo perimetro). `dev/seed/seed.sql` inserisce le appartenenze con
+  `ON CONFLICT (id) DO UPDATE`, ma su una banca dati già seminata la seconda esecuzione viola l'indice
+  unico parziale `ux_membership_tenant_identity` prima di arrivare al ramo di conflitto sull'`id`, e
+  l'esecuzione stampa `ERROR: duplicate key value violates unique constraint` proseguendo. Effetto
+  pratico: nulla si rompe (le righe ci sono già e sono corrette) ma il seme **non è più idempotente**
+  su quella tabella e l'errore resta a video in ogni avvio dello stack. La correzione (arbitro di
+  conflitto coerente con l'indice vero, oppure `insert ... where not exists`) appartiene a chi possiede
+  il seme: **UC 0011**, con questa storia come causa.

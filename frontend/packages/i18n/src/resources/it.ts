@@ -106,6 +106,16 @@ export const it: Resources = {
     userMenu: 'Menu utente',
     logout: 'Esci',
   },
+  // Selettore dell'account attivo nella barra laterale (UC 0117).
+  accountSwitch: {
+    label: 'Cambia account',
+    hint_one: '{{count}} account · cambia',
+    hint_other: '{{count}} account · cambia',
+    switching: 'Cambio account in corso…',
+    error: 'Non è stato possibile cambiare account. Riprova.',
+    changed: 'L’account attivo è cambiato in un’altra scheda.',
+    reload: 'Ricarica',
+  },
   states: {
     loading: 'Caricamento…',
     empty: 'Ancora niente qui',
@@ -377,6 +387,7 @@ export const it: Resources = {
     tooLong: 'Troppo lungo (max {{max}})',
   },
   errors: {
+    accountSelectionRequired: 'Appartieni a più account e nessuno è impostato come attivo. Scegli l’account su cui vuoi lavorare.',
     emailTaken: 'Questa email è già registrata.',
     invalidCredentials: 'Email o password non validi.',
     emailNotVerified: 'La tua email non è ancora verificata. Controlla la posta.',

@@ -56,4 +56,40 @@ public class MembershipRepository implements PanacheRepositoryBase<Membership, U
                 .setParameter("id", identityId)
                 .getResultList();
     }
+
+    /**
+     * Un'appartenenza attiva di una persona, con il nome dell'account: quanto serve al selettore
+     * dell'account attivo (UC 0117) e nulla di più. Nessun ruolo: l'interfaccia di piattaforma non
+     * mostra etichette di ruolo, perché il ruolo è per applicazione (UC 0117 §4.6).
+     */
+    public record AccountOfIdentity(UUID membershipId, String tenantId, String role, String accountName) {}
+
+    /**
+     * Le appartenenze <b>attive</b> di una persona con il nome dell'account, in ordine di anzianità
+     * (UC 0117). Stessa natura di {@link #tenantsOf(UUID)}: lettura di <b>piattaforma</b>, senza
+     * filtro per account, riservata al percorso di accesso e al selettore della persona stessa —
+     * nessuna interfaccia di account la usa.
+     *
+     * <p><b>Lo stato dell'account NON è un filtro, ed è deliberato.</b> Un account in eliminazione
+     * (periodo di grazia, UC 0033) resta selezionabile perché è <i>da dentro</i> quell'account che
+     * l'eliminazione si annulla: escluderlo qui vorrebbe dire chiudere fuori la persona proprio
+     * quando deve poter tornare indietro. È lo stesso insieme di candidati che vedeva la funzione del
+     * token prima di questa storia, quindi nessun accesso che funzionava smette di funzionare.
+     */
+    @SuppressWarnings("unchecked")
+    public List<AccountOfIdentity> activeAccountsOf(UUID identityId) {
+        List<Object[]> rows = em.createNativeQuery(
+                        "select m.id, m.tenant_id, m.role, a.name"
+                                + " from platform.membership m"
+                                + " join platform.accounts a on a.id = m.tenant_id::uuid"
+                                + " where m.identity_id = :id and m.status = 'active' and m.deleted_at is null"
+                                + " and a.deleted_at is null"
+                                + " order by m.created_at, m.id")
+                .setParameter("id", identityId)
+                .getResultList();
+        return rows.stream()
+                .map(r -> new AccountOfIdentity(
+                        (UUID) r[0], (String) r[1], (String) r[2], (String) r[3]))
+                .toList();
+    }
 }

@@ -44,7 +44,10 @@ export function LoginPage() {
       if (result.kind === 'mfa') setChallengeToken(result.challengeToken)
       else setSession(result.tokens)
     } catch (err) {
-      setFormError(authErrorMessage(err, t))
+      // 409 sull'accesso non è «email già registrata» (il significato che ha nell'iscrizione) ma
+      // «appartieni a più account e nessuno è attivo» (UC 0117): dirlo con la frase sbagliata
+      // manderebbe la persona a cercare un problema che non ha.
+      setFormError(authErrorMessage(err, t, { 409: t('errors.accountSelectionRequired') }))
     }
   })
 
@@ -57,7 +60,12 @@ export function LoginPage() {
       })
       setSession(tokens)
     } catch (err) {
-      setFormError(authErrorMessage(err, t, { 401: t('errors.invalidCode') }))
+      setFormError(
+        authErrorMessage(err, t, {
+          401: t('errors.invalidCode'),
+          409: t('errors.accountSelectionRequired'),
+        }),
+      )
     }
   })
 

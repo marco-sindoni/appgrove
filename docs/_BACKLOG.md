@@ -649,6 +649,23 @@ che dipende dall'ordine delle aree erode la fiducia nel comando unico.
   copiato in `target/classes`). Rimedio candidato: build dello smoke su target pulito o esclusione del file dalla
   copia. Owner: #07 (DevOps/CI) con #04.
 
+## Il gate legale è fail-open: il passo condiviso dei percorsi di piattaforma perde la corsa (change `0089`, 2026-08-21)
+
+`acceptLegalGateIfPresent` ([tools/platform-e2e/helpers/browser.ts](../tools/platform-e2e/helpers/browser.ts))
+attende «gate **oppure** shell navigabile» e attraversa il gate solo se in quell'istante è visibile. Ma il gate
+è **fail-open mentre il suo stato carica** (`LegalGate` rende i figli finché `useLegalStatus` non risponde):
+per un istante la shell è navigabile e **solo dopo** il gate la sostituisce. Chi passa da quel passo può quindi
+ritrovarsi il gate aperto sotto il naso subito dopo che il passo è tornato — e la successiva asserzione sulla
+shell fallisce, oppure il percorso continua a cliccare su una pagina bloccata.
+
+Osservato nella change `0089` in **due** punti: dopo l'accesso e dopo il cambio di account (quel percorso entra
+in due account, quindi incontra il gate due volte ed è quello che paga la corsa più spesso). Il percorso
+`J-ACCOUNT-SWITCH` si è reso robusto **da sé** — attende la risposta che *decide* il gate
+(`/me/legal/status`) e poi insiste sull'esito — ma il passo condiviso è rimasto come era: sistemarlo lì
+toglierebbe la stessa instabilità a tutti i tredici percorsi, e va fatto con attenzione perché non tutti gli
+accessi arrivano alla shell nello stesso modo (il secondo fattore ne è un esempio). Owner: **#10 (testing)** con
+UC 0091/0092, proprietari dei passi condivisi della suite di piattaforma.
+
 ## Indice di esecuzione degli use case: nessuna riga per le storie evolutive (change `0073`, 2026-08-01)
 
 `docs/usecases/_INDEX.md` contiene la tabella di esecuzione dei soli **60 use case base** (0001–0060). Le **37 storie

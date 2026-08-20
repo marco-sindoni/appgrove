@@ -206,17 +206,29 @@ public class PlatformWriter {
      * L'appartenenza della persona a un account. Il vincolo esplicito
      * {@code ux_membership_tenant_identity} rifiuta la seconda appartenenza viva allo stesso account:
      * è il vincolo che serve davvero, e vive nella banca dati, non solo nell'interfaccia.
+     *
+     * <p>L'appartenenza appena creata diventa anche l'<b>account attivo</b> della persona (UC 0117):
+     * si è appena entrati lì, ed è lì che si atterra. Non cambia nulla per chi ha una sola
+     * appartenenza — la regola che compone il token ignora il valore conservato quando ce n'è una
+     * sola — ma rende raro il caso «più appartenenze e nessuna scelta», che a chiusura non produrrebbe
+     * alcun token.
      */
     private void insertMembership(Connection c, UUID identityId, String tenantId, String role)
             throws SQLException {
+        UUID membershipId = UUID.randomUUID();
         exec(c, "insert into platform.membership(id, tenant_id, identity_id, role, status, "
                         + "created_at, updated_at, created_by) "
                         + "values (?, ?, ?, ?, 'active', now(), now(), 'auth')",
                 ps -> {
-                    ps.setObject(1, UUID.randomUUID());
+                    ps.setObject(1, membershipId);
                     ps.setString(2, tenantId);
                     ps.setObject(3, identityId);
                     ps.setString(4, role);
+                });
+        exec(c, "update platform.identity set active_membership_id = ?, updated_at = now() where id = ?",
+                ps -> {
+                    ps.setObject(1, membershipId);
+                    ps.setObject(2, identityId);
                 });
     }
 

@@ -61,6 +61,35 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 10. **Claim iniettati**: `tenant_id` (string) e `roles` (array). Quarkus mappa l'authz con
     `quarkus.oidc.roles.role-claim-path=roles`. **Fail-closed**: utente senza tenant/membership valida → niente claim → accesso negato.
 
+    **Quale account, quando le appartenenze sono più di una** *(UC 0117, change 0089)*. Con più
+    appartenenze il token non può dedurre l'account dalla persona: lo legge dall'**account attivo**
+    conservato sull'identità (`identity.active_membership_id`), applicando una regola scritta una volta
+    e attuata due —
+    [`ActiveAccount`](../services/commons/src/main/java/app/appgrove/commons/membership/ActiveAccount.java)
+    per il fornitore locale e la funzione Python del Pre-Token-Gen, con la stessa tabella di casi
+    eseguita dai collaudi di entrambe:
+
+    | Appartenenze attive | Valore conservato | Esito |
+    |---|---|---|
+    | nessuna | qualunque | nessun claim (come prima) |
+    | una sola | qualunque, anche assente | quella, **ignorando** il valore conservato |
+    | più di una | corrisponde a una di esse | quella |
+    | più di una | assente o non corrispondente | nessun claim + «scegli l'account» |
+
+    **Il valore conservato non è creduto**: vale solo se corrisponde a un'appartenenza **attiva**
+    trovata al momento della creazione del token. L'invariante #1 resta intatta — cambia la funzione
+    che *calcola* il claim, non chi se ne fida — e una manomissione di quella colonna non diventa un
+    varco fra due aziende. L'account attivo **non** è un attributo del gruppo di utenti Cognito:
+    quel gruppo non dichiara attributi personalizzati e aggiungerne uno per via dichiarativa rischia
+    di ricrearlo, cioè di perdere gli utenti.
+
+    **La durata dell'access token è il ritardo massimo con cui una revoca ha effetto.** Con TTL di 15
+    minuti (punto 5), una persona rimossa da un account — o che ha cambiato account attivo — continua
+    a poter usare il token già emesso fino alla scadenza. Non è un varco introdotto da UC 0117: quel
+    token vale per un account a cui la persona apparteneva davvero. È un legame che c'era già e che
+    va detto invece di restare implicito; la stretta per le operazioni che modificano dati (rilettura
+    dal core) è di **UC 0099**, la scelta della durata resta di **UC 0017**.
+
 ### Verifica JWT nei servizi (topic E)
 11. **Quarkus OIDC**: issuer = User Pool Cognito, verifica firma via **JWKS**, audience = app client.
     Si usa l'**access token** per l'authz; `tenant_id`/`roles` letti dai claim verificati.

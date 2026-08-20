@@ -5,6 +5,7 @@ import { EnforcementBanner } from '../billing/EnforcementBanner'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 import { LegalGate, LegalNoticeBanner } from './legal/LegalGate'
+import { AccountChangedBanner } from './AccountChangedBanner'
 
 /** Chrome permanente: sidebar (drawer su mobile) + topbar + area contenuti (`Outlet`). Responsive (#03 dec.12). */
 export function ShellLayout() {
@@ -34,6 +35,7 @@ export function ShellLayout() {
 
           <div className="flex min-w-0 flex-1 flex-col">
             <Topbar onOpenSidebar={() => setDrawerOpen(true)} />
+            <AccountChangedBanner />
             <EnforcementBanner />
             <LegalNoticeBanner />
             {/* L'invito ad attivare il secondo fattore non è più qui: è un avviso della Dashboard

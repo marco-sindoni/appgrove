@@ -1790,6 +1790,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/active-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Active Account */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetActiveAccount"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/catalog": {
         parameters: {
             query?: never;
@@ -1975,6 +2034,56 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["LegalStatusView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/memberships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Memberships */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MyMembershipsView"];
                     };
                 };
                 /** @description Not Authorized */
@@ -3328,6 +3437,10 @@ export interface components {
         MeEntitlementsView: {
             entitlements?: components["schemas"]["EntitlementView"][];
         };
+        MembershipRef: {
+            accountId?: string;
+            accountName?: string;
+        };
         MessageView: {
             id?: components["schemas"]["UUID"];
             author?: components["schemas"]["TicketAuthor"];
@@ -3339,6 +3452,10 @@ export interface components {
             cap?: number;
             nature?: string;
             window?: string;
+        };
+        MyMembershipsView: {
+            activeAccountId?: string;
+            memberships?: components["schemas"]["MembershipRef"][];
         };
         MySubscriptionsView: {
             subscriptions?: components["schemas"]["SubscriptionView"][];
@@ -3527,6 +3644,9 @@ export interface components {
         RestrictionsView: {
             active?: components["schemas"]["RestrictionView"][];
             auditTrail?: components["schemas"]["RestrictionAuditView"][];
+        };
+        SetActiveAccount: {
+            accountId: string;
         };
         StartCheckoutRequest: {
             tierKey?: string;

@@ -106,6 +106,16 @@ export const fr: Resources = {
     userMenu: 'Menu utilisateur',
     logout: 'Se déconnecter',
   },
+  // Selettore dell'account attivo nella barra laterale (UC 0117).
+  accountSwitch: {
+    label: 'Changer de compte',
+    hint_one: '{{count}} compte · changer',
+    hint_other: '{{count}} comptes · changer',
+    switching: 'Changement de compte…',
+    error: 'Impossible de changer de compte. Veuillez réessayer.',
+    changed: 'Le compte actif a changé dans un autre onglet.',
+    reload: 'Recharger',
+  },
   states: {
     loading: 'Chargement…',
     empty: 'Rien ici pour l’instant',
@@ -377,6 +387,7 @@ export const fr: Resources = {
     tooLong: 'Trop long (max {{max}})',
   },
   errors: {
+    accountSelectionRequired: 'Vous appartenez à plusieurs comptes et aucun n’est défini comme actif. Choisissez le compte dans lequel vous voulez travailler.',
     emailTaken: 'Cet email est déjà enregistré.',
     invalidCredentials: 'Email ou mot de passe invalide.',
     emailNotVerified: 'Votre email n’est pas encore vérifié. Consultez votre boîte de réception.',

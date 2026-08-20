@@ -6,6 +6,7 @@ import { useVisibleModules } from '../registry/registry'
 import { useEntitlements } from '../registry/entitlements'
 import { useAuthStore } from '../auth/authStore'
 import { useLogout } from '../auth/useLogout'
+import { AccountSwitcher } from './AccountSwitcher'
 
 /* Voce di primo livello (mockup: 13.5px/600, raggio 9px, icona 20px piena quando attiva). */
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -108,6 +109,13 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </span>
         </div>
       </div>
+
+      {/*
+        Account attivo (UC 0117): sotto il marchio, perché l'account è il CONTESTO del lavoro — come
+        il menu che gli sta sotto — e non un comando accessorio da mettere fra i controlli
+        dell'intestazione. Il nome c'è sempre; il selettore solo con più di una appartenenza.
+      */}
+      <AccountSwitcher />
 
       <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-1">
         <SectionLabel>{t('nav.platform')}</SectionLabel>

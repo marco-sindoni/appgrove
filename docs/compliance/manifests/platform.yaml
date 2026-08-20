@@ -123,6 +123,38 @@ entries:
       it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
       en: While the account is active + 14-day grace period after deletion (#13 E25)
 
+  - key: identity.active_membership_id
+    entity: app.appgrove.core.platform.Identity
+    field: activeMembershipId
+    location:
+      it: Tabella `platform.identity` (Aurora PostgreSQL, eu-west-1) — dato di piattaforma, non dell'account
+      en: Table `platform.identity` (Aurora PostgreSQL, eu-west-1) — platform data, not account data
+    data_subjects:
+      it: Persone registrate sulla piattaforma
+      en: People registered on the platform
+    data_category:
+      it: >-
+        Preferenza tecnica di sessione (riferimento all'appartenenza su cui la persona sta lavorando):
+        non aggiunge alcun legame fra persona e azienda, che è già dichiarato sull'appartenenza
+      en: >-
+        Technical session preference (reference to the membership the person is working in): it adds no
+        link between person and company, which is already declared on the membership
+    purpose:
+      it: >-
+        Ricordare su quale account la persona stava lavorando, così che con più appartenenze la
+        sessione sappia per conto di chi agisce (UC 0117). Il valore è un suggerimento: l'appartenenza
+        viene riverificata a ogni creazione di token
+      en: >-
+        Remembering which account the person was working in, so that with several memberships the
+        session knows on whose behalf it acts (UC 0117). The value is a hint: the membership is
+        re-verified on every token creation
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: Finché la persona ha almeno una appartenenza attiva (+ 14 giorni di grace, #13 E25)
+      en: While the person has at least one active membership (+ 14-day grace period, #13 E25)
+
   - key: membership.identity_id
     entity: app.appgrove.core.platform.Membership
     field: identityId

@@ -341,6 +341,46 @@ public class TestData {
         return queryInt("select count(*) from " + table + " where tenant_id = ?", tenantId);
     }
 
+    // ── Account attivo della persona (UC 0117) ───────────────────────────────────────
+
+    /**
+     * Scrive il riferimento all'appartenenza attiva sull'identità, <b>senza alcuna verifica</b>: è la
+     * leva che permette di provare la cosa che conta — un valore conservato che non corrisponde a
+     * un'appartenenza attiva non produce mai un claim con quell'account. Ammette esplicitamente
+     * {@code null} e appartenenze altrui: serve a manometterla.
+     */
+    public void setActiveMembership(UUID identityId, UUID membershipId) {
+        exec("update platform.identity set active_membership_id = ?, updated_at = ? where id = ?",
+                membershipId, OffsetDateTime.now(), identityId);
+    }
+
+    /** Il riferimento all'appartenenza attiva conservato sull'identità (può essere null). */
+    public UUID activeMembershipOf(UUID identityId) {
+        return queryUuid("select active_membership_id from platform.identity where id = ?", identityId);
+    }
+
+    /** Righe del registro dei cambi di account attivo per una persona. */
+    public int activeAccountAuditCount(UUID identityId) {
+        return queryInt("select count(*) from platform.active_account_audit where identity_id = ?", identityId);
+    }
+
+    /** Ultimo cambio registrato per una persona, come {@code from → to} (null se nessuno). */
+    public String lastActiveAccountAudit(UUID identityId) {
+        return queryString("select coalesce(from_tenant_id, 'nessuno') || ' -> ' || to_tenant_id"
+                + " from platform.active_account_audit where identity_id = ?"
+                + " order by executed_at desc, id desc limit 1", identityId);
+    }
+
+    /**
+     * Inserisce una riga nel registro dei cambi di account attivo con {@code executed_at} dato (per
+     * lo sweeper di conservazione).
+     */
+    public void activeAccountAudit(UUID identityId, String fromTenantId, String toTenantId, OffsetDateTime at) {
+        exec("insert into platform.active_account_audit"
+                        + "(id,identity_id,from_tenant_id,to_tenant_id,executed_at) values (?,?,?,?,?)",
+                UUID.randomUUID(), identityId, fromTenantId, toTenantId, at);
+    }
+
     // ── Registro transizioni di stato app (UC 0076) ──────────────────────────────────
 
     /**
