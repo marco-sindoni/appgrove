@@ -475,3 +475,40 @@ test('processo — use case scaffoldato e non classificato → rosso; classifica
   })
   assert.deepEqual(validate(verde), [])
 })
+
+test("catalogo — un'area organizzata in sottocartelle: le storie in `story/` fanno parte del catalogo", () => {
+  // L'area 22 (rifacimento del modello di appartenenza) separa epic/, story/ e task/ invece di tenere
+  // i file in piano. Se il rilevatore guardasse solo il primo livello, quelle storie sarebbero
+  // invisibili: nessun rosso, ma nessuna classificazione — il presidio smetterebbe di presidiare
+  // senza che nulla lo dica. Questo test è il guardiano di quella regola.
+  const conSottocartelle = (root) => {
+    scrivi(root, 'docs/usecases/22-area/story/0003-storia.md', '# UC 0003\n')
+    scrivi(root, 'docs/usecases/22-area/task/0003-piano.md', '# Piano di lavoro UC 0003\n')
+    scrivi(root, 'docs/usecases/22-area/epic/E22-madre.md', '# Epica\n')
+  }
+
+  // non classificato → rosso, esattamente come se fosse in piano
+  const rosso = repoDiProva({ dopo: conSottocartelle })
+  assert.ok(regole(rosso).includes('catalogo'))
+  assert.match(messaggi(rosso), /use case 0003 non classificato/)
+
+  // classificato → verde; e il numero, presente sia in story/ sia in task/, non conta due volte
+  const verde = repoDiProva({
+    dopo: conSottocartelle,
+    registro: (r) => {
+      r.esenzioni.push({
+        usecase: '0003',
+        categoria: 'non-implementato',
+        motivo: 'Storia dell\'epica 22: superficie non ancora esistente in main.',
+      })
+      return r
+    },
+  })
+  assert.deepEqual(validate(verde), [])
+
+  // il file dell'epica non ha un numero a quattro cifre: non entra nel catalogo e non chiede nulla
+  const soloEpica = repoDiProva({
+    dopo: (root) => scrivi(root, 'docs/usecases/22-area/epic/E22-madre.md', '# Epica\n'),
+  })
+  assert.deepEqual(validate(soloEpica), [])
+})

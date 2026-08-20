@@ -87,3 +87,10 @@ _Tracciato dalla change `0035-use-case-0006-…` (osservabilità di base)._
   anche l'evento nell'archivio log (utile per il forense unificato), è un'estensione del framework — usare
   `AuditLogger` nel consumer con esito per-app. Differito perché tocca il contratto del framework GDPR,
   non l'osservabilità. Proprietà: questo UC.
+
+- **Una persona può appartenere a più account** (UC 0116, epica 22): l'esportazione di un account comprende
+  le **appartenenze** e i dati dell'account, **non** l'identità intera della persona — che è un dato di
+  piattaforma e vive anche altrove. Simmetricamente, la cancellazione di un account **non** cancella
+  un'identità che ha altre appartenenze attive: solo l'ultima appartenenza la rende cancellabile.
+  Da attuare quando si implementa UC 0116; tracciato qui perché il presidio è di questo use case.
+  Proprietario: [UC 0116](../22-refactor-membership-model/story/0116-identita-e-appartenenze.md).

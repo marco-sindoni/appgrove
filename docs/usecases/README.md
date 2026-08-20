@@ -161,12 +161,18 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | [0070](13-abbonamenti-self-service/0070-bundling-abbonamento-multi-app.md) | Bundling: più app in un unico abbonamento _(priorità bassissima)_ | 0022, 0026 | 🟢 |
 | [0071](13-abbonamenti-self-service/0071-riconciliazione-netto-revenue.md) | Riconciliazione netto/revenue | 0025, 0006, 0021 | 🟢 |
 
-### 14-modello-utenti-multiapp — Modello utenti multi-app (B2B/B2C) _(direzione preferita, non ancora decisa)_
-| UC | Titolo | Dipendenze | Stato |
+### 14-modello-utenti-multiapp — Modello utenti multi-app (B2B/B2C) _(🗄️ **SUPERATA dall'epica 22**: archivio, non da implementare)_
+
+La direzione è stata decisa **in senso opposto**: l'epica **22** adotta l'appartenenza **centralizzata** con ruolo
+per applicazione e posti di piattaforma, cioè l'opzione che questa epica registrava come scartata. Le tre storie
+restano come **archivio della decisione precedente** — dicono cosa si era pensato e perché non si è fatto — e non
+compaiono più nell'ordine di esecuzione di [EPICS-WAVE-2.md](EPICS-WAVE-2.md).
+
+| UC | Titolo | Superata da | Stato |
 |---|---|---|---|
-| [0072](14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md) | Distinzione B2C/B2B a livello app (`App.user_model`) + semantica gestione utenti | 0013, 0059, 0051, 0054 | 🟢 |
-| [0073](14-modello-utenti-multiapp/0073-invito-utenti-per-app-posti-quota.md) | Invito utenti per-app con "posti" come metrica quota `stock` | 0027, 0046, 0047, 0072 | 🟢 |
-| [0074](14-modello-utenti-multiapp/0074-directory-cross-app-ui-membri.md) | Directory cross-app + UI "Membri" ripensata per-app | 0059, 0013, 0072, 0073 | 🟢 |
+| [0072](14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md) | Distinzione B2C/B2B a livello app (`App.user_model`) + semantica gestione utenti | 0114 (la ritira) + 0115 (ambito dei dati) | 🗄️ |
+| [0073](14-modello-utenti-multiapp/0073-invito-utenti-per-app-posti-quota.md) | Invito utenti per-app con "posti" come metrica quota `stock` | 0098 + 0102–0103 | 🗄️ |
+| [0074](14-modello-utenti-multiapp/0074-directory-cross-app-ui-membri.md) | Directory cross-app + UI "Membri" ripensata per-app | 0100 + 0111 | 🗄️ |
 
 ### 15-supporto-e-piattaforma — Supporto & piattaforma
 | UC | Titolo | Dipendenze | Stato |
@@ -218,6 +224,50 @@ Indice master degli use case implementativi (organizzato **per area**). Ogni use
 | [0095](21-catalogo-app-backoffice/0095-pagina-app-catalog.md) | Pagina "App catalog" (read-model catalogo per-tenant, card con stati, ricerca, paginazione → checkout) | 0020, 0022, 0024, 0026, 0077 | 🟢 |
 | [0096](21-catalogo-app-backoffice/0096-billing-solo-fatturazione.md) | Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute; avviso app disabilitata) | 0095, 0028, 0025, 0026, 0077, 0076 | 🟢 |
 | [0097](21-catalogo-app-backoffice/0097-dashboard-operativa.md) | Dashboard operativa del workspace (+ Workspace ID in Account) | 0095, 0027, 0028, 0059, 0056, 0077 | 🟢 |
+
+### 22-refactor-membership-model — Rifacimento del modello di appartenenza (analisi della change `0087`)
+
+**Struttura diversa dalle altre aree** (per volontà dello sviluppatore): sottocartelle
+[epic/](22-refactor-membership-model/epic/), [story/](22-refactor-membership-model/story/),
+[task/](22-refactor-membership-model/task/) e [prototype/](22-refactor-membership-model/prototype/README.md)
+con cinque prototipi navigabili. **Le prime tre storie** (`0116`–`0118`, sotto-epica E22.5) sciolgono il
+vincolo «una persona appartiene a un solo account», oggi imposto da indici unici globali su una tabella
+interna all'account: aprono l'epica pur essendo state scritte per ultime, perché `0098` crea la tabella
+degli accessi con un riferimento alla persona e cambiarne la forma dopo costringerebbe a rifare due
+migrazioni. Altre due storie nascono dalla **riverifica della categorizzazione B2C/B2B** delle applicazioni:
+`0114` la **ritira** (il nuovo modello la rende falsa) e `0115` mette al suo posto l'**ambito dei dati**
+(del gruppo di lavoro contro della singola persona), che ha conseguenze verificabili nel codice. L'uso di
+«B2C/B2B» in senso **giuridico** — titolare verso i consumatori, responsabile verso i clienti-azienda —
+resta valido e non viene toccato. Indice dell'area e decisioni già prese:
+[22-refactor-membership-model/README.md](22-refactor-membership-model/README.md).
+
+**Supera l'epica 14** (`0072`–`0074`): l'appartenenza torna **centralizzata** (elenco unico di persone,
+ruolo per applicazione, posti di piattaforma a listino unico), cioè l'opzione che l'epica 14 registrava
+come scartata. Le tre storie dell'epica 14 restano come archivio della decisione precedente.
+
+| UC | Titolo | Dipendenze | Stato |
+|---|---|---|---|
+| [0116](22-refactor-membership-model/story/0116-identita-e-appartenenze.md) | Identità della persona e appartenenze agli account: scioglie «una persona, un solo account» | 0013 | 🟢 |
+| [0117](22-refactor-membership-model/story/0117-account-attivo-e-selettore.md) | Account attivo nella sessione, selettore e parità dei fornitori di identità | 0116, 0010, 0017 | 🟢 |
+| [0118](22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md) | Inviti e registrazione quando l'identità esiste già (esiti indistinguibili) | 0116, 0117, 0058, 0059 | 🟢 |
+| [0098](22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md) | Modello dati dell'accesso per applicazione (`platform.app_access`) + ruolo di piattaforma a due valori | 0116, 0013, 0059 | 🟢 |
+| [0099](22-refactor-membership-model/story/0099-autorizzazione-per-applicazione.md) | Autorizzazione per applicazione: claim del token, propagazione del ruolo, varco riusabile in `commons` | 0098, 0016, 0010, 0027 | 🟢 |
+| [0100](22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md) | «Members» come elenco unico di utenti, senza ruolo, invito riservato all'owner | 0098, 0099, 0059 | 🟢 |
+| [0101](22-refactor-membership-model/story/0101-semantica-ruoli-viewer-editor-admin.md) | Semantica dei tre ruoli (viewer/editor/admin) come contratto di piattaforma verificabile | 0098, 0099 | 🟢 |
+| [0102](22-refactor-membership-model/story/0102-listino-posti-a-fasce.md) | Listino dei posti a fasce: modello versionato e calcolo del dovuto | 0098, 0022 | 🟢 |
+| [0103](22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md) | Acquisto anticipato del posto all'invito (abbonamento di piattaforma) | 0100, 0102, 0024, 0025, 0026 | 🟢 |
+| [0104](22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md) | Riduzione dei posti in attesa: scelta delle persone, blocco, annullamento, scadenza | 0103, 0026, 0028 | 🟢 |
+| [0105](22-refactor-membership-model/story/0105-governo-listino-console-piattaforma.md) | Governo del listino dei posti dalla console di piattaforma (dal ciclo successivo) | 0102, 0021, 0047 | 🟢 |
+| [0106](22-refactor-membership-model/story/0106-posti-in-billing.md) | I posti nella sezione «Billing»: righe, storico, prossimo rinnovo | 0103, 0105, 0096, 0067 | 🟢 |
+| [0107](22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md) | Menu, rotte e visibilità per ruolo (intersezione a tre; Account/Billing/Members all'owner) | 0099, 0100, 0020, 0077 | 🟢 |
+| [0108](22-refactor-membership-model/story/0108-cruscotto-collaboratore.md) | Cruscotto del collaboratore, senza azioni dispositive | 0107, 0097 | 🟢 |
+| [0109](22-refactor-membership-model/story/0109-catalogo-sola-lettura-richiesta-owner.md) | Catalogo in sola lettura + richiesta «chiedi all'owner di installare» (email) | 0107, 0095, 0018, 0085 | 🟢 |
+| [0110](22-refactor-membership-model/story/0110-miei-dati-forma-ridotta.md) | «I miei dati» in forma ridotta per il collaboratore (diritti della persona) | 0107, 0033 | 🟢 |
+| [0111](22-refactor-membership-model/story/0111-schermata-gestione-utenti-app.md) | Schermata «Gestione utenti» dentro ogni applicazione (+ ritiro dei posti del Mini-CRM) | 0098, 0099, 0101, 0107 | 🟢 |
+| [0112](22-refactor-membership-model/story/0112-copilota-ruoli-new-application.md) | Copilota dei ruoli nella skill `new-application` + parità dello scaffolding | 0101, 0099, 0111, 0046 | 🟢 |
+| [0114](22-refactor-membership-model/story/0114-ritiro-categoria-b2c-b2b.md) | Ritiro della categoria B2C/B2B delle app (`App.user_model`): il nuovo modello la rende falsa | 0099, 0101, 0112 | 🟢 |
+| [0115](22-refactor-membership-model/story/0115-ambito-dati-applicazione.md) | Ambito dei dati di un'app: del gruppo di lavoro o della persona che li ha creati (dichiarazione + guardia; il filtro va con la prima app che lo usa) | 0114, 0101, 0032 | 🟢 |
+| [0113](22-refactor-membership-model/story/0113-migrazione-account-e-copertura-e2e.md) | Migrazione degli account esistenti + copertura end-to-end per ruolo | 0098–0112, 0114, 0115, 0090, 0093 | 🟢 |
 
 ---
 **Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0060** appesi col prossimo `NNNN`

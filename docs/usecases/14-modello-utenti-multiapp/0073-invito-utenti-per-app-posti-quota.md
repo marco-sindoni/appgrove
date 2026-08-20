@@ -1,9 +1,21 @@
 # UC 0073 — Invito utenti per-app con "posti" come metrica quota stock
 
-**Area**: 14-modello-utenti-multiapp · **Fase**: evo · **Stato**: 🟢 scritto (evo, da implementare)
+**Area**: 14-modello-utenti-multiapp · **Fase**: evo · **Stato**: 🗄️ **SUPERATA dall'epica 22** — archivio della decisione precedente, **non da implementare**
 **Dipendenze**: UC 0072 (Distinzione B2C/B2B a livello app + semantica gestione utenti), UC 0027 (Enforcement entitlement + quota SPI flow/stock runtime), UC 0046 (skill new-application), UC 0047 (skill pricing-change), UC 0013 (Accounts/Users/Invitations + core REST API)
 **Fonte**: R3 (Tabella residui _INDEX.md) · docs/_BACKLOG.md §"Modello di gestione utenti — tenant-level vs per-app (B2B/B2C)"
 **Ultimo aggiornamento**: 2026-07-26
+
+
+> **Questa storia è superata e non va implementata.** L'epica **22 — rifacimento del modello di appartenenza**
+> (change `0087`) adotta il modello **opposto** a quello di questa epica: appartenenza **centralizzata** sulla
+> piattaforma, ruolo della persona **sull'applicazione**, posti **di piattaforma** a listino unico — cioè
+> esattamente l'opzione che l'epica 14 registrava come scartata. Lo sviluppatore ha cambiato direzione, e la
+> decisione è registrata in `changes/0087-epica-22-refactor-membership-model/decisions.json`.
+>
+> **Sostituita da**: [0098](../22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md) (accesso per applicazione) e [0102](../22-refactor-membership-model/story/0102-listino-posti-a-fasce.md)–[0103](../22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md) (posti di piattaforma).
+>
+> Il documento resta come **archivio**: dice cosa si era pensato e perché non si è fatto. Cancellarlo farebbe
+> perdere il ragionamento, che è la parte che serve a chi un giorno riaprirà la questione.
 
 ## 1. Obiettivo / Scope
 

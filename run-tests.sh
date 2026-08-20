@@ -11,7 +11,7 @@
 #   • infra    — infra/     (Terraform)       → infra/scripts/check (fmt + validate per root, + tflint/checkov/actionlint se presenti; actionlint = lint dei workflow CI, UC 0005)
 #   • compliance — tools/compliance (Node)    → parità lingue dei manifesti dati + freshness RoPA (UC 0030;
 #                dipendenze npm auto-installate se assenti; il check @PersonalData↔manifesto è nei test backend)
-#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage + tools/design-tokens + tools/new-blog-post (UC 0046/0048/0047/0057/0093/0086/0084) →
+#   • tooling  — tools/new-application + tools/scaffold-parity + tools/drop-application + tools/pricing-change + tools/finalize-landing + tools/e2e-coverage + tools/design-tokens + tools/new-blog-post (UC 0046/0048/0047/0057/0093/0086/0084) + controllo che l'impalcatura dei prototipi non sia finita nel prodotto →
 #                collaudo delle skill `new-application`, `drop-application`, `pricing-change`, `finalize-landing`
 #                e `new-blog-post`, più il controllo del registro di copertura end-to-end:
 #                (1) parità dei modelli-sorgente contro l'app #1 `fatture` — coglie la divergenza SILENZIOSA
@@ -277,6 +277,16 @@ run_tooling() {
   # (8) skill new-blog-post (UC 0084): scaffolding dei post del blog + allarme di deriva sul contratto
   # dei contenuti di UC 0042. Nessuna dipendenza npm: solo Node e il filesystem.
   ( cd "$ROOT/tools/new-blog-post" && npm test )         || rc=1
+  # (9) impalcatura dei prototipi mai finita nel prodotto. I prototipi navigabili (docs/usecases/**/prototype/)
+  # contengono elementi che esistono SOLO per farli leggere — barra di commutazione del ruolo, riquadro
+  # «cosa cambia per questo ruolo» — marcati col prefisso di classe `x-proto-scaffold-`, che nel design
+  # system non esiste. Se comparisse in frontend/, sarebbe impalcatura implementata per errore: nessun
+  # altro test lo vedrebbe, e l'interfaccia vera si porterebbe dietro un comando che non le appartiene.
+  if grep -rn "x-proto-scaffold" "$ROOT/frontend" --include='*.ts' --include='*.tsx' --include='*.css' >/dev/null 2>&1; then
+    fail "impalcatura dei prototipi trovata in frontend/: le classi x-proto-scaffold-* non sono prodotto (vedi docs/usecases/22-refactor-membership-model/prototype/README.md §0)"
+    grep -rn "x-proto-scaffold" "$ROOT/frontend" --include='*.ts' --include='*.tsx' --include='*.css' | head -10
+    rc=1
+  fi
   if [ "$rc" -eq 0 ]; then ok "tooling: ok"; record tooling OK; else fail "tooling: fallito"; record tooling FAIL; fi
 }
 

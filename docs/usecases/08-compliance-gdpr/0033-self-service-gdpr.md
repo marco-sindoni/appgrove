@@ -121,3 +121,8 @@ _Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente), o
   tutto. Con backend simulato (test L2) non si vede perché l'elenco è statico. Rimedio naturale: spostare la conferma
   fuori dalla lista (avviso di pagina o notifica persistente). Non blocca il diritto, è un difetto di riscontro
   all'utente. Il journey J-PRIVACY accetta come esito valido sia il messaggio sia l'app sparita dall'elenco.
+
+- **Cancellazione della propria identità con appartenenze attive** (UC 0116, epica 22): non si esegue
+  subito. La persona deve prima uscire dagli account (o esserne rimossa), perché non può cancellare
+  unilateralmente dati di cui sono titolari altri. Va **detto nella schermata**, non scoperto a operazione
+  rifiutata. Proprietario: [UC 0118](../22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md).
