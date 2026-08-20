@@ -70,16 +70,18 @@ class SeedDataTest {
         // ── cast multi-tenant ────────────────────────────────────────────────
         assertEquals(3, scalar("select count(*) from platform.accounts where created_by = 'seed'"),
                 "3 account: Acme (B2B), Bob (B2C), Platform");
-        assertEquals(5, scalar("select count(*) from platform.users where created_by = 'seed'"),
-                "5 utenti: Acme owner/admin/member, Bob, Platform admin");
+        assertEquals(5, scalar("select count(*) from platform.identity where created_by = 'seed'"),
+                "5 persone: Acme owner/admin/member, Bob, Platform admin");
+        assertEquals(5, scalar("select count(*) from platform.membership where created_by = 'seed'"),
+                "5 appartenenze: una per persona (il caso normale, UC 0116)");
         assertEquals(2, scalar(
                 "select count(*) from platform.invitations where created_by = 'seed' and status = 'pending'"),
                 "2 inviti pending (Acme)");
 
         // ── ruoli (B2B) ──────────────────────────────────────────────────────
-        assertEquals(1, scalar("select count(*) from platform.users where created_by = 'seed' and role = 'owner' and tenant_id = 'a0000000-0000-4000-8000-000000000001'"));
-        assertEquals(1, scalar("select count(*) from platform.users where created_by = 'seed' and role = 'admin'"));
-        assertEquals(1, scalar("select count(*) from platform.users where created_by = 'seed' and role = 'member'"));
+        assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'owner' and tenant_id = 'a0000000-0000-4000-8000-000000000001'"));
+        assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'admin'"));
+        assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'member'"));
 
         // ── catalogo (single/multi/disabled) ─────────────────────────────────
         // Non più nel seed: con il pricing-as-code (UC 0022) il catalogo è prodotto dal loader allo startup
@@ -113,7 +115,13 @@ class SeedDataTest {
         assertEquals(2, scalar("select count(distinct tenant_id) from platform.subscription where created_by = 'seed'"));
 
         // ── dati 100% sintetici (no PII): ogni email del seed è *.test ────────
-        assertEquals(0, scalar("select count(*) from platform.users where created_by = 'seed' and email not like '%.test'"),
+        assertEquals(0, scalar("select count(*) from platform.identity where created_by = 'seed' and email not like '%.test'"),
                 "tutte le email del seed sono sintetiche (*.test)");
+
+        // ── platform.users è FREDDA (UC 0116, change 0088) ────────────────────
+        // Il seme non la popola più: se qualcuno la ripopolasse, avremmo due verità sulla stessa
+        // persona e nessun modo di sapere quale vince.
+        assertEquals(0, scalar("select count(*) from platform.users where created_by = 'seed'"),
+                "platform.users è la rete di ritorno del travaso: il seme non la scrive");
     }
 }

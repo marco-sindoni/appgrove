@@ -1,7 +1,7 @@
 # Auth & sicurezza — Decisioni
 
 **Stato**: 🟢 deciso
-**Ultimo aggiornamento**: 2026-06-14
+**Ultimo aggiornamento**: 2026-08-20
 
 ## Scope
 Meccanica di autenticazione e autorizzazione: Cognito, flusso OAuth e gestione token nella SPA,
@@ -11,7 +11,9 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 
 ## Vincoli ereditati da #01 (già decisi)
 - Cognito = **solo autenticazione** (identity provider); membership/ruoli nel **core service** (DB).
-- **1 utente → 1 tenant**; `tenant_id` = account id, `sub` = user_id.
+- ~~**1 utente → 1 tenant**~~ → **una persona, più appartenenze** (UC 0116, change 0088): `tenant_id`
+  = account id, `sub` = user_id; l'identità della persona è di piattaforma, l'appartenenza è di account.
+  Vedi la decisione 14 rivista.
 - **Pre-Token-Generation Lambda** legge la membership dal core e inietta `tenant_id` + ruoli come claim.
 - Authorizer Cognito **centralizzato** su API Gateway; invariante: `tenant_id` solo dal JWT verificato.
 
@@ -22,7 +24,7 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 - **D. Modello ruoli & authz** (da #01) — set ruoli (owner/admin/member), tenant-level vs per-app; platform admin; dove si applica l'authz (API GW = authn, servizio = authz).
 - **E. Verifica JWT nei servizi** — Quarkus OIDC, issuer/audience/JWKS.
 - **F. Enforcement isolamento tenant** — come si garantisce `WHERE tenant_id` (Hibernate filter/interceptor/repo base). Border con #04/#05.
-- **G. Signup & inviti** — self-signup crea account+owner; token d'invito (scadenza, single-use) e accept flow, sotto il vincolo 1 utente→1 tenant.
+- **G. Signup & inviti** — self-signup crea account + identità + appartenenza owner; token d'invito (scadenza, single-use) e accept flow, con l'identità creata solo se manca (UC 0116).
 - **H. Secrets** — webhook Paddle, credenziali Lambda→core; dove (Secrets Manager/SSM). Border con #12.
 - **I. CORS** — origin ammessi (CloudFront), config API Gateway.
 
@@ -53,7 +55,8 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
    API v2 un authorizer custom non può restituire 402 (né 401 per token scaduto) — vedi UC 0014.
 
 ### Pre-Token-Gen Lambda (topic C)
-9. **Lettura DB diretta**: la Lambda (in VPC) interroga lo schema `platform` del DB core per membership e
+9. **Lettura DB diretta**: la Lambda (in VPC) interroga lo schema `platform` del DB core — dopo UC 0116
+    identità ⋈ appartenenza — per l'appartenenza e
    ruoli; credenziali in Secrets Manager. Meno hop nel path critico del login. (Accoppiamento accettato per il PoC.)
 10. **Claim iniettati**: `tenant_id` (string) e `roles` (array). Quarkus mappa l'authz con
     `quarkus.oidc.roles.role-claim-path=roles`. **Fail-closed**: utente senza tenant/membership valida → niente claim → accesso negato.
@@ -70,9 +73,35 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 ### Signup & inviti (topic G)
 13. **Signup self-service aperto**: nuovo utente → **nuovo account (tenant) + membership owner**; email
     verification via Cognito.
-14. **Flusso inviti nel PoC** (una delle due app demo è B2B/multi-utente): owner/admin invita una email →
-    **invitation** con token **single-use** e **scadenza** (default 7 giorni) → all'accept l'invitato è creato
-    **dentro il tenant che invita** con ruolo assegnato (vincolo 1 utente→1 tenant).
+14. **Flusso inviti**: owner/admin invita una email → **invitation** con token **single-use** e **scadenza**
+    (default 7 giorni) → all'accept l'invitato entra **nel tenant che invita** con il ruolo assegnato.
+
+    **~~Vincolo «1 utente → 1 tenant»~~ — SUPERATO** (UC 0116, change 0088). Era una scelta dichiarata e
+    non una dimenticanza: con un solo utente per cliente, ripiegare l'appartenenza sull'utente
+    risparmiava una tabella e una join. La si scriveva come **due indici unici globali** (indirizzo di
+    posta e identificativo di autenticazione) su `platform.users`, che però è una tabella **dentro**
+    l'account: è quel disallineamento — unicità globale su una riga di account — a produrre il vincolo
+    di troppo. Le due conseguenze si vedevano al primo cliente: chi era invitato da un'azienda non
+    poteva aprire un proprio account con lo stesso indirizzo, e chi aveva già provato appgrove per
+    conto proprio non poteva essere invitato (l'invito partiva e il rifiuto arrivava dopo, come
+    violazione di indice invece che come messaggio comprensibile).
+
+    **Cosa lo sostituisce**: **una persona, più appartenenze**. L'identità (`platform.identity`) è
+    un'entità di **piattaforma** — non appartiene a nessun account — e su di essa vive l'unicità
+    globale di indirizzo e identificativo di autenticazione. L'appartenenza (`platform.membership`) è
+    un'entità di **account** e porta ruolo e stato; l'unicità che serve davvero — «non due volte nello
+    stesso account» — è ora **esplicita** sulla coppia (account, identità), limitata alle righe vive.
+    La regola giusta era nascosta dentro una regola più larga.
+
+    Due stati distinti, non uno: `identity.status` dice se la persona accede alla piattaforma (leva del
+    titolare: limitazione del trattamento, art. 18), `membership.status` se si presenta come persona di
+    **quell'** account (leva dell'owner). Chi emette il token pretende **entrambi** attivi.
+
+    **Cosa NON cambia**: l'account resta il confine dei dati e `tenant_id` viene sempre e solo dal token
+    verificato (invariante #1). Cambia soltanto il modo in cui il token stabilisce l'account: con una
+    sola appartenenza — il caso di tutti gli utenti di oggi — il comportamento è identico a prima; la
+    scelta fra più appartenenze (account attivo, selettore) è di **UC 0117**, e i due percorsi
+    d'ingresso con i loro messaggi non rivelatori sono di **UC 0118**.
 
 ### Secrets (topic H, dettaglio store → #12)
 15. **Zero secret nel codice o in file committati**; tutti in AWS, iniettati a runtime. Per l'auth:

@@ -103,7 +103,7 @@ inviti UI backoffice; ridisegno per-app in UC 0074):
 - **Listino/prezzo dell'app** (il pricing scritto come codice, gestito dalle skill): il **prezzo** dei posti è per-app e
   indipendente dalle altre app — scritto alla nascita da UC 0046 (skill new-application), modificato dopo da UC 0047
   (skill pricing-change).
-- **`platform.users`** e **`invitations`**: sorgente del **conteggio** posti (membri attivi + inviti pendenti), filtrati
+- **`platform.membership`** (UC 0116) e **`invitations`**: sorgente del **conteggio** posti (appartenenze attive + inviti pendenti), filtrati
   per account e per app.
 - **Dati personali** (email/nome degli invitati): trattamento **già dichiarato** in UC 0013 (Accounts/Users/Invitations
   + core REST API). Ai fini del manifesto:

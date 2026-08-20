@@ -40,7 +40,7 @@ audience), `roles`-claim-path = `roles`, uso **access token**.
 nei servizi (issuer/JWKS/audience). **Runbook**: deploy via UC 0005; in caso di errori claim → log strutturati (#08) con `user_id`/`tenant_id`.
 
 ## 7. Dati toccati
-Legge `platform.users` (membership/ruoli) — **dati personali** indiretti (associazione utente↔tenant/ruolo), base **contratto**.
+Legge `platform.identity` ⋈ `platform.membership` (appartenenza e ruolo; dopo UC 0116, change `0088`) — **dati personali** indiretti (associazione persona↔account/ruolo), base **contratto**.
 I claim contengono `tenant_id`/`roles` (no PII sensibile; `sub` opaco). Cred DB in Secrets Manager. Manifest: rientra nel trattamento account (#13 B).
 
 ## 8. Permessi & gate
@@ -102,7 +102,7 @@ _Tracciato dalla change `0039-use-case-0014-…` (authorizer all'edge)._
   Aurora è in pausa (scale-to-0) il primo login dopo la pausa può superarlo → login fallito al primo tentativo.
   Mitigazioni possibili (min capacity Aurora / keep-warm / retry lato SPA) da valutare **all'accensione ambienti**.
   **Proprietario**: UC 0016 (con le evoluzioni DevOps).
-- **Sorgente `platform-admin` in cloud.** `platform.users.role` è solo tenant-level (owner/admin/member): `platform-admin`
+- **Sorgente `platform-admin` in cloud.** `platform.membership.role` è solo di account (owner/admin/member): `platform-admin`
   non è derivabile da lì. La Pre-Token-Gen replica l'allow-list di `sub` del locale via env `PLATFORM_ADMIN_SUBS`
   (oggi **vuota**). Va popolata col `sub` reale del platform-admin alla sua creazione su Cognito; valutare una
   **tabella dedicata** (`platform.platform_admins`) come fonte pulita. **Proprietario**: UC 0016 (con UC 0021).

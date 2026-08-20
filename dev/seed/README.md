@@ -15,18 +15,30 @@ Caricato da `./dev.sh seed` (psql, dopo `./dev.sh migrate`) e validato da
 | Bob Personal | `a0000000-0000-4000-8000-000000000002` | B2C single-user |
 | Appgrove Platform | `a0000000-0000-4000-8000-000000000003` | home del platform-admin |
 
-## Utenti (`cognito_sub` stabili → usati dall'auth locale UC 0010 per mintare i JWT)
+## Persone e appartenenze (UC 0116)
 
-| Utente | id | tenant | cognito_sub | email | role |
-|---|---|---|---|---|---|
-| Acme Owner | `b0000000-…-001` | Acme | `seed-acme-owner` | owner@acme.test | owner |
-| Acme Admin | `b0000000-…-002` | Acme | `seed-acme-admin` | admin@acme.test | admin |
-| Acme Member | `b0000000-…-003` | Acme | `seed-acme-member` | member@acme.test | member |
-| Bob | `b0000000-…-004` | Bob | `seed-bob-owner` | bob@bob.test | owner |
-| Platform Admin | `b0000000-…-005` | Platform | `seed-platform-admin` | admin@appgrove.test | owner * |
+Dalla change 0088 una persona è **due righe**: l'**identità** (`platform.identity`, dato di
+piattaforma: chi è la persona) e l'**appartenenza** (`platform.membership`, dato dell'account: che
+ruolo ha lì). Gli id delle identità sono gli **stessi** che avevano le righe utente di prima, così
+ogni riferimento memorizzato altrove (per esempio `invitations.invited_by`) resta valido.
 
-\* La capacità **`platform-admin`** è un **gruppo JWT**, non una colonna `users.role`: l'auth locale (UC 0010)
-assegna il gruppo `platform-admin` al subject `seed-platform-admin`.
+| Persona | identità (id) | appartenenza (id) | account | cognito_sub | email | ruolo |
+|---|---|---|---|---|---|---|
+| Acme Owner | `b0000000-…-001` | `d0000000-…-001` | Acme | `seed-acme-owner` | owner@acme.test | owner |
+| Acme Admin | `b0000000-…-002` | `d0000000-…-002` | Acme | `seed-acme-admin` | admin@acme.test | admin |
+| Acme Member | `b0000000-…-003` | `d0000000-…-003` | Acme | `seed-acme-member` | member@acme.test | member |
+| Bob | `b0000000-…-004` | `d0000000-…-004` | Bob | `seed-bob-owner` | bob@bob.test | owner |
+| Platform Admin | `b0000000-…-005` | `d0000000-…-005` | Platform | `seed-platform-admin` | admin@appgrove.test | owner * |
+
+Ogni persona del seme ha **una sola** appartenenza: è il caso di tutti gli utenti di oggi, e il seme
+deve restare la fotografia del caso normale. Il caso «una persona, due account» si costruisce nei
+collaudi automatici, non qui.
+
+`platform.users` esiste ancora nello schema ma è **fredda** (rete di ritorno del travaso, change
+0088): il seme non la popola e nessun codice la legge.
+
+\* La capacità **`platform-admin`** è un **gruppo JWT**, non il ruolo di un'appartenenza: l'auth locale
+(UC 0010) assegna il gruppo `platform-admin` al subject `seed-platform-admin`.
 
 ## Inviti pending (tenant Acme)
 
@@ -60,7 +72,7 @@ YAML in `services/core/.../pricing/` per i valori.
 
 > File separato: **`seed-subscriptions.sql`** (dipende dal catalogo via FK). Applicato **solo** dove il catalogo
 > esiste — core `@QuarkusTest` (loader allo startup) e dev/E2E (dopo `sync-pricing`). I servizi di sola identità
-> (es. auth) applicano **solo** `seed.sql` (accounts/users/invitations), non le subscription.
+> (es. auth) applicano **solo** `seed.sql` (accounts/identity/membership/invitations), non le subscription.
 
 | Tenant | App | Tier | Stato | Note |
 |---|---|---|---|---|

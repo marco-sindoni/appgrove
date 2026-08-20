@@ -30,7 +30,7 @@ public class Invitation extends BaseTenantEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role;
+    private MembershipRole role;
 
     @Column(name = "token_hash", nullable = false)
     private String tokenHash;
@@ -52,7 +52,7 @@ public class Invitation extends BaseTenantEntity {
         // richiesto da JPA
     }
 
-    public Invitation(String email, UserRole role, String tokenHash, Instant expiresAt, UUID invitedBy) {
+    public Invitation(String email, MembershipRole role, String tokenHash, Instant expiresAt, UUID invitedBy) {
         this.email = email;
         this.role = role;
         this.tokenHash = tokenHash;
@@ -64,7 +64,7 @@ public class Invitation extends BaseTenantEntity {
         return email;
     }
 
-    public UserRole getRole() {
+    public MembershipRole getRole() {
         return role;
     }
 

@@ -55,7 +55,9 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
   const memberTokens = await login(inviteeEmail, MEMBER_PASSWORD)
   const memberSub = String(jwtPayload(memberTokens.access_token).sub)
   const [memberTenant, memberRole] = dbRow(
-    `select tenant_id, role from platform.users where lower(email) = lower($1) and deleted_at is null`,
+    `select m.tenant_id, m.role from platform.membership m
+       join platform.identity i on i.id = m.identity_id
+      where lower(i.email) = lower($1) and m.deleted_at is null and i.deleted_at is null`,
     [inviteeEmail],
   )
   expect(memberTenant).toBe(owner.tenantId)
@@ -117,7 +119,12 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
   await roleSelect.selectOption('admin')
   await expect(roleSelect).toHaveValue('admin')
   expect(
-    dbRow(`select role from platform.users where lower(email) = lower($1) and deleted_at is null`, [inviteeEmail])[0],
+    dbRow(
+      `select m.role from platform.membership m
+         join platform.identity i on i.id = m.identity_id
+        where lower(i.email) = lower($1) and m.deleted_at is null`,
+      [inviteeEmail],
+    )[0],
   ).toBe('admin')
 
   const memberRow = page.getByRole('row').filter({ hasText: inviteeEmail })
@@ -135,10 +142,10 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
   await expect(ownerRow.getByRole('combobox')).toHaveCount(0)
   await expect(ownerRow.getByRole('button', { name: 'Remove' })).toBeDisabled()
 
-  // ── leak detector: gli utenti del tenant sono owner + membro (rimosso, soft-delete) ──
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [owner.tenantId])[0]).toBe('2')
+  // ── leak detector: le appartenenze del conto sono owner + membro (uscito, soft-delete) ──
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [owner.tenantId])[0]).toBe('2')
   expect(
-    dbRow(`select count(*) from platform.users where tenant_id = $1 and deleted_at is null`, [owner.tenantId])[0],
+    dbRow(`select count(*) from platform.membership where tenant_id = $1 and deleted_at is null`, [owner.tenantId])[0],
   ).toBe('1')
   expect(
     dbRow(`select status from platform.invitations where tenant_id = $1 and lower(email) = lower($2)`, [

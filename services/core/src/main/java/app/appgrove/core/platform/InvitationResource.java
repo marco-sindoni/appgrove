@@ -42,14 +42,14 @@ import java.util.UUID;
 public class InvitationResource {
 
     /** Si possono invitare solo admin/member: l'owner nasce con l'account (signup). */
-    private static final Set<UserRole> INVITABLE = EnumSet.of(UserRole.admin, UserRole.member);
+    private static final Set<MembershipRole> INVITABLE = EnumSet.of(MembershipRole.admin, MembershipRole.member);
     private static final Duration TTL = Duration.ofDays(7);
 
     @Inject
     InvitationRepository repository;
 
     @Inject
-    UserRepository users;
+    IdentityRepository identities;
 
     @Inject
     CallerContext caller;
@@ -61,13 +61,15 @@ public class InvitationResource {
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
     public Response create(@Valid CreateInvitation body) {
-        UserRole role = parseInvitableRole(body.role());
+        MembershipRole role = parseInvitableRole(body.role());
         String email = body.email().trim();
         if (repository.existsPendingForEmail(email)) {
             throw new ClientErrorException("Esiste già un invito pending per " + email, Response.Status.CONFLICT);
         }
         String token = InvitationTokens.newToken();
-        UUID invitedBy = users.findByCognitoSub(caller.subject()).map(User::getId).orElse(null);
+        // "chi ha invitato" è l'identità della persona (UC 0116): l'appartenenza cambia nel tempo,
+        // l'identità no — ed è l'identificativo che le altre tabelle già conservano.
+        UUID invitedBy = identities.findByCognitoSub(caller.subject()).map(Identity::getId).orElse(null);
         Invitation invitation = new Invitation(
                 email, role, InvitationTokens.hash(token), Instant.now().plus(TTL), invitedBy);
         repository.persist(invitation);
@@ -111,10 +113,10 @@ public class InvitationResource {
         return Response.noContent().build();
     }
 
-    private static UserRole parseInvitableRole(String value) {
-        UserRole role;
+    private static MembershipRole parseInvitableRole(String value) {
+        MembershipRole role;
         try {
-            role = UserRole.valueOf(value);
+            role = MembershipRole.valueOf(value);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Ruolo non valido: " + value);
         }

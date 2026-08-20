@@ -1,0 +1,284 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie sono la suite completa ./run-tests.sh verde prima del commit, il registro delle decisioni integrale e how-to-test.md nella cartella della change. Merge e push restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0116 «Identità della persona e appartenenze agli account» (area 22-refactor-membership-model, epica E22.5, prima storia dell'epica 22). Da qui il nome del branch 0088-use-case-0116-identita-e-appartenenze; il numero 0088 è il progressivo di changes/ (ultima esistente: 0087).",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "Lo use case 0116 passa a 🟡 all'apertura della change e a ✅ alla chiusura."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Nome dell'entità: `platform.identity` (e non `platform.person`), come indicato dalla preferenza del punto aperto della storia. Motivo: è l'identità di accesso alla piattaforma — indirizzo di posta e identificativo di autenticazione — non l'anagrafica della persona. Il punto aperto della storia si chiude qui.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0116-identita-e-appartenenze.md",
+        "description": "Punto aperto sul nome dell'entità chiuso: identity."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) L'identità nasce con lo STESSO identificativo della riga utente di oggi (identity.id = users.id). È la scelta che evita una migrazione a cascata: chi ha invitato (invitations.invited_by), chi ha accettato (accepted_user_id), il bersaglio di una limitazione del trattamento (gdpr_restriction_audit.target_id) e ogni altro riferimento memorizzato continuano a risolvere senza essere riscritti. L'appartenenza prende invece un identificativo nuovo.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V17__identity_membership.sql",
+        "description": "Travaso: una identità per ogni utente vivo, con lo stesso id; una appartenenza con id nuovo."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Lo stato si SDOPPIA e non si sposta: identity.status (con suspended_reason) dice se la persona può accedere alla piattaforma — è la leva del titolare, cioè la limitazione del trattamento dell'art. 18; membership.status dice se la persona può presentarsi come persona di quell'account — è la leva dell'owner. Chi emette il token e chi autentica pretende ENTRAMBI attivi (a chiusura in caso di dubbio). Alternativa scartata: un solo stato sull'appartenenza, che avrebbe costretto a sospendere N righe per limitare una persona e avrebbe lasciato la limitazione aggirabile aprendo un nuovo account."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) `platform.users` resta in piedi come rete di ritorno ma diventa FREDDA: nessuno la legge e nessuno la scrive più. Tutti i punti di lettura (console di piattaforma, esportazione, limitazione, avviso di inattività, recapito dei biglietti di assistenza, fornitore locale, funzione del token) passano a identità + appartenenza. La rimozione fisica della tabella è di una migrazione successiva. Alternativa scartata: trasformarla in una vista di compatibilità — avrebbe nascosto il modello nuovo dietro la forma vecchia e reso invisibile la distinzione fra i due stati."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) L'unicità dell'indirizzo e dell'identificativo di autenticazione sull'identità resta INCONDIZIONATA (anche sulle righe cancellate), esattamente come è oggi su platform.users: la storia dice «unico globalmente in minuscolo, come oggi». L'unicità dell'appartenenza è invece PARZIALE, sulle sole righe vive, perché una persona che esce da un account deve poterci rientrare. Il riuso di un indirizzo dopo la cancellazione di un'identità è materia dei percorsi d'ingresso: rimandato a UC 0118."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) I ruoli dell'appartenenza restano i tre di oggi — owner, admin, member — e non i due (owner/member) della tabella della storia: il ritiro del ruolo admin appartiene a UC 0098/0113 e anticiparlo qui romperebbe inviti, console e interfaccia senza che nulla lo chieda. Gli enum Java cambiano nome per dire la verità sul modello nuovo: UserRole → MembershipRole, UserStatus → MembershipStatus, più IdentityStatus."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Lo stato «appartenenza in attesa di accettazione», previsto dalla tabella della storia, NON viene introdotto: oggi l'attesa è già rappresentata dalla riga di invito (platform.invitations, stato pending) e aggiungere un secondo modo di dire la stessa cosa senza che nessun percorso lo usi sarebbe anticipare UC 0118. Rimando tracciato nello use case 0118."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Con più appartenenze attive, la funzione che compone il token e il fornitore locale prendono l'appartenenza più antica (creata prima), in modo deterministico e identico nei due linguaggi. È un ripiego dichiarato, non una scelta di prodotto: la scelta dell'account attivo è di UC 0117 e il commento di entrambe le implementazioni lo dice a voce alta. Con una sola appartenenza — il caso di tutti gli utenti di oggi — il comportamento è identico a prima."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Classificazione privacy della change: MINORE. Nessuna finalità nuova, nessuna base giuridica nuova, nessun responsabile esterno nuovo, nessuna categoria particolare: gli stessi dati (indirizzo, nome, lingua, identificativo di autenticazione) cambiano tabella e titolarità del posto — da dato dentro l'account a dato di piattaforma. Nessun aumento di versione di privacy policy o termini; manifesto dati aggiornato e registro dei trattamenti rigenerato."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Copertura end-to-end: nessun percorso nuovo. La voce 0116 del registro passa da `non-implementato` a `senza-superficie` (storia di modello dati, nessuna superficie propria; i percorsi arrivano con 0117 e 0118). I percorsi di piattaforma esistenti vengono adeguati alle tabelle nuove e restano verdi: è quella la prova che il travaso non ha rotto nulla di visibile.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0116: categoria non-implementato → senza-superficie."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Lo stato di implementazione delle storie evo NON vive in docs/usecases/_INDEX.md (che copre le 60 storie base) né nell'ultima colonna del catalogo docs/usecases/README.md (che dice se il drill-down è scritto): si registra nell'intestazione della storia stessa e nell'epica. La storia 0116 passa quindi a «✅ implementato (change 0088)» e l'epica E22.5 lo dichiara.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0116-identita-e-appartenenze.md",
+        "description": "Stato → ✅ implementato (change 0088); punti aperti chiusi o girati ai loro proprietari."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-05-identita-e-appartenenze.md",
+        "description": "0116 marcata implementata nell'elenco delle tre storie."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Le letture cross-account («a quali account appartiene questa persona?») usano una query NATIVA e non Panache: il discriminatore di Hibernate filtrerebbe per l'account corrente, cioè risponderebbe alla domanda sbagliata. L'assenza del filtro è dichiarata in un commento esplicito, perché altrimenti sembra un difetto di isolamento. La lettura è riservata al percorso di accesso e alla piattaforma: nessun percorso di account la usa.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MembershipRepository.java",
+        "description": "membersOf() con filtro automatico per account; tenantsOf(identityId) senza filtro, con la motivazione scritta."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/IdentityRepository.java",
+        "description": "Repository di piattaforma: nessun filtro per account, e il perché è nel commento della classe."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) L'interfaccia esposta non cambia forma: /api/platform/v1/users conserva percorsi, campi e il significato di `id` (l'identificativo della PERSONA, cioè l'identità, che è lo stesso di prima). Il documento OpenAPI e il frontend non sono toccati. Internamente il percorso è sempre appartenenza → identità, mai identità → appartenenze: un identificativo di persona che non appartiene a questo account risponde «non trovato», indistinguibile da «non esiste», così l'assenza non rivela che quella persona esiste altrove.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "Riscritto su Membership + Identity; uscita da un account = soft-delete della sola appartenenza."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserDtos.java",
+        "description": "UserView.from(Membership, Identity); nello stato vince la sospensione dell'identità, che è la più forte."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) La cancellazione di un account cancella le sue appartenenze e i suoi dati, ma NON l'identità di chi appartiene anche ad altri account: si cancellano solo le identità rimaste ORFANE. La stessa regola vale per ciò che è agganciato alla persona e non all'account (iscrizione alla newsletter e prova di consenso): chi resta membro altrove resta iscritto, perché quel consenso non l'aveva dato a questo account. L'insieme delle orfane si calcola PRIMA di toccare le appartenenze, in una tabella temporanea che muore col commit.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "purgeData: tabella temporanea delle identità orfane, cancellazione appartenenze → identità orfane → account; export sdoppiato in `identities` e `memberships`, sempre partendo dall'appartenenza di questo account."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) La limitazione del trattamento (art. 18) con bersaglio «utente» sospende ora l'IDENTITÀ, non l'appartenenza: sospendere in un account solo lascerebbe la limitazione aggirabile aprendone un altro. Il tenant registrato nella prova di evasione è quello dell'appartenenza più antica — etichetta di contesto, non perimetro dell'atto. Conseguenza accettata e tracciata in UC 0034: un'identità viva senza nessuna appartenenza dà «non trovato».",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/GdprRestrictionService.java",
+        "description": "platform.users → platform.identity; tenant del bersaglio letto dall'appartenenza più antica."
+      },
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0034-console-diritti-gdpr.md",
+        "description": "Punto aperto: limitare una persona senza appartenenze."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) L'accettazione di un invito da parte di chi è GIÀ registrato viene rifiutata con un 409 e un messaggio comprensibile, invece di sbattere contro una violazione di indice. Il modello ammetterebbe l'appartenenza in più, ma quel percorso conia un nuovo identificativo di autenticazione e una nuova password: applicarli a un'identità esistente vorrebbe dire permettere a un invito di rimettere in gioco le credenziali di un'altra persona. Il rifiuto lo vede solo l'invitato (ha in mano il proprio token), mai chi ha invitato. Far entrare davvero chi esiste già — dalla propria sessione, senza toccarne la password — è di UC 0118. Sul percorso Cognito il rifiuto esisteva già (UsernameExistsException → 409).",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/local/LocalIdentityProvider.java",
+        "description": "Guardia identityExists() su accept invito e su registrazione (che prima chiedeva «esiste una persona con questo indirizzo in un account?», domanda insufficiente dopo la separazione)."
+      },
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/PlatformWriter.java",
+        "description": "identityExists(email): esiste già questa persona sulla piattaforma?"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Il travaso è collaudato rieseguendo il SQL VERO della migrazione su uno schema-sonda usa-e-getta (le tre tabelle ricreate vuote, i nomi rimappati): così il collaudo prova la versione corrente del file e non una copia che invecchia. Due prove: i conteggi tornano riga per riga (identità e appartenenze = utenti vivi, stesso indirizzo, stesso ruolo, stesso stato) e la GUARDIA dentro la migrazione fallisce a voce alta quando qualcuno si perde. In più si verifica lo stato degli indici: i due unici globali su platform.users non esistono più, quelli sull'identità sì, e l'unicità dell'appartenenza è parziale sulle righe vive.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/IdentityMigrationTest.java",
+        "description": "Collaudo del travaso e della guardia; legge il SQL da V17__identity_membership.sql."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) La prova di separazione «stessa identità in due account» sta in MultiTenancyTest, dove vivono già le prove di separazione, e non in un file nuovo: la stessa persona scrive in un account e non vede nulla dall'altro, in lettura, nell'elenco delle persone e nell'esportazione del proprio profilo. I collaudi nuovi usano account propri (non TENANT_A/TENANT_B) perché la creazione dell'account è idempotente sul nome: riusarli renderebbe un collaudo dipendente dall'ordine in cui girano gli altri — difetto emerso davvero durante l'implementazione.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/MultiTenancyTest.java",
+        "description": "Prova cross-account con una sola identità in due account."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/AccountUserApiTest.java",
+        "description": "Due appartenenze, rifiuto della seconda nello stesso account, uscita da un account, sospensione che non attraversa il confine."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/TestTokens.java",
+        "description": "withSubject(sub, tenant, ruoli): la stessa persona che agisce in account diversi."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Il seme di sviluppo popola identità e appartenenze e NON scrive più platform.users: due verità sulla stessa persona, senza una regola su quale vince, sarebbero peggio di una tabella vuota. Gli identificativi delle identità restano quelli delle vecchie righe utente (b0000000-…), così `invitations.invited_by` del seme continua a puntare alla persona giusta; le appartenenze prendono la serie d0000000-…. Ogni persona del seme ha UNA sola appartenenza: il seme deve restare la fotografia del caso normale, e il caso «una persona, due account» si costruisce nei collaudi.",
+    "files": [
+      {
+        "file": "dev/seed/seed.sql",
+        "description": "Blocco users sostituito da identity + membership."
+      },
+      {
+        "file": "dev/seed/README.md",
+        "description": "Tabella delle persone rifatta con identità e appartenenza; nota su platform.users fredda."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/SeedDataTest.java",
+        "description": "Conteggi su identity/membership + guardia che platform.users resti vuota."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Il manifesto dei dati si sdoppia come la storia chiede: le quattro voci `users.*` diventano `identity.*` con posizione e soggetti aggiornati e una conservazione riscritta («finché la persona ha almeno una appartenenza attiva»), e si aggiunge `membership.identity_id` — il legame fra una persona e un'azienda è a sua volta un dato personale, anche se non contiene nome né indirizzo, e il titolare che ne risponde è l'account. Registro dei trattamenti rigenerato con `npm run assemble`. Il rilevatore dei segnali privacy è stato eseguito e ha segnalato esattamente le voci attese (tabelle nuove, campi nuovi, classificazioni toccate).",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "identity.* al posto di users.*, più membership.identity_id."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/Membership.java",
+        "description": "@PersonalData su identityId: il legame persona↔azienda è dato personale dell'account."
+      },
+      {
+        "file": "docs/compliance/ropa.it.md",
+        "description": "Registro dei trattamenti rigenerato (non si edita a mano)."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) I permessi di scrittura delle Lambda di autenticazione includono le tabelle nuove (`identity`, `membership`) al posto di `users`: senza questa riga la registrazione in cloud funzionerebbe in locale e non in ambiente reale, ed è la classe di guasto più difficile da vedere. Aggiornati anche i commenti del modulo Terraform e la funzione che compone il token.",
+    "files": [
+      {
+        "file": "infra/envs/prod/main.tf",
+        "description": "write_tables: accounts, identity, membership, invitations."
+      },
+      {
+        "file": "infra/envs/test/main.tf",
+        "description": "write_tables: accounts, identity, membership, invitations."
+      },
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/handler.py",
+        "description": "Lettura identità ⋈ appartenenza, appartenenza più antica, parità dichiarata col fornitore locale."
+      },
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/test_handler.py",
+        "description": "Collaudi: tabelle nuove, ordine deterministico, identità senza appartenenze a chiusura."
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) I percorsi end-to-end di piattaforma sono stati adeguati alle tabelle nuove (nove file di journey): i conteggi «persone del conto» diventano conteggi di appartenenze, le letture per indirizzo passano dall'identità, e le letture di ruolo/tenant fanno la giunzione. Nessun percorso nuovo: è il verde di quelli esistenti la prova che il travaso non ha rotto nulla di visibile.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-REG.spec.ts",
+        "description": "Un solo indirizzo = una sola identità, una sola appartenenza per chi si registra."
+      },
+      {
+        "file": "tools/platform-e2e/journeys/J-MEMBERS.spec.ts",
+        "description": "Ruolo e conto del membro invitato letti da appartenenza ⋈ identità."
+      },
+      {
+        "file": "tools/platform-e2e/journeys/A-GDPR.spec.ts",
+        "description": "La limitazione art. 18 agisce sull'identità."
+      },
+      {
+        "file": "tools/platform-e2e/journeys/F-DEGRADE.spec.ts",
+        "description": "La sospensione lato server agisce sull'identità."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) I documenti di decisione sono stati aggiornati dove dicevano il falso: docs/02 §14 dichiara superata la regola «1 utente → 1 account» spiegando da cosa e perché era stata scelta (senza cancellare la storia), docs/01 e docs/05 descrivono le due entità nuove e la tabella fredda, e le quattordici occorrenze di `platform.users` sparse nelle specifiche non ancora implementate sono state riscritte una per una. Un documento vivo che resta indietro è un documento falso, e nessun collaudo lo dice.",
+    "files": [
+      {
+        "file": "docs/02-auth-sicurezza.md",
+        "description": "Decisione 14 riscritta: vincolo superato, cosa lo sostituisce, cosa NON cambia."
+      },
+      {
+        "file": "docs/01-architettura.md",
+        "description": "Punto 8 riscritto: una persona, più appartenenze."
+      },
+      {
+        "file": "docs/05-persistenza-dati.md",
+        "description": "Modello dati: identity, membership, users superata."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Rimandi tracciati prima di chiudere, ognuno nello use case che lo possiede: UC 0117 riceve il ripiego «appartenenza più antica» da sostituire nelle DUE implementazioni insieme (la parità locale/cloud è ciò che tiene onesti i collaudi locali); UC 0118 riceve lo stato «in attesa di accettazione» non introdotto e il riuso di un indirizzo dopo la cancellazione di un'identità; UC 0034 riceve la limitazione su una persona senza appartenenze; docs/_BACKLOG.md riceve la rimozione fisica di platform.users. Il piano di UC 0098 è stato corretto: V17 è occupata, app_access può riferire direttamente platform.identity senza migrazione doppia."
+  }
+]

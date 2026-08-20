@@ -6,7 +6,7 @@
 ## Passo 1 — Il token porta un ruolo in meno
 
 **Modifica**: `infra/modules/platform_shared/lambda/pre_token_gen/handler.py` — la funzione `_roles_for`
-resta com'è, ma il ruolo che arriva da `platform.users` non potrà più valere `admin` (UC 0113 converte i
+resta com'è, ma il ruolo che arriva da `platform.membership` (UC 0116) non potrà più valere `admin` (UC 0113 converte i
 dati). Va aggiunta la **tolleranza**: se il valore letto è `admin`, si inietta `member`. Con il suo commento
 che dice **quando togliere** questa tolleranza.
 

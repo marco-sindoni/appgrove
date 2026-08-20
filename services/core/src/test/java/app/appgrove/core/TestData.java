@@ -27,29 +27,101 @@ public class TestData {
                 UUID.fromString(tenantId), name, "active", OffsetDateTime.now(), OffsetDateTime.now());
     }
 
-    /** Crea un utente nel tenant; idempotente su conflitti di unicità (email/cognito_sub). Ritorna l'id. */
+    /**
+     * Crea una persona nel tenant: identità (se manca) + appartenenza (UC 0116). Idempotente.
+     * Ritorna l'id dell'<b>identità</b>, che è l'identificativo della persona esposto dall'API.
+     */
     public UUID user(String tenantId, String cognitoSub, String email, String role) {
-        UUID id = UUID.randomUUID();
-        exec("insert into platform.users(id,tenant_id,cognito_sub,email,role,status,created_at,updated_at)"
-                        + " values (?,?,?,?,?,?,?,?) on conflict do nothing",
-                id, tenantId, cognitoSub, email, role, "active", OffsetDateTime.now(), OffsetDateTime.now());
-        return id;
+        UUID identityId = identity(cognitoSub, email, null);
+        membership(tenantId, identityId, role);
+        return identityId;
     }
 
-    /** Come {@link #user} ma con la lingua dell'utente, che decide la lingua delle email (UC 0018). */
+    /**
+     * L'identità della persona, creata solo se manca (cercata per identificativo di autenticazione o
+     * per indirizzo, le due unicità globali). Non crea nessuna appartenenza: serve anche a costruire
+     * il caso «persona senza account» del ciclo di vita.
+     */
+    public UUID identity(String cognitoSub, String email, String displayName) {
+        exec("insert into platform.identity(id,cognito_sub,email,display_name,locale,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?,?) on conflict do nothing",
+                UUID.randomUUID(), cognitoSub, email, displayName, "en", "active",
+                OffsetDateTime.now(), OffsetDateTime.now());
+        return queryUuid("select id from platform.identity"
+                + " where cognito_sub = ? or lower(email) = lower(?) order by created_at, id limit 1",
+                cognitoSub, email);
+    }
+
+    /** Appartenenza di una persona a un account; idempotente sul vincolo (tenant, identità). Ritorna l'id. */
+    public UUID membership(String tenantId, UUID identityId, String role) {
+        exec("insert into platform.membership(id,tenant_id,identity_id,role,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?) on conflict do nothing",
+                UUID.randomUUID(), tenantId, identityId, role, "active",
+                OffsetDateTime.now(), OffsetDateTime.now());
+        return queryUuid("select id from platform.membership"
+                + " where tenant_id = ? and identity_id = ? and deleted_at is null", tenantId, identityId);
+    }
+
+    /**
+     * Appartenenza <b>senza</b> guardia di conflitto: usata per provare che il vincolo «non due volte
+     * nello stesso account» vive nella banca dati e non solo nell'interfaccia.
+     */
+    public void membershipStrict(String tenantId, UUID identityId, String role) {
+        exec("insert into platform.membership(id,tenant_id,identity_id,role,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), tenantId, identityId, role, "active",
+                OffsetDateTime.now(), OffsetDateTime.now());
+    }
+
+    /** Come {@link #user} ma con la lingua della persona, che decide la lingua delle email (UC 0018). */
     public UUID userWithLocale(String tenantId, String cognitoSub, String email, String role, String locale) {
         UUID id = user(tenantId, cognitoSub, email, role);
-        exec("update platform.users set locale = ? where tenant_id = ? and cognito_sub = ?",
-                locale, tenantId, cognitoSub);
+        exec("update platform.identity set locale = ? where id = ?", locale, id);
         return id;
     }
 
-    /** Inserisce un utente <b>senza</b> guardia di conflitto: usato per provare il vincolo email unica. */
+    /**
+     * Inserisce un'identità <b>senza</b> guardia di conflitto: usato per provare che l'indirizzo è
+     * unico globalmente sulla persona (e non più sull'utente-dentro-l'account).
+     */
     public void userStrict(String tenantId, String cognitoSub, String email, String role) {
-        exec("insert into platform.users(id,tenant_id,cognito_sub,email,role,status,created_at,updated_at)"
-                        + " values (?,?,?,?,?,?,?,?)",
-                UUID.randomUUID(), tenantId, cognitoSub, email, role, "active",
+        exec("insert into platform.identity(id,cognito_sub,email,locale,status,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), cognitoSub, email, "en", "active",
                 OffsetDateTime.now(), OffsetDateTime.now());
+        membership(tenantId, queryUuid("select id from platform.identity where cognito_sub = ?", cognitoSub), role);
+    }
+
+    /** Chiude (soft-delete) l'appartenenza di una persona a un account: uscita da quell'account. */
+    public void closeMembership(String tenantId, UUID identityId) {
+        exec("update platform.membership set deleted_at = ?, updated_at = ?"
+                        + " where tenant_id = ? and identity_id = ? and deleted_at is null",
+                OffsetDateTime.now(), OffsetDateTime.now(), tenantId, identityId);
+    }
+
+    /** Gli account a cui appartiene una persona (appartenenze vive), in ordine di anzianità. */
+    public java.util.List<String> tenantsOf(UUID identityId) {
+        java.util.List<String> tenants = new java.util.ArrayList<>();
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(
+                        "select tenant_id from platform.membership where identity_id = ?"
+                                + " and deleted_at is null order by created_at, id")) {
+            ps.setObject(1, identityId);
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tenants.add(rs.getString(1));
+                }
+            }
+            return tenants;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Numero di identità vive con quell'indirizzo (deve essere 0 o 1: unicità globale). */
+    public int identityCount(String email) {
+        return queryInt("select count(*) from platform.identity where lower(email) = lower(?)"
+                + " and deleted_at is null", email);
     }
 
     /** Crea un'app di catalogo (FK di subscription.app_id); idempotente. */
@@ -194,9 +266,18 @@ public class TestData {
                 UUID.fromString(tenantId));
     }
 
-    /** Stato corrente di un utente (per i test della limitazione art. 18, UC 0034). */
-    public String userStatus(UUID userId) {
-        return queryString("select status from platform.users where id = ?", userId);
+    /**
+     * Stato corrente della <b>persona</b> (per i test della limitazione art. 18, UC 0034): dopo
+     * UC 0116 la limitazione sospende l'identità, non l'appartenenza a un singolo account.
+     */
+    public String userStatus(UUID identityId) {
+        return queryString("select status from platform.identity where id = ?", identityId);
+    }
+
+    /** Stato dell'appartenenza a un account (leva dell'owner, distinta da {@link #userStatus}). */
+    public String membershipStatus(String tenantId, UUID identityId) {
+        return queryString("select status from platform.membership where tenant_id = ? and identity_id = ?"
+                + " and deleted_at is null", tenantId, identityId);
     }
 
     /** Sospende un account con causale amministrativa (per i test di conflitto art. 18). */
@@ -370,6 +451,19 @@ public class TestData {
             }
             try (var rs = ps.executeQuery()) {
                 return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private UUID queryUuid(String sql, Object... params) {
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            try (var rs = ps.executeQuery()) {
+                return rs.next() ? rs.getObject(1, UUID.class) : null;
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

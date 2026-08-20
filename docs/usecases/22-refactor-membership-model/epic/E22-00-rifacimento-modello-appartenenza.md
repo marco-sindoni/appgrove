@@ -10,11 +10,17 @@
 
 ## 1. Il problema di oggi
 
-Il modello attuale nasce da una semplificazione dichiarata in UC 0013: **l'appartenenza è "ripiegata"
-sull'utente**. Una persona appartiene a un solo account e porta **un unico ruolo** (`owner`, `admin`,
-`member`) valido su tutto: non esiste tabella delle appartenenze, il ruolo è una colonna di
-`platform.users`, e la Lambda che costruisce il token lo copia nel claim `roles`
+Il modello di partenza nasceva da una semplificazione dichiarata in UC 0013: **l'appartenenza era
+"ripiegata" sull'utente**. Una persona apparteneva a un solo account e portava **un unico ruolo**
+(`owner`, `admin`, `member`) valido su tutto: nessuna tabella delle appartenenze, il ruolo come colonna
+di `platform.users`, e la Lambda che costruisce il token lo copiava nel claim `roles`
 ([handler.py](../../../../infra/modules/platform_shared/lambda/pre_token_gen/handler.py)).
+
+> **Stato del rifacimento.** La prima metà di questa premessa è già caduta: la change `0088`
+> ([UC 0116](../story/0116-identita-e-appartenenze.md)) ha separato l'identità della persona
+> (`platform.identity`, di piattaforma) dall'appartenenza (`platform.membership`, di account), e una
+> persona può ora appartenere a più account. Resta in piedi il secondo difetto — **un unico ruolo valido
+> su tutto** — che è il tema di UC 0098/0099 e delle storie che seguono.
 
 Da questa scelta discendono tre difetti che oggi si vedono:
 

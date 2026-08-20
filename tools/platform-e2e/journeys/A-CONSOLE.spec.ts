@@ -104,7 +104,7 @@ test('[A-CONSOLE] cliente con app attiva → admin disabilita → app negata ma 
 
   // ── 5. registro delle transizioni: database e console dicono la stessa cosa ──
   const [adminSub] = dbRow(
-    `select cognito_sub from platform.users where lower(email) = lower($1) and deleted_at is null`,
+    `select cognito_sub from platform.identity where lower(email) = lower($1) and deleted_at is null`,
     ['admin@appgrove.test'],
   )
   const trail = dbRows(
@@ -126,6 +126,6 @@ test('[A-CONSOLE] cliente con app attiva → admin disabilita → app negata ma 
   await expect(register.getByRole('row').filter({ hasText: adminSub }).first()).toBeVisible()
 
   // ── rilevatore di travaso: l'azione dell'operatore non ha creato nulla nel tenant ──
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
   await adminContext.close()
 })

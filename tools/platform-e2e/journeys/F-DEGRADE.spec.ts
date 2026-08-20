@@ -82,8 +82,8 @@ test('[F-DEGRADE] servizio fermato davvero → errore con riprova, mai diniego �
   // Leva d'ambiente (secondo uso sanzionato di dbExec, vedi helpers/db.ts): non esiste un'azione
   // utente né un endpoint di sviluppo che invalidi una sessione, e le vie di prodotto equivalenti
   // appartengono ad altri journey. Agisce solo sull'utente usa-e-getta di QUESTO journey.
-  dbExec(`update platform.users set status = 'suspended' where cognito_sub = $1`, [t.userSub])
-  expect(dbRow(`select status from platform.users where cognito_sub = $1`, [t.userSub])[0]).toBe('suspended')
+  dbExec(`update platform.identity set status = 'suspended' where cognito_sub = $1`, [t.userSub])
+  expect(dbRow(`select status from platform.identity where cognito_sub = $1`, [t.userSub])[0]).toBe('suspended')
 
   const navigazioni: string[] = []
   page.on('framenavigated', (frame) => {

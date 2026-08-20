@@ -32,6 +32,21 @@ public final class TestTokens {
                 .sign();
     }
 
+    /**
+     * Access token della <b>stessa persona</b> (subject fissato) dentro un account scelto: serve ai
+     * collaudi di UC 0116, dove una sola identità agisce in più account. In produzione è la funzione
+     * che compone il token a stabilire l'account (invariante #1): qui lo si fissa perché l'harness
+     * prende il posto di quella funzione.
+     */
+    public static String withSubject(String subject, String tenantId, String... roles) {
+        return access()
+                .upn("user-" + subject)
+                .subject(subject)
+                .claim("tenant_id", tenantId)
+                .claim("roles", List.of(roles))
+                .sign();
+    }
+
     /** Subject (= user_id/cognito_sub locale) corrispondente a {@link #withTenant}. */
     public static String subjectFor(String tenantId) {
         return "sub-" + tenantId;

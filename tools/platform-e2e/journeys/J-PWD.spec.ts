@@ -59,7 +59,7 @@ test('[J-PWD] reset con email reale → nuova password → 2FA enroll + login a 
   // Il secret vive nello schema dev-only dell'auth locale, abilitato solo dopo la conferma.
   const [totpEnabled] = dbRow(
     `select c.totp_enabled from auth_local.credentials c
-       join platform.users u on u.cognito_sub = c.cognito_sub
+       join platform.identity u on u.cognito_sub = c.cognito_sub
       where lower(u.email) = lower($1)`,
     [t.email],
   )

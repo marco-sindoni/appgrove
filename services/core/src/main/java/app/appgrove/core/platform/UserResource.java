@@ -30,8 +30,14 @@ import java.util.UUID;
 import org.jboss.logging.Logger;
 
 /**
- * API utenti del tenant. Tenant-scoped automatico (discriminator): ogni query filtra
- * {@code WHERE tenant_id = ?} senza codice manuale. Gestione riservata a owner/admin.
+ * API delle persone dell'account. Dopo UC 0116 la riga di partenza è l'<b>appartenenza</b>
+ * (tenant-scoped automatico: ogni query filtra {@code WHERE tenant_id = ?} senza codice manuale) e
+ * i dati della persona arrivano dall'<b>identità</b> collegata. Il percorso è sempre
+ * appartenenza → identità, mai identità → appartenenze: <b>nessuna risposta di questa API rivela a
+ * quali altri account una persona appartenga</b> (UC 0116 §8).
+ *
+ * <p>Il contratto esposto non cambia (stessi percorsi, stessi campi, stesso {@code id} della
+ * persona): cambia solo da dove vengono i campi. Gestione riservata a owner/admin.
  */
 @Path("/api/platform/v1/users")
 @Authenticated
@@ -42,7 +48,10 @@ public class UserResource {
     private static final Logger LOG = Logger.getLogger(UserResource.class);
 
     @Inject
-    UserRepository repository;
+    MembershipRepository memberships;
+
+    @Inject
+    IdentityRepository identities;
 
     @Inject
     CallerContext caller;
@@ -54,47 +63,46 @@ public class UserResource {
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     public Page<UserView> list(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         PageRequest pr = PageRequest.of(page, size);
-        List<UserView> content = repository.findAll()
+        List<UserView> content = memberships.findAll()
                 .page(io.quarkus.panache.common.Page.of(pr.page(), pr.size()))
                 .list()
                 .stream()
-                .map(UserView::from)
+                .map(this::view)
+                .filter(java.util.Objects::nonNull)
                 .toList();
-        return Page.of(content, pr, repository.count());
+        return Page.of(content, pr, memberships.count());
     }
 
     @GET
     @Path("/me")
     public UserView me() {
-        return repository.findByCognitoSub(caller.subject())
-                .map(UserView::from)
-                .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
+        Membership membership = currentMembership();
+        return UserView.from(membership, requireIdentity(membership));
     }
 
     /**
-     * Rettifica self-service del proprio profilo (art. 16, UC 0033): ogni utente, qualunque ruolo,
-     * corregge il proprio nome visualizzato. Il cambio email è dei flussi auth (UC 0017, differito).
+     * Rettifica self-service del proprio profilo (art. 16, UC 0033): ogni persona, qualunque ruolo,
+     * corregge il proprio nome visualizzato. Il nome sta sull'identità, quindi la correzione vale in
+     * tutti gli account a cui la persona appartiene — è il suo nome, non quello che un account le
+     * assegna. Il cambio indirizzo è dei flussi auth (UC 0017, differito).
      */
     @PATCH
     @Path("/me")
     @Transactional
     public UserView updateMe(@Valid UpdateMe body) {
-        User user = currentUser();
-        user.setDisplayName(body.displayName());
-        LOG.infof("user.rectify tenant_id=%s user_id=%s", user.getTenantId(), caller.subject());
-        return UserView.from(user);
-    }
-
-    private User currentUser() {
-        return repository.findByCognitoSub(caller.subject())
-                .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
+        Membership membership = currentMembership();
+        Identity identity = requireIdentity(membership);
+        identity.setDisplayName(body.displayName());
+        LOG.infof("user.rectify tenant_id=%s user_id=%s", membership.getTenantId(), caller.subject());
+        return UserView.from(membership, identity);
     }
 
     @GET
     @Path("/{id}")
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     public UserView get(@PathParam("id") UUID id) {
-        return UserView.from(require(id));
+        Membership membership = requireMembership(id);
+        return UserView.from(membership, requireIdentity(membership));
     }
 
     @PATCH
@@ -102,21 +110,24 @@ public class UserResource {
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
     public UserView update(@PathParam("id") UUID id, UpdateUser body) {
-        User user = require(id);
+        Membership membership = requireMembership(id);
+        Identity identity = requireIdentity(membership);
         if (body.role() != null) {
-            user.setRole(parseRole(body.role()));
+            membership.setRole(parseRole(body.role()));
         }
         if (body.status() != null) {
-            user.setStatus(parseStatus(body.status()));
+            // L'owner governa l'appartenenza al PROPRIO account, non l'identità della persona: una
+            // sospensione decisa qui non la tocca negli altri account a cui appartiene.
+            membership.setStatus(parseStatus(body.status()));
         }
         if (body.displayName() != null) {
-            user.setDisplayName(body.displayName());
+            identity.setDisplayName(body.displayName());
         }
         // evento audit (UC 0006) solo per i cambi privilegiati (ruolo/stato), non per la
         // rettifica del nome; details con soli identificativi opachi (mai email/nome).
         if (body.role() != null || body.status() != null) {
             Map<String, String> details = new HashMap<>();
-            details.put("user_id", user.getId().toString());
+            details.put("user_id", identity.getId().toString());
             details.put("actor", caller.subject());
             if (body.role() != null) {
                 details.put("role", body.role());
@@ -126,41 +137,73 @@ public class UserResource {
             }
             audit.success("member.updated", details);
         }
-        return UserView.from(user);
+        return UserView.from(membership, identity);
     }
 
+    /**
+     * Uscita della persona da <b>questo</b> account: si chiude l'<b>appartenenza</b>, non l'identità.
+     * Le altre appartenenze della persona non ne sanno nulla, e l'identità resta cancellabile solo
+     * quando resta senza appartenenze (UC 0116 §6, ciclo di conservazione di UC 0033).
+     */
     @DELETE
     @Path("/{id}")
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
     public Response delete(@PathParam("id") UUID id) {
-        User user = require(id);
-        user.markDeleted();
+        Membership membership = requireMembership(id);
+        membership.markDeleted();
         audit.success("member.removed", Map.of(
-                "user_id", user.getId().toString(),
+                "user_id", membership.getIdentityId().toString(),
                 "actor", caller.subject()));
         return Response.noContent().build();
     }
 
-    private User require(UUID id) {
-        User user = repository.findById(id);
-        if (user == null) {
-            throw new NotFoundException("Utente non trovato");
-        }
-        return user;
+    // ── helper ───────────────────────────────────────────────────────────────
+
+    /** L'appartenenza della persona che sta chiamando, dentro l'account del token. */
+    private Membership currentMembership() {
+        Identity identity = identities.findByCognitoSub(caller.subject())
+                .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
+        return memberships.findByIdentity(identity.getId())
+                .orElseThrow(() -> new NotFoundException("Profilo utente non trovato"));
     }
 
-    private static UserRole parseRole(String value) {
+    /**
+     * L'appartenenza di questo account per la persona indicata. {@code id} è l'identificativo della
+     * <b>persona</b> (l'identità): un identificativo di una persona che non appartiene a questo
+     * account non trova nulla — nessun 404 distinguibile da «non esiste», così l'assenza non dice
+     * se quella persona esiste altrove.
+     */
+    private Membership requireMembership(UUID identityId) {
+        return memberships.findByIdentity(identityId)
+                .orElseThrow(() -> new NotFoundException("Utente non trovato"));
+    }
+
+    private Identity requireIdentity(Membership membership) {
+        Identity identity = identities.findById(membership.getIdentityId());
+        if (identity == null) {
+            throw new NotFoundException("Profilo utente non trovato");
+        }
+        return identity;
+    }
+
+    /** Vista di un'appartenenza; {@code null} se l'identità collegata non è più viva (riga orfana). */
+    private UserView view(Membership membership) {
+        Identity identity = identities.findById(membership.getIdentityId());
+        return identity == null ? null : UserView.from(membership, identity);
+    }
+
+    private static MembershipRole parseRole(String value) {
         try {
-            return UserRole.valueOf(value);
+            return MembershipRole.valueOf(value);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Ruolo non valido: " + value);
         }
     }
 
-    private static UserStatus parseStatus(String value) {
+    private static MembershipStatus parseStatus(String value) {
         try {
-            return UserStatus.valueOf(value);
+            return MembershipStatus.valueOf(value);
         } catch (IllegalArgumentException e) {
             throw new BadRequestException("Stato non valido: " + value);
         }

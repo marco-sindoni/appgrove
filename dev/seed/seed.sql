@@ -22,19 +22,35 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name, status = EXCLUDED.status,
   paddle_customer_id = EXCLUDED.paddle_customer_id, updated_at = EXCLUDED.updated_at;
 
--- ── users (tenant-scoped; membership foldata) ────────────────────────────────
--- Acme: owner + admin + member · Bob: owner · Platform: utente piattaforma
--- (il gruppo JWT 'platform-admin' è assegnato dall'auth locale, UC 0010).
-INSERT INTO platform.users (id, tenant_id, cognito_sub, email, display_name, role, status, created_at, updated_at, created_by) VALUES
-  ('b0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'seed-acme-owner',     'owner@acme.test',      'Acme Owner',     'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('b0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'seed-acme-admin',     'admin@acme.test',      'Acme Admin',     'admin',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('b0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'seed-acme-member',    'member@acme.test',     'Acme Member',    'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('b0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000002', 'seed-bob-owner',      'bob@bob.test',         'Bob',            'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('b0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000003', 'seed-platform-admin', 'admin@appgrove.test',  'Platform Admin', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
+-- ── identity (persone: entità di PIATTAFORMA, nessun tenant_id) ──────────────
+-- UC 0116: la persona è unica sulla piattaforma (indirizzo e identificativo di autenticazione unici
+-- globalmente). Gli id sono gli stessi che avevano le righe utente di prima della change 0088 — così
+-- `invitations.invited_by` e ogni altro riferimento memorizzato continuano a puntare alla persona giusta.
+INSERT INTO platform.identity (id, cognito_sub, email, display_name, locale, status, created_at, updated_at, created_by) VALUES
+  ('b0000000-0000-4000-8000-000000000001', 'seed-acme-owner',     'owner@acme.test',      'Acme Owner',     'en', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('b0000000-0000-4000-8000-000000000002', 'seed-acme-admin',     'admin@acme.test',      'Acme Admin',     'en', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('b0000000-0000-4000-8000-000000000003', 'seed-acme-member',    'member@acme.test',     'Acme Member',    'en', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('b0000000-0000-4000-8000-000000000004', 'seed-bob-owner',      'bob@bob.test',         'Bob',            'en', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('b0000000-0000-4000-8000-000000000005', 'seed-platform-admin', 'admin@appgrove.test',  'Platform Admin', 'en', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
 ON CONFLICT (id) DO UPDATE SET
-  tenant_id = EXCLUDED.tenant_id, cognito_sub = EXCLUDED.cognito_sub, email = EXCLUDED.email,
-  display_name = EXCLUDED.display_name, role = EXCLUDED.role, status = EXCLUDED.status,
-  updated_at = EXCLUDED.updated_at;
+  cognito_sub = EXCLUDED.cognito_sub, email = EXCLUDED.email, display_name = EXCLUDED.display_name,
+  locale = EXCLUDED.locale, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
+
+-- ── membership (appartenenze: entità di ACCOUNT, porta tenant_id) ────────────
+-- Acme: owner + admin + member · Bob: owner · Platform: persona di piattaforma
+-- (il gruppo JWT 'platform-admin' è assegnato dall'auth locale, UC 0010).
+-- Tutte le persone del seme hanno UNA sola appartenenza: è il caso di tutti gli utenti di oggi, e il
+-- seme deve restare la fotografia del caso normale. Il caso «una persona, due account» si costruisce
+-- nei collaudi, non qui.
+INSERT INTO platform.membership (id, tenant_id, identity_id, role, status, created_at, updated_at, created_by) VALUES
+  ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'admin',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000004', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000005', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
+ON CONFLICT (id) DO UPDATE SET
+  tenant_id = EXCLUDED.tenant_id, identity_id = EXCLUDED.identity_id, role = EXCLUDED.role,
+  status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
 
 -- ── invitations (Acme, pending) ──────────────────────────────────────────────
 -- token_hash = SHA-256(hex) dei token fissi documentati nel README.

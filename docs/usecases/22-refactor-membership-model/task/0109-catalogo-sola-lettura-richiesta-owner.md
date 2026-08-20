@@ -22,7 +22,7 @@ audit). Indice su `(tenant_id, app_id, requested_by, created_at)` per il limite 
 
 **File nuovo**: modello di email in `shared/email-templates/` (verificare la struttura esistente), reso dal
 renderer condiviso di `services/commons/.../email/`, nelle cinque lingue, nella lingua **dell'owner** (che è
-il destinatario e la cui preferenza è nota: `platform.users.locale`).
+il destinatario e la cui preferenza è nota: `platform.identity.locale`, UC 0116).
 
 Contenuto: nome dell'applicazione, nome di chi chiede, nota, collegamento alla scheda dell'applicazione.
 Nient'altro: il minimo necessario è anche una regola di conformità, non solo di buon gusto.

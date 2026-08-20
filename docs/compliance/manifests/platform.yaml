@@ -10,24 +10,30 @@ name:
   en: appgrove platform (core)
 description:
   it: >-
-    Trattamenti trasversali della piattaforma (account, utenti, inviti, autenticazione, log).
+    Trattamenti trasversali della piattaforma (account, identità delle persone, appartenenze,
+    inviti, autenticazione, log). Dopo UC 0116 l'identità della persona è un dato di
+    **piattaforma** (indirizzo, nome, lingua, identificativo di autenticazione) e l'appartenenza a
+    un account è un dato **dell'account**: non cambia la finalità, cambia chi risponde per il dato.
     appgrove agisce come titolare per i consumatori B2C e come responsabile per i tenant B2B
     titolari (#13 C13). Paddle (Merchant of Record) è titolare autonomo per i dati di pagamento.
   en: >-
-    Cross-cutting platform processing (accounts, users, invitations, authentication, logs).
+    Cross-cutting platform processing (accounts, person identities, memberships, invitations,
+    authentication, logs). After UC 0116 the person's identity is **platform** data (email, name,
+    language, authentication identifier) and account membership is **account** data: the purpose does
+    not change, the party accountable for the data does.
     appgrove acts as controller towards B2C consumers and as processor for B2B tenant
     controllers (#13 C13). Paddle (Merchant of Record) is an independent controller for payment data.
 
 entries:
-  - key: users.email
-    entity: app.appgrove.core.platform.User
+  - key: identity.email
+    entity: app.appgrove.core.platform.Identity
     field: email
     location:
-      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
-      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+      it: Tabella `platform.identity` (Aurora PostgreSQL, eu-west-1) — dato di piattaforma, non dell'account
+      en: Table `platform.identity` (Aurora PostgreSQL, eu-west-1) — platform data, not account data
     data_subjects:
-      it: Utenti registrati (membri di un account/tenant)
-      en: Registered users (members of an account/tenant)
+      it: Persone registrate sulla piattaforma (una identità, una o più appartenenze ad account)
+      en: People registered on the platform (one identity, one or more account memberships)
     data_category:
       it: Contatto (indirizzo email)
       en: Contact data (email address)
@@ -38,24 +44,30 @@ entries:
       it: Contratto (art. 6.1.b GDPR)
       en: Contract (art. 6(1)(b) GDPR)
     retention:
-      it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
-      en: While the account is active + 14-day grace period after deletion (#13 E25)
+      it: >-
+        Finché la persona ha almeno una appartenenza attiva + 14 giorni di grace dopo l'eliminazione
+        dell'ultimo account (#13 E25); l'eliminazione di un account non cancella l'identità di chi
+        appartiene anche ad altri account (UC 0116)
+      en: >-
+        While the person has at least one active membership + 14-day grace period after the last
+        account is deleted (#13 E25); deleting one account does not erase the identity of someone who
+        also belongs to other accounts (UC 0116)
 
-  - key: users.display_name
-    entity: app.appgrove.core.platform.User
+  - key: identity.display_name
+    entity: app.appgrove.core.platform.Identity
     field: displayName
     location:
-      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
-      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+      it: Tabella `platform.identity` (Aurora PostgreSQL, eu-west-1) — dato di piattaforma, non dell'account
+      en: Table `platform.identity` (Aurora PostgreSQL, eu-west-1) — platform data, not account data
     data_subjects:
-      it: Utenti registrati
-      en: Registered users
+      it: Persone registrate sulla piattaforma
+      en: People registered on the platform
     data_category:
       it: Identità (nome visualizzato)
       en: Identity (display name)
     purpose:
-      it: Identificazione dell'utente nell'interfaccia e nelle collaborazioni del tenant
-      en: User identification in the UI and within tenant collaboration
+      it: Identificazione della persona nell'interfaccia e negli account a cui appartiene
+      en: Identification of the person in the UI and across the accounts they belong to
     legal_basis:
       it: Contratto (art. 6.1.b GDPR)
       en: Contract (art. 6(1)(b) GDPR)
@@ -63,15 +75,15 @@ entries:
       it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
       en: While the account is active + 14-day grace period after deletion (#13 E25)
 
-  - key: users.locale
-    entity: app.appgrove.core.platform.User
+  - key: identity.locale
+    entity: app.appgrove.core.platform.Identity
     field: locale
     location:
-      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
-      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+      it: Tabella `platform.identity` (Aurora PostgreSQL, eu-west-1) — dato di piattaforma, non dell'account
+      en: Table `platform.identity` (Aurora PostgreSQL, eu-west-1) — platform data, not account data
     data_subjects:
-      it: Utenti registrati
-      en: Registered users
+      it: Persone registrate sulla piattaforma
+      en: People registered on the platform
     data_category:
       it: Preferenza dell'utente (lingua)
       en: User preference (language)
@@ -89,15 +101,15 @@ entries:
       it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
       en: While the account is active + 14-day grace period after deletion (#13 E25)
 
-  - key: users.cognito_sub
-    entity: app.appgrove.core.platform.User
+  - key: identity.cognito_sub
+    entity: app.appgrove.core.platform.Identity
     field: cognitoSub
     location:
-      it: Tabella `platform.users` (Aurora PostgreSQL, eu-west-1)
-      en: Table `platform.users` (Aurora PostgreSQL, eu-west-1)
+      it: Tabella `platform.identity` (Aurora PostgreSQL, eu-west-1) — dato di piattaforma, non dell'account
+      en: Table `platform.identity` (Aurora PostgreSQL, eu-west-1) — platform data, not account data
     data_subjects:
-      it: Utenti registrati
-      en: Registered users
+      it: Persone registrate sulla piattaforma
+      en: People registered on the platform
     data_category:
       it: Identificativo online (subject Cognito, pseudo-identificatore)
       en: Online identifier (Cognito subject, pseudo-identifier)
@@ -110,6 +122,40 @@ entries:
     retention:
       it: Finché l'account è attivo + 14 giorni di grace dopo l'eliminazione (#13 E25)
       en: While the account is active + 14-day grace period after deletion (#13 E25)
+
+  - key: membership.identity_id
+    entity: app.appgrove.core.platform.Membership
+    field: identityId
+    location:
+      it: Tabella `platform.membership` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.membership` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persone che appartengono a un account (membri, amministratori, titolari dell'account)
+      en: People belonging to an account (members, administrators, account owners)
+    data_category:
+      it: >-
+        Identificativo online (riferimento all'identità della persona): il legame fra una persona e
+        un'azienda è a sua volta un dato personale, anche se non contiene nome né indirizzo
+      en: >-
+        Online identifier (reference to the person's identity): the link between a person and a
+        company is itself personal data, even though it contains neither name nor email
+    purpose:
+      it: >-
+        Stabilire chi può presentarsi come persona di quell'account e con quale ruolo (UC 0116);
+        l'account resta il confine dei dati
+      en: >-
+        Establishing who may act as a person of that account and in which role (UC 0116); the account
+        remains the data boundary
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR)
+      en: Contract (art. 6(1)(b) GDPR)
+    retention:
+      it: >-
+        Finché l'appartenenza è viva; eliminata con l'account (+ 14 giorni di grace, #13 E25).
+        L'uscita da un account chiude l'appartenenza e non tocca l'identità della persona
+      en: >-
+        While the membership is live; deleted with the account (+ 14-day grace period, #13 E25).
+        Leaving an account closes the membership and does not touch the person's identity
 
   - key: invitations.email
     entity: app.appgrove.core.platform.Invitation
@@ -207,8 +253,8 @@ entries:
       it: User pool Amazon Cognito (eu-west-1); in locale solo provider dev (`services/auth`, fuori RoPA)
       en: Amazon Cognito user pool (eu-west-1); locally a dev-only provider (`services/auth`, out of RoPA scope)
     data_subjects:
-      it: Utenti registrati
-      en: Registered users
+      it: Persone registrate sulla piattaforma
+      en: People registered on the platform
     data_category:
       it: Credenziali di autenticazione (hash password) e segreti MFA/TOTP
       en: Authentication credentials (password hash) and MFA/TOTP secrets

@@ -238,7 +238,7 @@ resource "aws_lambda_invocation" "auth_lambdas_grants" {
       schema       = "platform"
       owner_role   = "platform"
       select_all   = true
-      write_tables = ["accounts", "users", "invitations"]
+      write_tables = ["accounts", "identity", "membership", "invitations"]
     }
     # Solo per ri-innescare l'invocazione (la Lambda li ignora): la password e
     # ogni deploy (nuove tabelle) devono riconciliare i grant.

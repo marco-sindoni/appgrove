@@ -103,7 +103,7 @@ account a **app**.
 
 ## 7. Dati toccati
 
-- **`platform.users`** e **`invitations`**: la schermata li **legge filtrati per app** (membri e inviti dell'`app_id`
+- **`platform.membership` ⋈ `platform.identity`** (UC 0116) e **`invitations`**: la schermata li **legge filtrati per app** (membri e inviti dell'`app_id`
   corrente); la **directory** li legge, sempre entro l'account, per le **altre app B2B** (unione delle persone
   presenti altrove, in sola lettura).
 - **`App.user_model`**: determina se la sezione è completa (B2B) o ridotta/assente (B2C) — UC 0072.

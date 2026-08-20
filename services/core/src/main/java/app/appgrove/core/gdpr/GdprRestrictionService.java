@@ -19,7 +19,7 @@ import org.jboss.logging.Logger;
 
 /**
  * Limitazione del trattamento (art. 18, UC 0034, #13 D19): applica/rimuove la <b>sospensione</b>
- * di un account o di un utente con causale dedicata {@code gdpr_restriction} — riusa la meccanica
+ * di un account o dell'<b>identità</b> di una persona (UC 0116) con causale dedicata {@code gdpr_restriction} — riusa la meccanica
  * di sospensione esistente ({@code status = suspended}) ma la distingue da una sospensione
  * amministrativa, così la rimozione ripristina solo ciò che la limitazione ha sospeso. Ogni
  * applica/rimuovi lascia la <b>prova di evasione</b> in {@code gdpr_restriction_audit} (#13 L75).
@@ -140,9 +140,16 @@ public class GdprRestrictionService {
                     views.add(new RestrictionView(TargetKind.account, id, id.toString(), rs.getString(2)));
                 }
             }
+            // Il bersaglio "user" è l'IDENTITÀ della persona (UC 0116): la limitazione riguarda la
+            // persona, non la sua appartenenza a un account — sospenderla in un account solo la
+            // lascerebbe aggirabile aprendone un altro. Il tenant mostrato è quello della sua
+            // appartenenza più antica: serve solo come etichetta di contesto per la console.
             try (PreparedStatement ps = c.prepareStatement(
-                    "select id, tenant_id, email from platform.users"
-                            + " where suspended_reason = ? and deleted_at is null order by email");
+                    "select i.id, (select m.tenant_id from platform.membership m"
+                            + "   where m.identity_id = i.id and m.deleted_at is null"
+                            + "   order by m.created_at, m.id limit 1), i.email"
+                            + " from platform.identity i"
+                            + " where i.suspended_reason = ? and i.deleted_at is null order by i.email");
                     var rs = bind(ps)) {
                 while (rs.next()) {
                     views.add(new RestrictionView(
@@ -202,11 +209,20 @@ public class GdprRestrictionService {
         return ps.executeQuery();
     }
 
-    /** Tenant del bersaglio (per l'audit): l'account è la radice (tenant = id), l'utente lo porta. */
+    /**
+     * Tenant del bersaglio (per l'audit): l'account è la radice (tenant = id); la <b>persona</b> non
+     * ne ha uno solo, quindi si registra quello della sua appartenenza più antica — è un'etichetta di
+     * contesto, non il perimetro dell'atto (la limitazione è di piattaforma). Un'identità viva ma
+     * senza nessuna appartenenza dà {@code null}, cioè {@code NOT_FOUND}: è uno stato inutilizzabile
+     * e limitarlo non avrebbe effetto osservabile (rimando annotato in UC 0116).
+     */
     private String tenantOf(Connection c, TargetKind kind, UUID targetId) throws SQLException {
         String sql = kind == TargetKind.account
                 ? "select id::text from platform.accounts where id = ? and deleted_at is null"
-                : "select tenant_id from platform.users where id = ? and deleted_at is null";
+                : "select m.tenant_id from platform.membership m"
+                        + " join platform.identity i on i.id = m.identity_id"
+                        + " where i.id = ? and i.deleted_at is null and m.deleted_at is null"
+                        + " order by m.created_at, m.id limit 1";
         try (PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setObject(1, targetId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -217,7 +233,7 @@ public class GdprRestrictionService {
 
     private int update(Connection c, TargetKind kind, UUID targetId, String set, String guard)
             throws SQLException {
-        String table = kind == TargetKind.account ? "platform.accounts" : "platform.users";
+        String table = kind == TargetKind.account ? "platform.accounts" : "platform.identity";
         // set/guard sono frammenti costanti di questa classe (nessun input esterno nel SQL)
         try (PreparedStatement ps = c.prepareStatement(
                 "update " + table + " " + set + ", updated_at = ? where id = ? and deleted_at is null " + guard)) {

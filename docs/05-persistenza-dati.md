@@ -12,12 +12,13 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
 ## Vincoli ereditati (#01/#02, già decisi)
 - **Aurora Serverless v2 PostgreSQL**, istanza **condivisa**; **schema-per-app** (`app_<app_id>`), core su schema `platform`.
 - **Hibernate multitenancy `DISCRIMINATOR`** + `TenantResolver` da JWT; filtro `tenant_id` automatico, **fail-closed**.
-- `tenant_id` = account id; `user_id` = `sub` Cognito. **1 utente → 1 tenant**.
-- Il **core** possiede: `accounts` (+ `paddle_customer_id`, #09 B), `users` (**membership foldata su users**, niente tabella `memberships`), `invitations`, **catalogo** (`app`/`app_tier`/`app_price`, modello autorevole in [09-pagamenti](09-pagamenti.md) B), e **`subscription`** (tenant↔app). **L'entitlement è DERIVATO** da `subscription` (niente tabella `entitlements`, #09 dec.12).
+- `tenant_id` = account id; `user_id` = `sub` Cognito. ~~1 utente → 1 tenant~~ → **una persona, più
+  appartenenze** (UC 0116, change 0088).
+- Il **core** possiede: `accounts` (+ `paddle_customer_id`, #09 B), **`identity`** + **`membership`** (UC 0116: l'identità della persona è di piattaforma, l'appartenenza è di account; `users` è fredda, rete di ritorno del travaso), `invitations`, **catalogo** (`app`/`app_tier`/`app_price`, modello autorevole in [09-pagamenti](09-pagamenti.md) B), e **`subscription`** (tenant↔app). **L'entitlement è DERIVATO** da `subscription` (niente tabella `entitlements`, #09 dec.12).
 - La **Pre-Token-Gen Lambda** legge `platform` in **DB diretto**.
 
 ## Topic dell'area (agenda)
-- **A. Data model del core (`platform`)** — tabelle, chiavi, relazioni (accounts/users/invitations/catalogo `app`+`app_tier`+`app_price`/`subscription`; entitlement derivato).
+- **A. Data model del core (`platform`)** — tabelle, chiavi, relazioni (accounts/identity/membership/invitations/catalogo `app`+`app_tier`+`app_price`/`subscription`; entitlement derivato).
 - **B. Modello dati per-app & discriminator** — colonna `tenant_id` su ogni tabella tenant-scoped; implicazioni single vs multi-user.
 - **C. Strategia schema & isolamento** — schema-per-app sull'istanza condivisa; divieto cross-schema; path verso DB dedicato.
 - **D. Migrations** — Flyway vs Liquibase; per-schema; chi le esegue (startup servizio / CI/CD); versioning.
@@ -49,8 +50,18 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
 ### Data model del core — schema `platform` (topic A)
 7. Tabelle (tutte con audit + `deleted_at`; PK UUID v7 salvo `apps`):
    - **accounts**: `id` (= `tenant_id`), `name`, `status` (active/suspended), **`paddle_customer_id`** (un customer Paddle per account, #09 B). Il tenant.
-   - **users**: `id`, `cognito_sub` (unique), `email`, `display_name`, `tenant_id`→accounts, `role`
-     (owner/admin/member), `status`. **La membership è foldata su `users`** (1 utente→1 tenant): nessuna tabella memberships.
+   - **identity** (UC 0116, change 0088; entità di **piattaforma**, nessun `tenant_id`): `id`,
+     `cognito_sub` (**unique globale**), `email` (**unique globale**, in minuscolo), `display_name`,
+     `locale`, `status` (active/suspended) + `suspended_reason`. È il posto in cui «una persona = un
+     indirizzo» diventa vero per la piattaforma intera.
+   - **membership** (UC 0116; entità di **account**): `id`, `tenant_id`→accounts, `identity_id`→identity,
+     `role` (owner/admin/member), `status` (active/suspended). Unico su `(tenant_id, identity_id)`
+     **sulle righe vive** — «non due volte nello stesso account» — e indice su `identity_id` per
+     rispondere a «a quali account appartiene questa persona?».
+   - ~~**users**~~: **superata** da `identity` + `membership`. La tabella resta nello schema come **rete
+     di ritorno** del travaso (change 0088): nessun codice la legge e nessuno la scrive; la rimozione
+     fisica è di una migrazione successiva. I due indici unici globali che imponevano «1 utente → 1
+     tenant» sono stati rimossi da `V17__identity_membership.sql`.
    - **invitations**: `id`, `tenant_id`→accounts, `email`, `role`, `token_hash` (single-use), `status`
      (pending/accepted/expired/revoked), `expires_at`, `invited_by`, `accepted_user_id`.
    - **Catalogo** (modello autorevole in [09-pagamenti](09-pagamenti.md) B, dec.10): **`app`** (`app_id` PK varchar kebab,

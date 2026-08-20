@@ -20,7 +20,7 @@
 ## 1. Obiettivo / Scope
 
 Oggi la gestione utenti del marketplace vive **a livello di account** (in gergo tecnico *tenant*): la tabella
-`platform.users` e gli inviti sono legati all'account, non alla singola app. Questo impone a **tutti** la semantica di
+le appartenenze (`platform.membership`, UC 0116) e gli inviti sono legati all'account, non alla singola app. Questo impone a **tutti** la semantica di
 un prodotto "a più persone" (in gergo *B2B*, cioè azienda con più utenti), anche quando un'app è pensata per l'**uso del
 solo proprietario** (in gergo *B2C*, un singolo professionista che lavora da solo).
 
@@ -100,7 +100,7 @@ riflettere in base a `user_model`.
 
 - **`App.user_model`** (enumerazione `AppUserModel`): sorgente di verità della distinzione B2C/B2B; già presente. Nessun
   nuovo campo introdotto da questo use case.
-- **`platform.users`** e **`invitations`**: nessuna modifica di semantica introdotta qui; questo use case ne prepara la
+- **`platform.membership` ⋈ `platform.identity`** (UC 0116) e **`invitations`**: nessuna modifica di semantica introdotta qui; questo use case ne prepara la
   ri-lettura "per app" che UC 0073 e UC 0074 formalizzano.
 - **Dati personali degli utenti** (email e nome dei membri): trattamento **già dichiarato** in UC 0013
   (Accounts/Users/Invitations + core REST API). Per completezza del manifesto dati:

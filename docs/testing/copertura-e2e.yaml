@@ -692,8 +692,12 @@ esenzioni:
     categoria: non-implementato
     motivo: Ambito dei dati di un'app (gruppo di lavoro contro persona) — meccanismo di persistenza; avrà superficie solo quando esisterà un'app ad ambito utente.
   - usecase: "0116"
-    categoria: non-implementato
-    motivo: Identità e appartenenze — storia di modello dati, nessuna superficie propria (diventerà senza-superficie).
+    categoria: senza-superficie
+    motivo: >-
+      Identità della persona e appartenenze agli account — storia di modello dati (change 0088): nessuna
+      superficie propria. Il travaso è provato dai collaudi di migrazione e di separazione, e i percorsi
+      di piattaforma esistenti girano sulle tabelle nuove. I percorsi a browser arrivano con 0117
+      (selettore dell'account attivo) e 0118 (inviti e registrazione con identità esistente).
   - usecase: "0117"
     categoria: non-implementato
     motivo: Account attivo e selettore — avrà superficie, introdurrà il percorso J-ACCOUNT-SWITCH.

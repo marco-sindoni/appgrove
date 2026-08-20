@@ -84,7 +84,7 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
 ## 7. Dati toccati
 
 - **`platform.app_access`**: letta e scritta (UC 0098).
-- **`platform.users`**: letta per comporre l'elenco delle persone aggiungibili — **solo** email e nome, il
+- **`platform.membership` ⋈ `platform.identity`** (UC 0116): lette per comporre l'elenco delle persone aggiungibili — si parte dalle appartenenze dell'account e si prendono **solo** indirizzo e nome dall'identità, il
   minimo necessario.
 - **Ritiro dei posti del Mini-CRM**: la tabella `app_crm.seat`, il suo varco e la sua schermata vanno
   **rimossi**, sostituiti dal meccanismo di piattaforma. La quota `seats` del suo listino perde significato:
