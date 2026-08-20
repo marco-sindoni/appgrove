@@ -75,19 +75,45 @@ public class LocalIdentityProvider implements IdentityProvider {
             // utente del seed (nessuna riga credenziali) → fallback password dev universale
             throw unauthorized("Credenziali non valide.");
         }
-        // La verifica dell'account attivo (UC 0117) sta ESATTAMENTE dove nascerebbe la sessione: le
-        // credenziali sono già provate, quindi il messaggio non rivela nulla a chi non è la persona.
-        requireChosenAccount(resolution);
+        // La scelta dell'account (UC 0117/0118) si decide ESATTAMENTE dove nascerebbe la sessione: le
+        // credenziali sono già provate, quindi l'elenco degli account lo vede solo la persona.
+        if (resolution.mustChooseAccount()) {
+            return accountSelection(user.sub());
+        }
         return new LoginResult.Ok(session(user));
     }
 
     @Override
-    public Session loginMfa(String challengeToken, String code) {
+    public LoginResult loginMfa(String challengeToken, String code) {
         String sub = tokens.verifyTokenSubject(challengeToken, "mfa_challenge");
         Cred cred = credentials.find(sub).orElseThrow(() -> unauthorized("Challenge non valido."));
         if (!cred.totpEnabled() || !totp.verify(cred.totpSecret(), code)) {
             throw unauthorized("Codice 2FA non valido.");
         }
+        // La scelta dell'account può servire ANCHE dopo il secondo fattore: sono due passaggi
+        // indipendenti, e restituire direttamente una sessione qui l'avrebbe resa irraggiungibile
+        // per chi ha il secondo fattore attivo.
+        Resolution resolution = resolveActive(sub, "Utente non valido.");
+        if (resolution.mustChooseAccount()) {
+            return accountSelection(sub);
+        }
+        return new LoginResult.Ok(session(resolution.user()));
+    }
+
+    @Override
+    public Session chooseAccount(String choiceToken, String accountId) {
+        // Token non valido o scaduto → 401 (InvalidTokenException, a chiusura): senza la prova che le
+        // credenziali sono già state verificate, questa sarebbe la via per scrivere l'account attivo
+        // di chiunque.
+        String sub = tokens.verifyTokenSubject(choiceToken, "account_choice");
+        if (!platform.chooseActiveAccount(sub, accountId)) {
+            // 404 e non 403: l'esistenza di un account non è un'informazione di chi chiede.
+            // Ci si arriva anche quando l'appartenenza è stata revocata fra la schermata e la scelta —
+            // ed è giusto che in quel caso la scelta non abbia effetto.
+            throw status(Response.Status.NOT_FOUND, "Account non trovato.");
+        }
+        // La sessione nasce rileggendo la persona: il claim lo calcola sempre la stessa funzione, che
+        // riverifica l'appartenenza. Qui si è scritto un suggerimento, non un permesso.
         return session(activeUser(sub, "Utente non valido."));
     }
 
@@ -150,18 +176,18 @@ public class LocalIdentityProvider implements IdentityProvider {
 
     @Override
     public Session acceptInvitation(InviteRow invite, String password, String displayName, String locale) {
-        // UC 0116 — il modello ora ammette che quella persona esista già (l'appartenenza sarebbe una in
-        // più, non una identità in più). Questo percorso però conia un NUOVO identificativo di
-        // autenticazione e una NUOVA password: applicarli a un'identità esistente significherebbe
-        // permettere a un invito di rimettere in gioco le credenziali di qualcun altro. Quindi qui si
-        // rifiuta, in modo comprensibile e non con una violazione di indice — e far entrare davvero chi
-        // esiste già, dalla sua sessione e senza toccarne la password, è di UC 0118.
-        // Il rifiuto lo vede solo l'invitato (ha in mano il proprio token d'invito), mai chi ha invitato:
-        // nessuna interfaccia dell'account apprende da qui che quella persona esiste.
+        // Questo percorso conia un NUOVO identificativo di autenticazione e una NUOVA password:
+        // applicarli a un'identità che esiste già significherebbe permettere a un invito di rimettere in
+        // gioco le credenziali di qualcun altro. Quindi qui si rifiuta — e il percorso vero, dalla
+        // propria sessione e senza toccare nessuna password, ora ESISTE (UC 0118): è la sezione degli
+        // inviti in testa al cruscotto. L'interfaccia non arriva nemmeno a chiedere la password, perché
+        // interroga prima /invitations/lookup; questo rifiuto è la rete di sicurezza dietro di essa.
+        // Lo vede solo l'invitato (ha in mano il proprio token d'invito), mai chi ha invitato: nessuna
+        // interfaccia dell'account apprende da qui che quella persona esiste.
         if (platform.identityExists(invite.email())) {
             throw status(Response.Status.CONFLICT,
                     "Questo indirizzo è già registrato su appgrove: accedi con le tue credenziali "
-                            + "e accetta l'invito dalla tua sessione.");
+                            + "e accetta l'invito dalla sezione in testa al tuo cruscotto.");
         }
         CreatedUser created = platform.createUserInTenant(
                 localSub(), invite.tenantId(), invite.email(), displayName, invite.role(), locale);
@@ -216,21 +242,36 @@ public class LocalIdentityProvider implements IdentityProvider {
      * nessuno ha scelto, e dire «credenziali non valide» in quel caso sarebbe una bugia.
      */
     private AuthUser activeUser(String sub, String message) {
-        Resolution resolution = directory.resolveBySub(sub)
-                .filter(r -> r.user().isActive())
-                .orElseThrow(() -> unauthorized(message));
+        Resolution resolution = resolveActive(sub, message);
         requireChosenAccount(resolution);
         return resolution.user();
+    }
+
+    private Resolution resolveActive(String sub, String message) {
+        return directory.resolveBySub(sub)
+                .filter(r -> r.user().isActive())
+                .orElseThrow(() -> unauthorized(message));
+    }
+
+    /**
+     * La sfida di scelta dell'account (UC 0118): l'elenco degli account della persona e un token
+     * breve che prova che le credenziali sono già state verificate. È il gemello della sfida del
+     * secondo fattore, e per la stessa ragione — c'è un passaggio in più fra «ho provato chi sono» e
+     * «ho una sessione».
+     */
+    private LoginResult accountSelection(String sub) {
+        return new LoginResult.AccountSelectionRequired(
+                tokens.accountChoiceToken(sub), platform.activeAccountsOf(sub));
     }
 
     /**
      * A chiusura in caso di dubbio: se l'account attivo non è determinato, non si emette nulla.
      *
-     * <p>La <b>superficie</b> per rispondere a questa richiesta senza avere una sessione appartiene a
-     * UC 0118 (la storia che rende raggiungibile il caso, perché è quella che crea la seconda
-     * appartenenza): qui si garantisce l'esito tipizzato, il rifiuto e un messaggio che dice cosa è
-     * successo. Il caso è comunque raro per costruzione — con una sola appartenenza residua la regola
-     * la sceglie da sé, e ogni appartenenza nuova nasce già indicata come attiva.
+     * <p>Dopo UC 0118 resta il presidio dei percorsi <b>non interattivi</b> — rinnovo della sessione e
+     * verifica dell'indirizzo con accesso automatico — dove non c'è nessuno a cui mostrare una
+     * schermata. L'accesso e il secondo fattore rispondono invece con la <b>sfida di scelta</b>
+     * ({@link #accountSelection(String)}): il rinnovo che fallisce riporta la persona all'accesso, ed
+     * è lì che la scelta si fa, in un posto solo.
      */
     private static void requireChosenAccount(Resolution resolution) {
         if (resolution.mustChooseAccount()) {

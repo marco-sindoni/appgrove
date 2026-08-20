@@ -116,6 +116,33 @@ export const it: Resources = {
     changed: 'L’account attivo è cambiato in un’altra scheda.',
     reload: 'Ricarica',
   },
+  // Inviti ricevuti dalla persona (UC 0118): sezione in testa al cruscotto + contatore nel menu.
+  myInvites: {
+    title: 'Inviti per te',
+    body: '{{account}} ti invita a lavorare nel suo account.',
+    accept: 'Accetta',
+    reject: 'Rifiuta',
+    accepting: 'Ingresso in corso…',
+    error: 'Non è stato possibile completare l’operazione. Riprova.',
+    seatNote: 'Il posto lo paga l’account che ti invita, non tu.',
+    menuBadge_one: '{{count}} invito in attesa',
+    menuBadge_other: '{{count}} inviti in attesa',
+  },
+  // Apertura di un proprio account da dentro la sessione (UC 0118, percorso B).
+  ownAccount: {
+    title: 'Apri un altro account',
+    hint: 'Puoi avere un account tuo e restare membro degli altri. Nessun dato passa da uno all’altro.',
+    nameLabel: 'Nome dell’account',
+    submit: 'Apri account',
+    creating: 'Apertura in corso…',
+    error: 'Non è stato possibile aprire l’account. Riprova.',
+  },
+  // Scelta dell'account all'accesso (UC 0118).
+  chooseAccount: {
+    title: 'Scegli un account',
+    hint: 'Appartieni a più account. Scegli quello su cui vuoi lavorare — potrai cambiarlo più tardi.',
+    error: 'Non è stato possibile entrare in quell’account. Scegline un altro o rifai l’accesso.',
+  },
   states: {
     loading: 'Caricamento…',
     empty: 'Ancora niente qui',
@@ -203,6 +230,10 @@ export const it: Resources = {
     submit: 'Accetta invito',
     invalid: 'Questo invito non è valido.',
     expired: 'Questo invito è scaduto o è già stato usato.',
+    signinTitle: 'Hai già un account appgrove',
+    signinHint: 'Questo indirizzo è già registrato. Accedi e trovi l’invito di {{account}} in testa al tuo cruscotto — nessuna password nuova da scegliere.',
+    signinCta: 'Accedi per accettare',
+    checking: 'Verifica dell’invito…',
     missingToken: 'Token di invito mancante.',
   },
   twofa: {
@@ -377,6 +408,9 @@ export const it: Resources = {
     noInvites: 'Nessun invito in sospeso.',
     lastOwnerHint: 'Non puoi modificare o rimuovere l’ultimo owner.',
     selfHint: 'Non puoi eseguire questa azione su te stesso.',
+    emailAlreadyMemberOnly: 'Questa persona è già membro di questo account.',
+    emailAlreadyInvited: 'Esiste già un invito in attesa per questo indirizzo.',
+    seatNote: 'Il posto è di questo account: si paga qui anche se la persona lavora già in un altro account.',
     emailAlreadyMember: 'Questa email è già un membro o ha un invito in sospeso.',
   },
   validation: {
@@ -388,7 +422,7 @@ export const it: Resources = {
   },
   errors: {
     accountSelectionRequired: 'Appartieni a più account e nessuno è impostato come attivo. Scegli l’account su cui vuoi lavorare.',
-    emailTaken: 'Questa email è già registrata.',
+    emailTaken: 'Questa email è già registrata. Accedi: dalla tua sessione puoi aprire un nuovo account.',
     invalidCredentials: 'Email o password non validi.',
     emailNotVerified: 'La tua email non è ancora verificata. Controlla la posta.',
     suspended: 'Questo account è sospeso.',

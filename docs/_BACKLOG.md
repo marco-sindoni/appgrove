@@ -666,6 +666,12 @@ toglierebbe la stessa instabilità a tutti i tredici percorsi, e va fatto con at
 accessi arrivano alla shell nello stesso modo (il secondo fattore ne è un esempio). Owner: **#10 (testing)** con
 UC 0091/0092, proprietari dei passi condivisi della suite di piattaforma.
 
+**Aggiornamento (change `0090`, UC 0118)**: la soluzione robusta è stata **estratta** in
+`helpers/browser.ts` come `expectInsideAccount` / `loginIntoAccount` / `switchAccountTo`, perché serviva a un
+secondo percorso (`J-INVITE-EXISTING`) e duplicarla era il momento sbagliato per farlo. `browserLogin` — il
+passo usato dagli altri percorsi — **non è stato toccato**: resta il lavoro di questa voce, ed è ora più
+semplice, perché la versione corretta esiste già accanto ad esso.
+
 ## Indice di esecuzione degli use case: nessuna riga per le storie evolutive (change `0073`, 2026-08-01)
 
 `docs/usecases/_INDEX.md` contiene la tabella di esecuzione dei soli **60 use case base** (0001–0060). Le **37 storie
@@ -874,3 +880,24 @@ cresce in silenzio ogni volta che un file si sposta.
 lista di eccezioni per i modelli. Piccolo, e chiude una classe intera. Non fatto in `0087` per non
 sconfinare: la change è documentale e limitata all'area 22.
 
+## Manifesto dei dati ed esportazione dell'account: lo stesso elenco per due domande diverse (change `0090`, 2026-08-21)
+
+Il collaudo di contratto `PlatformGdprContractTest.exportCoversEveryManifestEntity` pretende che **ogni voce
+del manifesto** compaia nell'esportazione dei dati dell'account. È un presidio prezioso — impedisce che un
+dato dichiarato resti fuori dall'esportazione — ma tiene insieme due domande che non sono la stessa:
+
+- il **manifesto** è il registro dei trattamenti: deve elencare tutto ciò che si tratta, altrimenti nessuno
+  lo riesamina più;
+- l'**esportazione** è ciò che un titolare (l'account) può legittimamente vedere: e non tutto ciò che si
+  tratta *per* un account è informazione *dell'*account.
+
+Il caso che l'ha fatto emergere: `invitations.identity_id` (UC 0118) dice che l'indirizzo invitato ha già
+un'identità appgrove — informazione che UC 0118 §5 vieta di far arrivare a chi invita. Dichiararla nel
+manifesto la trascinava nell'esportazione, cioè la rivelava per un'altra via dopo averla tenuta fuori dalla
+risposta dell'invito. Risolto **restringendo** l'esportazione (solo inviti accettati, dove quella persona è
+già un membro noto), come si era fatto in UC 0117 per `identity.active_membership_id`: due precedenti sono un
+motivo per dare al problema un nome.
+
+Cosa manca: un modo **dichiarativo** di dire «questa voce è nel registro, e nell'esportazione è ristretta
+così», invece di una restrizione scritta a mano nella query e spiegata in un commento. Senza di esso, la
+terza volta qualcuno la dimenticherà. Owner: **#13 (compliance/privacy)** con UC 0030/0032.

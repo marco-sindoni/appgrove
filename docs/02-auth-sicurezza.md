@@ -74,7 +74,21 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
     | nessuna | qualunque | nessun claim (come prima) |
     | una sola | qualunque, anche assente | quella, **ignorando** il valore conservato |
     | più di una | corrisponde a una di esse | quella |
-    | più di una | assente o non corrispondente | nessun claim + «scegli l'account» |
+    | più di una | assente o non corrispondente | nessun claim + **sfida di scelta dell'account** |
+
+    **La sfida di scelta dell'account** *(UC 0118, change 0090)*. L'ultima riga della tabella non è più
+    un rifiuto cieco: l'accesso risponde
+    `200 {account_selection_required: true, choice_token, accounts}` — stessa forma della sfida del
+    secondo fattore, additiva come fu quella — e `POST /api/auth/login/account` conserva la scelta ed
+    emette la sessione. Il `choice_token` nasce **solo dopo** la verifica completa delle credenziali
+    (secondo fattore incluso), quindi l'elenco degli account lo vede soltanto la persona. Vale in
+    **entrambi** i fornitori: sul provider Cognito il caso si riconosce dall'assenza del claim
+    `tenant_id` nell'access token appena emesso — la funzione del token non solleva eccezioni quando non
+    riesce a scegliere, quindi l'accesso riesce e il token esce senza claim — e la sessione buona si
+    ottiene rinnovando dopo aver conservato la scelta. Sui percorsi **non interattivi** (rinnovo,
+    verifica dell'indirizzo con accesso automatico) resta il rifiuto `409`: non c'è nessuno a cui
+    mostrare una schermata, e il rinnovo che fallisce riporta all'accesso — dove la scelta si fa, in un
+    posto solo.
 
     **Il valore conservato non è creduto**: vale solo se corrisponde a un'appartenenza **attiva**
     trovata al momento della creazione del token. L'invariante #1 resta intatta — cambia la funzione
@@ -130,7 +144,11 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
     verificato (invariante #1). Cambia soltanto il modo in cui il token stabilisce l'account: con una
     sola appartenenza — il caso di tutti gli utenti di oggi — il comportamento è identico a prima; la
     scelta fra più appartenenze (account attivo, selettore) è di **UC 0117**, e i due percorsi
-    d'ingresso con i loro messaggi non rivelatori sono di **UC 0118**.
+    d'ingresso con i loro messaggi non rivelatori sono di **UC 0118** (change `0090`): l'invito a chi ha
+    già un'identità la collega lato server e si accetta **dalla propria sessione**, mai coniando una
+    parola d'accesso nuova su un'identità esistente; chi è già membro apre un proprio account da dentro
+    la sessione. L'esito dell'invito è **identico** esista l'identità o no — sono lecite solo le
+    collisioni che l'account può conoscere: «è già membro» e «c'è già un invito in attesa».
 
 ### Secrets (topic H, dettaglio store → #12)
 15. **Zero secret nel codice o in file committati**; tutti in AWS, iniettati a runtime. Per l'auth:

@@ -15,6 +15,22 @@ const server = setupServer(
     const body = (await request.json()) as { email: string }
     if (body.email === 'mfa@x.io') return HttpResponse.json({ mfa_required: true, challenge_token: 'ch-1' })
     if (body.email === 'bad@x.io') return HttpResponse.json({ title: 'Unauthorized' }, { status: 401 })
+    // UC 0118 — più appartenenze e nessuna scelta: la sfida di scelta, nessun token.
+    if (body.email === 'multi@x.io')
+      return HttpResponse.json({
+        account_selection_required: true,
+        choice_token: 'ch-account-1',
+        accounts: [
+          { account_id: 'tenant-a', account_name: 'Acme Corp' },
+          { account_id: 'tenant-b', account_name: 'Beta Srl' },
+        ],
+      })
+    return HttpResponse.json(session)
+  }),
+  http.post('http://localhost/api/auth/login/account', async ({ request }) => {
+    const body = (await request.json()) as { choice_token: string; account_id: string }
+    if (body.choice_token !== 'ch-account-1') return HttpResponse.json({ title: 'Unauthorized' }, { status: 401 })
+    if (body.account_id === 'tenant-revocato') return HttpResponse.json({ title: 'Not Found' }, { status: 404 })
     return HttpResponse.json(session)
   }),
   http.post('http://localhost/api/auth/login/2fa', async ({ request }) => {
@@ -61,6 +77,23 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByText('Invalid email or password.')).toBeInTheDocument()
     expect(useAuthStore.getState().status).toBe('anonymous')
+  })
+
+  it('con più account e nessuna scelta mostra la schermata di scelta e nessuna sessione', async () => {
+    // UC 0118: la proprietà essenziale è che NESSUN token esista finché la persona non ha scelto.
+    const user = userEvent.setup()
+    renderWithProviders(<LoginPage />)
+    await user.type(screen.getByLabelText('Email'), 'multi@x.io')
+    await user.type(screen.getByLabelText('Password'), 'Password1!')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    expect(await screen.findByRole('button', { name: 'Acme Corp' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Beta Srl' })).toBeInTheDocument()
+    expect(useAuthStore.getState().status).toBe('anonymous')
+
+    await user.click(screen.getByRole('button', { name: 'Beta Srl' }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(useAuthStore.getState().status).toBe('authenticated')
   })
 
   it('non ha violazioni a11y', async () => {

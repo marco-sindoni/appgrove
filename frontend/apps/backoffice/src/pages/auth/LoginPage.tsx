@@ -7,7 +7,7 @@ import { Button } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useConfig } from '../../config'
 import { useAuthStore } from '../../auth/authStore'
-import { login, loginTwoFa } from '../../auth/authApi'
+import { chooseAccount, login, loginTwoFa, type AccountOption } from '../../auth/authApi'
 import { loginSchema, totpSchema } from '../../auth/schemas'
 import { authErrorMessage } from '../../auth/authErrors'
 import { AuthLayout } from './AuthLayout'
@@ -21,6 +21,9 @@ export function LoginPage() {
   const setSession = useAuthStore((s) => s.setSession)
 
   const [challengeToken, setChallengeToken] = useState<string | null>(null)
+  // Sfida di scelta dell'account (UC 0118): terzo passo dell'accesso, sul modello del secondo
+  // fattore. Nessun token in mano finché la persona non ha scelto per conto di chi lavorare.
+  const [choice, setChoice] = useState<{ token: string; accounts: AccountOption[] } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const creds = useForm<z.infer<ReturnType<typeof loginSchema>>>({
@@ -40,13 +43,13 @@ export function LoginPage() {
   const onCredentials = creds.handleSubmit(async (values) => {
     setFormError(null)
     try {
-      const result = await login(config.authBaseUrl, values)
-      if (result.kind === 'mfa') setChallengeToken(result.challengeToken)
-      else setSession(result.tokens)
+      handleLogin(await login(config.authBaseUrl, values))
     } catch (err) {
       // 409 sull'accesso non è «email già registrata» (il significato che ha nell'iscrizione) ma
-      // «appartieni a più account e nessuno è attivo» (UC 0117): dirlo con la frase sbagliata
-      // manderebbe la persona a cercare un problema che non ha.
+      // «appartieni a più account e nessuno è attivo» (UC 0117). Dopo UC 0118 quel caso ha una
+      // schermata (il passo di scelta qui sopra) e il 409 resta la rete di ritorno dei percorsi non
+      // interattivi — il rinnovo che fallisce riporta qui: dirlo con la frase sbagliata manderebbe
+      // la persona a cercare un problema che non ha.
       setFormError(authErrorMessage(err, t, { 409: t('errors.accountSelectionRequired') }))
     }
   })
@@ -54,11 +57,12 @@ export function LoginPage() {
   const onTotp = totp.handleSubmit(async (values) => {
     setFormError(null)
     try {
-      const tokens = await loginTwoFa(config.authBaseUrl, {
-        challengeToken: challengeToken!,
-        code: values.code,
-      })
-      setSession(tokens)
+      handleLogin(
+        await loginTwoFa(config.authBaseUrl, {
+          challengeToken: challengeToken!,
+          code: values.code,
+        }),
+      )
     } catch (err) {
       setFormError(
         authErrorMessage(err, t, {
@@ -68,6 +72,60 @@ export function LoginPage() {
       )
     }
   })
+
+  function handleLogin(result: Awaited<ReturnType<typeof login>>) {
+    if (result.kind === 'mfa') {
+      setChallengeToken(result.challengeToken)
+      return
+    }
+    if (result.kind === 'chooseAccount') {
+      // Il secondo fattore, se c'era, è già superato: qui la persona è già provata, e mostrarle
+      // l'elenco dei suoi account non rivela niente a nessun altro.
+      setChallengeToken(null)
+      setChoice({ token: result.choiceToken, accounts: result.accounts })
+      return
+    }
+    setSession(result.tokens)
+  }
+
+  const onChooseAccount = async (accountId: string) => {
+    setFormError(null)
+    try {
+      setSession(await chooseAccount(config.authBaseUrl, { choiceToken: choice!.token, accountId }))
+    } catch (err) {
+      // Tipicamente 404: l'appartenenza è stata revocata fra la schermata e la scelta. Si dice, e si
+      // resta sull'elenco: le altre voci possono essere ancora valide.
+      setFormError(authErrorMessage(err, t, { 404: t('chooseAccount.error') }))
+    }
+  }
+
+  if (choice) {
+    return (
+      <AuthLayout title={t('chooseAccount.title')}>
+        <div className="space-y-4">
+          <p className="text-sm text-fg-muted">{t('chooseAccount.hint')}</p>
+          <ul className="space-y-2">
+            {choice.accounts.map((account) => (
+              <li key={account.accountId}>
+                <button
+                  type="button"
+                  onClick={() => void onChooseAccount(account.accountId)}
+                  className="flex w-full items-center gap-2 rounded-md border border-line bg-surface px-3 py-2.5 text-left text-[13.5px] font-semibold text-fg transition hover:bg-surface-2"
+                >
+                  {account.accountName}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {formError && (
+            <p role="alert" className="text-sm text-danger">
+              {formError}
+            </p>
+          )}
+        </div>
+      </AuthLayout>
+    )
+  }
 
   if (challengeToken) {
     return (

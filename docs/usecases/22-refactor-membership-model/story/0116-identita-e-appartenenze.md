@@ -202,15 +202,15 @@ segnali privacy: non è un cambio di scopo, ma è un cambio di **chi risponde pe
   nel fornitore locale sia nella funzione che compone il token, e lo dichiara nel commento di entrambe.
   È un ripiego, non un criterio di prodotto: il criterio vero — quale account è **attivo** in una
   sessione e come si cambia — è di **UC 0117**, che deve sostituire quel ripiego, non affiancarlo.
-- **Stato «appartenenza in attesa di accettazione»**: previsto dalla tabella §7 ma **non** introdotto
-  dalla change `0088`. Oggi l'attesa è già rappresentata dalla riga di invito (`platform.invitations`,
-  stato `pending`) e un secondo modo di dire la stessa cosa, che nessun percorso usa, sarebbe soltanto
-  un'ambiguità in più. Proprietario: **UC 0118**, che possiede i percorsi d'ingresso.
-- **Riuso di un indirizzo dopo la cancellazione di un'identità**: l'unicità sull'identità è
-  **incondizionata** (vale anche sulle righe cancellate), come era su `platform.users`. Chi cancella
-  un'identità e poi si ripresenta con lo stesso indirizzo trova ancora un rifiuto di indice. Non è un
-  problema nuovo e non lo si è risolto qui per non anticipare i messaggi d'ingresso. Proprietario:
-  **UC 0118**.
+- ~~**Stato «appartenenza in attesa di accettazione»**~~ — **chiuso dalla change `0090`** (UC 0118):
+  non si introduce. L'attesa resta la riga di invito (`platform.invitations`, stato `pending`) e
+  l'accettazione crea l'appartenenza già attiva; un secondo modo di dire la stessa cosa servirebbe
+  soltanto a tenere occupato un posto acquistato in anticipo, che è materia di **UC 0103**.
+- ~~**Riuso di un indirizzo dopo la cancellazione di un'identità**~~ — **chiuso dalla change `0090`**
+  (UC 0118): il controllo di esistenza dei percorsi d'ingresso è diventato **incondizionato** come
+  l'indice, quindi chi si ripresenta con l'indirizzo di un'identità cancellata riceve lo stesso
+  messaggio comprensibile di un indirizzo vivo, e non più un errore del servizio. Il riuso vero — cioè
+  liberare l'indirizzo — resta non previsto.
 - **Limitazione del trattamento su un'identità senza appartenenze**: la console risponde
   «non trovato», perché il tenant di contesto dell'atto si legge dall'appartenenza più antica. È uno
   stato inutilizzabile (chi non ha appartenenze non ottiene un token valido), quindi limitarlo non
@@ -225,6 +225,9 @@ segnali privacy: non è un cambio di scopo, ma è un cambio di **chi risponde pe
   unico parziale `ux_membership_tenant_identity` prima di arrivare al ramo di conflitto sull'`id`, e
   l'esecuzione stampa `ERROR: duplicate key value violates unique constraint` proseguendo. Effetto
   pratico: nulla si rompe (le righe ci sono già e sono corrette) ma il seme **non è più idempotente**
-  su quella tabella e l'errore resta a video in ogni avvio dello stack. La correzione (arbitro di
-  conflitto coerente con l'indice vero, oppure `insert ... where not exists`) appartiene a chi possiede
-  il seme: **UC 0011**, con questa storia come causa.
+  su quella tabella e l'errore resta a video in ogni avvio dello stack. **Corretto dalla change `0090`**
+  (UC 0118), perché ostruiva la verifica manuale di quella storia — che riparte dal ri-seme — ed era una
+  riga in un file di solo sviluppo: l'arbitro del conflitto è ora l'indice vero
+  (`tenant_id, identity_id` sulle righe vive). Conseguenza accettata e scritta nel file: su una banca
+  dati già migrata gli identificativi delle appartenenze restano quelli del travaso e non i
+  `d0000000-…` documentati.

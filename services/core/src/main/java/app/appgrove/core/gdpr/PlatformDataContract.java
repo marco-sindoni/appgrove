@@ -106,11 +106,18 @@ public class PlatformDataContract implements AppDataContract {
                 scope.tenantId(),
                 "id", "identity_id", "role", "status", "created_at", "deleted_at"));
 
+        // `identity_id` è RISTRETTO agli inviti accettati, e la restrizione è la parte importante
+        // (UC 0118 §5): a invito accettato quella persona è un membro dell'account, quindi il
+        // riferimento non dice nulla di nuovo; su un invito ancora in attesa direbbe che quella
+        // persona aveva già un rapporto con la piattaforma — l'informazione che l'invito ha
+        // deliberatamente tenuto fuori dalla propria risposta. Stessa forma della restrizione usata
+        // per identity.active_membership_id (UC 0117).
         entities.put("invitations", query(
-                "select id, email, role, status, expires_at, created_at"
+                "select id, email, role, status, expires_at, created_at,"
+                        + " case when status = 'accepted' then identity_id end as identity_id"
                         + " from platform.invitations where tenant_id = ? order by email",
                 scope.tenantId(),
-                "id", "email", "role", "status", "expires_at", "created_at"));
+                "id", "email", "role", "status", "expires_at", "created_at", "identity_id"));
 
         entities.put("support_tickets", query(
                 "select id, type, subject, priority, status, due_at, created_at, closed_at"

@@ -135,3 +135,12 @@ _Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente), o
   l'account come «in eliminazione» nel selettore, così che nessuno ci lavori credendolo normale): è
   materia del ciclo di vita dell'account, non della scelta dell'account attivo. Proprietario: questo use
   case.
+
+- **Liberare un indirizzo dopo la cancellazione di un'identità** — *portato qui dalla change `0090`*
+  (UC 0118). L'unicità di `platform.identity` su indirizzo e identificativo di autenticazione è
+  **incondizionata**: vale anche sulle righe cancellate. La change `0090` ha reso il rifiuto
+  **comprensibile** (chi si ripresenta con l'indirizzo di un'identità cancellata riceve lo stesso
+  messaggio di un indirizzo vivo, non un errore del servizio), ma non ha reso l'indirizzo riusabile —
+  sarebbe un allentamento dell'unicità, e va deciso insieme a *che cosa significa* cancellare
+  un'identità: se l'indirizzo torna libero, la persona che si ricancella e si riscrive è una persona
+  nuova o la stessa? La domanda appartiene alla cancellazione, non ai percorsi d'ingresso.

@@ -116,6 +116,33 @@ export const es: Resources = {
     changed: 'La cuenta activa cambió en otra pestaña.',
     reload: 'Recargar',
   },
+  // Inviti ricevuti dalla persona (UC 0118): sezione in testa al cruscotto + contatore nel menu.
+  myInvites: {
+    title: 'Invitaciones para ti',
+    body: '{{account}} te invita a trabajar en su cuenta.',
+    accept: 'Aceptar',
+    reject: 'Rechazar',
+    accepting: 'Entrando…',
+    error: 'No se ha podido completar la operación. Inténtalo de nuevo.',
+    seatNote: 'La plaza la paga la cuenta que te invita, no tú.',
+    menuBadge_one: '{{count}} invitación pendiente',
+    menuBadge_other: '{{count}} invitaciones pendientes',
+  },
+  // Apertura di un proprio account da dentro la sessione (UC 0118, percorso B).
+  ownAccount: {
+    title: 'Abrir otra cuenta',
+    hint: 'Puedes tener tu propia cuenta y seguir siendo miembro de las demás. Nada pasa de una a otra.',
+    nameLabel: 'Nombre de la cuenta',
+    submit: 'Abrir cuenta',
+    creating: 'Abriendo…',
+    error: 'No se ha podido abrir la cuenta. Inténtalo de nuevo.',
+  },
+  // Scelta dell'account all'accesso (UC 0118).
+  chooseAccount: {
+    title: 'Elige una cuenta',
+    hint: 'Perteneces a más de una cuenta. Elige aquella en la que quieres trabajar — podrás cambiarla después.',
+    error: 'No se ha podido entrar en esa cuenta. Elige otra o vuelve a iniciar sesión.',
+  },
   states: {
     loading: 'Cargando…',
     empty: 'Aún no hay nada aquí',
@@ -203,6 +230,10 @@ export const es: Resources = {
     submit: 'Aceptar invitación',
     invalid: 'Esta invitación no es válida.',
     expired: 'Esta invitación ha caducado o ya se ha usado.',
+    signinTitle: 'Ya tienes una cuenta de appgrove',
+    signinHint: 'Esta dirección ya está registrada. Inicia sesión y encontrarás la invitación de {{account}} arriba en tu panel — sin contraseña nueva.',
+    signinCta: 'Inicia sesión para aceptar',
+    checking: 'Comprobando la invitación…',
     missingToken: 'Falta el token de invitación.',
   },
   twofa: {
@@ -377,6 +408,9 @@ export const es: Resources = {
     noInvites: 'No hay invitaciones pendientes.',
     lastOwnerHint: 'No puedes cambiar ni eliminar al último propietario.',
     selfHint: 'No puedes realizar esta acción sobre ti mismo.',
+    emailAlreadyMemberOnly: 'Esta persona ya es miembro de esta cuenta.',
+    emailAlreadyInvited: 'Ya hay una invitación pendiente para esta dirección.',
+    seatNote: 'La plaza es de esta cuenta: se paga aquí aunque la persona ya trabaje en otra cuenta.',
     emailAlreadyMember: 'Este email ya es miembro o tiene una invitación pendiente.',
   },
   validation: {
@@ -388,7 +422,7 @@ export const es: Resources = {
   },
   errors: {
     accountSelectionRequired: 'Perteneces a más de una cuenta y ninguna está marcada como activa. Elige la cuenta en la que quieres trabajar.',
-    emailTaken: 'Este email ya está registrado.',
+    emailTaken: 'Este email ya está registrado. Inicia sesión: desde tu sesión puedes abrir una cuenta nueva.',
     invalidCredentials: 'Email o contraseña no válidos.',
     emailNotVerified: 'Tu email aún no está verificado. Revisa tu bandeja de entrada.',
     suspended: 'Esta cuenta está suspendida.',

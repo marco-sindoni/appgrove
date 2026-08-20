@@ -190,6 +190,54 @@ public class TestData {
                 OffsetDateTime.now().plusDays(7), OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /** Il ruolo dell'appartenenza viva di quella persona in quell'account. */
+    public String memberRole(String tenantId, UUID identityId) {
+        return queryString("select role from platform.membership where tenant_id = ? and identity_id = ?"
+                + " and deleted_at is null", tenantId, identityId);
+    }
+
+    /** L'account di un'appartenenza: serve a dire QUALE account è quello attivo. */
+    public String tenantOfMembership(UUID membershipId) {
+        return queryString("select tenant_id from platform.membership where id = ?", membershipId);
+    }
+
+    /** Crea un invito pending nel tenant e ne ritorna l'id — per i collaudi di UC 0118. */
+    public UUID invitationId(String tenantId, String email, String role) {
+        UUID id = UUID.randomUUID();
+        exec("insert into platform.invitations(id,tenant_id,email,role,token_hash,status,expires_at,"
+                        + "created_at,updated_at) values (?,?,?,?,?,?,?,?,?)",
+                id, tenantId, email, role, "hash-" + id, "pending",
+                OffsetDateTime.now().plusDays(7), OffsetDateTime.now(), OffsetDateTime.now());
+        return id;
+    }
+
+    /** Stato corrente di un invito (UC 0118): pending | accepted | revoked | expired | rejected. */
+    public String invitationStatus(UUID invitationId) {
+        return queryString("select status from platform.invitations where id = ?", invitationId);
+    }
+
+    /** L'identità registrata come «chi ha accettato» sull'invito, o null. */
+    public UUID invitationAcceptedBy(UUID invitationId) {
+        return queryUuid("select accepted_user_id from platform.invitations where id = ?", invitationId);
+    }
+
+    /** L'identità collegata all'invito all'invio (UC 0118), o null se all'invio non esisteva. */
+    public UUID invitationIdentityId(UUID invitationId) {
+        return queryUuid("select identity_id from platform.invitations where id = ?", invitationId);
+    }
+
+    /** Porta l'invito a scadenza, per i collaudi che devono vederlo rifiutato. */
+    public void expireInvitation(UUID invitationId) {
+        exec("update platform.invitations set expires_at = ? where id = ?",
+                OffsetDateTime.now().minusDays(1), invitationId);
+    }
+
+    /** Cancella (soft-delete) un'identità: serve al caso «riuso di un indirizzo cancellato» (UC 0118). */
+    public void deleteIdentity(UUID identityId) {
+        exec("update platform.identity set deleted_at = ?, updated_at = ? where id = ?",
+                OffsetDateTime.now(), OffsetDateTime.now(), identityId);
+    }
+
     /** Crea un ticket di supporto nel tenant — per i test del ticketing (UC 0034). Ritorna l'id. */
     public UUID ticket(String tenantId, String type, String subject, String status) {
         UUID id = UUID.randomUUID();

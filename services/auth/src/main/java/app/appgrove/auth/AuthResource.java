@@ -1,8 +1,13 @@
 package app.appgrove.auth;
 
 import app.appgrove.auth.AuthDtos.AcceptInviteRequest;
+import app.appgrove.auth.AuthDtos.AccountOption;
+import app.appgrove.auth.AuthDtos.AccountSelectionChallenge;
+import app.appgrove.auth.AuthDtos.ChooseAccountRequest;
 import app.appgrove.auth.AuthDtos.EmailRequest;
 import app.appgrove.auth.AuthDtos.EnrollResponse;
+import app.appgrove.auth.AuthDtos.InviteLookupRequest;
+import app.appgrove.auth.AuthDtos.InviteLookupResponse;
 import app.appgrove.auth.AuthDtos.InviteSendRequest;
 import app.appgrove.auth.AuthDtos.LoginRequest;
 import app.appgrove.auth.AuthDtos.LoginTwoFaRequest;
@@ -73,18 +78,26 @@ public class AuthResource {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(@Valid LoginRequest body) {
-        LoginResult result = provider().login(body.email(), body.password());
-        if (result instanceof LoginResult.MfaRequired mfa) {
-            return Response.ok(new MfaChallenge(true, mfa.challengeToken())).build();
-        }
-        return tokenResponse(((LoginResult.Ok) result).session());
+        return loginOutcome(provider().login(body.email(), body.password()));
     }
 
     @POST
     @Path("/login/2fa")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response loginTwoFa(@Valid LoginTwoFaRequest body) {
-        return tokenResponse(provider().loginMfa(body.challenge_token(), body.code()));
+        return loginOutcome(provider().loginMfa(body.challenge_token(), body.code()));
+    }
+
+    /**
+     * Completa la <b>sfida di scelta dell'account</b> (UC 0118): conserva l'account scelto ed emette
+     * la sessione. Endpoint pubblico come gli altri passi dell'accesso — la prova di identità è il
+     * {@code choice_token}, coniato solo dopo la verifica completa delle credenziali.
+     */
+    @POST
+    @Path("/login/account")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response loginAccount(@Valid ChooseAccountRequest body) {
+        return tokenResponse(provider().chooseAccount(body.choice_token(), body.account_id()));
     }
 
     @POST
@@ -178,6 +191,36 @@ public class AuthResource {
         return tokenResponse(provider().acceptInvitation(inv, body.password(), body.displayName(), body.locale()));
     }
 
+    /**
+     * Che cosa chiedere a chi apre un collegamento d'invito (UC 0118): una parola d'accesso, o solo di
+     * autenticarsi.
+     *
+     * <p>Esiste per non far compilare un modulo destinato a essere rifiutato: chi ha già un'identità
+     * <b>non</b> deve inventarsi una parola d'accesso nuova — sarebbe una seconda identità mascherata —
+     * e scoprirlo dopo aver premuto «accetta» è il modo peggiore di dirlo.
+     *
+     * <p><b>Non rivela nulla a nessuno che non lo sappia già</b>: la risposta la ottiene solo chi ha in
+     * mano il token dell'invito, cioè la persona invitata, che sa di sé. Chi ha invitato non passa da
+     * qui e non vede questa risposta. Un token non valido, scaduto o già usato risponde come
+     * l'accettazione, con lo stesso codice e lo stesso messaggio: non si distingue «invito inesistente»
+     * da «indirizzo sconosciuto».
+     */
+    @POST
+    @Path("/invitations/lookup")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public InviteLookupResponse lookupInvitation(@Valid InviteLookupRequest body) {
+        InviteRow inv = platform.findInvitationByTokenHash(TokenHashes.sha256Hex(body.token()))
+                .orElseThrow(() -> status(Response.Status.BAD_REQUEST, "Invito non valido."));
+        if (!inv.isPending()) {
+            throw status(Response.Status.GONE, "Invito non più valido.");
+        }
+        if (inv.isExpired(Instant.now())) {
+            throw status(Response.Status.GONE, "Invito scaduto.");
+        }
+        String mode = platform.identityExists(inv.email()) ? "signin" : "register";
+        return new InviteLookupResponse(mode, inv.email());
+    }
+
     @POST
     @Path("/invitations/send")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -237,6 +280,27 @@ public class AuthResource {
             throw status(Response.Status.BAD_REQUEST, "Token di verifica non valido o scaduto.");
         }
         return provider().emailActionToken(emailAddr, code);
+    }
+
+    /**
+     * I tre esiti dell'accesso in una sola forma: sessione, sfida del secondo fattore, sfida di scelta
+     * dell'account. Vive qui e non nei due provider perché è la <b>traduzione HTTP</b> dell'esito, e
+     * la forma della risposta deve essere identica fra gli ambienti (#02).
+     */
+    private Response loginOutcome(LoginResult result) {
+        if (result instanceof LoginResult.MfaRequired mfa) {
+            return Response.ok(new MfaChallenge(true, mfa.challengeToken())).build();
+        }
+        if (result instanceof LoginResult.AccountSelectionRequired choice) {
+            return Response.ok(new AccountSelectionChallenge(
+                            true,
+                            choice.choiceToken(),
+                            choice.accounts().stream()
+                                    .map(a -> new AccountOption(a.accountId(), a.accountName()))
+                                    .toList()))
+                    .build();
+        }
+        return tokenResponse(((LoginResult.Ok) result).session());
     }
 
     private Response tokenResponse(Session session) {

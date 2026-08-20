@@ -176,16 +176,17 @@ appartenenza revocata a menu aperto).
   minuti) è il ritardo massimo con cui una revoca ha effetto. La **scelta** della durata resta di
   UC 0017; la stretta per le operazioni che modificano dati è di UC 0099.
 
-- **Superficie per scegliere l'account senza una sessione** — *differita a UC 0118*. L'esito «più
-  appartenenze e nessuna scelta valida» è implementato, tipizzato e a chiusura in entrambe le
-  attuazioni, e all'accesso produce un `409` con un messaggio comprensibile invece di «credenziali non
-  valide». Manca la **schermata** per rispondere a quella richiesta quando non si ha ancora un token.
-  Perché differita: oggi **nessun percorso di prodotto** crea una seconda appartenenza (è UC 0118 a
-  introdurli), e costruire quella schermata richiederebbe rendere navigabile una sessione priva del
-  claim dell'account — cioè allargare il raggio d'azione del percorso più delicato del prodotto per un
-  caso che nessuno può raggiungere. Il caso è inoltre **raro per costruzione**: ogni appartenenza nuova
-  nasce già indicata come attiva, e con una sola appartenenza residua la regola la sceglie da sé, quindi
-  serve la revoca dell'appartenenza attiva con **almeno altre due** ancora vive. Proprietario: UC 0118.
+- ~~**Superficie per scegliere l'account senza una sessione**~~ — **chiusa dalla change `0090`**
+  (UC 0118). Delle due vie indicate qui è stata scelta la **seconda**: un token di scelta a vita breve,
+  sul modello della sfida del secondo fattore. L'accesso e il secondo fattore rispondono
+  `200 {account_selection_required, choice_token, accounts}` e `POST /api/auth/login/account` conserva
+  la scelta ed emette la sessione; la schermata è il terzo passo della pagina di accesso. La prima via
+  — rendere navigabile una sessione priva del claim dell'account — è stata **scartata per una ragione
+  tecnica dirimente**: in `services/core` il risolutore del tenant è a chiusura e rifiuta appena si
+  apre una sessione verso la banca dati, quindi un token senza claim non potrebbe nemmeno leggere
+  `/me/memberships`; servirla avrebbe richiesto di indebolire il presidio dell'invariante 1. Il `409`
+  resta sui percorsi **non interattivi** (rinnovo, verifica dell'indirizzo con accesso automatico),
+  dove non c'è nessuno a cui mostrare una schermata.
 
 - **Account sospeso o cancellato fra i candidati** — *differito a UC 0033*. Lo stato dell'**account**
   non filtra i candidati: un account in eliminazione (periodo di grazia) resta selezionabile, perché è

@@ -15,6 +15,7 @@ import {
   type DashboardAlert,
 } from './dashboardModel'
 import { useAppQuota } from './quotaApi'
+import { PendingInvitesSection } from './PendingInvitesSection'
 
 /* Tinte di categoria: classi statiche, altrimenti Tailwind le rimuove non trovandole nel sorgente. */
 const TILE_TINT: Record<string, string> = {
@@ -83,6 +84,10 @@ export function DashboardPage() {
           <p className="text-sm text-fg-muted">{t('dashboard.subtitle', { workspace })}</p>
         )}
       </header>
+
+      {/* Inviti ricevuti (UC 0118): in TESTA, prima degli avvisi e delle applicazioni. Un invito a
+          collaborare con un'altra azienda chiede una decisione, e una decisione non si mette in fondo. */}
+      <PendingInvitesSection />
 
       {alerts.length > 0 && (
         <div className="flex flex-col gap-2.5" aria-label={t('dashboard.alertsLabel')}>

@@ -1,10 +1,10 @@
 # UC 0118 — Inviti e registrazione quando l'identità esiste già
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ **implementato** (change `0090`)
 **Epica**: [E22.5 Identità e appartenenze](../epic/E22-05-identita-e-appartenenze.md)
 **Dipendenze**: [UC 0116](0116-identita-e-appartenenze.md), [UC 0117](0117-account-attivo-e-selettore.md), UC 0058 (flussi di accesso locali), UC 0059 (schermata membri e inviti)
 **Piano di lavoro**: [task/0118](../task/0118-inviti-e-registrazione-con-identita-esistente.md)
-**Ultimo aggiornamento**: 2026-08-20
+**Ultimo aggiornamento**: 2026-08-21
 
 ## 1. Obiettivo / Scope
 
@@ -163,42 +163,53 @@ nascondiamo meglio, ma perché non è più un caso possibile.
 
 ## Punti aperti / decisioni differite
 
-- **Lasciato indietro dalla change `0088` (UC 0116), perché è di questo use case**: lo stato
-  «appartenenza in attesa di accettazione» **non** esiste su `platform.membership`. Oggi l'attesa è la
-  riga di invito (`platform.invitations`, stato `pending`) e un secondo modo di dirla, che nessun
-  percorso usa, sarebbe solo un'ambiguità in più. Se i percorsi d'ingresso di questa storia hanno
-  bisogno di un'appartenenza «prenotata» (per esempio per tenere occupato un posto acquistato in
-  anticipo, UC 0103), è qui che lo stato si introduce — con il vincolo di unicità che va riletto,
-  perché è limitato alle righe vive.
-- **Riuso di un indirizzo dopo la cancellazione di un'identità**: l'unicità di `platform.identity` su
-  indirizzo e identificativo di autenticazione è **incondizionata** (vale anche sulle righe cancellate),
-  come era su `platform.users`. Chi si ripresenta con l'indirizzo di un'identità cancellata trova un
-  rifiuto di indice, non un messaggio. Rientra nel tema di questa storia: messaggi comprensibili senza
-  rivelare l'esistenza di un'identità.
-
-- **Lasciato indietro dalla change `0089` (UC 0117), perché è di questo use case — la schermata per
-  scegliere l'account quando non si ha una sessione.** UC 0117 ha implementato l'esito «più appartenenze
-  attive e nessuna scelta valida»: è tipizzato, a chiusura in entrambe le attuazioni che compongono i
-  claim, e all'accesso produce un `409` con un messaggio comprensibile («appartieni a più account e
-  nessuno è impostato come attivo») invece di «credenziali non valide». Manca la **superficie** per
-  rispondere a quella richiesta senza avere ancora un token. È di questa storia per due ragioni: è
-  questa storia a creare le seconde appartenenze (finché non esiste, il caso non è raggiungibile da
-  nessun percorso di prodotto), ed è questa storia a decidere **dove atterra** chi entra da un percorso
-  d'ingresso. Nota tecnica utile: costruirla richiede rendere navigabile una sessione **priva** del claim
-  dell'account, oppure un token di scelta a breve durata sul modello di quello del secondo fattore.
-- **Conseguenza operativa della change `0089`, da rispettare qui**: ogni appartenenza creata dal servizio
-  di autenticazione imposta anche `identity.active_membership_id` sulla nuova appartenenza (si è appena
-  entrati lì, ed è lì che si atterra). I percorsi d'ingresso di questa storia devono fare lo stesso,
-  altrimenti la persona che accetta un invito avendo già un account si troverebbe, al prossimo accesso,
-  senza account attivo e senza modo di scegliere.
+- ~~**Stato «appartenenza in attesa di accettazione»** (lasciato indietro dalla change `0088`)~~ —
+  **chiuso dalla change `0090`**: non si introduce. L'attesa resta la riga di invito
+  (`platform.invitations`, stato `pending`) e l'accettazione crea l'appartenenza già **attiva**. Un
+  secondo modo di dire la stessa cosa servirebbe soltanto a tenere occupato un posto acquistato in
+  anticipo: se servirà, servirà a [UC 0103](0103-acquisto-anticipato-posto-invito.md), che è la storia
+  che dà un costo al posto.
+- ~~**Riuso di un indirizzo dopo la cancellazione di un'identità**~~ — **chiuso dalla change `0090`**:
+  il controllo di esistenza dei percorsi d'ingresso è ora **incondizionato** come l'indice unico, quindi
+  chi si ripresenta con l'indirizzo di un'identità cancellata riceve lo **stesso** messaggio
+  comprensibile di un indirizzo vivo — che non rivela nulla in più — e non più un errore del servizio.
+  Liberare davvero un indirizzo dopo la cancellazione resta **non previsto**: sarebbe un allentamento
+  dell'unicità, e va deciso insieme alla cancellazione dell'identità. Proprietario: **UC 0033**.
+- ~~**La schermata per scegliere l'account quando non si ha una sessione** (lasciata indietro dalla
+  change `0089`)~~ — **chiusa dalla change `0090`**: realizzata come **sfida di scelta**, sul modello
+  di quella del secondo fattore (`account_selection_required` + `choice_token` +
+  `POST /api/auth/login/account`), in **entrambi** i fornitori di identità. L'altra via — rendere
+  navigabile una sessione priva del claim dell'account — è stata scartata perché il risolutore del
+  tenant di `services/core` è a chiusura: un token senza claim non può nemmeno leggere
+  `/me/memberships`, e servirlo avrebbe voluto dire indebolire il presidio dell'invariante 1.
+- ~~**Conseguenza operativa della change `0089`**: ogni appartenenza creata imposta anche
+  `identity.active_membership_id`~~ — **rispettata**: la fa l'accettazione dell'invito e la fa
+  l'apertura di un proprio account, e in entrambi i casi è anche il comportamento giusto di prodotto
+  (si è appena detto di volerci andare).
+- **Limite al numero di account che una persona può aprire**: non deciso. Oggi il percorso B non ha
+  alcun limite, e aprire un account è gratuito. Diventa una domanda vera quando aprire un account
+  costa: è **direzione di prodotto** e ha effetti commerciali, quindi non si decide in una change di
+  implementazione. Proprietario: [UC 0103](0103-acquisto-anticipato-posto-invito.md).
+- **I posti non sono calcolati, e questa storia non li calcola**: l'invito non viene rifiutato per
+  posti esauriti perché il conteggio dei posti non esiste ancora. Questa storia ha scritto la **regola
+  nel testo mostrato al cliente** («il posto è di questo account, si paga qui anche se la persona
+  lavora già in un altro account») nel riquadro dell'invito e nella sezione degli inviti ricevuti.
+  L'applicazione della regola è di [UC 0103](0103-acquisto-anticipato-posto-invito.md).
 - **Rimborso del posto se l'invito viene rifiutato o scade**: non deciso. La linea coerente col modello a
   mese intero è che il posto resti pagato per il periodo in corso e torni disponibile per un altro invito.
   Va confermato perché **riguarda denaro**. Proprietario: [UC 0103](0103-acquisto-anticipato-posto-invito.md).
+- **Manifesto dei dati ed esportazione dell'account non sono la stessa domanda.** Il collaudo di
+  contratto pretende che ogni voce del manifesto compaia nell'esportazione dell'account; ma
+  `invitations.identity_id` è un dato che l'account **non deve vedere** su un invito ancora in attesa.
+  Si è risolto **restringendo** l'esportazione agli inviti accettati (dove quella persona è già un
+  membro noto), come si era fatto per `identity.active_membership_id` in UC 0117. La domanda generale —
+  se «registro dei trattamenti» ed «esportazione per l'interessato/il titolare» debbano coincidere
+  campo per campo — resta aperta e tracciata in [docs/_BACKLOG.md](../../../_BACKLOG.md).
 - ~~**Invito mostrato dentro l'applicazione** a chi è già dentro (§4.4)~~ — **chiuso**: è una **sezione
   del cruscotto**, in testa, con il numero riportato sulla voce «Dashboard» del menu perché resti visibile
   anche da altrove. Scartata la prima ipotesi (un pulsante nell'intestazione): passava inosservata, e la
   decisione che chiede vale più di un pulsantino. Reso in [prototype/admin.html](../prototype/admin.html)
-  e mappato su `pages/dashboard/DashboardPage.tsx` + un componente nuovo
-  `dashboard/PendingInvitesSection.tsx` nella [documentazione dei prototipi](../prototype/README.md).
+  e mappato su `pages/dashboard/DashboardPage.tsx` + `dashboard/PendingInvitesSection.tsx` nella
+  [documentazione dei prototipi](../prototype/README.md). **Implementato dalla change `0090`.**
 - **Unione di due identità** create per errore con indirizzi diversi dalla stessa persona: fuori scope, ed
   è un lavoro sgradevole. Da annotare come possibile richiesta di assistenza. Proprietario: docs/_BACKLOG.md.

@@ -116,6 +116,33 @@ export const fr: Resources = {
     changed: 'Le compte actif a changé dans un autre onglet.',
     reload: 'Recharger',
   },
+  // Inviti ricevuti dalla persona (UC 0118): sezione in testa al cruscotto + contatore nel menu.
+  myInvites: {
+    title: 'Invitations pour vous',
+    body: '{{account}} vous invite à travailler dans son compte.',
+    accept: 'Accepter',
+    reject: 'Refuser',
+    accepting: 'Accès en cours…',
+    error: 'L’opération n’a pas pu être effectuée. Réessayez.',
+    seatNote: 'Le siège est payé par le compte qui vous invite, pas par vous.',
+    menuBadge_one: '{{count}} invitation en attente',
+    menuBadge_other: '{{count}} invitations en attente',
+  },
+  // Apertura di un proprio account da dentro la sessione (UC 0118, percorso B).
+  ownAccount: {
+    title: 'Ouvrir un autre compte',
+    hint: 'Vous pouvez avoir votre propre compte et rester membre des autres. Rien ne circule entre eux.',
+    nameLabel: 'Nom du compte',
+    submit: 'Ouvrir le compte',
+    creating: 'Ouverture…',
+    error: 'Le compte n’a pas pu être ouvert. Réessayez.',
+  },
+  // Scelta dell'account all'accesso (UC 0118).
+  chooseAccount: {
+    title: 'Choisissez un compte',
+    hint: 'Vous appartenez à plusieurs comptes. Choisissez celui où vous voulez travailler — vous pourrez changer plus tard.',
+    error: 'Impossible d’ouvrir ce compte. Choisissez-en un autre ou reconnectez-vous.',
+  },
   states: {
     loading: 'Chargement…',
     empty: 'Rien ici pour l’instant',
@@ -203,6 +230,10 @@ export const fr: Resources = {
     submit: 'Accepter l’invitation',
     invalid: 'Cette invitation est invalide.',
     expired: 'Cette invitation a expiré ou a déjà été utilisée.',
+    signinTitle: 'Vous avez déjà un compte appgrove',
+    signinHint: 'Cette adresse est déjà enregistrée. Connectez-vous : vous trouverez l’invitation de {{account}} en haut de votre tableau de bord — aucun nouveau mot de passe.',
+    signinCta: 'Se connecter pour accepter',
+    checking: 'Vérification de l’invitation…',
     missingToken: 'Jeton d’invitation manquant.',
   },
   twofa: {
@@ -377,6 +408,9 @@ export const fr: Resources = {
     noInvites: 'Aucune invitation en attente.',
     lastOwnerHint: 'Vous ne pouvez pas modifier ni retirer le dernier propriétaire.',
     selfHint: 'Vous ne pouvez pas effectuer cette action sur vous-même.',
+    emailAlreadyMemberOnly: 'Cette personne est déjà membre de ce compte.',
+    emailAlreadyInvited: 'Une invitation est déjà en attente pour cette adresse.',
+    seatNote: 'Le siège appartient à ce compte : il est payé ici même si la personne travaille déjà dans un autre compte.',
     emailAlreadyMember: 'Cet email est déjà membre ou a une invitation en attente.',
   },
   validation: {
@@ -388,7 +422,7 @@ export const fr: Resources = {
   },
   errors: {
     accountSelectionRequired: 'Vous appartenez à plusieurs comptes et aucun n’est défini comme actif. Choisissez le compte dans lequel vous voulez travailler.',
-    emailTaken: 'Cet email est déjà enregistré.',
+    emailTaken: 'Cet email est déjà enregistré. Connectez-vous : depuis votre session, vous pouvez ouvrir un nouveau compte.',
     invalidCredentials: 'Email ou mot de passe invalide.',
     emailNotVerified: 'Votre email n’est pas encore vérifié. Consultez votre boîte de réception.',
     suspended: 'Ce compte est suspendu.',

@@ -162,3 +162,14 @@ il collegamento all'invito, come oggi.
   l'impianto; il debito è l'insieme delle esclusioni da mantenere. Se le esclusioni diventassero più di
   una manciata, va rivalutata la struttura dedicata. Proprietario: Epica 22.
 - **Chi paga se l'owner cambia**: legato al passaggio di proprietà, fuori scope.
+- **Limite al numero di account che una persona può aprire** — *portato qui dalla change `0090`*
+  (UC 0118). Il percorso «apri un altro account» esiste ed è senza limiti: oggi non è un problema perché
+  aprire un account è gratuito e chi lo apre è già una persona conosciuta. Diventa una domanda vera
+  quando aprire un account **costa** qualcosa, e allora è una decisione **commerciale**, non tecnica: un
+  tetto, una verifica, o nulla. Da decidere insieme al prezzo dei posti.
+- **Il posto non è ancora contato, e l'invito non viene rifiutato per posti esauriti** — *portato qui
+  dalla change `0090`* (UC 0118). Quella storia ha scritto la regola nel **testo mostrato al cliente**
+  («il posto è di questo account: si paga qui anche se la persona lavora già in un altro account»),
+  perché la prima reazione di chi invita qualcuno che ha già un account altrove è «ma la paga già
+  l'altra azienda». Applicare la regola — contare i posti e rifiutare quando sono esauriti — è di questa
+  storia.

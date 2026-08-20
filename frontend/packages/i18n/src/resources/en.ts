@@ -116,6 +116,33 @@ export const en = {
     changed: 'The active account changed in another tab.',
     reload: 'Reload',
   },
+  // Inviti ricevuti dalla persona (UC 0118): sezione in testa al cruscotto + contatore nel menu.
+  myInvites: {
+    title: 'Invitations for you',
+    body: '{{account}} invites you to work in their account.',
+    accept: 'Accept',
+    reject: 'Decline',
+    accepting: 'Joining…',
+    error: 'We could not complete the action. Please try again.',
+    seatNote: 'The seat is paid by the account that invites you, not by you.',
+    menuBadge_one: '{{count}} invitation waiting',
+    menuBadge_other: '{{count}} invitations waiting',
+  },
+  // Apertura di un proprio account da dentro la sessione (UC 0118, percorso B).
+  ownAccount: {
+    title: 'Open another account',
+    hint: 'You can own your own account and stay a member of the others. Nothing moves between them.',
+    nameLabel: 'Account name',
+    submit: 'Open account',
+    creating: 'Opening…',
+    error: 'We could not open the account. Please try again.',
+  },
+  // Scelta dell'account all'accesso (UC 0118).
+  chooseAccount: {
+    title: 'Choose an account',
+    hint: 'You belong to more than one account. Pick the one you want to work in — you can switch later.',
+    error: 'We could not open that account. Pick another one or sign in again.',
+  },
   states: {
     loading: 'Loading…',
     empty: 'Nothing here yet',
@@ -203,6 +230,10 @@ export const en = {
     submit: 'Accept invitation',
     invalid: 'This invitation is invalid.',
     expired: 'This invitation has expired or was already used.',
+    signinTitle: 'You already have an appgrove account',
+    signinHint: 'This address is already registered. Sign in and you will find the invitation from {{account}} at the top of your dashboard — no new password needed.',
+    signinCta: 'Sign in to accept',
+    checking: 'Checking the invitation…',
     missingToken: 'Missing invitation token.',
   },
   twofa: {
@@ -377,6 +408,9 @@ export const en = {
     noInvites: 'No pending invitations.',
     lastOwnerHint: 'You can’t change or remove the last owner.',
     selfHint: 'You can’t perform this action on yourself.',
+    emailAlreadyMemberOnly: 'This person is already a member of this account.',
+    emailAlreadyInvited: 'There is already a pending invitation for this address.',
+    seatNote: 'The seat belongs to this account: it is paid here even if the person already works in another account.',
     emailAlreadyMember: 'This email is already a member or has a pending invitation.',
   },
   validation: {
@@ -388,7 +422,7 @@ export const en = {
   },
   errors: {
     accountSelectionRequired: 'You belong to more than one account and none is set as active. Choose the account you want to work in.',
-    emailTaken: 'This email is already registered.',
+    emailTaken: 'This email is already registered. Sign in: from your session you can open a new account.',
     invalidCredentials: 'Invalid email or password.',
     emailNotVerified: 'Your email isn’t verified yet. Check your inbox.',
     suspended: 'This account is suspended.',

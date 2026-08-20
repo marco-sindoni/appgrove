@@ -54,6 +54,35 @@ public final class AuthDtos {
     /** Risposta del login quando il 2FA è attivo: niente token finché non si supera la challenge. */
     public record MfaChallenge(boolean mfa_required, String challenge_token) {}
 
+    /** Un account fra cui scegliere all'accesso: identificativo e nome (nessuna etichetta di ruolo). */
+    public record AccountOption(String account_id, String account_name) {}
+
+    /**
+     * Risposta dell'accesso quando la persona appartiene a più account e nessuno è indicato come
+     * attivo (UC 0118): niente token finché non ha scelto. Stessa forma della sfida del secondo
+     * fattore — un indicatore, un token breve — più l'elenco fra cui scegliere, che senza il nome degli
+     * account sarebbe una scelta alla cieca.
+     */
+    public record AccountSelectionChallenge(
+            boolean account_selection_required, String choice_token, java.util.List<AccountOption> accounts) {}
+
+    /** Scelta dell'account con cui aprire la sessione (UC 0118). */
+    public record ChooseAccountRequest(@NotBlank String choice_token, @NotBlank String account_id) {}
+
+    /**
+     * Ispezione di un invito prima di mostrarne il modulo (UC 0118): la risposta la vede solo chi ha in
+     * mano il token dell'invito, cioè la persona invitata — non l'account che ha invitato.
+     *
+     * @param mode {@code register} se quell'indirizzo non ha ancora un'identità (serve la parola
+     *     d'accesso), {@code signin} se ce l'ha già (serve solo che si autentichi: una parola d'accesso
+     *     nuova su un'identità esistente sarebbe una seconda identità mascherata)
+     * @param email l'indirizzo invitato — è già suo, l'ha ricevuto per posta
+     */
+    public record InviteLookupResponse(String mode, String email) {}
+
+    /** Il token dell'invito da ispezionare. */
+    public record InviteLookupRequest(@NotBlank String token) {}
+
     public record EnrollResponse(String secret, String otpauth_uri) {}
 
     /** Stato del secondo fattore dell'utente del token: attivo o no. Nessun segreto, nessun dettaglio. */

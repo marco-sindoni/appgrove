@@ -20,11 +20,26 @@ public interface IdentityProvider {
             String accessToken, String idToken, long expiresInSeconds,
             String refreshValue, long refreshTtlSeconds) {}
 
-    /** Esito del login: sessione, oppure challenge 2FA da completare con {@code loginMfa}. */
+    /** Un account fra cui scegliere: identificativo e nome, nulla di più (nessuna etichetta di ruolo). */
+    record AccountRef(String accountId, String accountName) {}
+
+    /**
+     * Esito del login: sessione, challenge 2FA da completare con {@code loginMfa}, oppure
+     * <b>scelta dell'account</b> da completare con {@code chooseAccount} (UC 0118).
+     *
+     * <p>Il terzo esito esiste perché dopo UC 0116 una persona può appartenere a più account e il
+     * token deve portarne <b>uno</b>: quando le appartenenze attive sono più di una e nessuna è
+     * indicata come attiva, nessuno può decidere al posto suo. Prima di UC 0118 quel caso era un
+     * rifiuto {@code 409} con un messaggio comprensibile ma senza superficie per rispondere; ora è
+     * una sfida, additiva ed esattamente sul modello di quella del secondo fattore.
+     */
     sealed interface LoginResult {
         record Ok(Session session) implements LoginResult {}
 
         record MfaRequired(String challengeToken) implements LoginResult {}
+
+        record AccountSelectionRequired(String choiceToken, java.util.List<AccountRef> accounts)
+                implements LoginResult {}
     }
 
     /** Iscrizione TOTP avviata: segreto + URI otpauth:// per l'app authenticator. */
@@ -32,7 +47,27 @@ public interface IdentityProvider {
 
     LoginResult login(String email, String password);
 
-    Session loginMfa(String challengeToken, String code);
+    /**
+     * Completa la sfida del secondo fattore. Ritorna un {@link LoginResult} e non direttamente una
+     * sessione perché la scelta dell'account può servire <b>anche dopo</b> il secondo fattore: sono
+     * due passaggi indipendenti, e fonderli avrebbe reso irraggiungibile la scelta per chi ha il
+     * secondo fattore attivo.
+     */
+    LoginResult loginMfa(String challengeToken, String code);
+
+    /**
+     * Conserva l'account scelto dalla persona ed emette la sessione (UC 0118).
+     *
+     * <p>Il {@code choiceToken} è la prova che le credenziali sono già state verificate: senza di
+     * esso questa operazione sarebbe il modo di scrivere l'account attivo di chiunque.
+     * L'{@code accountId} è un <b>candidato</b> e viene accettato solo se corrisponde a
+     * un'appartenenza attiva della persona del token, riverificata adesso — e il claim continua a
+     * essere calcolato dalla sola funzione che compone il token, che a sua volta riverifica.
+     *
+     * @throws jakarta.ws.rs.WebApplicationException 404 se l'account non è un'appartenenza attiva
+     *     della persona: non 403, perché l'esistenza di un account non è informazione di chi chiede
+     */
+    Session chooseAccount(String choiceToken, String accountId);
 
     Session refresh(String refreshValue);
 

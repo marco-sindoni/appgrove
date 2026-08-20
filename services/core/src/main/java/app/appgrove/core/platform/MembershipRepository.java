@@ -92,4 +92,47 @@ public class MembershipRepository implements PanacheRepositoryBase<Membership, U
                         (UUID) r[0], (String) r[1], (String) r[2], (String) r[3]))
                 .toList();
     }
+
+    /**
+     * Esiste già un'appartenenza <b>viva</b> di questa persona a quell'account? Lettura di piattaforma
+     * (nessun filtro per account: l'account è un parametro, non il contesto), usata prima di far
+     * entrare qualcuno da un percorso d'ingresso — il vincolo
+     * {@code ux_membership_tenant_identity} lo impedirebbe comunque, ma con una violazione di indice
+     * invece che con un esito comprensibile, ed è esattamente il difetto che UC 0118 chiude.
+     */
+    public boolean existsIn(String tenantId, UUID identityId) {
+        return !em.createNativeQuery(
+                        "select 1 from platform.membership"
+                                + " where tenant_id = :tenant and identity_id = :id and deleted_at is null")
+                .setParameter("tenant", tenantId)
+                .setParameter("id", identityId)
+                .getResultList()
+                .isEmpty();
+    }
+
+    /**
+     * Crea l'appartenenza di una persona a un account e la restituisce.
+     *
+     * <p><b>Scrittura di piattaforma, deliberatamente fuori dal discriminatore.</b> L'appartenenza
+     * nasce in un account che <b>non è</b> quello della sessione — è il senso stesso di accettare un
+     * invito da dentro l'applicazione, o di aprirsi un account nuovo (UC 0118): con l'entità
+     * tenant-scoped Hibernate scriverebbe il {@code tenant_id} del token, cioè l'account sbagliato.
+     * Per questo il {@code tenant_id} è un parametro <b>esplicito</b>, e chi chiama ha il dovere di
+     * averlo ricavato da una riga di invito verificata o da un account appena creato per la persona
+     * del token — <b>mai</b> da un valore arrivato dal chiamante.
+     */
+    public UUID createMembership(String tenantId, UUID identityId, MembershipRole role, String createdBy) {
+        UUID id = UUID.randomUUID();
+        em.createNativeQuery(
+                        "insert into platform.membership"
+                                + " (id, tenant_id, identity_id, role, status, created_at, updated_at, created_by)"
+                                + " values (:id, :tenant, :identity, :role, 'active', now(), now(), :by)")
+                .setParameter("id", id)
+                .setParameter("tenant", tenantId)
+                .setParameter("identity", identityId)
+                .setParameter("role", role.name())
+                .setParameter("by", createdBy)
+                .executeUpdate();
+        return id;
+    }
 }

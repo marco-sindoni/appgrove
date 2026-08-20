@@ -24,6 +24,21 @@ const server = setupServer(
   ),
   http.post('http://localhost/api/platform/v1/invitations', async ({ request }) => {
     const body = (await request.json()) as { email: string; role: string }
+    // UC 0118 — le due collisioni LECITE, distinte dal campo `type` del problem+json. La terza
+    // situazione («quella persona ha già un account appgrove») NON è qui di proposito: risponde 201
+    // come un indirizzo sconosciuto, perché non è un'informazione dell'account che invita.
+    if (body.email === 'gia-membro@x.io') {
+      return HttpResponse.json(
+        { type: 'urn:appgrove:invitation:already-member', title: 'Conflict', status: 409 },
+        { status: 409 },
+      )
+    }
+    if (body.email === 'gia-invitato@x.io') {
+      return HttpResponse.json(
+        { type: 'urn:appgrove:invitation:already-invited', title: 'Conflict', status: 409 },
+        { status: 409 },
+      )
+    }
     const created = {
       id: `inv-${invites.length + 1}`,
       email: body.email,
@@ -69,6 +84,36 @@ beforeEach(() => {
 })
 
 describe('MembersPage (UC 0059)', () => {
+  it('le due collisioni lecite dell’invito hanno due messaggi distinti (UC 0118)', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<MembersPage />)
+    await screen.findByText('owner@test')
+
+    await user.type(screen.getByLabelText('Email'), 'gia-membro@x.io')
+    await user.click(screen.getByRole('button', { name: 'Send invitation' }))
+    expect(
+      await screen.findByText('This person is already a member of this account.'),
+    ).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Email'))
+    await user.type(screen.getByLabelText('Email'), 'gia-invitato@x.io')
+    await user.click(screen.getByRole('button', { name: 'Send invitation' }))
+    expect(
+      await screen.findByText('There is already a pending invitation for this address.'),
+    ).toBeInTheDocument()
+  })
+
+  it('dice che il posto è dell’account, non della persona (UC 0118)', async () => {
+    // La regola va scritta dove si invita: la prima reazione di chi invita qualcuno che ha già un
+    // account altrove è «ma la paga già l'altra azienda».
+    renderWithProviders(<MembersPage />)
+    expect(
+      await screen.findByText(
+        'The seat belongs to this account: it is paid here even if the person already works in another account.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   it('mostra i membri e gli inviti pendenti', async () => {
     renderWithProviders(<MembersPage />)
     expect(await screen.findByText('owner@test')).toBeInTheDocument()

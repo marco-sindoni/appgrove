@@ -87,11 +87,11 @@ public class CognitoIdentityProvider implements IdentityProvider {
             Log.warnf("Challenge Cognito non gestita al login: %s", res.challengeNameAsString());
             throw unauthorized("Credenziali non valide.");
         }
-        return new LoginResult.Ok(session(res.authenticationResult()));
+        return sessionOrAccountChoice(res.authenticationResult());
     }
 
     @Override
-    public Session loginMfa(String challengeToken, String code) {
+    public LoginResult loginMfa(String challengeToken, String code) {
         String[] parts = OpaqueTokens.split(challengeToken);
         String username = parts[0];
         String cognitoSession = parts[1];
@@ -113,7 +113,22 @@ public class CognitoIdentityProvider implements IdentityProvider {
         if (res.authenticationResult() == null) {
             throw unauthorized("Challenge non valido.");
         }
-        return session(res.authenticationResult());
+        return sessionOrAccountChoice(res.authenticationResult());
+    }
+
+    @Override
+    public Session chooseAccount(String choiceToken, String accountId) {
+        // Il token di scelta è la coppia (sub, refresh token) già usata per il cookie di rinnovo: qui è
+        // esattamente ciò che serve, perché la sessione con il claim nuovo si ottiene RINNOVANDO dopo
+        // aver conservato la scelta. Nessun token nuovo da inventare, nessuna password da ricordare.
+        String[] parts = OpaqueTokens.split(choiceToken);
+        if (!platform.chooseActiveAccount(parts[0], accountId)) {
+            // 404 e non 403: l'esistenza di un account non è un'informazione di chi chiede.
+            throw status(Response.Status.NOT_FOUND, "Account non trovato.");
+        }
+        // Il rinnovo fa girare di nuovo la funzione che compone il token, che rilegge la scelta appena
+        // conservata e la riverifica: il claim continua a nascere in un posto solo.
+        return refresh(choiceToken);
     }
 
     @Override
@@ -273,7 +288,13 @@ public class CognitoIdentityProvider implements IdentityProvider {
                     .password(password)
                     .permanent(true));
         } catch (UsernameExistsException e) {
-            throw status(Response.Status.CONFLICT, "Email già registrata.");
+            // Parità col provider locale (UC 0118): chi ha già un'identità NON entra da qui — questo
+            // percorso conierebbe una password nuova su una persona che ne ha già una. Il percorso vero
+            // è la sezione degli inviti in testa al proprio cruscotto, e l'interfaccia ci arriva prima
+            // interrogando /invitations/lookup: questo rifiuto è la rete di sicurezza dietro di essa.
+            throw status(Response.Status.CONFLICT,
+                    "Questo indirizzo è già registrato su appgrove: accedi con le tue credenziali "
+                            + "e accetta l'invito dalla sezione in testa al tuo cruscotto.");
         }
         CreatedUser createdUser = platform.createUserInTenant(
                 sub, invite.tenantId(), invite.email(), displayName, invite.role(), locale);
@@ -333,6 +354,50 @@ public class CognitoIdentityProvider implements IdentityProvider {
     private Session session(AuthenticationResultType result) {
         String sub = subFromAccessToken(result.accessToken());
         return session(result, sub, result.refreshToken());
+    }
+
+    /**
+     * Sessione, oppure la <b>sfida di scelta dell'account</b> (UC 0118).
+     *
+     * <p>Su Cognito il caso si riconosce dall'<b>assenza del claim {@code tenant_id}</b> nell'access
+     * token appena emesso: la funzione che compone il token non solleva eccezioni quando non riesce a
+     * scegliere — restituisce l'evento inalterato — quindi l'accesso riesce e il token esce senza
+     * claim, e i servizi lo rifiutano (a chiusura, UC 0012). È l'unico segnale disponibile qui, ed è
+     * affidabile perché è lo stesso che i servizi useranno.
+     *
+     * <p>La sfida si offre <b>solo</b> quando gli account fra cui scegliere sono più di uno. Un'unica
+     * appartenenza attiva sarebbe stata scelta dalla funzione del token, quindi se il claim manca con
+     * zero o una appartenenza il motivo è un altro (persona senza appartenenze, o sospesa): non è una
+     * scelta da fare, ed è un token che i servizi rifiutano. Comportamento invariato rispetto a prima.
+     */
+    private LoginResult sessionOrAccountChoice(AuthenticationResultType result) {
+        String sub = subFromAccessToken(result.accessToken());
+        if (!hasTenantClaim(result.accessToken())) {
+            var accounts = platform.activeAccountsOf(sub);
+            if (accounts.size() > 1) {
+                return new LoginResult.AccountSelectionRequired(
+                        OpaqueTokens.join(sub, result.refreshToken()), accounts);
+            }
+            Log.warnf("Token senza tenant_id e %d appartenenze: nessuna scelta da offrire", accounts.size());
+        }
+        return new LoginResult.Ok(session(result, sub, result.refreshToken()));
+    }
+
+    /**
+     * Il claim {@code tenant_id} è presente nell'access token? Stessa decodifica di
+     * {@link #subFromAccessToken(String)} — token appena ricevuto da Cognito su TLS, fonte fidata e
+     * non input del client, quindi nessuna verifica di firma necessaria.
+     */
+    static boolean hasTenantClaim(String accessToken) {
+        try {
+            String[] segments = accessToken.split("\\.");
+            String payload = new String(Base64.getUrlDecoder().decode(segments[1]), StandardCharsets.UTF_8);
+            return java.util.regex.Pattern.compile("\"tenant_id\"\\s*:\\s*\"[^\"]+\"")
+                    .matcher(payload)
+                    .find();
+        } catch (RuntimeException e) {
+            throw new IllegalStateException("Access token Cognito non decodificabile", e);
+        }
     }
 
     private Session session(AuthenticationResultType result, String sub, String refreshToken) {
