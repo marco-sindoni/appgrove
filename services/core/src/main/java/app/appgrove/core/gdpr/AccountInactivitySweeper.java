@@ -139,8 +139,14 @@ public class AccountInactivitySweeper {
         List<String> emails = new ArrayList<>();
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement(
-                        "select email from platform.users where tenant_id = ? and role = 'owner'"
-                                + " and status = 'active' and deleted_at is null order by email")) {
+                        // Proprietari dell'account = appartenenze con ruolo owner (UC 0116); il
+                        // recapito sta sull'identità. Attivi entrambi: appartenenza e persona.
+                        "select i.email from platform.membership m"
+                                + " join platform.identity i on i.id = m.identity_id"
+                                + " where m.tenant_id = ? and m.role = 'owner'"
+                                + " and m.status = 'active' and m.deleted_at is null"
+                                + " and i.status = 'active' and i.deleted_at is null"
+                                + " order by i.email")) {
             ps.setString(1, tenantId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

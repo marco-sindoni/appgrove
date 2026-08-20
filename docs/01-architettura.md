@@ -34,16 +34,22 @@ né lo schema dati fisico (→ [05-persistenza-dati](05-persistenza-dati.md)).
 
 ### Core/platform service (topic C, B)
 5. **Esiste UN core/platform service** che è la source of truth della piattaforma. Possiede (DB proprio):
-   `accounts` (+ `paddle_customer_id`), `users` (membership foldata su users, **niente tabella memberships** — #05 dec.7),
+   `accounts` (+ `paddle_customer_id`), **`identity`** (l'identità della persona: entità di piattaforma) +
+   **`membership`** (la coppia account↔identità con ruolo e stato) — la membership ripiegata su `users` è
+   **superata** da UC 0116, change 0088; `users` resta come rete di ritorno, fredda,
    `invitations`, **catalogo** (`app`/`app_tier`/`app_price` — #09 B), **`subscription`** (tenant↔app; **entitlement
    DERIVATO**, niente tabella entitlements — #09 dec.12), gestione **webhook billing Paddle**.
    Cognito fa **solo autenticazione** (identity provider). I servizi per-app restano verticali puri.
 
 ### Identità & token (topic A, → dettaglio in 02)
-8. **1 utente → 1 tenant**: ogni login appartiene a esattamente un account. `tenant_id` fisso per
-   login, niente tenant switching/switcher. Un utente **invitato è creato dentro il tenant che invita**;
-   la stessa persona in due tenant = due login distinti.
-9. **Pre-Token-Generation Lambda**: a ogni emissione del token legge la membership dal core e inietta
+8. ~~**1 utente → 1 tenant**~~ → **una persona, più appartenenze** (UC 0116, change 0088). L'identità della
+   persona è unica sulla piattaforma; le sue **appartenenze** agli account possono essere più di una, al
+   massimo una per account. Un invitato riceve una **appartenenza** nel tenant che invita, e l'identità
+   si crea solo se non esiste già: la stessa persona in due account è ormai un caso normale, con **un
+   solo** login. Con una sola appartenenza — il caso di tutti gli utenti di oggi — nulla cambia: nessun
+   selettore, nessun passaggio in più. L'account attivo di una sessione e il selettore sono di UC 0117.
+9. **Pre-Token-Generation Lambda**: a ogni emissione del token legge dal core l'appartenenza attiva della
+   persona (identità ⋈ appartenenza, UC 0116) e inietta
    `tenant_id` + ruoli come claim custom. Garantisce l'invariante "tenant_id solo dal JWT verificato".
    _Naming dei claim e meccanica Cognito: dettaglio in [02-auth-sicurezza](02-auth-sicurezza.md)._
 

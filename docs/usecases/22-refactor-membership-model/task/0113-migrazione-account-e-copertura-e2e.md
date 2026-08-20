@@ -15,7 +15,7 @@ distinte e commentate**, nell'ordine:
    (esiste già il precedente dei comandi di manutenzione del core: cercare `MigrateCommand`);
 2. **accessi dai posti del Mini-CRM** — per ogni riga di `app_crm.seat`, una riga di accesso su quella
    applicazione con ruolo `editor` (o `admin` se la persona era `admin` di piattaforma);
-3. **ruolo di piattaforma** — `update platform.users set role = 'member' where role = 'admin'`. **Dopo** i due
+3. **ruolo di piattaforma** — `update platform.membership set role = 'member' where role = 'admin'` (dopo UC 0116 il ruolo vive sull'appartenenza). **Dopo** i due
    passi precedenti, che quel valore lo leggono;
 4. **inviti in attesa** — azzeramento del ruolo (colonna che resta ma non si usa più).
 

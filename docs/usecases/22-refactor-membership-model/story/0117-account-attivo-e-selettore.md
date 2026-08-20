@@ -162,6 +162,15 @@ appartenenza revocata a menu aperto).
 
 ## Punti aperti / decisioni differite
 
+- **Ripiego lasciato dalla change `0088` (UC 0116), da sostituire qui**: con più appartenenze attive, il
+  fornitore locale ([UserDirectory.java](../../../../services/auth/src/main/java/app/appgrove/auth/local/UserDirectory.java))
+  e la funzione che compone il token ([handler.py](../../../../infra/modules/platform_shared/lambda/pre_token_gen/handler.py))
+  prendono in modo deterministico l'appartenenza **più antica** (`order by m.created_at, m.id limit 1`).
+  È scritto a voce alta nel commento di entrambe, con la nota che il criterio vero è di questo use case.
+  Attenzione: la sostituzione va fatta **nelle due implementazioni insieme** — la parità fra locale e
+  cloud è la cosa che tiene onesti i collaudi locali. Il collaudo
+  `test_piu_appartenenze_prende_la_piu_antica` (test_handler.py) va riscritto, non cancellato.
+
 - **Durata del token e ritardo della revoca**: questa storia rende visibile un legame che c'era già. La
   scelta della durata resta di UC 0017; qui si pretende solo che sia **scritta** e non implicita.
   Proprietario: UC 0017.

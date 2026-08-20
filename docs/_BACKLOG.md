@@ -70,7 +70,7 @@ quando il fan-in sincrono diventa un costo reale. Il seam attuale (`QuotaLimitSo
 
 Sollevato durante UC 0028 (change `0024-use-case-0028-…`, portale self-service). Oggi la schermata **"Membri"**
 (UC [0059](usecases/06-frontend/0059-gestione-membri-inviti.md) / [0017](usecases/05-auth/0017-flussi-auth.md)) gestisce gli
-utenti a livello di **tenant** (`platform.users` + inviti tenant-scoped). Questo assume **implicitamente** che il tenant sia
+utenti a livello di **tenant** (appartenenze in `platform.membership` dopo UC 0116 + inviti tenant-scoped). Questo assume **implicitamente** che il tenant sia
 **B2B** — ma non è detto: un'app può essere **B2C** (uso del solo owner, nessun invito) oppure **B2B** (utenti invitati). Il
 modello tenant-level impone la semantica B2B a tutti. *(Nota: l'entità `App` ha già `user_model`/`AppUserModel` — segnale che
 la distinzione B2C/B2B vive naturalmente a livello **app**, non tenant.)*
@@ -90,7 +90,7 @@ slegato dalle app → **non desiderato**.
 
 **Da approfondire**: come distinguere B2C vs B2B (probabilmente `App.user_model`); ripensare la UI "Membri" tenant-level →
 **per-app** per le app B2B (assente/ridotta per le B2C); la directory cross-app degli utenti del tenant per l'invito rapido;
-l'interazione con `platform.users`/inviti (UC 0013) e col pricing dei posti (#09, `new-application`/`pricing-change`).
+l'interazione con identità/appartenenze (UC 0013 + UC 0116) e inviti, e col pricing dei posti (#09, `new-application`/`pricing-change`).
 **Owner futuro**: decisione di piattaforma trasversale (non un singolo UC); tocca UC 0059/0017/0013 + catalogo/pricing #09.
 **Approfondire in sessione dedicata** (richiesto dall'utente subito dopo UC 0028).
 
@@ -837,6 +837,12 @@ discendono restano fuori, per natura e non per dimenticanza:
   sgradevole (dati da riattribuire, tracce di controllo da non falsificare) e richiesta di assistenza
   prevedibile. Da affrontare quando si presenta, con una decisione consapevole su cosa si può riattribuire
   e cosa no.
+- **Rimozione fisica di `platform.users`** (tracciato dalla change `0088`, UC 0116). Il travaso verso
+  `platform.identity` + `platform.membership` lascia la vecchia tabella in piedi come **rete di ritorno**:
+  nessun codice la legge e nessuno la scrive, ma se il travaso avesse un difetto è l'unica via per
+  tornare indietro. Va rimossa con una migrazione dedicata **dopo** che l'epica 22 è in esercizio da un
+  po' — non prima, e non nella stessa change che l'ha resa fredda. Chi la rimuove tolga anche il permesso
+  di scrittura residuo e il commento della tabella.
 
 ## Collegamenti rotti nei documenti — nessun presidio automatico
 

@@ -83,10 +83,42 @@ class PreTokenGenTest(unittest.TestCase):
         handler._connection = conn
         handler.handler(_event("sub-1"), None)
         sql, params = conn.queries[0]
-        self.assertIn("cognito_sub = :sub", sql)
-        self.assertIn("status = 'active'", sql)
-        self.assertIn("deleted_at IS NULL", sql)
+        self.assertIn("i.cognito_sub = :sub", sql)
+        self.assertIn("i.status = 'active'", sql)
+        self.assertIn("m.status = 'active'", sql)
+        self.assertIn("i.deleted_at IS NULL", sql)
+        self.assertIn("m.deleted_at IS NULL", sql)
         self.assertEqual(params["sub"], "sub-1")
+
+    def test_query_legge_identita_e_appartenenza(self):
+        """UC 0116: la persona sta in platform.identity, il suo posto in platform.membership."""
+        conn = FakeConn([("tenant-1", "owner")])
+        handler._connection = conn
+        handler.handler(_event("sub-1"), None)
+        sql, _ = conn.queries[0]
+        self.assertIn("platform.identity", sql)
+        self.assertIn("platform.membership", sql)
+        self.assertNotIn("platform.users", sql, "platform.users è fredda dalla change 0088")
+
+    def test_piu_appartenenze_prende_la_piu_antica(self):
+        """Con più appartenenze attive si sceglie la più ANTICA, in modo deterministico.
+
+        Ripiego dichiarato di UC 0116: la scelta dell'account attivo è di UC 0117. Il criterio è
+        scritto nel SQL (ORDER BY m.created_at, m.id LIMIT 1) e deve restare identico a quello del
+        fornitore locale (UserDirectory.java) — è quella la parità che tiene insieme locale e cloud.
+        """
+        conn = FakeConn([("tenant-vecchio", "owner"), ("tenant-nuovo", "member")])
+        handler._connection = conn
+        out = handler.handler(_event("sub-multi"), None)
+        sql, _ = conn.queries[0]
+        self.assertIn("ORDER BY m.created_at, m.id LIMIT 1", sql)
+        self.assertEqual(_access_claims(out)["tenant_id"], "tenant-vecchio")
+
+    def test_identita_senza_appartenenze_fail_closed(self):
+        """Chi è uscito dal suo ultimo account non ottiene un token valido (UC 0116 §6)."""
+        self._with_rows([])
+        out = handler.handler(_event("sub-orfano"), None)
+        self.assertIsNone(_access_claims(out))
 
 
 if __name__ == "__main__":

@@ -115,7 +115,7 @@ _Aggiunti dalla change `0011-use-case-0020-…` (implementazione shell skeleton)
 _Aggiunto dalla change `0040-use-case-0018-…` (localizzazione email auth):_
 
 - **Lingua utente persistita e modificabile dalle impostazioni.** La change 0040 introduce `locale` come
-  **attributo dell'utente** su `platform.users` (unica fonte di verità, usato per scegliere la lingua delle
+  **attributo della persona** su `platform.identity` (unica fonte di verità dopo UC 0116: la lingua è della persona, non dell'account; usato per scegliere la lingua delle
   email di autenticazione) e lo valorizza alla registrazione dalla lingua attiva dell'interfaccia. Restano
   fuori scope, e appartengono a **questo** UC (che possiede la topbar col selettore lingua): (1) rendere il
   selettore lingua della topbar **persistente** sull'utente invece che solo di sessione; (2) esporre la lingua

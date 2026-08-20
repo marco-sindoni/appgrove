@@ -17,7 +17,8 @@ import java.util.stream.Stream;
  * {@code dev seed}, nei test questo helper.
  *
  * <p>Applica l'intera cartella e non un elenco cablato (era V1+V2): così una nuova migrazione che
- * tocca {@code platform.users} — come {@code V8__user_locale.sql} (UC 0018) — arriva qui da sola,
+ * tocca lo schema {@code platform} — come {@code V8__user_locale.sql} (UC 0018) o
+ * {@code V17__identity_membership.sql} (UC 0116) — arriva qui da sola,
  * invece di far fallire questi test con un "colonna inesistente" a ogni giro.
  */
 public final class TestSchema {
@@ -53,8 +54,9 @@ public final class TestSchema {
         return Integer.parseInt(name.substring(1, name.indexOf("__")));
     }
 
+    /** Sentinella dello schema applicato: la tabella delle persone (UC 0116). */
     private static boolean tableExists(Statement st) throws Exception {
-        try (ResultSet rs = st.executeQuery("select to_regclass('platform.users')")) {
+        try (ResultSet rs = st.executeQuery("select to_regclass('platform.identity')")) {
             rs.next();
             return rs.getString(1) != null;
         }

@@ -113,7 +113,7 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attiv
   expect(
     dbRows(`select tenant_id from platform.subscription where tenant_id = $1`, [t.tenantId]),
   ).toHaveLength(2)
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
   // Storico pagamenti (UC 0096): una transazione riuscita per ciascuna delle due app comprate,
   // scritta dalla stessa pipeline webhook che ha materializzato la subscription.
   const paid = dbRows(

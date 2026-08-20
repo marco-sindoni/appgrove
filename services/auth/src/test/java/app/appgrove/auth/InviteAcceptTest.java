@@ -15,7 +15,11 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Accept invito (UC 0058): l'utente entra nel tenant invitante col ruolo; token scaduto/invalido respinto. */
+/**
+ * Accept invito (UC 0058): la persona entra nel tenant invitante col ruolo dell'invito; token
+ * scaduto/invalido respinto. Dopo UC 0116 «entrare» significa una <b>appartenenza</b> in più, e
+ * l'identità si crea solo se quella persona non esiste ancora sulla piattaforma.
+ */
 @QuarkusTest
 class InviteAcceptTest {
 
@@ -38,13 +42,38 @@ class InviteAcceptTest {
                 .then().statusCode(200).body("access_token", org.hamcrest.Matchers.notNullValue());
 
         assertEquals(1, scalar(
-                "select count(*) from platform.users where email = 'invitee-admin@acme.test' "
-                        + "and tenant_id = '" + ACME + "' and role = 'admin'"),
-                "utente creato nel tenant Acme con ruolo admin");
+                // UC 0116: la persona (identità) + la sua appartenenza al tenant invitante.
+                "select count(*) from platform.identity i"
+                        + " join platform.membership m on m.identity_id = i.id"
+                        + " where i.email = 'invitee-admin@acme.test'"
+                        + " and m.tenant_id = '" + ACME + "' and m.role = 'admin'"),
+                "appartenenza creata nel tenant Acme con ruolo admin");
         assertEquals("accepted", text(
                 "select status from platform.invitations where token_hash = '"
                         + TokenHashes.sha256Hex("seed-invite-acme-admin") + "'"),
                 "invito segnato accepted");
+    }
+
+    /**
+     * UC 0116 — chi esiste già sulla piattaforma non entra da questo percorso, e il rifiuto è
+     * <b>comprensibile</b> (409 con un messaggio) invece di essere una violazione di indice. Il modello
+     * ammetterebbe l'appartenenza in più; è la password nuova che non si può applicare a un'identità
+     * altrui. Il percorso completo — accettare dalla propria sessione — è di UC 0118.
+     */
+    @Test
+    void acceptForAnAlreadyRegisteredAddressIsRefusedWithAMessage() {
+        // 'owner@acme.test' è una persona del seme: esiste già come identità
+        insertPendingInvite("ia-esistente-token", "owner@acme.test", "member");
+        given().contentType(ContentType.JSON)
+                .body(Map.of("token", "ia-esistente-token", "password", "Password1!"))
+                .when().post("/api/auth/invitations/accept")
+                .then().statusCode(409);
+        // nessuna appartenenza fantasma creata nel tenant che invitava
+        assertEquals(1, scalar(
+                "select count(*) from platform.membership m"
+                        + " join platform.identity i on i.id = m.identity_id"
+                        + " where lower(i.email) = 'owner@acme.test' and m.deleted_at is null"),
+                "l'appartenenza resta una: il rifiuto non lascia nulla dietro di sé");
     }
 
     @Test
@@ -62,9 +91,17 @@ class InviteAcceptTest {
                 .when().post("/api/auth/invitations/accept").then().statusCode(410);
     }
 
+    private void insertPendingInvite(String token, String email, String role) {
+        insertInvite(token, email, role, "now() + interval '7 days'");
+    }
+
     private void insertExpiredInvite(String token, String email, String role) {
+        insertInvite(token, email, role, "now() - interval '1 day'");
+    }
+
+    private void insertInvite(String token, String email, String role, String expiresAt) {
         String sql = "insert into platform.invitations(id, tenant_id, email, role, token_hash, status, expires_at, "
-                + "created_at, updated_at, created_by) values (?, ?, ?, ?, ?, 'pending', now() - interval '1 day', "
+                + "created_at, updated_at, created_by) values (?, ?, ?, ?, ?, 'pending', " + expiresAt + ", "
                 + "now(), now(), 'test')";
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setObject(1, UUID.randomUUID());
@@ -77,6 +114,7 @@ class InviteAcceptTest {
             throw new RuntimeException(e);
         }
     }
+
 
     private long scalar(String sql) {
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql);

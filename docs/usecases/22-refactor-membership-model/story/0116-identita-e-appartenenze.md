@@ -1,10 +1,10 @@
 # UC 0116 — Identità della persona e appartenenze agli account
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0088`)
 **Epica**: [E22.5 Identità e appartenenze](../epic/E22-05-identita-e-appartenenze.md)
 **Dipendenze**: UC 0013 (account, utenti, inviti e interfaccia del core)
 **Piano di lavoro**: [task/0116](../task/0116-identita-e-appartenenze.md)
-**Ultimo aggiornamento**: 2026-08-20
+**Ultimo aggiornamento**: 2026-08-20 (implementazione: change `0088`)
 
 ## 1. Obiettivo / Scope
 
@@ -185,14 +185,37 @@ segnali privacy: non è un cambio di scopo, ma è un cambio di **chi risponde pe
 
 ## Punti aperti / decisioni differite
 
-- **Nome dell'entità**: `platform.identity` oppure `platform.person`. Preferenza per `identity`, perché è
-  l'identità di accesso e non l'anagrafica di una persona — ma la parola «identità» in italiano si usa
-  anche per altro. Da fissare in implementazione. Proprietario: questa storia.
+- ~~**Nome dell'entità**~~ — **chiuso** (change `0088`): `platform.identity`. È l'identità di **accesso**
+  alla piattaforma — indirizzo di posta e identificativo di autenticazione — non l'anagrafica della
+  persona, e il nome deve dire quello.
 - **Preferenza di lingua**: portata sull'identità (è della persona, non dell'account). Se un giorno un
   account volesse imporre la lingua ai propri membri, servirebbe un valore per appartenenza che vince su
   quello dell'identità. Non ora. Proprietario: UC 0060.
-- **Assistenza e biglietti** aperti da una persona che appartiene a due account: il biglietto è di un
-  account (quello attivo al momento) e lì resta. Verificare in implementazione che la riassegnazione non
-  sia necessaria. Proprietario: UC 0041.
+- ~~**Assistenza e biglietti**~~ — **verificato in implementazione** (change `0088`): nessuna
+  riassegnazione necessaria. Il biglietto è dell'account in cui è stato aperto e lì resta; il recapito di
+  chi l'ha aperto si legge passando dall'appartenenza di **quell'** account all'identità, quindi una
+  persona che appartiene anche altrove non porta con sé i propri biglietti. Proprietario: UC 0041 se un
+  giorno servisse spostarli.
 - **Piano per liberi professionisti** che lavorano per più clienti: questa storia lo rende possibile, ma il
   prodotto non lo prevede. È materia commerciale, non tecnica. Proprietario: docs/_BACKLOG.md.
+- **Scelta fra più appartenenze**: la change `0088` prende in modo deterministico la **più antica**, sia
+  nel fornitore locale sia nella funzione che compone il token, e lo dichiara nel commento di entrambe.
+  È un ripiego, non un criterio di prodotto: il criterio vero — quale account è **attivo** in una
+  sessione e come si cambia — è di **UC 0117**, che deve sostituire quel ripiego, non affiancarlo.
+- **Stato «appartenenza in attesa di accettazione»**: previsto dalla tabella §7 ma **non** introdotto
+  dalla change `0088`. Oggi l'attesa è già rappresentata dalla riga di invito (`platform.invitations`,
+  stato `pending`) e un secondo modo di dire la stessa cosa, che nessun percorso usa, sarebbe soltanto
+  un'ambiguità in più. Proprietario: **UC 0118**, che possiede i percorsi d'ingresso.
+- **Riuso di un indirizzo dopo la cancellazione di un'identità**: l'unicità sull'identità è
+  **incondizionata** (vale anche sulle righe cancellate), come era su `platform.users`. Chi cancella
+  un'identità e poi si ripresenta con lo stesso indirizzo trova ancora un rifiuto di indice. Non è un
+  problema nuovo e non lo si è risolto qui per non anticipare i messaggi d'ingresso. Proprietario:
+  **UC 0118**.
+- **Limitazione del trattamento su un'identità senza appartenenze**: la console risponde
+  «non trovato», perché il tenant di contesto dell'atto si legge dall'appartenenza più antica. È uno
+  stato inutilizzabile (chi non ha appartenenze non ottiene un token valido), quindi limitarlo non
+  avrebbe effetto osservabile — ma se un giorno servisse limitare una persona *prima* che entri in un
+  account, la console va estesa. Proprietario: **UC 0034**.
+- **Rimozione fisica di `platform.users`**: la tabella resta come rete di ritorno, fredda. Chi la
+  rimuove lo fa con una migrazione dedicata, dopo un periodo di esercizio. Tracciato in
+  [docs/_BACKLOG.md](../../../_BACKLOG.md).

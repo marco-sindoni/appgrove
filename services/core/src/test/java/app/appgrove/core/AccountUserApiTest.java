@@ -5,18 +5,21 @@ import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
- * API account/utenti (UC 0013): account corrente, isolamento utenti per tenant, profilo proprio,
- * patch ruolo, soft-delete, e vincolo email globale ("1 utente→1 tenant", #02 14).
+ * API account/persone (UC 0013 + UC 0116): account corrente, isolamento per account, profilo
+ * proprio, patch ruolo, uscita dall'account, e unicità dell'indirizzo spostata sull'<b>identità</b>
+ * (non più «1 utente → 1 account», #02 14 superata dalla change 0088).
  */
 @QuarkusTest
 class AccountUserApiTest {
@@ -25,6 +28,11 @@ class AccountUserApiTest {
     private static final String USERS = "/api/platform/v1/users";
     private static final String TENANT_A = "dddddddd-0000-0000-0000-000000000004";
     private static final String TENANT_B = "eeeeeeee-0000-0000-0000-000000000005";
+    // Account propri dei collaudi «una persona, più appartenenze» (UC 0116): tenerli separati da
+    // TENANT_A/TENANT_B evita che la creazione dell'account (idempotente sul nome) faccia dipendere
+    // un collaudo dall'ordine in cui girano gli altri.
+    private static final String TENANT_UNO = "dddddddd-0000-0000-0000-0000000000a1";
+    private static final String TENANT_DUE = "eeeeeeee-0000-0000-0000-0000000000a2";
 
     @Inject
     TestData data;
@@ -88,10 +96,104 @@ class AccountUserApiTest {
                 .then().body("content.email", not(hasItem("del@example.test")));
     }
 
+    /**
+     * L'indirizzo resta unico globalmente, ma sull'<b>identità</b>: due persone diverse non possono
+     * avere lo stesso indirizzo. È l'unicità che serve; quella che è caduta è «la stessa persona non
+     * può stare in due account».
+     */
     @Test
-    void emailIsGloballyUnique() {
+    void emailIsGloballyUniqueOnTheIdentity() {
         data.userStrict(TENANT_A, "sub-uq-a", "dup@example.test", "member");
         assertThrows(RuntimeException.class,
                 () -> data.userStrict(TENANT_B, "sub-uq-b", "dup@example.test", "member"));
+    }
+
+    /**
+     * Il punto della storia: la stessa persona è owner del proprio account e member di un altro.
+     * Ogni account la vede come propria persona, col ruolo che le ha dato lui — e nessuno dei due
+     * vede l'altro.
+     */
+    @Test
+    void sameIdentityBelongsToTwoAccounts() {
+        data.account(TENANT_UNO, "Conto uno");
+        data.account(TENANT_DUE, "Conto due");
+        UUID person = data.identity("sub-due-conti", "due-conti@example.test", "Due Conti");
+        data.membership(TENANT_UNO, person, "member");
+        data.membership(TENANT_DUE, person, "owner");
+
+        assertEquals(List.of(TENANT_UNO, TENANT_DUE), data.tenantsOf(person),
+                "due appartenenze vive per la stessa identità");
+        assertEquals(1, data.identityCount("due-conti@example.test"), "una sola identità, non due");
+
+        // A la vede come member, e vede SOLO il proprio account nella riga
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_UNO, "owner"))
+                .when().get(USERS + "/" + person)
+                .then().statusCode(200)
+                .body("role", is("member"))
+                .body("tenantId", is(TENANT_UNO));
+
+        // B la vede come owner
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_DUE, "owner"))
+                .when().get(USERS + "/" + person)
+                .then().statusCode(200)
+                .body("role", is("owner"))
+                .body("tenantId", is(TENANT_DUE));
+    }
+
+    /** La seconda appartenenza viva allo stesso account è rifiutata dal VINCOLO, non dall'interfaccia. */
+    @Test
+    void secondMembershipInTheSameAccountIsRejected() {
+        data.account(TENANT_UNO, "Conto uno");
+        UUID person = data.identity("sub-doppio", "doppio@example.test", "Doppio");
+        data.membershipStrict(TENANT_UNO, person, "member");
+        assertThrows(RuntimeException.class, () -> data.membershipStrict(TENANT_UNO, person, "admin"));
+    }
+
+    /**
+     * Uscire da un account chiude l'appartenenza, <b>non</b> l'identità: l'altra appartenenza resta
+     * intatta e la persona continua a esistere. È l'edge che la storia chiede di provare.
+     */
+    @Test
+    void leavingOneAccountLeavesTheOtherMembershipIntact() {
+        data.account(TENANT_UNO, "Conto uno");
+        data.account(TENANT_DUE, "Conto due");
+        UUID person = data.identity("sub-uscita", "uscita@example.test", "Uscita");
+        data.membership(TENANT_UNO, person, "member");
+        data.membership(TENANT_DUE, person, "owner");
+
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_UNO, "owner"))
+                .when().delete(USERS + "/" + person)
+                .then().statusCode(204);
+
+        assertEquals(List.of(TENANT_DUE), data.tenantsOf(person), "resta solo l'appartenenza al conto due");
+        assertEquals(1, data.identityCount("uscita@example.test"), "l'identità sopravvive all'uscita");
+
+        // A non la vede più; B sì, e non si è accorto di nulla
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_UNO, "owner"))
+                .when().get(USERS + "/" + person).then().statusCode(404);
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_DUE, "owner"))
+                .when().get(USERS + "/" + person).then().statusCode(200).body("role", is("owner"));
+    }
+
+    /**
+     * La sospensione decisa da un owner vale nel <b>suo</b> account e non altrove: è la leva
+     * dell'appartenenza, non quella della persona (che è la limitazione del trattamento, art. 18).
+     */
+    @Test
+    void suspendingInOneAccountDoesNotTouchTheOther() {
+        data.account(TENANT_UNO, "Conto uno");
+        data.account(TENANT_DUE, "Conto due");
+        UUID person = data.identity("sub-sosp", "sosp@example.test", "Sospesa");
+        data.membership(TENANT_UNO, person, "member");
+        data.membership(TENANT_DUE, person, "member");
+
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_UNO, "owner"))
+                .contentType(ContentType.JSON).body(Map.of("status", "suspended"))
+                .when().patch(USERS + "/" + person)
+                .then().statusCode(200).body("status", is("suspended"));
+
+        assertEquals("suspended", data.membershipStatus(TENANT_UNO, person));
+        assertEquals("active", data.membershipStatus(TENANT_DUE, person), "l'altro account non è toccato");
+        assertEquals("active", data.userStatus(person), "la persona non è sospesa sulla piattaforma");
     }
 }

@@ -107,9 +107,12 @@ class CognitoInvitationsTest {
                 "nessuna email Cognito: il link d'invito prova già l'email");
         assertTrue(pwdSeen.get().permanent(), "password permanente (utente confermato)");
         assertEquals(1, TestDb.count(ds,
-                "select count(*) from platform.users where cognito_sub = '" + SUB
-                        + "' and tenant_id = '" + ACME + "' and role = 'admin'"),
-                "utente creato nel tenant Acme col sub Cognito e ruolo dell'invito");
+                // UC 0116: l'accettazione crea l'APPARTENENZA nel tenant invitante (e l'identità se manca).
+                "select count(*) from platform.identity i"
+                        + " join platform.membership m on m.identity_id = i.id"
+                        + " where i.cognito_sub = '" + SUB
+                        + "' and m.tenant_id = '" + ACME + "' and m.role = 'admin'"),
+                "appartenenza creata nel tenant Acme col sub Cognito e ruolo dell'invito");
         assertEquals("accepted", TestDb.text(ds,
                 "select status from platform.invitations where token_hash = '"
                         + TokenHashes.sha256Hex("seed-invite-acme-admin") + "'"));

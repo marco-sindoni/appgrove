@@ -84,6 +84,39 @@ class PlatformGdprContractTest {
         // B: intatto
         ExportResult afterB = contract.exportData(new GdprScope(TENANT_B));
         assertFalse(afterB.entities().get("accounts").isEmpty(), "l'account di B non va toccato");
-        assertFalse(afterB.entities().get("users").isEmpty(), "gli utenti di B non vanno toccati");
+        assertFalse(afterB.entities().get("identities").isEmpty(), "le persone di B non vanno toccate");
+    }
+
+    /**
+     * UC 0116 — la stretta più delicata verso la conformità, provata in <b>entrambi i versi</b>:
+     * cancellare l'account A non cancella l'identità di chi appartiene anche a B (sarebbe cancellare
+     * dati di un altro titolare), e cancellare l'ultimo account di una persona la rende cancellabile.
+     */
+    @Test
+    void purgeKeepsTheIdentityWhenAnotherMembershipSurvives() {
+        String tenantUno = "77777777-0000-0000-0000-0000000000d1";
+        String tenantDue = "77777777-0000-0000-0000-0000000000d2";
+        data.account(tenantUno, "Conto uno");
+        data.account(tenantDue, "Conto due");
+        java.util.UUID condivisa = data.identity("sub-condivisa", "condivisa@example.test", "Condivisa");
+        data.membership(tenantUno, condivisa, "member");
+        data.membership(tenantDue, condivisa, "owner");
+        // persona presente SOLO nel conto uno: con la purga deve sparire del tutto
+        java.util.UUID soloUno = data.identity("sub-solo-uno", "solo-uno@example.test", "Solo Uno");
+        data.membership(tenantUno, soloUno, "member");
+
+        contract.purgeData(new GdprScope(tenantUno));
+
+        assertEquals(1, data.identityCount("condivisa@example.test"),
+                "l'identità sopravvive: appartiene ancora al conto due");
+        assertEquals(List.of(tenantDue), data.tenantsOf(condivisa),
+                "resta solo l'appartenenza al conto due");
+        assertEquals(0, data.identityCount("solo-uno@example.test"),
+                "l'identità rimasta orfana va cancellata con l'account");
+
+        // secondo verso: cancellato anche l'ultimo account, la persona non resta in giro
+        contract.purgeData(new GdprScope(tenantDue));
+        assertEquals(0, data.identityCount("condivisa@example.test"),
+                "cancellata l'ultima appartenenza, l'identità è cancellabile e viene cancellata");
     }
 }

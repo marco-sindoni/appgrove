@@ -33,7 +33,7 @@ esistenti → UC 0113.
 ## 3. Precondizioni
 
 - Esistono identità e appartenenze ([UC 0116](0116-identita-e-appartenenze.md)), che prendono il posto di
-  `platform.users`, e gli inviti (UC 0013).
+  `platform.membership`/`platform.identity` (UC 0116), e gli inviti (UC 0013).
 - Esiste il catalogo delle applicazioni (`platform.app`) con i suoi identificativi.
 - L'account ha almeno un utente: l'owner, creato all'iscrizione.
 

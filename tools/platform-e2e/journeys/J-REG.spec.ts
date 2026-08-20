@@ -114,19 +114,29 @@ test('[J-REG] signup → email verificata davvero → onboarding → dashboard �
   // L'utente esiste, è owner attivo, e il suo tenant è l'account creato dal signup
   // (rinominato dall'onboarding): tenant_id coerente end-to-end.
   const [tenantId, role, status, accountName] = dbRow(
-    `select u.tenant_id, u.role, u.status, a.name
-       from platform.users u
-       join platform.accounts a on a.id::text = u.tenant_id
-      where lower(u.email) = lower($1) and u.deleted_at is null`,
+    `select m.tenant_id, m.role, m.status, a.name
+       from platform.membership m
+       join platform.identity i on i.id = m.identity_id
+       join platform.accounts a on a.id::text = m.tenant_id
+      where lower(i.email) = lower($1) and m.deleted_at is null and i.deleted_at is null`,
     [email],
   )
   expect(role).toBe('owner')
   expect(status).toBe('active')
   expect(accountName).toBe(workspaceName)
-  // Nessuna fuga fuori dal tenant: l'email vive in UNA sola riga utente (nessuna copia in
-  // altri tenant) e il tenant appena nato contiene SOLO il suo owner.
-  expect(dbRows(`select tenant_id from platform.users where lower(email) = lower($1)`, [email])).toHaveLength(1)
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [tenantId])[0]).toBe('1')
+  // Nessuna fuga fuori dal tenant: dopo UC 0116 l'indirizzo vive in UNA sola IDENTITÀ (mai
+  // duplicata) e chi si è appena registrato ha UNA sola appartenenza — quella al conto che ha
+  // creato lui. Il conto appena nato contiene SOLO il suo owner.
+  expect(dbRows(`select id from platform.identity where lower(email) = lower($1)`, [email])).toHaveLength(1)
+  expect(
+    dbRows(
+      `select m.tenant_id from platform.membership m
+         join platform.identity i on i.id = m.identity_id
+        where lower(i.email) = lower($1) and m.deleted_at is null`,
+      [email],
+    ),
+  ).toHaveLength(1)
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [tenantId])[0]).toBe('1')
 
   // ── 6. l'identificativo del workspace è in Account, non in Dashboard (UC 0097) ──
   // Confronto con il valore VERO letto dal database: prova che il codice mostrato è quello del
@@ -146,11 +156,13 @@ test('[J-REG-API] tenant() programmatico — helper pronto per gli UC 0091/0092'
   const t = await tenant('helper')
   expect(String(jwtPayload(t.tokens.access_token).tenant_id)).toBe(t.tenantId)
   const [dbTenant, role] = dbRow(
-    `select tenant_id, role from platform.users where lower(email) = lower($1) and deleted_at is null`,
+    `select m.tenant_id, m.role from platform.membership m
+       join platform.identity i on i.id = m.identity_id
+      where lower(i.email) = lower($1) and m.deleted_at is null and i.deleted_at is null`,
     [t.email],
   )
   expect(dbTenant).toBe(t.tenantId)
   expect(role).toBe('owner')
   // Isolamento: il tenant fresco contiene solo il proprio owner.
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
 })

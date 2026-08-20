@@ -6,12 +6,14 @@
 ## Passo 1 — Migrazione della banca dati
 
 **File nuovo**: `services/core/src/main/resources/db/migration/V18__app_access.sql`
-(`V17` è di [UC 0116](0116-identita-e-appartenenze.md), che si esegue prima; l'ultima esistente oggi è
-`V16__support_ticket_source_review.sql` — **riverificare** entrambi i numeri al momento dell'implementazione).
+(`V17__identity_membership.sql` è di [UC 0116](0116-identita-e-appartenenze.md), **già in main** con la
+change `0088`: `V18` è quindi il numero giusto — **riverificarlo** comunque al momento dell'implementazione.
+`platform.identity` e `platform.membership` esistono già: `app_access.identity_id` può riferire
+direttamente `platform.identity(id)`, senza migrazione doppia.)
 
 Contenuto: creazione di `platform.app_access` con le colonne della storia §7, i tre indici (unicità sulla
 terna limitata alle righe vive, indice per persona, indice per applicazione) e il commento sulla tabella che
-dice a che serve. Nessun vincolo di chiave esterna verso `platform.users` sul campo `tenant_id`, coerentemente
+dice a che serve. Nessun vincolo di chiave esterna verso `platform.accounts` sul campo `tenant_id`, coerentemente
 con la scelta già in vigore (il discriminatore è una chiave logica, non una chiave esterna).
 
 Nella stessa migrazione **non** si tocca il ruolo di piattaforma: la conversione dei valori è di UC 0113. Qui

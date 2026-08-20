@@ -128,7 +128,7 @@ test('[A-ENTITLE] acquisto attivo · sola fascia gratuita · account in eliminaz
 
   // ── rilevatore di travaso: i tre tenant restano distinti e separati ─────────
   for (const t of [paid, free, deleting]) {
-    expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
+    expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [t.tenantId])[0]).toBe('1')
   }
   expect(dbRow(`select status from platform.accounts where id::text = $1`, [paid.tenantId])[0]).toBe('active')
   expect(dbRow(`select status from platform.accounts where id::text = $1`, [free.tenantId])[0]).toBe('active')

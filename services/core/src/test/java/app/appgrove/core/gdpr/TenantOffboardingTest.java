@@ -78,7 +78,7 @@ class TenantOffboardingTest {
 
         // il tenant estraneo è intatto
         ExportResult other = contract.exportData(new GdprScope(TENANT_OTHER));
-        assertFalse(other.entities().get("users").isEmpty());
+        assertFalse(other.entities().get("identities").isEmpty());
 
         // idempotenza: un secondo offboarding non fallisce e audita di nuovo (0 righe cancellate)
         offboarding.offboard(TENANT, TenantPurgeMessage.REASON_OFFBOARDED);

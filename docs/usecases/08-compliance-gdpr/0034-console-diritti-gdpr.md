@@ -62,6 +62,15 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
 
 ## Punti aperti / decisioni differite
 
+- **Limitazione del trattamento su una persona senza appartenenze** (tracciato dalla change `0088`,
+  UC 0116). Dopo il rifacimento del modello, il bersaglio `user` della limitazione è l'**identità** della
+  persona, e il tenant registrato nella prova di evasione è quello della sua appartenenza più antica —
+  un'etichetta di contesto, non il perimetro dell'atto. Conseguenza: un'identità viva ma **senza nessuna
+  appartenenza** dà «non trovato». È uno stato inutilizzabile (chi non ha appartenenze non ottiene un
+  token valido), quindi limitarlo non avrebbe effetto osservabile; ma se un giorno servisse limitare una
+  persona *prima* che entri in un account, la console va estesa e la colonna del tenant nella prova va
+  ripensata.
+
 - ~~**Gestione operativa della limitazione del trattamento (art. 18, da UC 0033)**~~ → **risolto dalla
   change `0030-use-case-0034-…`**: presa in carico via ticket privacy, azione admin applica/rimuovi con
   causale dedicata `gdpr_restriction` (sospensione riusata, distinta da quella amministrativa) e prova di
@@ -88,7 +97,7 @@ ticket con PII minimizzati (no allegati MVP). Retention: ticket privacy 24 mesi 
 - **La limitazione art. 18 sull'ACCOUNT non ha effetti osservabili dall'utente** _(rilevato dalla change
   `0072-use-case-0092-…`, journey A-GDPR)_: applicandola al bersaglio "account" viene sospeso
   `platform.accounts.status`, ma la validità di una sessione dipende **solo** dallo stato della riga
-  utente (`platform.users.status`, letto dal servizio di autenticazione) e la regola unica di accesso
+  persona (`platform.identity.status` dopo UC 0116, letto dal servizio di autenticazione) e la regola unica di accesso
   guarda l'account solo per lo stato "in eliminazione". Risultato: limitare un account lascia i suoi
   utenti pienamente operativi — la misura è registrata ma non produce nulla. Il journey applica quindi
   la limitazione all'**utente**, che funziona. Da decidere in questo use case: se la limitazione

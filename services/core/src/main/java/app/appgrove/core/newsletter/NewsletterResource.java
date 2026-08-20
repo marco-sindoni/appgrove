@@ -4,8 +4,8 @@ import app.appgrove.core.newsletter.NewsletterDtos.PreferenceRequest;
 import app.appgrove.core.newsletter.NewsletterDtos.PreferenceView;
 import app.appgrove.core.newsletter.NewsletterDtos.SubscribeRequest;
 import app.appgrove.core.platform.CallerContext;
-import app.appgrove.core.platform.User;
-import app.appgrove.core.platform.UserRepository;
+import app.appgrove.core.platform.Identity;
+import app.appgrove.core.platform.IdentityRepository;
 import io.quarkus.security.Authenticated;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.inject.Inject;
@@ -50,7 +50,7 @@ public class NewsletterResource {
     CallerContext caller;
 
     @Inject
-    UserRepository users;
+    IdentityRepository identities;
 
     // ── pubblico ───────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ public class NewsletterResource {
     @Authenticated
     @Produces(MediaType.APPLICATION_JSON)
     public PreferenceView getPreference() {
-        return new PreferenceView(service.isSubscribed(callerUser().getEmail()));
+        return new PreferenceView(service.isSubscribed(callerIdentity().getEmail()));
     }
 
     @PUT
@@ -112,16 +112,20 @@ public class NewsletterResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public PreferenceView setPreference(@Valid PreferenceRequest body) {
-        User user = callerUser();
+        Identity user = callerIdentity();
         boolean subscribed = service.setPreference(user.getEmail(), body.subscribed(), user.getLocale(), user.getId());
         return new PreferenceView(subscribed);
     }
 
     // ── helper ─────────────────────────────────────────────────────────────────
 
-    /** Utente del chiamante nel suo tenant (email autoritativa + provenienza). */
-    private User callerUser() {
-        return users.findByCognitoSub(caller.subject())
+    /**
+     * Identità del chiamante (indirizzo autoritativo + lingua + provenienza). Dopo UC 0116 il
+     * consenso alla newsletter si lega alla <b>persona</b>, non alla sua appartenenza a un account:
+     * l'indirizzo e la lingua sono suoi e non cambiano da un account all'altro.
+     */
+    private Identity callerIdentity() {
+        return identities.findByCognitoSub(caller.subject())
                 .orElseThrow(() -> new NotFoundException("Utente del chiamante non trovato."));
     }
 

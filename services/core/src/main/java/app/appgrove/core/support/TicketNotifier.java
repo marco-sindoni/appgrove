@@ -136,7 +136,7 @@ public class TicketNotifier {
 
     /**
      * Recapito di chi ha aperto il ticket: {@code created_by} = sub del JWT → riga
-     * {@code platform.users} (lettura JDBC con conto esplicito, perché chi chiama può essere
+     * identità ⋈ appartenenza (lettura JDBC con conto esplicito, perché chi chiama può essere
      * l'operatore di piattaforma, fuori dal conto del ticket).
      */
     private Recipient requester(TicketRef ticket) {
@@ -147,8 +147,13 @@ public class TicketNotifier {
         }
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement(
-                        "select email, locale from platform.users"
-                                + " where tenant_id = ? and cognito_sub = ? and deleted_at is null")) {
+                        // Il recapito sta sull'identità; l'appartenenza è la prova che quella persona
+                        // è del conto del biglietto (UC 0116). Il biglietto resta dell'account in cui
+                        // è stato aperto: nessuna riassegnazione se la persona appartiene anche altrove.
+                        "select i.email, i.locale from platform.membership m"
+                                + " join platform.identity i on i.id = m.identity_id"
+                                + " where m.tenant_id = ? and i.cognito_sub = ?"
+                                + " and m.deleted_at is null and i.deleted_at is null")) {
             ps.setString(1, ticket.tenantId());
             ps.setString(2, ticket.createdBy());
             try (ResultSet rs = ps.executeQuery()) {

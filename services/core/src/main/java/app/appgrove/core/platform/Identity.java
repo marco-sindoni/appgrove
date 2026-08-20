@@ -1,6 +1,6 @@
 package app.appgrove.core.platform;
 
-import app.appgrove.commons.persistence.BaseTenantEntity;
+import app.appgrove.commons.persistence.BaseEntity;
 import app.appgrove.commons.privacy.PersonalData;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,71 +10,79 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
- * Utente del tenant (membership foldata: 1 utente→1 tenant, nessuna tabella memberships).
- * Tenant-scoped: il filtro {@code WHERE tenant_id = ?} è automatico (discriminator).
- * {@code email}/{@code displayName} sono dati personali (#13 C) — finalità gestione account.
+ * Identità di accesso della persona (UC 0116). Entità di <b>piattaforma</b>: NON estende
+ * {@link app.appgrove.commons.persistence.BaseTenantEntity} perché non appartiene a nessun account —
+ * come {@code platform.app}. Qui vive l'unicità globale di indirizzo di posta e identificativo di
+ * autenticazione, che prima stava (a torto) su una tabella interna all'account.
+ *
+ * <p>È l'unica entità di piattaforma con dati personali diretti: va interrogata solo attraverso
+ * un'appartenenza quando si è dentro un percorso di account (#02, invariante #2). {@code email},
+ * {@code displayName}, {@code locale} e {@code cognitoSub} sono dati personali (#13 C) — stessi dati
+ * di prima, cambia chi risponde per essi.
+ *
+ * <p>{@link #status} è la leva del <b>titolare</b> (la persona può accedere alla piattaforma:
+ * limitazione del trattamento, art. 18), distinta dalla leva dell'<b>owner</b> sul singolo account,
+ * che è {@link Membership#getStatus()}.
  */
 @Entity
-@Table(schema = "platform", name = "users")
+@Table(schema = "platform", name = "identity")
 @SQLRestriction("deleted_at is null")
-public class User extends BaseTenantEntity {
+public class Identity extends BaseEntity {
 
     @PersonalData(
             category = "identificativo online (subject Cognito)",
             purpose = "collegamento identità di autenticazione ↔ profilo applicativo",
-            retention = "account attivo + grace 14gg (#13 E25)")
+            retention = "identità attiva (ultima appartenenza) + grace 14gg (#13 E25)")
     @Column(name = "cognito_sub", nullable = false, updatable = false)
     private String cognitoSub;
 
     @PersonalData(
             category = "contatto",
             purpose = "erogazione e gestione account (login, comunicazioni di servizio)",
-            retention = "account attivo + grace 14gg (#13 E25)")
+            retention = "identità attiva (ultima appartenenza) + grace 14gg (#13 E25)")
     @Column(nullable = false)
     private String email;
 
     @PersonalData(
             category = "identità (nome visualizzato)",
-            purpose = "identificazione dell'utente nella UI e nel tenant",
-            retention = "account attivo + grace 14gg (#13 E25)")
+            purpose = "identificazione della persona nella UI e negli account a cui appartiene",
+            retention = "identità attiva (ultima appartenenza) + grace 14gg (#13 E25)")
     @Column(name = "display_name")
     private String displayName;
 
     /**
-     * Lingua dell'utente per le email transazionali (UC 0018): fonte di verità unica, letta dal
-     * servizio auth per scegliere il template EN/IT. Mai nulla: chi non l'ha espressa è {@code en}.
+     * Lingua della persona per le email transazionali (UC 0018): fonte di verità unica, letta dal
+     * servizio auth per scegliere il template EN/IT. È della <b>persona</b>, non dell'account — se un
+     * giorno un account volesse imporre la lingua ai propri membri servirebbe un valore per
+     * appartenenza che vinca su questo (punto aperto di UC 0060). Mai nulla: chi non l'ha espressa
+     * è {@code en}.
      */
     @PersonalData(
             category = "preferenza (lingua)",
             purpose = "lingua delle email transazionali di autenticazione",
-            retention = "account attivo + grace 14gg (#13 E25)")
+            retention = "identità attiva (ultima appartenenza) + grace 14gg (#13 E25)")
     @Column(nullable = false, length = 8)
     private String locale = "en";
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserRole role;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.active;
+    private IdentityStatus status = IdentityStatus.active;
 
     /**
      * Causale della sospensione (UC 0034): {@code gdpr_restriction} = limitazione del trattamento
-     * (art. 18, #13 D19), distinta da una sospensione amministrativa. Null se non sospeso.
+     * (art. 18, #13 D19), distinta da una sospensione amministrativa. Null se non sospesa.
      */
     @Column(name = "suspended_reason", length = 32)
     private String suspendedReason;
 
-    protected User() {
+    protected Identity() {
         // richiesto da JPA
     }
 
-    public User(String cognitoSub, String email, String displayName, UserRole role) {
+    public Identity(String cognitoSub, String email, String displayName) {
         this.cognitoSub = cognitoSub;
         this.email = email;
         this.displayName = displayName;
-        this.role = role;
     }
 
     public String getCognitoSub() {
@@ -105,19 +113,11 @@ public class User extends BaseTenantEntity {
         this.locale = locale;
     }
 
-    public UserRole getRole() {
-        return role;
-    }
-
-    public void setRole(UserRole role) {
-        this.role = role;
-    }
-
-    public UserStatus getStatus() {
+    public IdentityStatus getStatus() {
         return status;
     }
 
-    public void setStatus(UserStatus status) {
+    public void setStatus(IdentityStatus status) {
         this.status = status;
     }
 

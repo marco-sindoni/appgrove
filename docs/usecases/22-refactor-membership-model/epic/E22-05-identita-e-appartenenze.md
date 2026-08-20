@@ -1,7 +1,7 @@
 # E22.5 — Identità della persona e appartenenze agli account
 
 **Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0116, 0117, 0118
-**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-20
+**Stato**: 🟢 analisi scritta · **0116 implementata** (change `0088`) · **Ultimo aggiornamento**: 2026-08-20
 
 > **Numerata per ultima, si esegue per prima.** Le sotto-epiche portano il numero nell'ordine in cui sono
 > state scritte, non in quello in cui si eseguono — come gli identificativi del registro delle decisioni,
@@ -40,8 +40,11 @@ Il costo di anticiparla è basso: 0098 nasce direttamente col riferimento all'id
 
 ## Le tre storie
 
-1. **[0116 — Identità e appartenenze](../story/0116-identita-e-appartenenze.md).** Il modello: identità di
-   piattaforma, appartenenza di account, unicità spostata dove deve stare, migrazione senza perdite.
+1. **[0116 — Identità e appartenenze](../story/0116-identita-e-appartenenze.md)** — ✅ **implementata**
+   (change `0088`). Il modello: identità di piattaforma, appartenenza di account, unicità spostata dove
+   deve stare, migrazione senza perdite. `platform.users` resta come rete di ritorno, fredda. Il ripiego
+   lasciato in eredità (con più appartenenze si prende la più antica) è scritto nei commenti delle due
+   implementazioni e appartiene alla storia successiva.
 2. **[0117 — Account attivo e selettore](../story/0117-account-attivo-e-selettore.md).** Se le appartenenze
    sono più di una, il token deve dire *per conto di chi* stai agendo. È la storia più delicata dell'intera
    epica: tocca il punto in cui si stabilisce l'identità e l'account, cioè l'invariante numero uno.

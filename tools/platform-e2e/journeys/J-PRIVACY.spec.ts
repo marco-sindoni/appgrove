@@ -50,7 +50,7 @@ test('[J-PRIVACY] rettifica → export reale con download validato → recesso p
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByText('Saved')).toBeVisible()
   expect(
-    dbRow(`select display_name from platform.users where lower(email) = lower($1) and deleted_at is null`, [
+    dbRow(`select display_name from platform.identity where lower(email) = lower($1) and deleted_at is null`, [
       t.email,
     ])[0],
   ).toBe('Nome Rettificato')
@@ -135,8 +135,8 @@ test('[J-PRIVACY] rettifica → export reale con download validato → recesso p
   expect(dbRow(`select status from platform.accounts where id::text = $1`, [t.tenantId])[0]).toBe('active')
 
   // ── leak detector: il canarino è rimasto intatto e isolato ──────────────────
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1`, [canary.tenantId])[0]).toBe('1')
-  expect(dbRow(`select count(*) from platform.users where tenant_id = $1 and deleted_at is null`, [t.tenantId])[0]).toBe(
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [canary.tenantId])[0]).toBe('1')
+  expect(dbRow(`select count(*) from platform.membership where tenant_id = $1 and deleted_at is null`, [t.tenantId])[0]).toBe(
     '1',
   )
 })

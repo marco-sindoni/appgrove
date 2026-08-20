@@ -128,7 +128,7 @@ class CognitoEmailLinkTest {
                 .when().post("/api/auth/signup").then().statusCode(201);
 
         // Deve viaggiare QUI: Cognito manda l'email durante questa chiamata, quando la riga in
-        // platform.users non esiste ancora e nessuno potrebbe leggerne la lingua.
+        // platform.identity non esiste ancora e nessuno potrebbe leggerne la lingua.
         assertEquals("it", seen.get().clientMetadata().get("locale"));
     }
 

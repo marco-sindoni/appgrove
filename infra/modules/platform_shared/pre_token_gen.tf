@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Lambda Pre-Token-Generation (UC 0016, #02 9/10/11): Cognito la invoca a ogni
-# emissione token → legge la membership da `platform.users` via RDS Proxy e
+# emissione token → legge l'appartenenza da `platform.identity` ⋈ `platform.membership` via RDS Proxy e
 # inietta `tenant_id`+`roles` nell'ACCESS token (fail-closed). In VPC (endpoint
 # secretsmanager + proxy RDS), runtime Python con driver pg8000 vendorizzato
 # (nessun binario nativo, archive_file autocontenuto — come db_bootstrap).
@@ -120,7 +120,7 @@ resource "aws_cloudwatch_log_group" "pre_token_gen" {
 
 resource "aws_lambda_function" "pre_token_gen" {
   function_name = local.pre_token_gen_name
-  description   = "Pre-Token-Gen (UC 0016): inietta tenant_id/roles nell'access token leggendo platform.users via RDS Proxy"
+  description   = "Pre-Token-Gen (UC 0016): inietta tenant_id/roles nell'access token leggendo platform.identity ⋈ platform.membership via RDS Proxy"
   role          = aws_iam_role.pre_token_gen.arn
 
   filename         = data.archive_file.pre_token_gen.output_path

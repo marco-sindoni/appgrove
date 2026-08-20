@@ -64,7 +64,7 @@ public class AdminResource {
                 """
                 select
                   (select count(*) from platform.accounts where deleted_at is null),
-                  (select count(*) from platform.users where deleted_at is null),
+                  (select count(*) from platform.identity where deleted_at is null),
                   (select count(*) from platform.subscription where deleted_at is null and status in ('active','trialing')),
                   (select count(*) from platform.app where deleted_at is null and status = 'inactive')
                 """)
@@ -89,8 +89,8 @@ public class AdminResource {
     public List<AdminAccountView> accounts() {
         return rows("""
                 select a.id, a.name, a.status,
-                  (select count(*) from platform.users u
-                     where u.tenant_id = a.id::text and u.deleted_at is null),
+                  (select count(*) from platform.membership m
+                     where m.tenant_id = a.id::text and m.deleted_at is null),
                   (select count(*) from platform.subscription s
                      where s.tenant_id = a.id::text and s.deleted_at is null and s.status in ('active','trialing'))
                 from platform.accounts a
@@ -120,11 +120,14 @@ public class AdminResource {
     @Path("/users")
     public List<AdminUserView> users() {
         return rows("""
-                select u.id, u.email, u.display_name, u.role, u.status, u.tenant_id, a.name
-                from platform.users u
-                join platform.accounts a on a.id::text = u.tenant_id
-                where u.deleted_at is null
-                order by a.name, u.email
+                select i.id, i.email, i.display_name, m.role,
+                       case when i.status = 'suspended' then i.status else m.status end,
+                       m.tenant_id, a.name
+                from platform.membership m
+                join platform.identity i on i.id = m.identity_id
+                join platform.accounts a on a.id::text = m.tenant_id
+                where m.deleted_at is null and i.deleted_at is null
+                order by a.name, i.email
                 """)
                 .stream()
                 .map(this::toUser)
@@ -245,13 +248,21 @@ public class AdminResource {
               and (s.status is not null or (app.status = 'active' and app.free_tier))
             """;
 
+    /**
+     * Le persone di un account: si parte dall'<b>appartenenza</b> e si raggiunge l'identità (UC 0116).
+     * Lo stato mostrato è quello dell'appartenenza, tranne quando la persona è sospesa sulla
+     * piattaforma (limitazione del trattamento, art. 18), che è la sospensione più forte.
+     */
     private List<AdminUserView> usersOf(String tenantId) {
         return rows("""
-                select u.id, u.email, u.display_name, u.role, u.status, u.tenant_id, a.name
-                from platform.users u
-                join platform.accounts a on a.id::text = u.tenant_id
-                where u.tenant_id = :tid and u.deleted_at is null
-                order by u.email
+                select i.id, i.email, i.display_name, m.role,
+                       case when i.status = 'suspended' then i.status else m.status end,
+                       m.tenant_id, a.name
+                from platform.membership m
+                join platform.identity i on i.id = m.identity_id
+                join platform.accounts a on a.id::text = m.tenant_id
+                where m.tenant_id = :tid and m.deleted_at is null and i.deleted_at is null
+                order by i.email
                 """, "tid", tenantId)
                 .stream()
                 .map(this::toUser)

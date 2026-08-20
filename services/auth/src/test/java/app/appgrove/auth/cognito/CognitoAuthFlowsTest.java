@@ -215,9 +215,12 @@ class CognitoAuthFlowsTest {
 
         assertEquals(email, seen.get().username());
         assertEquals(1, TestDb.count(ds,
-                "select count(*) from platform.users where cognito_sub = '" + sub
-                        + "' and email = '" + email + "' and role = 'owner'"),
-                "utente owner creato nello schema platform col sub Cognito");
+                // UC 0116: la registrazione crea identità (la persona) + appartenenza owner.
+                "select count(*) from platform.identity i"
+                        + " join platform.membership m on m.identity_id = i.id"
+                        + " where i.cognito_sub = '" + sub
+                        + "' and i.email = '" + email + "' and m.role = 'owner'"),
+                "persona e appartenenza owner create nello schema platform col sub Cognito");
     }
 
     @Test

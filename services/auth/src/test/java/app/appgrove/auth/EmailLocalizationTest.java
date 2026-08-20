@@ -113,10 +113,12 @@ class EmailLocalizationTest {
 
     private String localeOf(String email) {
         try (var c = ds.getConnection();
-                var ps = c.prepareStatement("select locale from platform.users where lower(email) = lower(?)")) {
+                var ps = c.prepareStatement(
+                        // UC 0116: la lingua è della PERSONA, quindi sta sull'identità.
+                        "select locale from platform.identity where lower(email) = lower(?)")) {
             ps.setString(1, email);
             try (var rs = ps.executeQuery()) {
-                assertTrue(rs.next(), "utente non trovato: " + email);
+                assertTrue(rs.next(), "persona non trovata: " + email);
                 return rs.getString(1);
             }
         } catch (java.sql.SQLException e) {

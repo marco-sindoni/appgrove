@@ -163,6 +163,19 @@ nascondiamo meglio, ma perché non è più un caso possibile.
 
 ## Punti aperti / decisioni differite
 
+- **Lasciato indietro dalla change `0088` (UC 0116), perché è di questo use case**: lo stato
+  «appartenenza in attesa di accettazione» **non** esiste su `platform.membership`. Oggi l'attesa è la
+  riga di invito (`platform.invitations`, stato `pending`) e un secondo modo di dirla, che nessun
+  percorso usa, sarebbe solo un'ambiguità in più. Se i percorsi d'ingresso di questa storia hanno
+  bisogno di un'appartenenza «prenotata» (per esempio per tenere occupato un posto acquistato in
+  anticipo, UC 0103), è qui che lo stato si introduce — con il vincolo di unicità che va riletto,
+  perché è limitato alle righe vive.
+- **Riuso di un indirizzo dopo la cancellazione di un'identità**: l'unicità di `platform.identity` su
+  indirizzo e identificativo di autenticazione è **incondizionata** (vale anche sulle righe cancellate),
+  come era su `platform.users`. Chi si ripresenta con l'indirizzo di un'identità cancellata trova un
+  rifiuto di indice, non un messaggio. Rientra nel tema di questa storia: messaggi comprensibili senza
+  rivelare l'esistenza di un'identità.
+
 - **Rimborso del posto se l'invito viene rifiutato o scade**: non deciso. La linea coerente col modello a
   mese intero è che il posto resti pagato per il periodo in corso e torni disponibile per un altro invito.
   Va confermato perché **riguarda denaro**. Proprietario: [UC 0103](0103-acquisto-anticipato-posto-invito.md).

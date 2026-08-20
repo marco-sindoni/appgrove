@@ -170,7 +170,7 @@ public class CognitoIdentityProvider implements IdentityProvider {
                         .password(password)
                         .userAttributes(userAttributes(emailAddr, displayName))
                         // La lingua deve viaggiare QUI: Cognito manda l'email di verifica durante
-                        // questa chiamata, quando la riga in platform.users non esiste ancora.
+                        // questa chiamata, quando la riga in platform.identity non esiste ancora.
                         .clientMetadata(localeMetadata(lang));
             }).userSub();
         } catch (UsernameExistsException e) {

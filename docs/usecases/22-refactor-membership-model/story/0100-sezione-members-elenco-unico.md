@@ -84,7 +84,7 @@ e descritto per gli strumenti di assistenza.
 
 ## 7. Dati toccati
 
-- **`platform.users`**: letta e scritta come oggi, meno il ruolo (che scende a due valori, UC 0098).
+- **`platform.identity` + `platform.membership`** (UC 0116): lette e scritte come `platform.users` prima del rifacimento — indirizzo e nome dall'identità, ruolo e stato dall'appartenenza — meno il ruolo, che scende a due valori (UC 0098).
 - **`platform.invitations`**: letta come parte dello stesso elenco; il ruolo dell'invito **scompare**
   (era un ruolo di piattaforma che non esiste più).
 - **`platform.app_access`**: letta in sola lettura per il conteggio delle applicazioni per persona.

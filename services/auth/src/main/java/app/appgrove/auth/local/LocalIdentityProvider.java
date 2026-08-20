@@ -98,7 +98,10 @@ public class LocalIdentityProvider implements IdentityProvider {
 
     @Override
     public void signup(String emailAddr, String password, String displayName, String locale) {
-        if (directory.findByEmail(emailAddr).isPresent()) {
+        // Dopo UC 0116 la domanda giusta è «esiste già questa PERSONA?», non «esiste già una persona con
+        // questo indirizzo in qualche account?»: un'identità rimasta senza appartenenze non comparirebbe
+        // nella prima lettura, e il rifiuto arriverebbe più tardi come violazione di indice.
+        if (directory.findByEmail(emailAddr).isPresent() || platform.identityExists(emailAddr)) {
             throw status(Response.Status.CONFLICT, "Email già registrata.");
         }
         CreatedUser created = platform.createAccountWithOwner(localSub(), emailAddr, displayName, locale);
@@ -141,6 +144,19 @@ public class LocalIdentityProvider implements IdentityProvider {
 
     @Override
     public Session acceptInvitation(InviteRow invite, String password, String displayName, String locale) {
+        // UC 0116 — il modello ora ammette che quella persona esista già (l'appartenenza sarebbe una in
+        // più, non una identità in più). Questo percorso però conia un NUOVO identificativo di
+        // autenticazione e una NUOVA password: applicarli a un'identità esistente significherebbe
+        // permettere a un invito di rimettere in gioco le credenziali di qualcun altro. Quindi qui si
+        // rifiuta, in modo comprensibile e non con una violazione di indice — e far entrare davvero chi
+        // esiste già, dalla sua sessione e senza toccarne la password, è di UC 0118.
+        // Il rifiuto lo vede solo l'invitato (ha in mano il proprio token d'invito), mai chi ha invitato:
+        // nessuna interfaccia dell'account apprende da qui che quella persona esiste.
+        if (platform.identityExists(invite.email())) {
+            throw status(Response.Status.CONFLICT,
+                    "Questo indirizzo è già registrato su appgrove: accedi con le tue credenziali "
+                            + "e accetta l'invito dalla tua sessione.");
+        }
         CreatedUser created = platform.createUserInTenant(
                 localSub(), invite.tenantId(), invite.email(), displayName, invite.role(), locale);
         credentials.create(created.user().sub(), Passwords.hash(password), true); // link prova l'email

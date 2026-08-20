@@ -11,7 +11,8 @@ import app.appgrove.core.legal.LegalAcceptance;
 import app.appgrove.core.newsletter.NewsletterSubscriber;
 import app.appgrove.core.platform.Account;
 import app.appgrove.core.platform.Invitation;
-import app.appgrove.core.platform.User;
+import app.appgrove.core.platform.Membership;
+import app.appgrove.core.platform.Identity;
 import app.appgrove.core.support.SupportTicket;
 import app.appgrove.core.support.SupportTicketMessage;
 import io.agroal.api.AgroalDataSource;
@@ -42,6 +43,16 @@ public class PlatformDataContract implements AppDataContract {
 
     public static final String APP_ID = "platform";
 
+    /**
+     * Gli indirizzi delle persone di <b>questo</b> account (UC 0116): si passa sempre per
+     * l'appartenenza, mai per l'identità da sola — è la regola che tiene l'export dentro il confine
+     * dell'account. Sotto-interrogazione, non vista: un parametro {@code ?} = il tenant.
+     */
+    private static final String EMAIL_OF_TENANT =
+            "select lower(i.email) from platform.identity i"
+                    + " join platform.membership m on m.identity_id = i.id"
+                    + " where m.tenant_id = ?";
+
     @Inject
     AgroalDataSource ds;
 
@@ -54,9 +65,9 @@ public class PlatformDataContract implements AppDataContract {
     public ExportResult exportData(GdprScope scope) {
         Map<String, List<Map<String, Object>>> entities = new LinkedHashMap<>();
         List<String> steps = List.of(
-                "Raccolta account", "Raccolta utenti", "Raccolta inviti", "Raccolta ticket di supporto",
-                "Raccolta iscrizioni newsletter", "Raccolta accettazioni legali",
-                "Raccolta storico pagamenti");
+                "Raccolta account", "Raccolta persone e appartenenze", "Raccolta inviti",
+                "Raccolta ticket di supporto", "Raccolta iscrizioni newsletter",
+                "Raccolta accettazioni legali", "Raccolta storico pagamenti");
 
         entities.put("accounts", query(
                 "select id, name, status, paddle_customer_id, created_at"
@@ -64,13 +75,26 @@ public class PlatformDataContract implements AppDataContract {
                 UUID.fromString(scope.tenantId()),
                 "id", "name", "status", "paddle_customer_id", "created_at"));
 
-        entities.put("users", query(
-                // `locale` (UC 0018) è un dato personale dell'utente: va esportato come gli altri,
+        // UC 0116 — le persone dell'account si esportano in due entità distinte, perché sono due cose
+        // distinte: l'IDENTITÀ (dato di piattaforma: chi è la persona) e l'APPARTENENZA (dato di questo
+        // account: che ruolo ha qui). Si parte SEMPRE dall'appartenenza di questo conto e si raggiunge
+        // l'identità: così l'export di un account non può contenere nulla di un altro account, e in
+        // particolare non rivela a quali altri account quella persona appartenga.
+        entities.put("identities", query(
+                // `locale` (UC 0018) è un dato personale della persona: va esportato come gli altri,
                 // o la portabilità (art. 20) restituirebbe un profilo incompleto.
-                "select id, cognito_sub, email, display_name, locale, role, status, created_at"
-                        + " from platform.users where tenant_id = ? order by email",
+                "select i.id, i.cognito_sub, i.email, i.display_name, i.locale, i.status, i.created_at"
+                        + " from platform.identity i"
+                        + " join platform.membership m on m.identity_id = i.id"
+                        + " where m.tenant_id = ? order by i.email",
                 scope.tenantId(),
-                "id", "cognito_sub", "email", "display_name", "locale", "role", "status", "created_at"));
+                "id", "cognito_sub", "email", "display_name", "locale", "status", "created_at"));
+
+        entities.put("memberships", query(
+                "select id, identity_id, role, status, created_at, deleted_at"
+                        + " from platform.membership where tenant_id = ? order by created_at",
+                scope.tenantId(),
+                "id", "identity_id", "role", "status", "created_at", "deleted_at"));
 
         entities.put("invitations", query(
                 "select id, email, role, status, expires_at, created_at"
@@ -96,7 +120,7 @@ public class PlatformDataContract implements AppDataContract {
         entities.put("newsletter_subscribers", query(
                 "select id, email, status, locale, origin_channel, confirmed_at, unsubscribed_at, created_at"
                         + " from platform.newsletter_subscriber"
-                        + " where lower(email) in (select lower(email) from platform.users where tenant_id = ?)"
+                        + " where lower(email) in (" + EMAIL_OF_TENANT + ")"
                         + " order by email",
                 scope.tenantId(),
                 "id", "email", "status", "locale", "origin_channel", "confirmed_at", "unsubscribed_at",
@@ -106,7 +130,7 @@ public class PlatformDataContract implements AppDataContract {
                 "select ce.id, ce.subscriber_id, ce.event_type, ce.consent_text_version, ce.channel, ce.occurred_at"
                         + " from platform.consent_event ce"
                         + " where ce.subscriber_id in (select ns.id from platform.newsletter_subscriber ns"
-                        + "   where lower(ns.email) in (select lower(email) from platform.users where tenant_id = ?))"
+                        + "   where lower(ns.email) in (" + EMAIL_OF_TENANT + "))"
                         + " order by ce.occurred_at",
                 scope.tenantId(),
                 "id", "subscriber_id", "event_type", "consent_text_version", "channel", "occurred_at"));
@@ -137,11 +161,28 @@ public class PlatformDataContract implements AppDataContract {
 
     @Override
     public PurgeResult purgeData(GdprScope scope) {
-        // Ordine FK-safe: item → job, poi inviti/subscription/utenti, infine l'account (radice).
+        // Ordine FK-safe: item → job, poi inviti/subscription/appartenenze, infine l'account (radice).
         // Cancellazione FISICA (erasure #13 L70), atomica sulla singola connessione.
+        //
+        // UC 0116 — il punto delicato. Cancellare un account cancella le sue APPARTENENZE e i suoi dati,
+        // ma NON l'identità di una persona che appartiene anche ad altri account: quella persona è di
+        // un'altra azienda tanto quanto di questa, e portarsela via sarebbe cancellare dati di un
+        // titolare diverso. Si cancellano quindi solo le identità che restano ORFANE — quelle la cui
+        // unica appartenenza era in questo account. Lo stesso vale per ciò che è agganciato alla
+        // persona e non all'account: l'iscrizione alla newsletter e la sua prova di consenso.
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
             Map<String, Integer> deleted = new LinkedHashMap<>();
+
+            // Le identità orfane, calcolate PRIMA di toccare le appartenenze (dopo non si saprebbe più
+            // chi era di questo account). Tabella temporanea che muore col commit: nessuno stato residuo.
+            exec(c, "create temp table purge_orphan_identity on commit drop as"
+                    + " select i.id, i.email from platform.identity i"
+                    + " where i.id in (select m.identity_id from platform.membership m where m.tenant_id = ?)"
+                    + "   and not exists (select 1 from platform.membership m2"
+                    + "                    where m2.identity_id = i.id and m2.tenant_id <> ?)",
+                    scope.tenantId(), scope.tenantId());
+
             // i ticket referenziano gdpr_export_job (auto-ticket): vanno via prima dei job
             deleted.put("support_ticket_message",
                     delete(c, "delete from platform.support_ticket_message where tenant_id = ?", scope.tenantId()));
@@ -151,16 +192,16 @@ public class PlatformDataContract implements AppDataContract {
                     delete(c, "delete from platform.gdpr_export_job_item where tenant_id = ?", scope.tenantId()));
             deleted.put("gdpr_export_job",
                     delete(c, "delete from platform.gdpr_export_job where tenant_id = ?", scope.tenantId()));
-            // Newsletter (UC 0039): collegata per email agli utenti del tenant; eventi prima del
-            // subscriber (FK), e tutto prima del delete di `users` (che ne fornisce le email).
+            // Newsletter (UC 0039): legata alla PERSONA per indirizzo, non all'account. Va via solo per
+            // le identità orfane: chi resta membro di un altro account resta iscritto, perché il suo
+            // consenso non l'aveva dato a questo account. Eventi prima del subscriber (FK).
             deleted.put("consent_event",
                     delete(c, "delete from platform.consent_event where subscriber_id in ("
                             + " select ns.id from platform.newsletter_subscriber ns"
-                            + " where lower(ns.email) in (select lower(email) from platform.users where tenant_id = ?))",
-                            scope.tenantId()));
+                            + " where lower(ns.email) in (select lower(email) from purge_orphan_identity))"));
             deleted.put("newsletter_subscriber",
                     delete(c, "delete from platform.newsletter_subscriber where lower(email) in ("
-                            + " select lower(email) from platform.users where tenant_id = ?)", scope.tenantId()));
+                            + " select lower(email) from purge_orphan_identity)"));
             deleted.put("legal_acceptance",
                     delete(c, "delete from platform.legal_acceptance where tenant_id = ?", scope.tenantId()));
             deleted.put("invitations",
@@ -171,8 +212,12 @@ public class PlatformDataContract implements AppDataContract {
                     delete(c, "delete from platform.billing_transaction where tenant_id = ?", scope.tenantId()));
             deleted.put("subscription",
                     delete(c, "delete from platform.subscription where tenant_id = ?", scope.tenantId()));
-            deleted.put("users",
-                    delete(c, "delete from platform.users where tenant_id = ?", scope.tenantId()));
+            // Prima le appartenenze di questo account, poi le identità rimaste orfane (FK).
+            deleted.put("membership",
+                    delete(c, "delete from platform.membership where tenant_id = ?", scope.tenantId()));
+            deleted.put("identity",
+                    delete(c, "delete from platform.identity where id in ("
+                            + " select id from purge_orphan_identity)"));
             deleted.put("accounts",
                     delete(c, "delete from platform.accounts where id = ?", UUID.fromString(scope.tenantId())));
             c.commit();
@@ -186,7 +231,8 @@ public class PlatformDataContract implements AppDataContract {
     public DataManifest manifest() {
         List<DataManifest.Entry> entries = new ArrayList<>();
         DataManifests.collectPersonalData(Account.class, "accounts", entries);
-        DataManifests.collectPersonalData(User.class, "users", entries);
+        DataManifests.collectPersonalData(Identity.class, "identities", entries);
+        DataManifests.collectPersonalData(Membership.class, "memberships", entries);
         DataManifests.collectPersonalData(Invitation.class, "invitations", entries);
         DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
         DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);
@@ -196,10 +242,21 @@ public class PlatformDataContract implements AppDataContract {
         return new DataManifest(APP_ID, entries);
     }
 
-    private static int delete(Connection c, String sql, Object tenantParam) throws SQLException {
+    private static int delete(Connection c, String sql, Object... params) throws SQLException {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setObject(1, tenantParam);
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
             return ps.executeUpdate();
+        }
+    }
+
+    private static void exec(Connection c, String sql, Object... params) throws SQLException {
+        try (PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            ps.execute();
         }
     }
 

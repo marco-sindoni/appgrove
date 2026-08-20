@@ -81,7 +81,7 @@ test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta 
 
   // ── 4. limitazione art. 18 sull'utente, con conferma ────────────────────────
   const [userId] = dbRow(
-    `select id from platform.users where lower(email) = lower($1) and deleted_at is null`,
+    `select id from platform.identity where lower(email) = lower($1) and deleted_at is null`,
     [t.email],
   )
   await admin.getByRole('link', { name: 'GDPR rights' }).click()
@@ -117,7 +117,7 @@ test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta 
 
   // ── 7. prove nel registro + isolamento (rilevatore di travaso) ──────────────
   const [adminSub] = dbRow(
-    `select cognito_sub from platform.users where lower(email) = lower($1) and deleted_at is null`,
+    `select cognito_sub from platform.identity where lower(email) = lower($1) and deleted_at is null`,
     ['admin@appgrove.test'],
   )
   const trail = dbRows(
@@ -129,7 +129,7 @@ test('[A-GDPR] ticket privacy + export → aggregazione in console → risposta 
   expect(trail.every(([, actor]) => actor === adminSub)).toBeTruthy()
   expect(trail.every(([, , tenantId]) => tenantId === t.tenantId)).toBeTruthy()
   expect(
-    dbRow(`select status, suspended_reason from platform.users where id::text = $1`, [userId]),
+    dbRow(`select status, suspended_reason from platform.identity where id::text = $1`, [userId]),
   ).toEqual(['active', ''])
 
   // Ticket ed export appartengono al solo tenant giusto: il canarino resta pulito.
