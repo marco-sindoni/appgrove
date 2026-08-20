@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie sono la suite completa ./run-tests.sh verde prima del commit, il registro delle decisioni integrale e how-to-test.md nella cartella della change. Merge e push restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0098 «Modello dati dell'accesso per applicazione e ruolo di piattaforma a due valori» (area 22-refactor-membership-model, epica E22.1, quarta storia dell'epica 22 in ordine di esecuzione, prima della sotto-epica E22.1). Da qui il nome del branch 0091-use-case-0098-modello-dati-accesso-per-applicazione; il numero 0091 è il progressivo di changes/ (ultima esistente: 0090) e coincide con quello atteso dall'orchestratore. Lo stato di implementazione delle storie evo NON vive in docs/usecases/_INDEX.md (che copre le 60 storie base, e infatti 0098 non vi compare): si registra nell'intestazione della storia e nell'epica, come stabilito dalla decisione 13 della change 0088."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La migrazione della nuova tabella è V20__app_access.sql. Il piano di lavoro della storia ipotizzava V18 e la change 0088 lo aveva già corretto: V17 (identità e appartenenze), V18 (account attivo) e V19 (inviti a identità esistenti) sono occupate. Conseguenza già registrata dalla 0088 e qui confermata: `app_access.identity_id` riferisce DIRETTAMENTE platform.identity, senza la migrazione doppia che il piano ipotizzava quando l'identità non esisteva ancora.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0098-modello-dati-accesso-per-applicazione.md",
+        "description": "Passo 1 allineato: la migrazione è V20, non V18."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La riduzione del ruolo di piattaforma a due valori si ferma dove comincia il token. In scope: l'enumerazione MembershipRole (owner, member) e tutto ciò che OFFRE o SCRIVE il valore admin — invito, cambio di ruolo della persona, seme di sviluppo, i due selettori della schermata dei membri. Fuori scope: la costante Roles.ADMIN e le annotazioni @RolesAllowed che leggono il claim `roles` del token, che restano intatte. Due ragioni: la riduzione del claim è dichiaratamente di UC 0099 e la tolleranza dei token GIÀ EMESSI che portano ancora admin è di UC 0113 §6, quindi toglierle qui contraddirebbe due storie; e la restrizione avviene comunque per costruzione, perché nessuna appartenenza produce più quel valore, senza riscrivere l'autorizzazione di venti operazioni mentre la storia successiva la rifà. Il perché è scritto accanto alla costante, altrimenti qualcuno la 'ripulirà'.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/Roles.java",
+        "description": "Roles.ADMIN resta come tolleranza dei token già emessi; il commento dice chi la ritira (UC 0099/0113)."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MembershipRole.java",
+        "description": "Enumerazione ridotta a owner e member."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La migrazione NON aggiunge alcun vincolo di controllo sui valori del ruolo di piattaforma e NON converte le righe admin esistenti. Il piano di lavoro ammetteva il vincolo «se e solo se non esistono righe admin»: scartato perché produrrebbe schemi diversi fra ambienti a seconda dei dati, che è peggio dell'assenza del vincolo. La conversione (admin → member più accesso admin su ogni applicazione dell'account) e il vincolo che la sigilla sono di UC 0113, che li possiede per intero; il rimando è tracciato là. Sulla nuova tabella il vincolo di controllo del ruolo di APPLICAZIONE c'è invece, perché non esistono righe pregresse da rispettare."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il seme di sviluppo viene invece convertito: la persona `admin@acme.test` diventa `member` di piattaforma con una riga di accesso di ruolo `admin` sul Mini-CRM, e l'invito in attesa di ruolo `admin` diventa `member`. Non è anticipare UC 0113 — quella storia converte i dati REALI con una migrazione — ma il dovere di un dato di sviluppo, che deve dire la verità sul modello del giorno: un seme con un ruolo che l'enumerazione non ammette più non si caricherebbe nemmeno. È anche ciò che rende la nuova tabella osservabile nella verifica manuale. Conseguenza dichiarata in how-to-test: quella persona non vede più le schermate riservate a owner e admin.",
+    "files": [
+      {
+        "file": "dev/seed/seed.sql",
+        "description": "Appartenenza admin → member; riga di accesso app_access con ruolo admin sul Mini-CRM; invito pendente admin → member."
+      },
+      {
+        "file": "dev/seed/README.md",
+        "description": "Tabella delle persone e degli inviti allineata; nota sul ruolo di applicazione."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) L'interfaccia di rete degli accessi è in scope (storia §1 e Definition of Done 3): lettura, concessione, cambio di ruolo e revoca sotto /api/platform/v1/apps/{appId}/access. La protezione NON è @RolesAllowed — il ruolo di applicazione non è nel token — ma @Authenticated più la verifica esplicita dentro la transazione, con la funzione pura delle regole. È scritto nel commento della classe perché è esattamente il punto in cui una 'semplificazione' aprirebbe un varco."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'evento di invalidazione della copia locale (storia §4 punto 4) NON viene emesso: il meccanismo — copia locale nei servizi delle applicazioni, invalidazione a eventi, varco riusabile — è di UC 0099 per dichiarazione della storia stessa. I tre punti di scrittura portano un commento che dice quale evento andrà emesso da lì, così la storia successiva non deve cercarli. Rimando tracciato in UC 0099."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Nessun ruolo predefinito lato servizio quando si concede un accesso: il ruolo è obbligatorio nel corpo della richiesta. Il punto aperto della storia proponeva `viewer` come predefinito ma ne assegnava la conferma all'interfaccia (UC 0111): il predefinito è quindi una scelta della schermata, non del servizio. Un potere concesso per omissione di un campo è il modo peggiore di concederlo."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) `app_access.identity_id` è annotato @PersonalData e dichiarato nel manifesto dei dati, in deroga al piano di lavoro che diceva «nessuna annotazione: non contiene dati personali». Motivo: il collaudo di conformità è bidirezionale (una voce del manifesto con entità e campo pretende l'annotazione, e viceversa), e la storia §7 pretende la dichiarazione nel manifesto; la coerenza col precedente di `membership.identity_id` — il legame fra una persona e un'azienda è dato personale anche senza nome né indirizzo — vale più della distinzione fine. Qui il dato dice di più: quella persona usa QUELLA applicazione con QUEL ruolo. Titolare: l'account."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Copertura end-to-end: nessun percorso nuovo, la voce 0098 del registro passa da esenzione `non-implementato` a `senza-superficie` (storia di modello dati; i percorsi arrivano con 0100, 0107 e 0111). Il percorso di piattaforma J-MEMBERS e i collaudi della schermata dei membri perdono il segmento del CAMBIO DI RUOLO, perché quel comportamento non esiste più: non è una regressione di copertura ma la sparizione dell'oggetto coperto, e il titolo del percorso nel registro viene corretto di conseguenza.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0098: non-implementato → senza-superficie; titolo di J-MEMBERS senza «ruoli»."
+      }
+    ]
+  }
+]
