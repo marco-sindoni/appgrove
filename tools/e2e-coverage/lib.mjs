@@ -52,16 +52,35 @@ export function readRegistry(root) {
 
 // ── catalogo degli use case ──────────────────────────────────────────────────
 
-/** Numeri (stringhe a 4 cifre) di tutti gli use case presenti in docs/usecases/. */
+/**
+ * Numeri (stringhe a 4 cifre) di tutti gli use case presenti in docs/usecases/.
+ *
+ * Guarda dentro ogni area E dentro un livello di SOTTOCARTELLE dell'area. Il secondo livello serve
+ * perché un'area può organizzarsi in sottocartelle invece di tenere i file in piano: l'area 22
+ * (rifacimento del modello di appartenenza) separa `story/` da `task/` e `epic/`. Senza questo, le
+ * storie dentro `story/` sarebbero INVISIBILI al controllo — e quindi esenti di fatto dalla regola
+ * «ogni use case è classificato», che è il presidio per cui questo file esiste. Un buco silenzioso
+ * vale meno di zero: dà l'impressione che il registro sia completo.
+ *
+ * Un livello e non di più: basta per le strutture reali e resta prevedibile. Lo stesso numero trovato
+ * in due punti (la storia in `story/`, il suo piano di lavoro in `task/`) conta una volta sola.
+ */
 export function listCatalogUseCases(root) {
   const base = path.join(root, 'docs/usecases')
   if (!fs.existsSync(base)) return []
   const numeri = new Set()
-  for (const area of fs.readdirSync(base, { withFileTypes: true })) {
-    if (!area.isDirectory()) continue
-    for (const f of fs.readdirSync(path.join(base, area.name))) {
+  const raccogli = (dir) => {
+    for (const f of fs.readdirSync(dir)) {
       const m = /^(\d{4})-.*\.md$/.exec(f)
       if (m) numeri.add(m[1])
+    }
+  }
+  for (const area of fs.readdirSync(base, { withFileTypes: true })) {
+    if (!area.isDirectory()) continue
+    const dirArea = path.join(base, area.name)
+    raccogli(dirArea)
+    for (const sub of fs.readdirSync(dirArea, { withFileTypes: true })) {
+      if (sub.isDirectory()) raccogli(path.join(dirArea, sub.name))
     }
   }
   return [...numeri].sort()

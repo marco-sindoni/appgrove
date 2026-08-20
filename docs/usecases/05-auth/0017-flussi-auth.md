@@ -124,3 +124,12 @@ _Aggiunti dalla change `0012-use-case-0017-…` (implementazione UI auth contro 
   (invio codice/link, aggiornamento nel provider, riallineamento del record `users` nel core). *Owner:*
   questo use case (flusso UI) + **UC 0058** (endpoint auth-local) + ☁ UC 0015/0016 (Cognito). Finché non
   esiste, la rettifica dell'email passa dal supporto.
+
+- **Durata del token = ritardo massimo di una revoca** (UC 0117, epica 22): con più appartenenze per
+  persona il legame diventa visibile — un token emesso per un account resta valido fino alla scadenza anche
+  dopo un cambio di account o una revoca dell'appartenenza. Non è un varco (vale per un account a cui la
+  persona apparteneva), ma la durata scelta **va scritta** qui insieme alla sua conseguenza, invece di
+  restare implicita. Proprietario: questo use case.
+- **Vincolo «1 utente → 1 tenant» superato** (UC 0116, epica 22): i flussi di accesso e invito di questo
+  use case lo assumono. Da rileggere quando UC 0116 viene implementato.
+  Proprietario: [UC 0116](../22-refactor-membership-model/story/0116-identita-e-appartenenze.md).

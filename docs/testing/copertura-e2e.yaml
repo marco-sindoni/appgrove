@@ -632,3 +632,74 @@ esenzioni:
   - usecase: "0094"
     categoria: senza-superficie
     motivo: Integrazione della copertura nel workflow delle skill — strumento di processo.
+
+  # ── Epica 22 — rifacimento del modello di appartenenza (analisi: change 0087) ──
+  # Sedici storie appena scritte (docs/usecases/22-refactor-membership-model/story/): NESSUNA è ancora
+  # implementata, quindi tutte esenti come `non-implementato`. Il controllo rifiuterà l'esenzione appena
+  # compare la cartella changes/*-use-case-NNNN-*: allora la storia va riclassificata — fra le superfici
+  # con il suo percorso, oppure come `senza-superficie` se non ne ha (quelle di modello, autorizzazione,
+  # listino e strumenti). L'indicazione di quale sarà la classificazione giusta è già scritta qui accanto,
+  # per non doverla ricostruire fra sei mesi.
+  - usecase: "0098"
+    categoria: non-implementato
+    motivo: Modello dati dell'accesso per applicazione — nessuna superficie propria (diventerà senza-superficie).
+  - usecase: "0099"
+    categoria: non-implementato
+    motivo: Autorizzazione per applicazione (token, propagazione, varco) — nessuna superficie propria (diventerà senza-superficie).
+  - usecase: "0100"
+    categoria: non-implementato
+    motivo: «Members» come elenco unico senza ruolo — avrà superficie, coperta dal percorso di livello 2 dei membri e da J-ROLES.
+  - usecase: "0101"
+    categoria: non-implementato
+    motivo: Semantica dei tre ruoli come contratto di piattaforma — contratto e collaudi strutturali (diventerà senza-superficie).
+  - usecase: "0102"
+    categoria: non-implementato
+    motivo: Listino dei posti a fasce, modello e calcolo — nessuna superficie propria (diventerà senza-superficie).
+  - usecase: "0103"
+    categoria: non-implementato
+    motivo: Acquisto anticipato del posto all'invito — avrà superficie (riquadro dei posti), coperta da J-SEATS.
+  - usecase: "0104"
+    categoria: non-implementato
+    motivo: Riduzione dei posti in attesa — avrà superficie, coperta da J-SEATS.
+  - usecase: "0105"
+    categoria: non-implementato
+    motivo: Governo del listino dalla console di piattaforma — avrà superficie nella console admin.
+  - usecase: "0106"
+    categoria: non-implementato
+    motivo: I posti nella sezione «Billing» — avrà superficie, coperta dal percorso di livello 2 della fatturazione.
+  - usecase: "0107"
+    categoria: non-implementato
+    motivo: Menu, rotte e visibilità per ruolo — avrà superficie, coperta dal percorso della shell e da J-ROLES.
+  - usecase: "0108"
+    categoria: non-implementato
+    motivo: Cruscotto del collaboratore — avrà superficie, coperta dal percorso di livello 2 del cruscotto e da J-ROLES.
+  - usecase: "0109"
+    categoria: non-implementato
+    motivo: Catalogo in sola lettura e richiesta all'owner — avrà superficie, coperta dal percorso di livello 2 del catalogo.
+  - usecase: "0110"
+    categoria: non-implementato
+    motivo: «I miei dati» in forma ridotta — avrà superficie, coperta dal percorso di livello 2 dei diritti dell'interessato.
+  - usecase: "0111"
+    categoria: non-implementato
+    motivo: Schermata «Gestione utenti» dentro ogni applicazione — avrà superficie, cuore di J-ROLES.
+  - usecase: "0112"
+    categoria: non-implementato
+    motivo: Copilota dei ruoli nella skill new-application — strumentazione (diventerà senza-superficie).
+  - usecase: "0114"
+    categoria: non-implementato
+    motivo: Ritiro della categoria B2C/B2B delle app — rimozione strutturale, nessuna superficie (diventerà senza-superficie).
+  - usecase: "0115"
+    categoria: non-implementato
+    motivo: Ambito dei dati di un'app (gruppo di lavoro contro persona) — meccanismo di persistenza; avrà superficie solo quando esisterà un'app ad ambito utente.
+  - usecase: "0116"
+    categoria: non-implementato
+    motivo: Identità e appartenenze — storia di modello dati, nessuna superficie propria (diventerà senza-superficie).
+  - usecase: "0117"
+    categoria: non-implementato
+    motivo: Account attivo e selettore — avrà superficie, introdurrà il percorso J-ACCOUNT-SWITCH.
+  - usecase: "0118"
+    categoria: non-implementato
+    motivo: Inviti e registrazione con identità esistente — avrà superficie, introdurrà il percorso J-INVITE-EXISTING.
+  - usecase: "0113"
+    categoria: non-implementato
+    motivo: Migrazione degli account e copertura per ruolo — introduce J-ROLES e J-SEATS, non ha superficie propria (diventerà senza-superficie).

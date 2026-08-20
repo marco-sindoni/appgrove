@@ -1,0 +1,648 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: autopilot — l'agente risponde alle domande di approfondimento seguendo l'opzione che raccomanderebbe, registrando ogni scelta qui; i tre presidi restano dello sviluppatore (rilettura dei requisiti, consenso al commit, consenso al merge). Scelta dichiarata dallo sviluppatore alla prima domanda della skill."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change NON implementa uno use case esistente: ne CREA di nuovi. È un'attività documentale che scrive l'epica 22 (analisi di epiche, storie e piani di lavoro per il rifacimento della gestione delle appartenenze). Da qui la forma del branch senza il segmento use-case: change/0087-epica-22-refactor-membership-model. Nessuna riga di docs/usecases/_INDEX.md passa a 🟡 all'apertura, perché nessuna storia esistente viene implementata qui.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/",
+        "description": "Nuova area del catalogo creata da questa change, con le sottocartelle epic/, story/, task/ richieste dallo sviluppatore."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Interpretazione della richiesta «per i task usa plan mode»: i piani di lavoro (task) vanno scritti con il rigore di un piano di implementazione — esplorazione reale del codice esistente, percorsi di file veri, ordine e dipendenze fra i passi — NON invocando il tool di modalità pianificazione, che vieta la scrittura di file e renderebbe impossibile il deliverable (che è appunto scrivere documenti). L'esplorazione del codice è stata fatta prima di scrivere: modello dati utenti/inviti, API di piattaforma, lambda di generazione del token, menu laterale e guardie di rotta del backoffice, posti per-app del Mini-CRM, motore di quota ed entitlement, skill new-application."
+  },
+  {
+    "id": 4,
+    "decision": "L'epica 22 ROVESCIA una decisione registrata: l'epica 14 (storie 0072, 0073, 0074) dichiarava la gestione utenti centralizzata di piattaforma come «opzione scartata dall'utente», in favore di posti e appartenenze per-app con listino per-app. La richiesta dello sviluppatore reintroduce esattamente il modello centralizzato (utenti della piattaforma in un elenco unico, ruoli per-app, listino posti unico di piattaforma a scaglioni). Le tre storie dell'epica 14 vanno quindi marcate come SUPERATE dall'epica 22 e tolte dall'onda 2, non cancellate: la memoria della decisione precedente resta leggibile.",
+    "files": [
+      {
+        "file": "docs/usecases/14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md",
+        "description": "Da marcare come superato dall'epica 22 (nota in testa + punto aperto), quando l'analisi verrà approvata."
+      },
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Le righe 24-26 (storie 0072-0074, fase D) vanno sostituite dalle storie dell'epica 22 all'approvazione dell'analisi."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "Prezzo dei posti — scelta dello sviluppatore (fermata di escalation su materia economica, come prescritto: l'autopilot non decide i prezzi). Modello adottato: TARIFFA DI FASCIA APPLICATA A TUTTI I POSTI A PAGAMENTO. I primi 3 posti sono sempre gratuiti; il numero totale di posti determina una sola tariffa, applicata ai posti oltre i 3 gratuiti. Confini disambiguati (la formulazione originale si sovrapponeva su 3, 10, 50, 100): 1-3 gratuiti, 4-10 a 0,49 €/mese/posto, 11-50 a 0,42, 51-100 a 0,37, oltre 100 a 0,30. Esempio: 12 posti → 9 × 0,42 = 3,78 €/mese."
+  },
+  {
+    "id": 6,
+    "decision": "Conteggio dei posti — scelta dello sviluppatore: l'owner OCCUPA un posto, quindi la franchigia gratuita è owner + 2 collaboratori (tre persone in tutto). Coerente con GitHub, dove il proprietario dell'organizzazione consuma una licenza, e con l'indicatore «posti usati X su Y» mostrato all'utente, che così coincide col numero di persone."
+  },
+  {
+    "id": 7,
+    "decision": "Riduzione di posti in attesa (pending downgrade) — scelta dello sviluppatore: gli utenti indicati per la cancellazione MANTENGONO l'accesso fino alla fine del periodo già pagato, e cessano allo scadere. Deliberata divergenza da GitHub (che revoca subito e continua a fatturare): il posto è pagato, quindi resta usabile. Chi vuole escludere qualcuno immediatamente lo rimuove dalle singole applicazioni — operazione gratuita, immediata e distinta dalla riduzione dei posti."
+  },
+  {
+    "id": 8,
+    "decision": "Sezione «I miei dati» per gli utenti non-owner — scelta dello sviluppatore dopo segnalazione dell'agente (fermata di escalation su dati personali). La richiesta iniziale («account, billing, members e my data visibili solo all'owner») è stata corretta in: forma RIDOTTA per i non-owner, con i soli diritti della persona (rettifica del proprio nome, esportazione dei propri dati, informativa e contatto privacy) e senza alcun atto sull'account (esportazione completa, recesso per-app, cancellazione dell'account), che restano dell'owner. Motivo: il diritto di accesso e di portabilità appartiene a ogni interessato (artt. 15 e 20 del Regolamento europeo) e la documentazione di progetto dichiara già quei percorsi «esenti dai gate, per ogni ruolo» (UC 0033, ProfileExportResource)."
+  },
+  {
+    "id": 9,
+    "decision": "Requisito aggiunto dallo sviluppatore durante l'approfondimento: l'amministratore di piattaforma deve poter cambiare i prezzi delle fasce dei posti per TUTTI i tenant (system-wide), con effetto dal ciclo di fatturazione successivo. Va analizzato in una storia dedicata perché entra in tensione con due presidi esistenti: il listino come codice (i prezzi delle app vivono in file YAML versionati) e l'immutabilità dei prezzi vivi (skill pricing-change: un prezzo nuovo è un livello nuovo, non la mutazione di uno esistente). Direzione da analizzare: listino dei posti VERSIONATO in banca dati, con nuova versione datata invece di mutazione in luogo, e nessun effetto retroattivo sui periodi già fatturati."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Struttura della nuova area 22: sottocartelle epic/ (5 file: epica madre + 4 sotto-epiche), story/ (16 storie numerate 0098-0113 nel formato drill-down del catalogo) e task/ (16 piani di lavoro), più un README.md di indice dell'area. Le storie sono use case a pieno titolo con numerazione assoluta continua, così entrano nell'indice del catalogo, nell'onda 2 e nel registro di copertura come tutte le altre: un'analisi che vive fuori dal catalogo non verrebbe mai schedulata."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La struttura in sottocartelle richiesta dallo sviluppatore rompe un presidio meccanico: tools/e2e-coverage/lib.mjs enumera gli use case leggendo SOLO il primo livello di ogni area, quindi le storie dentro story/ sarebbero invisibili al controllo che pretende la classificazione di ogni use case (e classificarle a mano renderebbe rossa la suite, perché il controllo segnala le esenzioni per use case che non trova). Si estende quindi listCatalogUseCases a scandire un livello di sottocartelle, con il suo test, e si classificano le 16 storie come esenzione 'non-implementato'. Alternativa scartata: tenere le storie piatte nell'area, che avrebbe rispettato il presidio ma non la struttura richiesta.",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "listCatalogUseCases estesa a un livello di sottocartelle dentro l'area, così le storie in story/ risultano nel catalogo."
+      },
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "Le 16 storie nuove entrano come esenzioni 'non-implementato': la loro superficie non esiste ancora in main."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Ordine di esecuzione proposto per le 16 storie: fondamenta (0098 dati e API, 0099 autorizzazione e proiezione verso le app, 0101 semantica dei ruoli, 0100 sezione Members), poi i posti a pagamento (0102 listino, 0103 acquisto anticipato, 0104 riduzione in attesa, 0105 governo del listino, 0106 trasparenza in Billing), poi l'esperienza per ruolo (0107 menu e rotte, 0108 cruscotto, 0109 catalogo e richiesta all'owner, 0110 «I miei dati» ridotto), infine dentro le applicazioni (0111 schermata di gestione utenti, 0112 copilota della skill new-application, 0113 migrazione e copertura end-to-end). Criterio: nulla si può mostrare per ruolo prima che il ruolo esista nei dati e nel token; nulla si può vendere prima che il posto esista."
+  },
+  {
+    "id": 13,
+    "decision": "Requisito aggiunto dallo sviluppatore in corso di approfondimento: la change produce anche CINQUE prototipi navigabili in HTML che evolvono l'interfaccia attuale senza cambiarne lo stile — quattro sullo stesso caso d'uso visto dai quattro ruoli (owner, admin, editor, viewer), che mettono in evidenza le differenze d'uso della sezione «Members» e della gestione utenti dentro l'applicazione, più uno per l'amministratore di piattaforma con l'impostazione delle tariffe delle fasce dei posti. Devono essere documentati per rendere facile l'implementazione successiva.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/",
+        "description": "Cartella dei cinque prototipi (owner.html, admin.html, editor.html, viewer.html, platform-admin.html) e del loro README di implementazione."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Impianto tecnico dei prototipi: un file HTML autonomo per prototipo, con poco JavaScript scritto a mano, che IMPORTA il file dei token reale del design system (frontend/packages/design-system/src/tokens/tokens.css) e dipinge solo con quelle variabili. Così «nessun cambiamento di stile» è vero per costruzione e non per disciplina, e i prototipi seguono l'evoluzione dei token. Alternativa scartata: evolvere i prototipi esistenti docs/frontend-design/v1/*.dc.html, monoliti da centoventimila caratteri dipendenti da un runtime proprietario di terze parti (support.js), in inglese e anteriori a metà delle schermate oggi esistenti. Nota di sicurezza del presidio: docs/ non è fra le radici sorvegliate dal rilevatore di divergenza dal brand (tools/design-tokens, WATCHED), quindi l'uso dei token qui è una scelta di qualità, non un obbligo meccanico."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Applicazione dimostrativa dei quattro prototipi per ruolo: il Mini-CRM. È l'unica applicazione multi-utente del catalogo, ha dati da leggere e modificare (contatti, trattative) e già una schermata di gestione dei posti: permette quindi di mostrare davvero la differenza fra sola lettura (viewer) e operazioni dispositive (editor). L'app «fatture» non serviva allo scopo: è a utente singolo. Il caso d'uso comune ai quattro prototipi è: entro nel workspace, apro il Mini-CRM, lavoro sui contatti, guardo chi ha accesso all'applicazione."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Discrepanza aritmetica segnalata allo sviluppatore e risolta senza fermarlo: la richiesta parla di «tre fasce» di membership, ma i prezzi che ha dato sono QUATTRO tariffe oltre la franchigia (4-10 → 0,49; 11-50 → 0,42; 51-100 → 0,37; oltre 100 → 0,30). Il prototipo della console di piattaforma espone la franchigia gratuita e le quattro tariffe, coerentemente con i requisiti originali; se intendeva davvero tre fasce, lo correggerà in revisione."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) I prototipi sono specifica illustrata, non codice da riusare: il README a corredo lo dichiara esplicitamente e vieta di copiare frammenti nel prodotto, dove valgono i componenti del design system e le loro regole di accessibilità. La documentazione porta tre cose pensate per l'implementazione: la mappa delle schermate con i loro stati, la tabella di mappatura elemento → file React reale → chiamata di rete → storia che la introduce, e la matrice ruolo × elemento (visibile / disabilitato / assente) che chi implementa traduce in guardie di rotta e chi collauda in casi di prova."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Ossatura dell'analisi: una epica madre più quattro sotto-epiche (fondamenta del modello centralizzato; posti a pagamento; esperienza del backoffice per ruolo; dentro le applicazioni e industrializzazione) e sedici storie 0098-0113. Criterio dell'ordine di esecuzione: nulla si può mostrare per ruolo prima che il ruolo esista nei dati e nel token (da qui 0098 e 0099 in testa), nulla si può vendere prima che il posto esista come oggetto contabile (da qui i posti prima dell'esperienza d'uso)."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Decisione portante di UC 0099, la più delicata dell'epica: il ruolo per applicazione NON entra nel token. Se ci entrasse, un cambio di ruolo avrebbe effetto solo al rinnovo del token (una persona retrocessa resterebbe amministratore per minuti) e un account con dieci applicazioni gonfierebbe ogni richiesta. Nel token restano identità, account e solo il ruolo di piattaforma; il ruolo per applicazione si legge dal core riusando il meccanismo di copia locale invalidata a eventi già collaudato per i diritti d'accesso. Le operazioni distruttive rileggono dal core senza fidarsi della copia.",
+    "files": [
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/handler.py",
+        "description": "Il claim dei ruoli perde il valore admin di piattaforma; va aggiunta la tolleranza temporanea per i token già emessi, con la data in cui togliersi."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Il ruolo di piattaforma scende da tre valori a due: owner e member. Il valore admin scompare da quel livello e riappare, molto più circoscritto, sull'applicazione. Conseguenza operativa: ogni presidio oggi tarato su «owner oppure admin» va portato a «solo owner» — schermata dei membri, interfaccia utenti e inviti del core, atti di conformità sull'account, cruscotto, pagina dei diritti. È una stretta, non un allargamento, e ogni storia che la esegue deve provarla."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Scelta strutturale per l'abbonamento dei posti (UC 0103): si riusa l'impianto di pagamento esistente introducendo nel catalogo una VOCE DI PIATTAFORMA marcata come non installabile, invece di costruire una struttura contabile dedicata. Motivo: la seconda via è concettualmente più pulita ma costringe a riscrivere pagamento, ricezione degli eventi del fornitore, fatturazione e riconciliazione. Il debito della scelta è un elenco di cinque esclusioni da mantenere (diritti d'accesso, catalogo del cliente, menu laterale, lettura degli accessi, tabella degli abbonamenti), ognuna con il suo collaudo: se le esclusioni crescessero oltre una manciata, la scelta va rivalutata."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Il listino dei posti è versionato in banca dati, non modificabile in luogo: la console di piattaforma crea nuove versioni con la loro data di decorrenza, e le versioni già decorse sono immutabili. Serve a poter rispondere fra un anno alla domanda «quanto pagava questo cliente in marzo?» ed è coerente col principio già in vigore per i prezzi delle applicazioni (un prezzo nuovo è un livello nuovo). Il file di risorse resta la sorgente del solo valore iniziale.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/pricing/seats.yaml",
+        "description": "Nuovo file previsto: le fasce iniziali, fuori da pricing/index.yaml perché i posti non sono un'applicazione."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Osservazione aritmetica registrata perché non venga scambiata per un difetto in implementazione: con la tariffa di fascia applicata a tutti i posti a pagamento, ai confini di fascia il dovuto SCENDE al crescere dei posti (10 posti 3,43 € contro 11 posti 3,36 €; 50 contro 51; 100 contro 101). L'interfaccia deve presentarlo come vantaggio e nessun collaudo deve pretendere che il dovuto cresca in modo monotono."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Migrazione senza perdita di accesso (UC 0113): a ogni utente esistente si concede l'accesso a ogni applicazione dell'account, traducendo il ruolo attuale — owner resta owner con accesso implicito, admin diventa member con ruolo admin su tutte, member diventa member con ruolo EDITOR su tutte. La scelta di editor invece di viewer è deliberata: oggi un member può modificare i dati delle applicazioni, e una migrazione non è il momento per togliere poteri di soppiatto. Chi vuole stringere lo farà consapevolmente dopo."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Il trattamento economico degli account ESISTENTI che superano già la franchigia dei tre posti NON viene deciso dall'agente: è marcato come punto aperto principale di UC 0113, con una proposta (rilevazione, periodo di grazia, comunicazione all'owner, addebito solo dopo) e il vincolo esplicito di non implementare nulla senza conferma dello sviluppatore. Vale denaro di clienti attivi: è materia di escalation."
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Copertura end-to-end (dovere della change secondo UC 0093/0094): questa change NON tocca superficie applicativa, quindi «nessun impatto» sui percorsi esistenti. Le sedici storie nuove entrano nel registro come esenzioni 'non-implementato', ognuna col motivo e con l'indicazione di quale sarà la classificazione giusta quando verrà implementata. UC 0113 introdurrà i due percorsi di piattaforma nuovi (J-ROLES, la stessa applicazione vista dai quattro ruoli; J-SEATS, il ciclo di vita del posto).",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "Sedici esenzioni aggiunte in un blocco commentato dedicato all'epica 22."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Estensione del rilevatore del catalogo eseguita come previsto: listCatalogUseCases ora scandisce anche un livello di sottocartelle dentro l'area, così le storie in story/ risultano nel catalogo e devono essere classificate. Coperta da un test dedicato che verifica tre cose: la storia in sottocartella non classificata rende rosso il controllo, classificata lo rende verde, e lo stesso numero presente sia in story/ sia in task/ non conta due volte. Area tooling verde (55 test).",
+    "files": [
+      {
+        "file": "tools/e2e-coverage/lib.mjs",
+        "description": "listCatalogUseCases estesa a un livello di sottocartelle, con il commento che spiega perché il buco silenzioso sarebbe peggio di un rosso."
+      },
+      {
+        "file": "tools/e2e-coverage/test/check.test.mjs",
+        "description": "Test nuovo: catalogo — un'area organizzata in sottocartelle."
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Impianto dei prototipi realizzato come deciso: un foglio di stile che importa i token reali, un file di dati che contiene la MATRICE dei permessi come specifica leggibile da un programma, un motore comune che rende i quattro prototipi per ruolo dalla matrice (così le quattro pagine non possono divergere), e un motore dedicato per la console di piattaforma. Verificati in un browser vero: le cinque pagine caricano senza errori, dipingono coi token (sfondo rgb(244,244,241) letto dal file dei token), e i menu per ruolo sono quelli della matrice.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-data.js",
+        "description": "Dati d'esempio e MATRICE dei permessi: è la specifica ruolo × elemento, da cui chi implementa può ricavare i casi di prova."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.css",
+        "description": "Importa frontend/packages/design-system/src/tokens/tokens.css: nessun colore scritto a mano."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "Mappa delle schermate, tabella di mappatura elemento → file React reale → chiamata di rete → storia, matrice ruolo × elemento."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "(autopilot) Il calcolo del prototipo della console è VERO, non finto: cambiando una tariffa l'anteprima ricalcola con la regola dei requisiti. Verificato in browser che dia gli stessi numeri della tabella di UC 0102 (3 → 0,00; 4 → 0,49; 8 → 2,45; 12 → 3,78; 55 → 19,24; 120 → 35,10 €) e che la validazione delle fasce colga un buco fra due fasce. Il resto dei dati è inventato e dichiarato tale nel README."
+  },
+  {
+    "id": 30,
+    "decision": "(autopilot) Correzione applicata durante la verifica visiva dei prototipi: la spiegazione del ruolo mancante, ripetuta su ogni riga di una tabella, diventava rumore (otto ripetizioni della stessa frase nella vista viewer). La funzione che rende i comandi ha ora due modi — spiegazione visibile sul comando principale della pagina, spiegazione solo negli attributi leggibili dagli strumenti di assistenza nelle righe delle tabelle. È una indicazione anche per l'implementazione, e sta nel README dei prototipi."
+  },
+  {
+    "id": 31,
+    "decision": "(autopilot) Registrazione nel catalogo eseguita: l'area 22 è nell'indice per area (docs/usecases/README.md) con le sue sedici storie e la nota che supera l'epica 14, e il conteggio del catalogo in CLAUDE.md passa da 97 a 113 use case. NON è stato toccato EPICS-WAVE-2.md, né sono state marcate come superate le storie 0072-0074 dell'epica 14: lo sviluppatore ha chiesto esplicitamente che quella parte avvenga solo dopo la sua approvazione dell'analisi.",
+    "files": [
+      {
+        "file": "docs/usecases/README.md",
+        "description": "Sezione nuova per l'area 22, con la struttura a sottocartelle dichiarata."
+      },
+      {
+        "file": "CLAUDE.md",
+        "description": "Conteggio del catalogo aggiornato a 113 e area 22 nominata fra le epiche evolutive."
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "decision": "Punto aperto CHIUSO dallo sviluppatore — account esistenti oltre la franchigia dei tre posti: non esistono, la piattaforma è ancora solo in locale e non ha clienti. Cade quindi l'intera parte economica della migrazione (rilevazione, periodo di grazia, comunicazione commerciale, inizio dell'addebito). Resta un solo presidio, aggiunto per prudenza: se durante la conversione un account risultasse oltre i tre posti, la migrazione si FERMA con un messaggio esplicito invece di proseguire — è l'unica difesa contro un presupposto invecchiato (per esempio: si è andati in cloud nel frattempo).",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0113-migrazione-account-e-copertura-e2e.md",
+        "description": "§5 riscritto: nodo economico chiuso, sostituito dal controllo di sicurezza."
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "decision": "Punto aperto CHIUSO dallo sviluppatore — pagamento dei posti non riuscito, con tre casi distinti: (1) errore DEFINITIVO (carta rifiutata, metodo non valido) → errore fatale, l'aggiunta dell'utente non procede e non nasce alcun invito; (2) errore TEMPORANEO (fornitore di pagamento non raggiungibile, guasto di rete) → si può ritentare, e l'interfaccia lo presenta come tale invece di dichiarare un fallimento; (3) errore SISTEMATICO (i tentativi continuano a fallire) → email all'amministratore di appgrove, perché a quel punto il problema è nostro o del fornitore, non del cliente. In nessun caso le persone già attive perdono accesso e in nessun caso l'account si blocca: il guasto impedisce di aggiungere, non di lavorare. Resta da fissare in implementazione la soglia oltre cui un temporaneo è sistematico (proposta: tre tentativi falliti sullo stesso account nello stesso periodo).",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0106-posti-in-billing.md",
+        "description": "§5 con i tre casi e la regola «il guasto impedisce di aggiungere, non di lavorare»."
+      }
+    ]
+  },
+  {
+    "id": 34,
+    "decision": "Riverifica della categorizzazione B2C/B2B delle applicazioni, chiesta dallo sviluppatore. ESITO: la categoria va RITIRATA (scelta dello sviluppatore fra tre opzioni presentate). Tre ragioni indipendenti, verificate nel codice: (1) «applicazione privata» non è più una proprietà dell'applicazione, perché l'accesso è un'entità di piattaforma e qualunque app può avere più persone con ruoli; (2) non tocca più il prezzo, perché i posti si pagano una volta a livello di piattaforma; (3) il suo UNICO uso funzionale — nel generatore, per scegliere i ruoli degli endpoint prodotti (single → OWNER+ADMIN, multi → anche MEMBER) — scompare col varco per applicazione. Dopo il refactor sarebbe un campo obbligatorio, dichiarato e mai letto, con un nome che mente. Nuova storia UC 0114.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0114-ritiro-categoria-b2c-b2b.md",
+        "description": "Storia del ritiro, con i tre motivi e la separazione fra i due significati dell'etichetta."
+      },
+      {
+        "file": "tools/new-application/lib/context.mjs",
+        "description": "Righe 214-228: l'unico punto in cui user_model cambiava il codice generato (segnaposto USER_MODEL, ROLES_ALLOWED, ROLES_EXTRA_CONSTANTS)."
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "decision": "Distinzione fondamentale emersa dalla riverifica: «B2C/B2B» significa DUE cose nel progetto e va disambiguata, non solo ritirata. Primo senso — modello utenti dell'applicazione (una persona contro molte): vive in App.user_model, docs/01 §31 e §80, docs/02, UC 0051/0052/0054/0060 e nel generatore, e si RITIRA. Secondo senso — ruolo giuridico e segmento di mercato (appgrove titolare verso i consumatori, responsabile verso i clienti-azienda): vive in docs/13, nei manifesti dati, nel registro dei trattamenti, nelle note fiscali e di revisione legale, e RESTA INTATTO. Prova che l'ambiguità era già un problema: docs/13 §34-35 aveva già dovuto scrivere una nota difensiva («il modello B2B è una feature di prodotto, NON un ruolo giuridico»), e i collaudi della console admin usano come valori finti 'b2b'/'b2c', che non esistono nell'enumerazione reale."
+  },
+  {
+    "id": 36,
+    "decision": "Al posto della categoria ritirata nasce l'AMBITO DEI DATI di un'applicazione (nuova storia UC 0115), che lo sviluppatore ha scelto di far COSTRUIRE subito e non solo tracciare: i dati sono «del gruppo di lavoro» (chiunque abbia accesso li vede tutti — il comportamento attuale, predefinito) oppure «della persona» che li ha creati (ognuno vede solo i propri). A differenza dell'etichetta ritirata questa distinzione ha conseguenze verificabili nel codice: cambia il filtro delle interrogazioni. Regola portante: l'ambito precede il ruolo (l'ambito dice su quali dati, il ruolo che cosa puoi farci).",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0115-ambito-dati-applicazione.md",
+        "description": "Storia dell'ambito dei dati, con il nodo della visibilità dell'owner."
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "decision": "(autopilot) Nodo più delicato di UC 0115, risolto separando due esigenze invece di sacrificarne una: l'ambito limita la VISIBILITÀ dentro l'applicazione, non la TITOLARITÀ dei dati. Nelle applicazioni ad ambito «utente» l'owner NON vede i dati altrui dall'interfaccia — se li vedesse, la promessa fatta alle persone sarebbe falsa — ma LI OTTIENE dalle vie di conformità (esportazione dell'account, risposta a una richiesta di accesso, purga), che lasciano traccia. Coerente con la decisione già in vigore per cui i dati delle applicazioni appartengono all'account e non all'operatore (UC 0032). Va scritto nell'informativa: è più onesto che lasciar intendere una riservatezza che non c'è."
+  },
+  {
+    "id": 38,
+    "decision": "(autopilot) Meccanismo di persistenza per l'ambito «utente»: NON si può riusare quello dell'account. Il filtro per account usa @TenantId di Hibernate, cioè il discriminatore di multitenancy, e ce n'è uno solo. Si adotta quindi un filtro di sessione parametrico (@FilterDef/@Filter) con una classe base BaseUserOwnedEntity che porta owner_user_id, un attivatore che lo accende all'inizio di ogni richiesta con l'identità del chiamante, e un elenco CHIUSO e scritto di percorsi che lo spengono in modo esplicito (vie di conformità, lavori periodici, consumatori di coda). Acceso per difetto: un filtro da accendere a mano verrebbe dimenticato, e la dimenticanza sarebbe un varco silenzioso. Alternativa scartata: filtrare a mano in ogni interrogazione — funziona il primo giorno e si rompe alla prima interrogazione scritta da chi non lo sa."
+  },
+  {
+    "id": 39,
+    "decision": "Scelta dello sviluppatore sui file storici: gli use case già implementati che portano l'etichetta nel nome (per esempio 0054-app2-b2b-via-new-application.md) NON si rinominano. Si aggiunge una nota in testa che dice come va letta l'etichetta dopo l'epica 22. Motivo: il numero è l'identità dello use case, il nome del file è cosmetico, e rinominarlo romperebbe i collegamenti nelle change già in main, che sono la memoria del progetto."
+  },
+  {
+    "id": 40,
+    "decision": "(autopilot) Collocazione delle due storie nuove: dopo 0112 (dove il generatore di applicazioni viene rifatto, quindi è lì che i segnaposto dei ruoli si toccano) e prima di 0113 (la migrazione finale deve trovare il modello già assestato). L'epica passa da sedici a diciotto storie, 0098-0115, e la sotto-epica E22.4 da tre a cinque. Condizione di sicurezza scritta in testa al piano di 0114: la verifica strutturale di UC 0101 (nessuna operazione di scrittura priva di dichiarazione) deve essere verde PRIMA di rimuovere i ruoli di piattaforma dalle applicazioni, altrimenti un endpoint dimenticato resterebbe senza protezione."
+  },
+  {
+    "id": 41,
+    "decision": "Nessuna applicazione ad ambito `utente` viene creata dentro l'epica 22 — decisione dello sviluppatore: dopo il rifacimento dell'appartenenza si passa a lavorare sulle applicazioni, e le applicazioni ad ambito `utente` appartengono a quella fase. Conseguenze scritte in UC 0115: il campo `data_scope` e il meccanismo di filtro si costruiscono comunque (un campo che non cambia nulla sarebbe esattamente l'etichetta vuota che UC 0114 ritira), ma l'esercizio avviene su un'entità di prova in `services/commons` — sul modello del precedente già in casa `FixtureCustomer` usato dai collaudi della conformità — invece che su un'applicazione generata. Il generatore in questo giro emette solo entità ad ambito `account`; il copilota fa comunque la domanda sull'ambito e, se la risposta è `utente`, si ferma e dichiara che il supporto va aggiunto prima di procedere, anziché generare un'applicazione a metà. Le due voci rimandate (supporto del generatore, prima applicazione reale con i suoi percorsi end-to-end) sono tracciate nei punti aperti di UC 0115.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0115-ambito-dati-applicazione.md",
+        "description": "§6 (edge: nessuna applicazione ad ambito utente in questo giro), §9 (esercizio su entità di prova al posto dell'applicazione generata), §10 punto 6 del Definition of Done, due nuovi punti aperti (supporto del generatore, prima applicazione reale)."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0115-ambito-dati-applicazione.md",
+        "description": "Passo 5: il generatore non emette ambito `utente`, il copilota si ferma. Passo 6: collaudi sull'entità di prova. Trappola 4 riscritta: essendo l'entità di prova l'unica prova disponibile, va collaudata con la severità che si userebbe su un'applicazione vera."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0112-copilota-ruoli-new-application.md",
+        "description": "Quinta domanda del copilota: il generatore supporta solo `account`; risposta `utente` = fermata esplicita."
+      }
+    ]
+  },
+  {
+    "id": 42,
+    "decision": "Chiarita, su richiesta dello sviluppatore, la ragione del principio «filtro per utente acceso per difetto» di UC 0115, senza cambiare la scelta: il filtro per account è il discriminatore di multitenancy di Hibernate e viene applicato da sé a ogni interrogazione (non c'è nulla da ricordare), mentre il filtro di sessione — l'unico meccanismo disponibile per il secondo filtro — nasce spento e restituisce tutto se nessuno lo accende. Perciò non lo accende chi scrive l'endpoint (una riga dimenticata in un endpoint nuovo esporrebbe i dati altrui in silenzio: nessuna eccezione, nessun collaudo rosso), ma un unico punto centrale all'inizio della richiesta, sul modello del filtro di richiesta già presente in `commons/logging`. Dei due errori possibili si sceglie quello rumoroso: filtro dimenticato acceso in un lavoro periodico = la purga lascia righe indietro, difetto visibile, recuperabile e coperto da un collaudo dedicato; filtro dimenticato spento = varco silenzioso."
+  },
+  {
+    "id": 43,
+    "decision": "Riorganizzato UC 0115 secondo la formulazione dello sviluppatore: l'ambito dei dati è una **caratteristica dichiarata dall'applicazione alla nascita**, e il filtro che la fa rispettare è una **conseguenza** che si costruisce quando esiste la prima applicazione che la richiede. Nell'epica 22 si eseguono quindi: il campo `data_scope` dichiarato dal listino (perché così ogni applicazione nasce classificata — aggiungerlo dopo vorrebbe dire tornare indietro a classificare le due esistenti e migrare i loro listini), la domanda del copilota, la precisazione al contratto dei ruoli e il piano integrale del filtro. Restano fuori: costruzione del filtro, collaudi di isolamento, supporto del generatore, manifesto e informativa. Chiarito nel corso della discussione che «generatore» = `tools/new-application/generate.mjs` con i suoi modelli, cosa distinta dalla skill `.claude/skills/new-application/` che conduce l'intervista: la domanda si aggiunge subito, i modelli no.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0115-ambito-dati-applicazione.md",
+        "description": "§1 riscritto (dichiarazione ora / filtro con la prima applicazione, e perché il campo si fa comunque adesso), §2 attori, §4 flusso con la guardia come punto 3 e il comportamento futuro come punto 4, §6 edge, §7 dati toccati marcati come rimandati, §9 diviso in due blocchi (questa storia / col filtro), §10 Definition of Done ridotta con l'elenco esplicito di ciò che resta fuori, punti aperti con la voce sulla costruzione del filtro."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0115-ambito-dati-applicazione.md",
+        "description": "Dimensione da media-grande a piccola. Aggiunta la guida di lettura (passi 1, 5, 6 eseguiti; passi 2, 3, 4-parziale, 7 marcati ⏸ rimandato, con la ragione: chi li eseguirà avrà il progetto già fatto). Aggiunta la guardia a due punti di arresto nel passo 1. Passo 6 diviso. Trappola 4 riscritta sul rischio vero: il campo senza filtro è una promessa di riservatezza non mantenuta."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-04-app-e-industrializzazione.md",
+        "description": "Chiarito che l'epica fa la dichiarazione e non il filtro, con la ragione (si decide mentre il modello è chiaro, si costruisce quando c'è chi lo usa)."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/README.md",
+        "description": "Decisione 11 e tabella dei punti aperti: due voci rimandate (filtro, informativa)."
+      }
+    ]
+  },
+  {
+    "id": 44,
+    "decision": "Introdotta la **guardia** che rende onesto un campo `data_scope` dichiarabile ma non ancora fatto rispettare: un'applicazione che dichiara ambito `utente` fa fallire il controllo dei listini (`tools/pricing-change/lib/pricing.mjs`) **e** l'avvio di `services/core` — due punti di arresto e non uno, perché un controllo che gira solo in fase di sviluppo si aggira per sbaglio. Il messaggio d'errore dice il perché e rimanda al piano, invece di limitarsi a «valore non valido». Ragione: senza la guardia, `data_scope` ripeterebbe esattamente il difetto della categoria B2C/B2B che UC 0114 ritira — un campo dichiarato senza effetti — ma con l'aggravante che qui la promessa è di riservatezza, e una riservatezza creduta e non applicata è peggio di nessuna riservatezza.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0115-ambito-dati-applicazione.md",
+        "description": "Passo 1: i due punti di arresto e il testo del messaggio. Passo 6: le due prove che li coprono. La guardia si toglie quando il filtro arriva, non prima."
+      }
+    ]
+  },
+  {
+    "id": 45,
+    "decision": "Valutato e scartato per ora un terzo ambito dei dati di tipo «supervisione» (dati personali che un supervisore deve vedere per la finalità dell'applicazione: esempio, gli esiti degli esami in un'applicazione di formazione). Ragioni dello scarto, emerse esaminando lo schema disegnato dallo sviluppatore: (a) non è un terzo valore dello stesso campo ma una dichiarazione più fine, perché la condivisione riguarda il singolo dato e non l'applicazione intera — nella formazione l'esito va condiviso, gli appunti del corso no; (b) la supervisione spetta a un ruolo dell'applicazione, non all'owner della piattaforma, che è uno solo e diventerebbe un collo di bottiglia; (c) richiede una lettura non modificabile, cioè un pezzo tecnico nuovo rispetto all'accendere o spegnere un filtro; (d) cambia finalità e base giuridica, non solo la visibilità. Chiarito nella stessa discussione che l'esportazione dell'account comprende tutto in qualunque ambito (l'owner è titolare), quindi non è la caratteristica che distingue i tre casi: distingue solo cosa si vede nell'uso quotidiano. Il rimando non costa nulla perché il filtro non è ancora costruito e aggiungere un valore a un campo dichiarativo è una migrazione banale. Tracciato nei punti aperti di UC 0115, distinguendo la condivisione orizzontale (fra pari, per scelta della persona) da quella verticale (supervisione), che il nome «sharing» confondeva.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0115-ambito-dati-applicazione.md",
+        "description": "Punto aperto sul terzo ambito riscritto nelle sue due forme, con le ragioni dello scarto e il costo nullo del rimando."
+      }
+    ]
+  },
+  {
+    "id": 46,
+    "decision": "L'epica 22 accoglie il superamento del vincolo «una persona appartiene a un solo account», su decisione dello sviluppatore, con tre storie nuove (0116, 0117, 0118) in una sotto-epica propria E22.5. Ragione dell'inclusione: il vincolo vive esattamente nei due punti che l'epica sta già riscrivendo — `platform.users` e la funzione che costruisce il token — quindi rimandarlo significherebbe rifare la stessa migrazione e ritoccare la stessa sicurezza due volte. Verifica che ha fatto emergere il problema: gli indici unici globali su indirizzo di posta e identificativo di autenticazione in V2__core_domain.sql (col commento «membership foldata 1 utente→1 tenant»), la decisione registrata in docs/02 §14, e la funzione del token che cerca una sola riga per identificativo. Conseguenza pratica già visibile: chi ha provato appgrove per conto proprio non può essere invitato da un'azienda, e il rifiuto arriva come violazione di indice invece che come messaggio comprensibile.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-05-identita-e-appartenenze.md",
+        "description": "Sotto-epica nuova: problema, ragione della precedenza su 0098, decisioni portanti, rischi, confini."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0116-identita-e-appartenenze.md",
+        "description": "Modello: identità di piattaforma, appartenenza di account, unicità spostata, migrazione con controllo dei conteggi."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0117-account-attivo-e-selettore.md",
+        "description": "Account attivo, selettore, parità dei fornitori di identità."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md",
+        "description": "I due percorsi d'ingresso ed esiti indistinguibili."
+      }
+    ]
+  },
+  {
+    "id": 47,
+    "decision": "Le tre storie nuove si eseguono **prima** di UC 0098, pur essendo numerate per ultime: 0098 crea la tabella degli accessi con un riferimento alla persona, quindi se la forma dell'identità cambiasse dopo si rifarebbero quella tabella, la sua migrazione e la migrazione finale di UC 0113. La sotto-epica porta il numero E22.5 (ordine di scrittura) ma è la prima a eseguirsi, come per gli identificativi di questo registro: non si rinumera nulla, si dice dove sta. Nuovo ordine: 0116 → 0117 → 0118 → 0098 → … → 0113. Costo dell'anticipo: nullo, perché 0098 nasce direttamente col riferimento all'identità.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md",
+        "description": "`user_id` diventa `identity_id`; le precondizioni citano identità e appartenenze; il ruolo di piattaforma si riduce sull'appartenenza; il controllo di appartenenza attiva sostituisce «appartiene all'account»."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0098-modello-dati-accesso-per-applicazione.md",
+        "description": "Migrazione da V17 a V18 (V17 è di 0116); entità, repository e percorsi passano all'identità."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-01-fondamenta-modello-centralizzato.md",
+        "description": "Nota: non è più la prima sotto-epica a eseguirsi."
+      }
+    ]
+  },
+  {
+    "id": 48,
+    "decision": "L'account attivo della sessione vive in **banca dati** (colonna sull'identità) e non come attributo dell'utente presso il fornitore di identità. Ragione tecnica verificata: il gruppo di utenti Cognito (infra/modules/platform_shared/auth.tf) non dichiara attributi personalizzati, e aggiungerne uno per via dichiarativa può forzare la **ricreazione del gruppo**, cioè la perdita degli utenti — rischio inaccettabile per una comodità. La funzione che costruisce il token interroga già la banca dati, quindi leggere una colonna in più non costa nulla e non tocca l'infrastruttura. Corollario non negoziabile: il valore conservato è un **suggerimento**, non una fonte di verità — l'appartenenza si riverifica a ogni creazione di token, ed è la riga che impedisce a una manomissione della colonna di diventare un varco fra due aziende. L'invariante «account solo dal token verificato» resta intatta: cambia la funzione che calcola il claim, non chi se ne fida.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0117-account-attivo-e-selettore.md",
+        "description": "Passo 1 (dove vive e perché non un attributo), passo 2 (la funzione che scegli l'account, con i quattro casi e la regola del valore non creduto)."
+      }
+    ]
+  },
+  {
+    "id": 49,
+    "decision": "Gli esiti dell'invito **non** rivelano se l'identità esiste già: stesso codice e stesso corpo per identità esistente e inesistente. Un messaggio chiaro («questa persona ha già un account appgrove») sarebbe comodo per chi invita e inaccettabile, perché rivelerebbe a un'azienda l'esistenza di un rapporto fra quella persona e la piattaforma. I messaggi comprensibili restano per le collisioni che sono informazione dell'account: «già membro» e «invito già in attesa». Il modello è già in casa: le risposte neutre contro l'enumerazione degli utenti in AuthResource.java esistono per la stessa ragione.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md",
+        "description": "§5: la regola e la distinzione fra informazione dell'account e informazione della persona."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/task/0118-inviti-e-registrazione-con-identita-esistente.md",
+        "description": "Passo 1: tabella dei tre esiti; passo 5: il collaudo di indistinguibilità accanto a quelli esistenti sulle risposte neutre."
+      }
+    ]
+  },
+  {
+    "id": 50,
+    "decision": "La stessa persona presente in due account occupa **un posto in ciascuno**: ogni account paga le persone che usano le sue applicazioni. È la regola più semplice ed è anche la più difendibile, ma va scritta nel testo mostrato al cliente perché la reazione naturale è «ma la paga già l'altra azienda». Nessun cambiamento al calcolo del listino: la presenza dell'identità altrove non entra nel conteggio.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md",
+        "description": "§7 e §8: il posto si paga in ogni percorso; il testo mostrato al cliente."
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "decision": "Rimandi tracciati fuori dall'epica 22, come impone la regola sulle decisioni differite: in UC 0032 l'esportazione di un account comprende le appartenenze e non l'identità intera, e la cancellazione di un account non cancella un'identità con altre appartenenze; in UC 0033 la cancellazione della propria identità con appartenenze attive non si esegue subito e va detto nella schermata; in UC 0017 la durata del token è il ritardo massimo di una revoca e va scritta, più la nota che il vincolo «1 utente → 1 tenant» assunto dai suoi flussi è superato; in docs/_BACKLOG.md il piano commerciale per chi lavora per più clienti e l'unione di due identità create per errore.",
+    "files": [
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0032-framework-esportazione-cancellazione.md",
+        "description": "Punto aperto: perimetro dell'esportazione e della cancellazione con appartenenze multiple."
+      },
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0033-self-service-gdpr.md",
+        "description": "Punto aperto: cancellazione della propria identità con appartenenze attive."
+      },
+      {
+        "file": "docs/usecases/05-auth/0017-flussi-auth.md",
+        "description": "Due punti aperti: durata del token e ritardo della revoca; vincolo «1 utente → 1 tenant» superato."
+      },
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Sezione nuova: i due temi lasciati fuori dall'epica 22."
+      }
+    ]
+  },
+  {
+    "id": 52,
+    "decision": "I prototipi navigabili accolgono i due elementi d'interfaccia nuovi della sotto-epica E22.5: il **selettore dell'account attivo** e gli **inviti ricevuti**, entrambi nell'intestazione. Scelte di merito: (a) il selettore **non viene reso** quando la persona ha una sola appartenenza — non reso disabilitato, che sarebbe rumore per il cento per cento degli utenti di oggi a beneficio di una minoranza; (b) il nome dell'account attivo è mostrato **sempre**, anche con una sola appartenenza, perché con più account è un elemento di sicurezza percepita; (c) gli inviti stanno accanto al selettore, che è dove la persona guarda quando pensa «a quali account appartengo»; (d) il selettore compare in base al **numero di appartenenze**, non al ruolo — per questo nei prototipi ce l'hanno `admin` e `viewer` ma non `owner` ed `editor`, e la documentazione lo dice esplicitamente perché legarlo al ruolo in implementazione sarebbe un errore naturale; (e) il cambio di account **non è simulato**: mostra il comando, spiega cosa fa il prodotto (riscrive l'account attivo, rinnova il token, ricarica, riverifica l'appartenenza) e porta al prototipo dell'esperienza in quell'account — simularlo richiederebbe un secondo insieme di dati che non insegnerebbe nulla di più. Verificato in un browser reale su tutti e quattro i prototipi (presenza e assenza del selettore, apertura dei due menu, invito accettabile, nessun errore in console, il pannello dei ruoli ancora funzionante).",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-data.js",
+        "description": "Nuovi dati APPARTENENZE (una per owner ed editor, due per admin e viewer) e INVITI_RICEVUTI; una riga di «differenze» per ruolo che spiega la presenza o l'assenza del selettore."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.js",
+        "description": "renderSelettore() e renderInviti(), intestazione rifatta, azioni di cambio account e di accettazione o rifiuto dell'invito, con i messaggi che spiegano il meccanismo reale."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.css",
+        "description": "Stili del selettore e del riquadro degli inviti, con i soli token già in uso: nessun cambiamento di stile, come da requisito."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "Due righe nella tabella degli stati, tre nella tabella di mappatura verso il codice (Topbar, avviso di scheda vecchia, InvitesMenu), una tabella nuova che avverte che il selettore non dipende dal ruolo, la nota su cosa è deliberatamente finto e una terza lezione."
+      }
+    ]
+  },
+  {
+    "id": 53,
+    "decision": "Domanda dello sviluppatore in rilettura: come si evita che gli elementi di **impalcatura** dei prototipi — la barra scura di commutazione del ruolo e il riquadro «Cosa cambia per …» — vengano implementati per errore durante i task. Risposta con quattro presidi in ordine di efficacia, tutti applicati. (1) **L'artefatto lo dice di sé**: entrambi portano l'etichetta «non è prodotto» visibile in ogni schermata, e quindi anche in ogni fotografia dello schermo che finisca in un documento o in un messaggio — è il presidio che conta di più, perché il fraintendimento nasce guardando un'immagine, non leggendo il README. (2) **Convenzione di nomi**: le classi dell'impalcatura passano al prefisso `x-proto-scaffold-`, che nel design system non esiste; il pannello ha in testa un commento che lo dichiara. (3) **Sezione §0 del README dei prototipi**, prima di ogni altra cosa, con la tabella dei due elementi, il perché esistono, cosa accade nel prodotto (nulla) e i modi per riconoscerli; più la nota che la tabella di mappatura del §4 non li elenca **per costruzione**, non per dimenticanza. (4) **Presidio automatico**: passo (9) dell'area `tooling` di `run-tests.sh` che fa fallire la suite se il prefisso compare in `frontend/`. Provato nei due versi (aggiunta finta della classe → rosso; rimossa → verde). Ragione del quarto presidio, che altrimenti sembrerebbe eccessivo: un comando estraneo nell'interfaccia vera **non rompe nulla** — resta lì, e nessun altro collaudo lo vedrebbe.",
+    "files": [
+      {
+        "file": "run-tests.sh",
+        "description": "Area tooling, passo (9): il prefisso `x-proto-scaffold` in frontend/ fa fallire la suite. Commento che spiega perché nessun altro collaudo coglierebbe questa deriva."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "Nuova sezione §0 «Che cosa NON va implementato» in testa al documento; nota sul §4 che non elenca l'impalcatura per costruzione; titolo del §7 da «Due cose» a «Tre cose»."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.js",
+        "description": "Classi rinominate con prefisso `x-proto-scaffold-`; etichetta «non è prodotto» nella barra; intestazione e nota finale del pannello; commento in testa a renderPannello che dichiara l'impalcatura e la convenzione."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-admin.js",
+        "description": "Stessa etichetta nella barra della console di piattaforma."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.css",
+        "description": "Stile dell'etichetta e ritorno a capo pulito della barra (verificato a 1280 e 1600 pixel: nessun testo tagliato)."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/admin.html",
+        "description": "Commento in testa che dichiara l'impalcatura; identico negli altri quattro file."
+      }
+    ]
+  },
+  {
+    "id": 54,
+    "decision": "Tre correzioni all'interfaccia decise dallo sviluppatore rivedendo i prototipi. (1) Il **selettore dell'account** passa dall'intestazione alla **barra laterale, sotto il marchio**: l'account è il contesto in cui si lavora — come il menu che gli sta sotto — non un comando accessorio come lingua o tema. Il nome dell'account resta visibile anche con una sola appartenenza, in forma non cliccabile. (2) **Rimossa l'etichetta di ruolo dall'intestazione** («Admin del Mini-CRM»): il ruolo è per applicazione, quindi una etichetta globale sarebbe falsa appena una persona è abilitata a più di una applicazione — «Admin del Mini-CRM, Viewer delle Note, Editor di Teams…» non è un'informazione, è un elenco. Il ruolo si legge dove è vero: sulla scheda dell'applicazione nel cruscotto e in testa alle schermate di quell'applicazione, dove i prototipi lo mostravano già. È una cosa da **non** fare, quindi va scritta esplicitamente, altrimenti in implementazione ricomparirebbe. (3) Gli **inviti ricevuti** passano da un pulsante dell'intestazione a una **sezione in testa al cruscotto**: come pulsantino passavano inosservati, e un invito a collaborare con un'altra azienda non è un dettaglio ma un rapporto di lavoro in sospeso. Perché resti visibile anche da altre schermate, la voce «Dashboard» del menu porta il numero degli inviti in attesa. Conseguenza: l'intestazione del prototipo mostra ora il percorso di navigazione, che è ciò che l'intestazione vera contiene già (Breadcrumb.tsx), più una nota tratteggiata che dichiara i controlli non resi (lingua, tema, notifiche) — marcata come impalcatura, quindi terza voce nella tabella del §0.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.js",
+        "description": "Selettore reso nella barra laterale (blocco account-slot); forma verticale con nome e «2 account · cambia»; nome fisso senza comando con una sola appartenenza; sezioneInviti() nel cruscotto al posto del menu; contatore sulla voce Dashboard; percorso() come nell'intestazione vera; etichetta di ruolo rimossa dall'intestazione, con commento che dice perché non va rimessa; la scheda utente in basso mostra l'indirizzo invece del nome dell'account, ora ridondante."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.css",
+        "description": "Stili del selettore nella colonna (larghezza piena), del nome fisso, della scheda di invito col contorno d'accento, del contatore allineato a destra nella voce di menu e della nota di impalcatura in linea."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "§0 terza voce di impalcatura; §3 stati con le posizioni nuove; §4 mappatura verso Sidebar.tsx, DashboardPage.tsx e il componente PendingInvitesSection, più la riga «nessuna etichetta di ruolo» che documenta una cosa da non fare; §5 nota sul perché l'etichetta globale non esiste."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0117-account-attivo-e-selettore.md",
+        "description": "§4.5 riscritto (barra laterale, non intestazione) e §4.6 nuovo (nessuna etichetta di ruolo globale); riferimento al prototipo e punto chiuso aggiornati."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md",
+        "description": "§4.4: la sezione del cruscotto con il contatore sul menu; punto chiuso che registra anche l'ipotesi scartata (pulsante nell'intestazione) e perché."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0108-cruscotto-collaboratore.md",
+        "description": "Punto aperto: la sezione degli inviti è lavoro di UC 0118 ma atterra su questa schermata, da coordinare."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md",
+        "description": "Due punti aperti: nessuna etichetta di ruolo di piattaforma (cosa da non fare) e selettore in Sidebar.tsx, che è materia di questo use case."
+      }
+    ]
+  },
+  {
+    "id": 55,
+    "decision": "**Modello di prezzo dei posti cambiato dallo sviluppatore in rilettura: da tariffa unica di fascia a scaglioni progressivi.** Supera le decisioni 5 e 23. Ogni posto paga la tariffa della fascia in cui cade *quel posto*, non la tariffa dell'ultima fascia raggiunta. Esempio dello sviluppatore, 52 posti: i primi 3 gratis, dal 4° al 10° sette posti alla prima tariffa, dall'11° al 50° quaranta posti alla seconda, il 51° e il 52° alla terza. Ragione del cambio: il modello precedente faceva SCENDERE il totale ai confini di fascia (undici posti costavano meno di dieci) — aritmeticamente corretto ma indifendibile davanti a un cliente, perché un prezzo che cala quando cresci sembra un errore di conteggio anche quando è a suo favore. Con la progressività il totale è **monotono crescente** e a scendere è il **costo del posto successivo**: la stessa convenienza, detta in un modo che si capisce. Conseguenze operative: l'interfaccia mostra DUE numeri (dovuto attuale e costo del prossimo posto); il calcolo visualizzato è la **somma degli scaglioni** e non un prodotto unico (un prodotto tornerebbe per caso con cinque posti e sarebbe falso con cinquanta); un collaudo può ora legittimamente pretendere la monotonia, che prima era falsa — la decisione 23 va letta come superata.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0102-listino-posti-a-fasce.md",
+        "description": "§4 riscritto: calcolo a scaglioni in tre passi, esempio svolto dei 52 posti, tabella di riferimento con quattordici casi (confini compresi) e la colonna «costo del posto successivo»; registrato il modello scartato e perché."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-00-rifacimento-modello-appartenenza.md",
+        "description": "Tabella economica per scaglioni con quattro esempi svolti e la proprietà di monotonia."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/epic/E22-02-posti-a-pagamento.md",
+        "description": "Decisione portante riscritta, con la ragione dello scarto del modello precedente."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-admin.js",
+        "description": "Funzione dovuto() a scaglioni; casi tipici scelti sui confini (4, 10, 11, 52, 120); spiegazione nell'anteprima. Verificato contro la tabella di UC 0102: tutti i valori corrispondono."
+      },
+      {
+        "file": "changes/0087-epica-22-refactor-membership-model/requirements.md",
+        "description": "Requisito 4 riscritto, con nota esplicita che il requisito è stato rivisto in corsa e perché."
+      }
+    ]
+  },
+  {
+    "id": 56,
+    "decision": "**Nuove tariffe dei posti** volute dallo sviluppatore, che sostituiscono quelle iniziali: 1–3 gratuiti (invariato), 4–10 → 2,99 €/mese/posto, 11–50 → 1,99, 51–100 → 0,99, oltre 100 → 0,49. Applicate a tutti i documenti dell'epica e ai prototipi. Valori di riferimento ricalcolati e usati come casi di prova: 3 → 0,00 · 4 → 2,99 · 5 → 5,98 · 10 → 20,93 · 11 → 22,92 · 50 → 100,53 · 52 → 102,51 · 100 → 150,03 · 120 → 159,83 €.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-data.js",
+        "description": "Fasce e riquadro dei posti con le tariffe nuove; il campo `calcolo` mostra la somma degli scaglioni; spesa mensile del cruscotto ricalcolata (19 + 12 + 5,98 = 36,98 €)."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md",
+        "description": "Cifre dell'invito e messaggio al confine di fascia riscritti: «questa persona costa 1,99 invece di 2,99 perché entri nello scaglione successivo»."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md",
+        "description": "Effetto della riduzione ricalcolato (da dodici a nove posti: da 24,91 a 17,94 €)."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0106-posti-in-billing.md",
+        "description": "La riga di calcolo mostra la somma degli scaglioni, non un prodotto unico."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "Numeri di verifica aggiornati e «prima lezione» riscritta: il listino si racconta con due numeri (totale crescente, costo marginale che scende)."
+      }
+    ]
+  },
+  {
+    "id": 57,
+    "decision": "**Il prototipo deve essere fedele al menu vero, comprese le voci che questa epica non cambia** — richiesta dello sviluppatore, che ha notato l'assenza di «Impostazioni» e teme regressioni in fase di implementazione. Verificata la verità in `frontend/apps/backoffice/src/shell/Sidebar.tsx`: nel piede del menu ci sono «Impostazioni» e la scheda della persona con il suo menu («Sicurezza», «Esci»). Nessuna delle tre era nel prototipo. Aggiunte, con una decisione di merito annessa: sono **preferenze e atti della persona** (nome visualizzato, iscrizione alle notizie, secondo fattore), quindi restano visibili a **ogni ruolo**, come «I miei dati» — toglierle ai collaboratori sarebbe una regressione, ed è esattamente il rischio che un prototipo incompleto invita a correre. Il menu della persona usa l'elemento `details` nativo, come il prodotto: nessuno stato da gestire. Reso semplificato dichiarato nel README: nel prodotto i gruppi delle applicazioni si aprono e chiudono, nel prototipo sono sempre aperti.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.js",
+        "description": "Voce «Impostazioni» nel piede, menu della persona con Sicurezza ed Esci, schermata Impostazioni con nome visualizzato e notizie, rotta per Sicurezza."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-data.js",
+        "description": "`nav.settings` e `nav.security` a 'si' per tutti e quattro i ruoli, col commento che spiega perché non si toccano."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/README.md",
+        "description": "§6: il menu è quello vero, comprese le voci che l'epica non cambia; dichiarato il reso semplificato dei gruppi di applicazioni."
+      }
+    ]
+  },
+  {
+    "id": 58,
+    "decision": "Il prototipo rende le **icone del menu**, che mancavano del tutto (segnalato dallo sviluppatore a partire dall'ingranaggio assente su «Impostazioni»). Regola adottata: i nomi delle icone **si copiano, non si scelgono** — sono quelli veri di `shell/Sidebar.tsx` per le voci di piattaforma (`space_dashboard`, `apps`, `account_circle`, `credit_card`, `group`, `shield_person`, `support_agent`, `settings`, più `shield` e `logout` nel menu della persona), dei manifesti dei moduli per le applicazioni (`contacts` per il Mini-CRM, `receipt_long` per Fatture, con le icone delle rispettive sezioni) e di `apps/admin/src/shell/Sidebar.tsx` per la console di piattaforma. Stesso font e stesso nome di classe del prodotto (`material-symbols-rounded`), così la corrispondenza è evidente a chi implementa; la voce attiva porta la variante piena, come nel prodotto. Limite dichiarato: nel prototipo il font arriva da rete (Google Fonts) mentre nel prodotto viene dal pacchetto `material-symbols` — senza collegamento si leggono i nomi delle icone al posto dei simboli, come già accade per i caratteri tipografici.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.js",
+        "description": "Funzione ico(); icone su tutte le voci di piattaforma, sul piede (Impostazioni), nel menu della persona (Sicurezza, Esci), nei riquadri-icona delle applicazioni e nelle loro sezioni; chevron veri (`expand_more`) al posto dei triangoli tipografici."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-data.js",
+        "description": "Le applicazioni portano il nome dell'icona del proprio manifesto invece di una lettera; ogni sezione porta la sua."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto-admin.js",
+        "description": "Menu della console con voci e icone vere, compresi i raggruppamenti della console reale."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/assets/proto.css",
+        "description": "Classe `material-symbols-rounded` con gli stessi parametri del prodotto; variante piena sulla voce attiva."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/prototype/owner.html",
+        "description": "Collegamento al font delle icone; identico negli altri quattro file."
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "decision": "Analisi **riletta e approvata** dallo sviluppatore. Integrata nell'onda 2 (`docs/usecases/EPICS-WAVE-2.md`) come **fase A2 dedicata**, con le ventuno storie nell'ordine topologico dell'epica. Collocazione scelta subito dopo gli abilitanti di piattaforma e **prima della messa in cloud**, per due ragioni scritte nel documento: (a) l'epica non ha prerequisiti evolutivi pendenti — 0077, 0085, 0090, 0093, 0095, 0096, 0097 sono tutti già in `main`, verificato — quindi è eseguibile subito; (b) `0116` divide in due la tabella delle persone e `0113` migra gli account: oggi quella migrazione è banale (nessun account supera i tre posti, siamo in locale), dopo il go-live sarebbe una migrazione su dati reali con clienti che pagano posti. Lo stesso vale per il listino: partire col modello a scaglioni già in piedi evita di cambiare le regole di prezzo a clienti che le hanno accettate. Aggiornati conteggio (55 storie da implementare, 58 nel catalogo meno le tre superate), elenco delle fasi, vincoli di dipendenza e note.",
+    "files": [
+      {
+        "file": "docs/usecases/EPICS-WAVE-2.md",
+        "description": "Titolo e conteggio (epiche 12–22); fase A2 con le ventuno storie e le loro dipendenze evo e base; sezione «Perché l'epica 22 sta qui, e non in coda»; sezione «Storie superate dall'epica 22 (archivio)»; vincoli di dipendenza dell'epica 22; epica 14 che non ordina più nulla; note sullo stato deciso dell'epica 22. Righe rinumerate da 1 a 55."
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "decision": "Le tre storie dell'epica 14 (0072, 0073, 0074) sono marcate **superate** e **non da implementare**, ma **conservate come archivio** — scelta deliberata: dicono cosa si era pensato e perché non si è fatto, e cancellarle farebbe perdere il ragionamento, che è la parte utile a chi un giorno riaprisse la questione. Ognuna porta in testa un blocco che dichiara il superamento, rimanda alla decisione registrata in questa change e indica **da quali storie dell'epica 22 è sostituita**. Sono state rimosse dall'ordine di esecuzione dell'onda 2 e la loro epica, nel catalogo, è marcata come archivio.",
+    "files": [
+      {
+        "file": "docs/usecases/14-modello-utenti-multiapp/0072-distinzione-b2c-b2b-livello-app.md",
+        "description": "Stato 🗄️ e blocco di superamento; sostituita da 0114 (che la ritira) e 0115 (ambito dei dati)."
+      },
+      {
+        "file": "docs/usecases/14-modello-utenti-multiapp/0073-invito-utenti-per-app-posti-quota.md",
+        "description": "Stato 🗄️ e blocco di superamento; sostituita da 0098 e 0102–0103."
+      },
+      {
+        "file": "docs/usecases/14-modello-utenti-multiapp/0074-directory-cross-app-ui-membri.md",
+        "description": "Stato 🗄️ e blocco di superamento; sostituita da 0100 e 0111."
+      },
+      {
+        "file": "docs/usecases/README.md",
+        "description": "Intestazione dell'epica 14 riscritta come archivio, con la tabella che indica per ogni storia da cosa è superata."
+      }
+    ]
+  }
+]

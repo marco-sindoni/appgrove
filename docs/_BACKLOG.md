@@ -163,7 +163,7 @@ Le decisioni di [03-frontend](03-frontend.md) (e affini) fissano stack/architett
 **progettare in dettaglio tutti gli use case** delle varie funzionalità (backoffice, moduli app, console admin):
 flussi, schermate per stato, edge case, validazioni, permessi per ruolo. Da affrontare in sessioni dedicate per area/app.
 
-- ✅ **FATTO (2026-06-16)**: casi d'uso di **autenticazione e registrazione** → [usecases/01-auth-registrazione](usecases/01-auth-registrazione.md) (UC1–UC10). Resta solo la stesura dei **testi** dei template email EN/IT.
+- ✅ **FATTO (2026-06-16)**: casi d'uso di **autenticazione e registrazione** → [usecases/05-auth](usecases/05-auth/) (UC1–UC10). Resta solo la stesura dei **testi** dei template email EN/IT.
 - **DA PROGETTARE (priorità BASSISSIMA) — use case "Pausa subscription self-service"** (richiesto 2026-06-21, da #09 E):
   sospensione/ripresa di un abbonamento da parte dell'utente (Paddle pause/resume). **Non al lancio**; lo status `paused`
   è comunque gestito (= no accesso). Evoluzione futura.
@@ -822,3 +822,32 @@ repository vietano. Il rosso è **dimostrato preesistente** e segnalato, non ere
 **Chi possiede il tema**: UC 0071 (riconciliazione) per il difetto di prodotto, UC 0060 (localizzazione a
 cinque lingue) per la regola generale sulla formattazione, e la strategia di collaudo
 (`docs/10-testing.md`) per la dipendenza delle prove dal locale.
+
+## Appartenenza multipla: temi lasciati fuori dall'epica 22
+
+L'epica 22 rende una persona capace di appartenere a **più account**
+([UC 0116](usecases/22-refactor-membership-model/story/0116-identita-e-appartenenze.md)). Due temi che ne
+discendono restano fuori, per natura e non per dimenticanza:
+
+- **Piano commerciale per chi lavora per più clienti** (liberi professionisti, studi, consulenti). La
+  tecnica lo rende possibile; il prodotto non lo prevede. È una decisione commerciale — quanto costa un
+  posto a chi è già pagato da un altro account? Nessuna, per ora: **ogni account paga le persone che usano
+  le sue applicazioni**, che è la regola più semplice e anche la più difendibile.
+- **Unione di due identità** create per errore con indirizzi diversi dalla stessa persona. Lavoro
+  sgradevole (dati da riattribuire, tracce di controllo da non falsificare) e richiesta di assistenza
+  prevedibile. Da affrontare quando si presenta, con una decisione consapevole su cosa si può riattribuire
+  e cosa no.
+
+## Collegamenti rotti nei documenti — nessun presidio automatico
+
+Un controllo manuale eseguito durante la change `0087` ha trovato **27 collegamenti interni rotti** nei
+documenti di `docs/` (fuori dall'area 22, che è stata verificata e ne ha zero): riferimenti a percorsi
+precedenti la suddivisione degli use case in sottocartelle (`usecases/01-auth-registrazione.md`), rimandi a
+`_kit/` da applicazioni archiviate in `_catalogo/_escluse/`, e alcuni segnaposto nei modelli (che non sono
+difetti). Nessuno di questi rende falso un documento vivo, ma nessuno diventa rosso: la classe di difetti
+cresce in silenzio ogni volta che un file si sposta.
+
+**Cosa servirebbe**: un controllo dei collegamenti interni nell'area `tooling` di `run-tests.sh`, con una
+lista di eccezioni per i modelli. Piccolo, e chiude una classe intera. Non fatto in `0087` per non
+sconfinare: la change è documentale e limitata all'area 22.
+
