@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie sono la suite completa ./run-tests.sh verde prima del commit, il registro delle decisioni integrale e how-to-test.md nella cartella della change. Merge e push restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0118 «Inviti e registrazione quando l'identità esiste già» (area 22-refactor-membership-model, epica E22.5, terza e ultima storia della sotto-epica). Da qui il nome del branch 0090-use-case-0118-inviti-registrazione-identita-esistente; il numero 0090 è il progressivo di changes/ (ultima esistente: 0089) e coincide con quello atteso dall'orchestratore. Lo stato di implementazione delle storie evo NON vive in docs/usecases/_INDEX.md (che copre le 60 storie base): si registra nell'intestazione della storia e nell'epica, come stabilito dalla decisione 13 della change 0088."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La superficie «di me stesso» degli inviti vive in services/core sotto /api/platform/v1/me/invitations (elenco, accettazione, rifiuto), accanto a /me/memberships di UC 0117, e NON in services/auth. Motivo: accettare un invito da dentro l'applicazione è un atto del prodotto compiuto da una persona già autenticata, non un flusso di autenticazione; la famiglia /me è già in core e vi è già il precedente delle letture di piattaforma che attraversano gli account. Il percorso via collegamento resta in auth (è lì che si conia un'identità nuova), così la logica non è duplicata: per un'identità che esiste già quel percorso rimanda alla sessione invece di accettare.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MeInvitationsResource.java",
+        "description": "Le tre operazioni; perimetro sempre dal sub del token."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) I due rifiuti LECITI dell'invito (già membro / invito già in attesa) si distinguono con il campo `type` del corpo problem+json (RFC 9457): urn:appgrove:invitation:already-member e urn:appgrove:invitation:already-invited. Alternative scartate: (a) far interpretare al frontend il messaggio del server — è in italiano e l'interfaccia parla cinque lingue; (b) dedurre la causa dagli elenchi già caricati nella pagina — funzionerebbe solo se gli elenchi sono caricati, cioè un messaggio che dipende dallo stato della cache. Poiché il mapper delle eccezioni riscrive sempre `type` ad about:blank, il rifiuto viene RESTITUITO dal resource come Response e non sollevato come eccezione.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationResource.java",
+        "description": "create(): due rifiuti tipizzati restituiti come Response con problem+json e `type` stabile."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La riservatezza sull'esistenza dell'identità si tiene per COSTRUZIONE, non per simmetria di codice: la lettura «esiste un'identità con questo indirizzo?» si esegue SEMPRE, in entrambi i rami, e il suo risultato cambia solo il valore scritto in invitations.identity_id — mai il codice di stato, mai il corpo, mai un ramo di lavoro in più. Il collaudo dedicato confronta le due risposte campo per campo. NESSUNA asserzione sui tempi: una soglia temporale in una suite condivisa è un collaudo instabile, e instabile vuol dire disattivato. Il motivo è scritto accanto al codice."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Lo stato «appartenenza in attesa di accettazione» NON viene introdotto, chiudendo il rimando di UC 0116: l'attesa è già la riga di invito (platform.invitations, stato pending) e l'accettazione crea l'appartenenza già attiva. Un secondo modo di dire la stessa cosa servirebbe solo a tenere occupato un posto acquistato in anticipo, che è materia di UC 0103. Il vincolo parziale ux_membership_tenant_identity resta quindi valido così com'è."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La schermata per scegliere l'account senza sessione si realizza come SFIDA DI SCELTA sul modello della sfida del secondo fattore (seconda delle due vie indicate da UC 0117), e non rendendo navigabile una sessione priva del claim dell'account. Motivo tecnico decisivo: in services/core il risolutore del tenant è a chiusura e solleva un rifiuto appena si apre una sessione verso la banca dati, quindi un token senza claim non potrebbe nemmeno leggere /me/memberships; l'alternativa avrebbe richiesto di indebolire il presidio dell'invariante 1 per servire un caso raro. La sfida vive invece nel servizio di autenticazione, che legge la banca dati via JDBC diretto senza discriminatore.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/IdentityProvider.java",
+        "description": "LoginResult acquista il terzo esito AccountSelectionRequired; loginMfa ritorna LoginResult e non Session, perché la scelta può servire anche dopo il secondo fattore."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La sfida di scelta è attuata in ENTRAMBI i fornitori di identità, con la stessa forma di risposta. Sul fornitore locale il token di scelta è un JWT a vita breve con uso `account_choice`; su Cognito è il valore opaco già usato per le altre coppie (sub + refresh token), perché la sessione si riottiene rinnovando dopo aver conservato la scelta. Su Cognito il caso si riconosce dall'ASSENZA del claim tenant_id nell'access token appena emesso: la funzione che compone il token non solleva eccezioni (restituisce l'evento inalterato), quindi l'accesso riesce e il token esce senza claim. Non implementarla su Cognito avrebbe lasciato la divergenza fra fornitori che l'epica elenca fra i rischi."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Sui percorsi NON interattivi (rinnovo della sessione, verifica dell'indirizzo con accesso automatico) l'esito «scegli l'account» resta il rifiuto 409 di UC 0117: non c'è nessuno a cui mostrare una schermata, e a chiusura in caso di dubbio è l'esito giusto. Il rinnovo che fallisce riporta la persona all'accesso, dove la sfida di scelta esiste: la scelta si fa in un posto solo. La chiave di traduzione errors.accountSelectionRequired resta quindi in uso come rete di ritorno sulla pagina di accesso."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il percorso B (chi è già membro apre un proprio account) è POST /api/platform/v1/me/accounts, aperto a qualunque persona autenticata, con superficie nella pagina Account («Apri un altro account»). Alternative scartate: metterlo nel selettore dell'account (con una sola appartenenza il selettore non è reso affatto, quindi il comando sarebbe irraggiungibile proprio per chi ne ha bisogno) e una pagina dedicata (una pagina per un modulo con un campo). La registrazione con un indirizzo già registrato continua a rifiutare — non si può creare un account per conto di un'identità senza autenticarla — ma il testo mostrato diventa azionabile."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il numero massimo di account che una persona può aprire NON viene deciso qui: è direzione di prodotto e ha effetti commerciali. Rimando tracciato nei punti aperti di UC 0118 con proprietario UC 0103 (posti a pagamento), perché è lì che l'apertura di un account acquista un costo."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il controllo di esistenza dell'identità nei percorsi d'ingresso diventa INCONDIZIONATO (guarda anche le righe cancellate), perché tale è l'unicità di platform.identity su indirizzo e identificativo di autenticazione. Chiude il rimando di UC 0116 sul riuso di un indirizzo dopo la cancellazione di un'identità: prima quel caso passava il controllo e sbatteva contro l'indice unico (errore 500), ora riceve lo stesso messaggio comprensibile di sempre — che non rivela nulla in più, perché è identico a quello di un indirizzo vivo."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) I posti: nessuna modifica al calcolo (non esiste ancora, è di UC 0103). Questa change scrive soltanto la REGOLA NEL TESTO mostrato al cliente nel riquadro dell'invito — «il posto è dell'account, non della persona» — perché la prima reazione di chi invita qualcuno che ha già un account altrove sarà «ma la paga già l'altra azienda». Il rifiuto per posti esauriti resta di UC 0103."
+  }
+]
