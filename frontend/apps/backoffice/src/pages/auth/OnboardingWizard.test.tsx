@@ -62,11 +62,19 @@ describe('OnboardingWizard', () => {
     expect(lastSignupBody?.locale).toBe('en')
   })
 
-  it('email già registrata (409) → mostra errore e resta su Account', async () => {
+  it('email già registrata (409) → messaggio AZIONABILE e resta su Account', async () => {
+    // UC 0118: non si può creare un account per conto di un'identità senza autenticarla, quindi il
+    // rifiuto resta — ma il testo deve dire dove andare. Chi è già membro di un'azienda apre il
+    // proprio account DALLA SESSIONE (pagina Account), non da qui: senza questa riga la persona si
+    // registra con un secondo indirizzo, e unire due identità è lavoro manuale e sgradevole.
     const user = userEvent.setup()
     renderWithProviders(<OnboardingWizard />, { route: '/signup' })
     await fillAccount(user, 'taken@x.io')
-    expect(await screen.findByText('This email is already registered.')).toBeInTheDocument()
+    expect(
+      await screen.findByText(
+        'This email is already registered. Sign in: from your session you can open a new account.',
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Create account' })).toBeInTheDocument()
   })
 

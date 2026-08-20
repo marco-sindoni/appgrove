@@ -10,11 +10,23 @@ final class CognitoStubs {
 
     private CognitoStubs() {}
 
-    /** Access token "alla Cognito": firma non verificata dal provider, conta solo il payload. */
+    /**
+     * Access token "alla Cognito" <b>senza</b> il claim {@code tenant_id}: firma non verificata dal
+     * provider, conta solo il payload. È il token che la funzione del token emette quando non riesce a
+     * scegliere l'account — non solleva eccezioni, restituisce l'evento inalterato (UC 0116/0117).
+     */
     static String accessTokenWithSub(String sub) {
-        String header = base64Url("{\"alg\":\"RS256\"}");
-        String payload = base64Url("{\"sub\":\"" + sub + "\",\"token_use\":\"access\"}");
-        return header + "." + payload + ".firma-finta";
+        return token("{\"sub\":\"" + sub + "\",\"token_use\":\"access\"}");
+    }
+
+    /** Access token con il claim {@code tenant_id}: il caso normale, account già stabilito. */
+    static String accessTokenWithTenant(String sub, String tenantId) {
+        return token("{\"sub\":\"" + sub + "\",\"tenant_id\":\"" + tenantId
+                + "\",\"token_use\":\"access\"}");
+    }
+
+    private static String token(String payload) {
+        return base64Url("{\"alg\":\"RS256\"}") + "." + base64Url(payload) + ".firma-finta";
     }
 
     static String expectedSecretHash(String username) {

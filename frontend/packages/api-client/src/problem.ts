@@ -25,8 +25,16 @@ export class ApiError extends Error {
   }
 }
 
-/** Costruisce un {@link ApiError} da una Response non-ok, leggendo il problem+json se presente. */
-export async function toApiError(response: Response): Promise<ApiError> {
+/**
+ * Costruisce un {@link ApiError} da una Response non-ok, leggendo il problem+json se presente.
+ *
+ * `parsedBody` è il corpo che il chiamante ha **già** letto, quando l'ha letto: `openapi-fetch`
+ * consuma il corpo della risposta d'errore prima di restituirla, e dopo di lui `response.clone()`
+ * non è più possibile. Senza questo parametro il campo `problem` risultava `null` proprio nelle
+ * chiamate passate dal client generato — cioè quasi tutte — e ogni informazione dell'errore oltre al
+ * codice di stato andava perduta in silenzio.
+ */
+export async function toApiError(response: Response, parsedBody?: unknown): Promise<ApiError> {
   let problem: ProblemDetail | null = null
   const contentType = response.headers.get('content-type') ?? ''
   if (contentType.includes('json')) {
@@ -35,6 +43,9 @@ export async function toApiError(response: Response): Promise<ApiError> {
     } catch {
       problem = null
     }
+  }
+  if (problem === null && parsedBody !== null && typeof parsedBody === 'object') {
+    problem = parsedBody as ProblemDetail
   }
   return new ApiError(response.status, problem)
 }
@@ -51,7 +62,9 @@ export interface FetchResult<T> {
  * Pensato per essere usato dentro le query/mutation di TanStack Query.
  */
 export async function unwrap<T>(promise: Promise<FetchResult<T>>): Promise<T> {
-  const { data, response } = await promise
-  if (!response.ok) throw await toApiError(response)
+  const { data, error, response } = await promise
+  // `error` è il corpo che openapi-fetch ha già letto: passarlo è l'unico modo perché `problem`
+  // arrivi valorizzato a chi deve distinguere DUE rifiuti con lo stesso codice di stato.
+  if (!response.ok) throw await toApiError(response, error)
   return data as T
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, CardContent, CardHeader, CardTitle, Icon } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
-import { useCurrentAccount, useCurrentUser } from '../api/hooks'
+import { useCreateOwnAccount, useCurrentAccount, useCurrentUser } from '../api/hooks'
 import { useAuthStore } from '../auth/authStore'
 import { QueryState } from '../shell/QueryState'
 
@@ -59,7 +59,76 @@ export function Account() {
           <WorkspaceId tenantId={tenantId} />
         </CardContent>
       </Card>
+
+      <OpenAnotherAccount />
     </div>
+  )
+}
+
+/**
+ * **Apri un altro account** (UC 0118, percorso B): chi è già una persona della piattaforma — magari
+ * perché è stato invitato da un'azienda — può avere un account proprio senza crearsi una seconda
+ * identità con un altro indirizzo.
+ *
+ * Serve **solo** il nome. Indirizzo, nome della persona e parola d'accesso ci sono già: richiederli
+ * è il modo in cui si finisce con due identità della stessa persona, e unirle è lavoro manuale e
+ * sgradevole. Per questo il percorso vive **dentro la sessione** e non nella registrazione, che con
+ * un indirizzo già noto non può fare altro che rifiutare.
+ *
+ * Sta nella pagina Account, non nel selettore della barra laterale: con una sola appartenenza il
+ * selettore non viene reso affatto (UC 0117), quindi il comando sarebbe irraggiungibile proprio per
+ * chi ne ha più bisogno.
+ *
+ * Dopo la creazione l'applicazione **ricarica**: chi apre un account vuole andarci, il nuovo account
+ * è quello attivo, ed è il ricaricamento a far nascere il token con il claim nuovo (UC 0117).
+ */
+function OpenAnotherAccount() {
+  const { t } = useTranslation()
+  const create = useCreateOwnAccount()
+  const [name, setName] = useState('')
+  const [failed, setFailed] = useState(false)
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setFailed(false)
+    try {
+      await create.mutateAsync(name.trim())
+      window.location.assign('/')
+    } catch {
+      setFailed(true)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('ownAccount.title')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-fg-muted">{t('ownAccount.hint')}</p>
+        <form onSubmit={(e) => void submit(e)} className="flex flex-wrap items-end gap-3" noValidate>
+          <div className="min-w-[14rem] flex-1">
+            <label htmlFor="own-account-name" className="mb-1 block text-sm font-medium text-fg">
+              {t('ownAccount.nameLabel')}
+            </label>
+            <input
+              id="own-account-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-10 w-full rounded-md border border-line bg-surface px-3 text-sm text-fg"
+            />
+          </div>
+          <Button type="submit" disabled={!name.trim() || create.isPending}>
+            {create.isPending ? t('ownAccount.creating') : t('ownAccount.submit')}
+          </Button>
+        </form>
+        {failed && (
+          <p role="alert" className="text-sm text-danger">
+            {t('ownAccount.error')}
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

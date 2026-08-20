@@ -116,6 +116,33 @@ export const de: Resources = {
     changed: 'Das aktive Konto wurde in einem anderen Tab gewechselt.',
     reload: 'Neu laden',
   },
+  // Inviti ricevuti dalla persona (UC 0118): sezione in testa al cruscotto + contatore nel menu.
+  myInvites: {
+    title: 'Einladungen für Sie',
+    body: '{{account}} lädt Sie ein, im eigenen Konto mitzuarbeiten.',
+    accept: 'Annehmen',
+    reject: 'Ablehnen',
+    accepting: 'Beitritt läuft…',
+    error: 'Die Aktion konnte nicht abgeschlossen werden. Bitte erneut versuchen.',
+    seatNote: 'Den Platz zahlt das Konto, das Sie einlädt, nicht Sie.',
+    menuBadge_one: '{{count}} offene Einladung',
+    menuBadge_other: '{{count}} offene Einladungen',
+  },
+  // Apertura di un proprio account da dentro la sessione (UC 0118, percorso B).
+  ownAccount: {
+    title: 'Weiteres Konto eröffnen',
+    hint: 'Sie können ein eigenes Konto haben und Mitglied der anderen bleiben. Es werden keine Daten übertragen.',
+    nameLabel: 'Kontoname',
+    submit: 'Konto eröffnen',
+    creating: 'Wird eröffnet…',
+    error: 'Das Konto konnte nicht eröffnet werden. Bitte erneut versuchen.',
+  },
+  // Scelta dell'account all'accesso (UC 0118).
+  chooseAccount: {
+    title: 'Konto auswählen',
+    hint: 'Sie gehören zu mehreren Konten. Wählen Sie das Konto, in dem Sie arbeiten möchten — Sie können später wechseln.',
+    error: 'Dieses Konto konnte nicht geöffnet werden. Wählen Sie ein anderes oder melden Sie sich neu an.',
+  },
   states: {
     loading: 'Wird geladen…',
     empty: 'Hier ist noch nichts',
@@ -203,6 +230,10 @@ export const de: Resources = {
     submit: 'Einladung annehmen',
     invalid: 'Diese Einladung ist ungültig.',
     expired: 'Diese Einladung ist abgelaufen oder wurde bereits verwendet.',
+    signinTitle: 'Sie haben schon ein appgrove-Konto',
+    signinHint: 'Diese Adresse ist bereits registriert. Melden Sie sich an: die Einladung von {{account}} finden Sie oben in Ihrem Dashboard — kein neues Passwort nötig.',
+    signinCta: 'Zum Annehmen anmelden',
+    checking: 'Einladung wird geprüft…',
     missingToken: 'Einladungstoken fehlt.',
   },
   twofa: {
@@ -377,6 +408,9 @@ export const de: Resources = {
     noInvites: 'Keine ausstehenden Einladungen.',
     lastOwnerHint: 'Sie können den letzten Inhaber nicht ändern oder entfernen.',
     selfHint: 'Sie können diese Aktion nicht an sich selbst ausführen.',
+    emailAlreadyMemberOnly: 'Diese Person ist bereits Mitglied dieses Kontos.',
+    emailAlreadyInvited: 'Für diese Adresse gibt es bereits eine offene Einladung.',
+    seatNote: 'Der Platz gehört zu diesem Konto: er wird hier bezahlt, auch wenn die Person schon in einem anderen Konto arbeitet.',
     emailAlreadyMember: 'Diese E-Mail ist bereits Mitglied oder hat eine ausstehende Einladung.',
   },
   validation: {
@@ -388,7 +422,7 @@ export const de: Resources = {
   },
   errors: {
     accountSelectionRequired: 'Sie gehören zu mehreren Konten und keines ist als aktiv gesetzt. Wählen Sie das Konto, in dem Sie arbeiten möchten.',
-    emailTaken: 'Diese E-Mail ist bereits registriert.',
+    emailTaken: 'Diese E-Mail ist bereits registriert. Melden Sie sich an: aus Ihrer Sitzung können Sie ein neues Konto eröffnen.',
     invalidCredentials: 'Ungültige E-Mail oder ungültiges Passwort.',
     emailNotVerified: 'Ihre E-Mail ist noch nicht bestätigt. Überprüfen Sie Ihren Posteingang.',
     suspended: 'Dieses Konto ist gesperrt.',

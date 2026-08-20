@@ -3,6 +3,7 @@ package app.appgrove.auth;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -84,26 +85,86 @@ class ActiveAccountTokenTest {
     }
 
     @Test
-    void piuAppartenenzeSenzaSceltaNessunToken() {
-        // «Nega e chiede di scegliere»: 409 con un messaggio comprensibile, non «credenziali non
-        // valide» — che sarebbe una bugia — e nessun token emesso.
+    void piuAppartenenzeSenzaSceltaNessunTokenMaLaSfidaDiScelta() {
+        // Fino a UC 0117 questo caso era un 409: nessun token, e giustamente — ma nessun modo di
+        // rispondere. Con UC 0118 diventa una SFIDA, sul modello di quella del secondo fattore: la
+        // proprietà essenziale non cambia (NESSUN token finché la persona non ha scelto), cambia che
+        // ora c'è dove scegliere.
         secondaAppartenenza("member");
-        given().contentType(ContentType.JSON)
+        Response res = given().contentType(ContentType.JSON)
                 .body(Map.of("email", BOB, "password", PASSWORD))
-                .when().post(LOGIN)
-                .then().statusCode(409);
+                .when().post(LOGIN).thenReturn();
+        res.then().statusCode(200)
+                .body("account_selection_required", org.hamcrest.Matchers.is(true))
+                .body("choice_token", org.hamcrest.Matchers.notNullValue())
+                .body("accounts.account_id", org.hamcrest.Matchers.hasItems(BOB_TENANT, ALTRO_TENANT))
+                .body("accounts.account_name", org.hamcrest.Matchers.hasItem("Altro Account"));
+        assertNull(res.path("access_token"), "nessun token finché la persona non ha scelto");
     }
 
     @Test
     void accountAttivoManomessoNonProduceMaiUnClaim() {
         // La colonna scritta a mano su un'appartenenza che non è fra quelle attive della persona:
-        // nessun token con quell'account, mai. È il varco che questa storia deve chiudere.
+        // nessun token con quell'account, mai. È il varco che questa storia deve chiudere — e resta
+        // chiuso anche ora che l'esito è una sfida invece di un rifiuto.
         secondaAppartenenza("member");
         setActiveMembership(BOB_IDENTITY, APPARTENENZA_ALTRUI);
+        Response res = given().contentType(ContentType.JSON)
+                .body(Map.of("email", BOB, "password", PASSWORD))
+                .when().post(LOGIN).thenReturn();
+        res.then().statusCode(200).body("account_selection_required", org.hamcrest.Matchers.is(true));
+        assertNull(res.path("access_token"), "il valore manomesso non produce alcun claim");
+    }
+
+    // ── UC 0118: la sfida di scelta dell'account ──────────────────────────────
+
+    @Test
+    void sceltaDellAccountProduceLaSessioneConQuelClaimELaConserva() {
+        UUID altra = secondaAppartenenza("member");
+        String choiceToken = sfidaDiScelta();
+
+        Response session = given().contentType(ContentType.JSON)
+                .body(Map.of("choice_token", choiceToken, "account_id", ALTRO_TENANT))
+                .when().post("/api/auth/login/account").thenReturn();
+        session.then().statusCode(200);
+        assertEquals(ALTRO_TENANT, tenantOf(session.path("access_token")));
+        assertEquals("member", roleOf(session.path("access_token")), "il ruolo è quello dell'appartenenza scelta");
+
+        // La scelta è CONSERVATA: al prossimo accesso non si chiede più nulla. Se restasse solo nel
+        // token, la persona rivedrebbe la schermata a ogni ingresso.
+        assertEquals(altra, queryUuid("select active_membership_id from platform.identity where id = ?", BOB_IDENTITY));
+        assertEquals(ALTRO_TENANT, tenantOfLogin(BOB));
+    }
+
+    @Test
+    void sceltaDiUnAccountCheNonEProprioRifiutata() {
+        secondaAppartenenza("member");
+        String choiceToken = sfidaDiScelta();
+        // L'account esiste (è quello di Acme, dal seme) ma non è di Bob: 404 e non 403, perché
+        // l'esistenza di un account non è un'informazione di chi chiede.
         given().contentType(ContentType.JSON)
+                .body(Map.of("choice_token", choiceToken, "account_id", "a0000000-0000-4000-8000-000000000001"))
+                .when().post("/api/auth/login/account")
+                .then().statusCode(404);
+    }
+
+    @Test
+    void sceltaConTokenNonValidoRifiutata() {
+        // Senza la prova che le credenziali sono già state verificate, questa sarebbe la via per
+        // scrivere l'account attivo di chiunque: a chiusura, 401.
+        given().contentType(ContentType.JSON)
+                .body(Map.of("choice_token", "non-un-token", "account_id", ALTRO_TENANT))
+                .when().post("/api/auth/login/account")
+                .then().statusCode(401);
+    }
+
+    /** Esegue l'accesso e ritorna il token della sfida di scelta. */
+    private String sfidaDiScelta() {
+        return given().contentType(ContentType.JSON)
                 .body(Map.of("email", BOB, "password", PASSWORD))
                 .when().post(LOGIN)
-                .then().statusCode(409);
+                .then().statusCode(200)
+                .extract().path("choice_token");
     }
 
     @Test
@@ -152,9 +213,13 @@ class ActiveAccountTokenTest {
         return tenantOf(accessTokenOfLogin(email));
     }
 
-    @SuppressWarnings("unchecked")
     private String roleOfLogin(String email) {
-        Map<String, Object> claims = TestJwt.claims(accessTokenOfLogin(email));
+        return roleOf(accessTokenOfLogin(email));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String roleOf(String accessToken) {
+        Map<String, Object> claims = TestJwt.claims(accessToken);
         return ((java.util.List<String>) claims.get("roles")).get(0);
     }
 

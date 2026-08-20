@@ -1,67 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import { tenant } from '../helpers/api'
-import { acceptLegalGateIfPresent } from '../helpers/browser'
+import { loginIntoAccount, switchAccountTo } from '../helpers/browser'
 import { dbRow, dbExec } from '../helpers/db'
-
-/** La risposta che DECIDE il gate legale: prima che arrivi, la shell è navigabile per fail-open. */
-const LEGAL_SETTLED = (r: { url(): string }) => r.url().includes('/me/legal/status')
-
-/**
- * Attende di essere **davvero** dentro l'account atteso, attraversando il gate legale quando compare.
- *
- * Perché non basta `acceptLegalGateIfPresent` da solo: il gate è **fail-open mentre il suo stato
- * carica** — per un istante la shell è navigabile e solo dopo il gate la sostituisce. Chiedere «gate
- * oppure shell» una volta sola perde quella corsa, e il gate si apre un attimo dopo. Questo percorso
- * entra in DUE account, quindi incontra il gate più volte di ogni altro: è quello che la paga.
- *
- * L'attesa è sull'**esito** — il nome dell'account nuovo nella barra laterale — e si riprova finché
- * non c'è, non su un istante fisso.
- */
-async function expectInsideAccount(page: Page, accountName: string): Promise<void> {
-  await expect(async () => {
-    await acceptLegalGateIfPresent(page)
-    await expect(page.getByRole('navigation', { name: 'Platform' }).getByTestId('active-account-name'))
-      .toHaveText(accountName, { timeout: 1_000 })
-  }).toPass({ timeout: 20_000 })
-}
-
-/**
- * Accesso dal browser. Non usa la scorciatoia condivisa `browserLogin` di proposito: quel passo dà
- * per assodato che la shell sia visibile appena attraversato il gate, e con il fail-open descritto
- * sopra non è sempre vero. Il presidio condiviso resta valido per i percorsi che incontrano il gate
- * una volta sola; il rimando è tracciato in docs/_BACKLOG.md.
- */
-async function login(page: Page, email: string, password: string, accountName: string): Promise<void> {
-  await page.goto('/login')
-  await page.getByLabel('Email').fill(email)
-  await page.getByLabel('Password').fill(password)
-  const legalSettled = page.waitForResponse(LEGAL_SETTLED)
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await legalSettled
-  await expectInsideAccount(page, accountName)
-}
-
-/**
- * Cambia account dal selettore e arriva nell'account nuovo. Il **ricaricamento è parte del
- * comportamento** (UC 0117: mezza applicazione con l'account nuovo e mezza col vecchio è il modo
- * peggiore di sbagliare), quindi si attende l'evento di caricamento e non un istante fisso —
- * altrimenti l'asserzione successiva guarderebbe ancora il documento vecchio e leggerebbe il nome
- * dell'account di prima.
- *
- * Nell'account in cui si entra per la prima volta il **gate legale è pendente**, perché
- * l'accettazione dei documenti è per ACCOUNT e non per persona (UC 0056): ogni account è un
- * contratto a sé. Si attraversa come farebbe l'utente — è parte del percorso reale, non un artificio
- * del collaudo.
- */
-async function switchAccountTo(page: Page, accountName: string): Promise<void> {
-  await page.getByLabel('Switch account').click()
-  const reloaded = page.waitForEvent('load')
-  const legalSettled = page.waitForResponse(LEGAL_SETTLED)
-  await page.getByRole('button', { name: new RegExp(accountName) }).click()
-  await reloaded
-  await legalSettled
-  await expectInsideAccount(page, accountName)
-}
 
 /**
  * J-ACCOUNT-SWITCH — account attivo della sessione e selettore (UC 0117).
@@ -107,7 +47,7 @@ test('[J-ACCOUNT-SWITCH] due appartenenze → selettore, cambio con ricarica, me
   ])
 
   // ── 2. nel proprio account: nome dell'account, selettore, menu completi ────
-  await login(page, persona.email, persona.password, persona.displayName)
+  await loginIntoAccount(page, persona.email, persona.password, persona.displayName)
   const sidebar = page.getByRole('navigation', { name: 'Platform' })
   await expect(sidebar.getByRole('link', { name: 'Members' })).toBeVisible()
   // Il selettore esiste perché le appartenenze sono due (con una sola non sarebbe nel documento).

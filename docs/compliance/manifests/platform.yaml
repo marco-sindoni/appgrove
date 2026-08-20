@@ -210,6 +210,43 @@ entries:
     retention:
       it: Fino a scadenza/accettazione dell'invito; soft-delete e purge secondo il ciclo piattaforma
       en: Until the invitation expires or is accepted; soft-delete and purge per the platform lifecycle
+  - key: invitations.identity_id
+    entity: app.appgrove.core.platform.Invitation
+    field: identityId
+    location:
+      it: Tabella `platform.invitations` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.invitations` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persone invitate a entrare in un account che hanno già un'identità appgrove
+      en: People invited to join an account who already have an appgrove identity
+    data_category:
+      it: >-
+        Identificativo online (riferimento all'identità della persona invitata), valorizzato solo
+        quando quell'indirizzo ha già un'identità sulla piattaforma
+      en: >-
+        Online identifier (reference to the invited person's identity), set only when that address
+        already has an identity on the platform
+    purpose:
+      it: >-
+        Collegare l'invito a una persona che esiste già, per farla entrare con una appartenenza in più
+        e non con una seconda identità (UC 0118)
+      en: >-
+        Linking the invitation to a person who already exists, so they join with one more membership
+        instead of a second identity (UC 0118)
+    legal_basis:
+      it: Misure precontrattuali / contratto (art. 6.1.b GDPR)
+      en: Pre-contractual measures / contract (art. 6(1)(b) GDPR)
+    retention:
+      it: >-
+        Fino a scadenza o chiusura dell'invito; eliminato con l'account (+ 14 giorni di grace,
+        #13 E25). NON viene mai restituito a chi ha invitato, ed è esportato solo per gli inviti
+        ACCETTATI — su un invito in attesa rivelerebbe l'esistenza di un rapporto fra quella persona
+        e la piattaforma, che non è informazione dell'account che invita (UC 0118 §5)
+      en: >-
+        Until the invitation expires or is closed; deleted with the account (+ 14-day grace period,
+        #13 E25). It is NEVER returned to the inviter, and is exported only for ACCEPTED invitations —
+        on a pending invitation it would reveal that the person already has a relationship with the
+        platform, which is not the inviting account's information (UC 0118 §5)
   - key: newsletter_subscribers.email
     entity: app.appgrove.core.newsletter.NewsletterSubscriber
     field: email

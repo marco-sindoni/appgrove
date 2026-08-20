@@ -145,6 +145,101 @@ class CognitoAuthFlowsTest {
         assertEquals("123456", req.challengeResponses().get("SOFTWARE_TOKEN_MFA_CODE"));
     }
 
+    /**
+     * UC 0118 — sfida di scelta dell'account sul fornitore <b>Cognito</b>, cioè la parità con il
+     * fornitore locale.
+     *
+     * <p>Qui il caso si riconosce dall'<b>assenza del claim {@code tenant_id}</b> nell'access token
+     * appena emesso: la funzione che compone il token non solleva eccezioni quando non riesce a
+     * scegliere, quindi l'accesso riesce e il token esce senza claim. Il token della sfida è la coppia
+     * (sub, refresh token), e la sessione con il claim nuovo si ottiene <b>rinnovando</b> dopo aver
+     * conservato la scelta — nessun token da inventare, nessuna password da ricordare.
+     */
+    @Test
+    void piuAppartenenzeSenzaScelta_sfidaDiSceltaPoiSessioneConIlClaim() {
+        String sub = "cognito-sub-0118";
+        String primo = "a0000000-0118-4000-8000-000000000001";
+        String secondo = "a0000000-0118-4000-8000-000000000002";
+        creaPersonaConDueAppartenenze(sub, "cog-0118@acme.test", primo, secondo);
+
+        stubInitiateAuth(AuthenticationResultType.builder()
+                .accessToken(CognitoStubs.accessTokenWithSub(sub)) // nessun tenant_id: non ha scelto
+                .idToken("id-token-0118")
+                .expiresIn(900)
+                .refreshToken("rt-0118")
+                .build());
+
+        Response challenge = login("cog-0118@acme.test", "Password1!");
+        challenge.then().statusCode(200)
+                .body("account_selection_required", is(true))
+                .body("accounts.account_id", org.hamcrest.Matchers.hasItems(primo, secondo))
+                .body("access_token", nullValue());
+        String choiceToken = challenge.path("choice_token");
+
+        // Il rinnovo dopo la scelta: qui il token nasce CON il claim, perché la funzione del token
+        // rilegge la scelta appena conservata.
+        when(cognito.initiateAuth(anyConsumer(InitiateAuthRequest.Builder.class)))
+                .thenAnswer(inv -> InitiateAuthResponse.builder()
+                        .authenticationResult(AuthenticationResultType.builder()
+                                .accessToken(CognitoStubs.accessTokenWithTenant(sub, secondo))
+                                .idToken("id-token-0118b")
+                                .expiresIn(900)
+                                .refreshToken("rt-0118-ruotato")
+                                .build())
+                        .build());
+
+        given().contentType(ContentType.JSON)
+                .body(Map.of("choice_token", choiceToken, "account_id", secondo))
+                .when().post("/api/auth/login/account")
+                .then().statusCode(200).body("access_token", notNullValue());
+
+        // La scelta è conservata lato server: è da lì che il token la rileggerà.
+        assertEquals(secondo, TestDb.text(ds,
+                "select m.tenant_id from platform.identity i"
+                        + " join platform.membership m on m.id = i.active_membership_id"
+                        + " where i.cognito_sub = '" + sub + "'"));
+    }
+
+    @Test
+    void sceltaDiUnAccountCheNonEProprioRifiutataAncheSuCognito() {
+        String sub = "cognito-sub-0118b";
+        String primo = "a0000000-0118-4000-8000-000000000003";
+        String secondo = "a0000000-0118-4000-8000-000000000004";
+        creaPersonaConDueAppartenenze(sub, "cog-0118b@acme.test", primo, secondo);
+        given().contentType(ContentType.JSON)
+                .body(Map.of(
+                        "choice_token", CognitoStubs.opaque(sub, "rt-x"),
+                        "account_id", "a0000000-0118-4000-8000-00000000ffff"))
+                .when().post("/api/auth/login/account")
+                .then().statusCode(404);
+    }
+
+    private void creaPersonaConDueAppartenenze(String sub, String email, String primo, String secondo) {
+        exec("insert into platform.accounts(id,name,status,created_at,updated_at,created_by)"
+                + " values ('" + primo + "','Primo 0118','active',now(),now(),'test')"
+                + " on conflict (id) do nothing");
+        exec("insert into platform.accounts(id,name,status,created_at,updated_at,created_by)"
+                + " values ('" + secondo + "','Secondo 0118','active',now(),now(),'test')"
+                + " on conflict (id) do nothing");
+        exec("insert into platform.identity(id,cognito_sub,email,locale,status,created_at,updated_at)"
+                + " values (gen_random_uuid(),'" + sub + "','" + email + "','en','active',now(),now())"
+                + " on conflict do nothing");
+        for (String tenant : new String[] {primo, secondo}) {
+            exec("insert into platform.membership(id,tenant_id,identity_id,role,status,created_at,updated_at)"
+                    + " select gen_random_uuid(),'" + tenant + "', i.id,'owner','active',now(),now()"
+                    + " from platform.identity i where i.cognito_sub = '" + sub + "'"
+                    + " on conflict do nothing");
+        }
+    }
+
+    private void exec(String sql) {
+        try (var c = ds.getConnection(); var ps = c.prepareStatement(sql)) {
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // ── refresh / logout ─────────────────────────────────────────────────────
 
     @Test

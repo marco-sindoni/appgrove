@@ -48,9 +48,16 @@ INSERT INTO platform.membership (id, tenant_id, identity_id, role, status, creat
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000004', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000005', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
-ON CONFLICT (id) DO UPDATE SET
-  tenant_id = EXCLUDED.tenant_id, identity_id = EXCLUDED.identity_id, role = EXCLUDED.role,
-  status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
+-- L'arbitro del conflitto è il vincolo VERO dell'appartenenza — (tenant_id, identity_id) sulle righe
+-- vive — e non la chiave primaria. Con `ON CONFLICT (id)` il ri-seme falliva con
+-- «duplicate key ... ux_membership_tenant_identity» su ogni banca dati che aveva già ATTRAVERSATO la
+-- migrazione V17: il travaso conia identificativi nuovi (gen_random_uuid()), quindi la coppia esiste già
+-- con un id diverso dal nostro, l'inserimento non conflitta sulla chiave primaria e sbatte sull'indice.
+-- Difetto lasciato dalla change 0088 e corretto qui (change 0090). Conseguenza accettata: su una banca
+-- dati migrata gli identificativi delle appartenenze restano quelli del travaso e non i d0000000-… di
+-- questo file — nessuno vi si appoggia, e la persona giusta nell'account giusto è ciò che conta.
+ON CONFLICT (tenant_id, identity_id) WHERE deleted_at IS NULL DO UPDATE SET
+  role = EXCLUDED.role, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
 
 -- ── invitations (Acme, pending) ──────────────────────────────────────────────
 -- token_hash = SHA-256(hex) dei token fissi documentati nel README.

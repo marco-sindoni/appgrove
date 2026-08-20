@@ -153,6 +153,20 @@ public class TokenService {
         return signTyped(sub, "mfa_challenge", mfaChallengeTtl);
     }
 
+    /**
+     * Token della <b>sfida di scelta dell'account</b> (UC 0118): breve, monouso per intenzione, e
+     * coniato <b>solo dopo</b> la verifica completa delle credenziali — secondo fattore incluso. È il
+     * gemello del token della sfida del secondo fattore, e per la stessa ragione: c'è un passaggio in
+     * più fra «ho provato chi sono» e «ho una sessione», e in quel passaggio non serve un token di
+     * sessione, serve la prova che il passaggio precedente è avvenuto.
+     *
+     * <p>Stessa durata della sfida del secondo fattore: è lo stesso tipo di attesa, quella di una
+     * persona davanti a una schermata.
+     */
+    public String accountChoiceToken(String sub) {
+        return signTyped(sub, "account_choice", mfaChallengeTtl);
+    }
+
     private String signTyped(String sub, String use, long ttl) {
         return Jwt.issuer(issuer)
                 .subject(sub)

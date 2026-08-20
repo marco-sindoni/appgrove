@@ -304,6 +304,15 @@ components:
         role:
           type: string
           pattern: \S
+    CreateOwnAccount:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          pattern: \S
+          maxLength: 255
     DownloadView:
       type: object
       properties:
@@ -494,6 +503,24 @@ components:
           type: string
         window:
           type: string
+    MyInvitationView:
+      type: object
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        accountName:
+          type: string
+        expiresAt:
+          $ref: "#/components/schemas/Instant"
+    MyInvitationsView:
+      type: object
+      properties:
+        invitations:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyInvitationView"
     MyMembershipsView:
       type: object
       properties:
@@ -2008,6 +2035,28 @@ paths:
       - Legal Document Resource
       security:
       - SecurityScheme: []
+  /api/platform/v1/me/accounts:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOwnAccount"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Create
+      tags:
+      - Me Accounts Resource
+      security:
+      - SecurityScheme: []
   /api/platform/v1/me/active-account:
     post:
       requestBody:
@@ -2064,6 +2113,64 @@ paths:
       summary: Entitlements
       tags:
       - Me Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/invitations:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyInvitationsView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: List
+      tags:
+      - Me Invitations Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/invitations/{id}/accept:
+    post:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Accept
+      tags:
+      - Me Invitations Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/invitations/{id}/reject:
+    post:
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Reject
+      tags:
+      - Me Invitations Resource
       security:
       - SecurityScheme: []
   /api/platform/v1/me/legal/acceptance:

@@ -37,6 +37,7 @@ usecases_con_superficie:
   - "0096" # Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute)
   - "0097" # Dashboard operativa del workspace (+ Workspace ID in Account)
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
+  - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
 
 # ── I percorsi ────────────────────────────────────────────────────────────────
 percorsi:
@@ -155,6 +156,16 @@ percorsi:
       - livello: platform
         file: tools/platform-e2e/journeys/J-ACCOUNT-SWITCH.spec.ts
 
+  - id: J-INVITE-EXISTING
+    titolo: >-
+      Invito a chi ha già un account — l'invito si crea senza rivelare nulla, la persona lo accetta
+      dal cruscotto, nasce la seconda appartenenza e da lì passa fra i due account
+    usecases: ["0116", "0118"]
+    stato: coperto
+    test:
+      - livello: platform
+        file: tools/platform-e2e/journeys/J-INVITE-EXISTING.spec.ts
+
   # ---- Livello 2 (browser vero, servizi simulati con page.route) -------------
   - id: L2-AUTH
     titolo: Accesso e iscrizione dal backoffice — radice anonima, accesso con credenziali, procedura guidata di iscrizione
@@ -182,6 +193,26 @@ percorsi:
     test:
       - livello: l2
         file: frontend/apps/backoffice/e2e/accountSwitch.spec.ts
+
+  - id: L2-INVITE-EXISTING
+    titolo: >-
+      Inviti ricevuti nel backoffice — sezione in testa al cruscotto col nome di chi invita e chi paga
+      il posto, numero sulla voce del menu, accettazione con ricarica e comparsa del selettore, rifiuto
+    usecases: ["0118"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/invitesExisting.spec.ts
+
+  - id: L2-ACCOUNT-CHOICE
+    titolo: >-
+      Scelta dell'account all'accesso — più appartenenze e nessuna attiva: schermata di scelta invece
+      di un rifiuto, e sessione nell'account scelto
+    usecases: ["0118"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/accountChoice.spec.ts
 
   - id: L2-CHECKOUT
     titolo: Acquisto dal backoffice — scelta della fascia, sovrapposizione di pagamento, attesa dell'attivazione
@@ -719,11 +750,9 @@ esenzioni:
       Identità della persona e appartenenze agli account — storia di modello dati (change 0088): nessuna
       superficie propria. Il travaso è provato dai collaudi di migrazione e di separazione, e i percorsi
       di piattaforma esistenti girano sulle tabelle nuove. Il modello «una persona, due account» è ora
-      esercitato dal vero dentro J-ACCOUNT-SWITCH, che è però il percorso di 0117 (il selettore); il
-      percorso dei modi d'ingresso arriva con 0118.
-  - usecase: "0118"
-    categoria: non-implementato
-    motivo: Inviti e registrazione con identità esistente — avrà superficie, introdurrà il percorso J-INVITE-EXISTING.
+      esercitato dal vero da due percorsi che però appartengono alle storie successive:
+      J-ACCOUNT-SWITCH (il selettore, 0117) e J-INVITE-EXISTING (i modi d'ingresso, 0118) — è
+      quest'ultimo a costruire la seconda appartenenza da un percorso di prodotto.
   - usecase: "0113"
     categoria: non-implementato
     motivo: Migrazione degli account e copertura per ruolo — introduce J-ROLES e J-SEATS, non ha superficie propria (diventerà senza-superficie).

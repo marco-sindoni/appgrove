@@ -7,6 +7,7 @@ import { useEntitlements } from '../registry/entitlements'
 import { useAuthStore } from '../auth/authStore'
 import { useLogout } from '../auth/useLogout'
 import { AccountSwitcher } from './AccountSwitcher'
+import { useMyInvitations } from '../api/hooks'
 
 /* Voce di primo livello (mockup: 13.5px/600, raggio 9px, icona 20px piena quando attiva). */
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -49,11 +50,17 @@ function PlatformLink({
   to,
   icon,
   label,
+  badge,
+  badgeLabel,
   onNavigate,
 }: {
   to: string
   icon: string
   label: string
+  /** Numero da mostrare accanto alla voce; assente o zero = nessun contrassegno. */
+  badge?: number
+  /** Descrizione del numero per chi usa un lettore di schermo («2 inviti in attesa»). */
+  badgeLabel?: string
   onNavigate?: () => void
 }) {
   return (
@@ -62,6 +69,14 @@ function PlatformLink({
         <>
           <Icon name={icon} size={20} filled={isActive} />
           {label}
+          {!!badge && (
+            <span
+              className="ml-auto grid min-w-[19px] place-items-center rounded-pill bg-accent px-1.5 py-px text-[11px] font-bold text-white"
+              aria-label={badgeLabel}
+            >
+              {badge}
+            </span>
+          )}
         </>
       )}
     </NavLink>
@@ -97,6 +112,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   })
   // Gruppi app espansi di default (i test e le abitudini d'uso vogliono le sezioni raggiungibili subito).
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const pendingInvites = useMyInvitations().data?.invitations?.length ?? 0
 
   return (
     <nav aria-label={t('nav.platform')} className="flex h-full flex-col">
@@ -119,7 +135,19 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-3 pt-1">
         <SectionLabel>{t('nav.platform')}</SectionLabel>
-        <PlatformLink to="/" icon="space_dashboard" label={t('nav.dashboard')} onNavigate={onNavigate} />
+        {/*
+          Il numero degli inviti in attesa (UC 0118) vive QUI e non su una voce propria: la sezione
+          che li mostra è in testa al cruscotto, e da un'altra schermata resterebbero invisibili. Un
+          invito non risposto è un rapporto di lavoro in sospeso, non una notifica.
+        */}
+        <PlatformLink
+          to="/"
+          icon="space_dashboard"
+          label={t('nav.dashboard')}
+          badge={pendingInvites}
+          badgeLabel={pendingInvites ? t('myInvites.menuBadge', { count: pendingInvites }) : undefined}
+          onNavigate={onNavigate}
+        />
       <PlatformLink to="/catalog" icon="apps" label={t('nav.appCatalog')} onNavigate={onNavigate} />
         <PlatformLink to="/account" icon="account_circle" label={t('nav.account')} onNavigate={onNavigate} />
         <PlatformLink to="/billing" icon="credit_card" label={t('nav.billing')} onNavigate={onNavigate} />

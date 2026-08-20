@@ -13,7 +13,8 @@ import org.hibernate.annotations.SQLRestriction;
 
 /**
  * Invito a entrare in un tenant. Tenant-scoped (discriminator). Il token grezzo NON è persistito:
- * si salva solo {@code tokenHash} (single-use). L'accettazione (→ creazione utente) è UC 0017.
+ * si salva solo {@code tokenHash} (single-use). L'accettazione (→ creazione utente) è UC 0017, e per
+ * chi ha già un'identità avviene <b>dalla propria sessione</b> (UC 0118, {@link MeInvitationsResource}).
  */
 @Entity
 @Table(schema = "platform", name = "invitations")
@@ -47,6 +48,30 @@ public class Invitation extends BaseTenantEntity {
 
     @Column(name = "accepted_user_id")
     private UUID acceptedUserId;
+
+    /**
+     * L'identità che <b>già esisteva</b> quando l'invito è stato mandato, se esisteva (UC 0118).
+     *
+     * <p>Valorizzata lato server all'invio; nulla nel caso normale — la maggior parte degli invitati
+     * non esiste ancora sulla piattaforma — e un valore nullo significa «all'invio non c'era», non
+     * «non controllato».
+     *
+     * <p><b>Non esce mai verso chi ha invitato</b> (UC 0118 §5): non compare in
+     * {@link InvitationDtos.InvitationView} e nessuna interfaccia di account lo mostra. Nell'
+     * esportazione dei dati dell'account è <b>ristretto agli inviti accettati</b>: a invito accettato
+     * quella persona è un membro dell'account, quindi il riferimento non rivela nulla che l'account
+     * non sappia già; su un invito ancora in attesa direbbe invece che quella persona aveva già un
+     * rapporto con la piattaforma, che è esattamente l'informazione che non gli appartiene. Stessa
+     * forma della restrizione usata per {@code identity.active_membership_id} (UC 0117).
+     */
+    @PersonalData(
+            category = "identificativo online (riferimento all'identità della persona invitata)",
+            purpose = "collegare l'invito a una persona che esiste già, per farla entrare senza coniarne "
+                    + "una seconda identità",
+            legalBasis = "misure precontrattuali/contratto",
+            retention = "fino a scadenza/chiusura dell'invito; eliminato con l'account (#13 E25)")
+    @Column(name = "identity_id")
+    private UUID identityId;
 
     protected Invitation() {
         // richiesto da JPA
@@ -94,5 +119,13 @@ public class Invitation extends BaseTenantEntity {
 
     public void setAcceptedUserId(UUID acceptedUserId) {
         this.acceptedUserId = acceptedUserId;
+    }
+
+    public UUID getIdentityId() {
+        return identityId;
+    }
+
+    public void setIdentityId(UUID identityId) {
+        this.identityId = identityId;
     }
 }

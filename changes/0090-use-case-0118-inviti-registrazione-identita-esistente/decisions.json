@@ -1,0 +1,196 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie sono la suite completa ./run-tests.sh verde prima del commit, il registro delle decisioni integrale e how-to-test.md nella cartella della change. Merge e push restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0118 «Inviti e registrazione quando l'identità esiste già» (area 22-refactor-membership-model, epica E22.5, terza e ultima storia della sotto-epica). Da qui il nome del branch 0090-use-case-0118-inviti-registrazione-identita-esistente; il numero 0090 è il progressivo di changes/ (ultima esistente: 0089) e coincide con quello atteso dall'orchestratore. Lo stato di implementazione delle storie evo NON vive in docs/usecases/_INDEX.md (che copre le 60 storie base): si registra nell'intestazione della storia e nell'epica, come stabilito dalla decisione 13 della change 0088."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La superficie «di me stesso» degli inviti vive in services/core sotto /api/platform/v1/me/invitations (elenco, accettazione, rifiuto), accanto a /me/memberships di UC 0117, e NON in services/auth. Motivo: accettare un invito da dentro l'applicazione è un atto del prodotto compiuto da una persona già autenticata, non un flusso di autenticazione; la famiglia /me è già in core e vi è già il precedente delle letture di piattaforma che attraversano gli account. Il percorso via collegamento resta in auth (è lì che si conia un'identità nuova), così la logica non è duplicata: per un'identità che esiste già quel percorso rimanda alla sessione invece di accettare.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MeInvitationsResource.java",
+        "description": "Le tre operazioni; perimetro sempre dal sub del token."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) I due rifiuti LECITI dell'invito (già membro / invito già in attesa) si distinguono con il campo `type` del corpo problem+json (RFC 9457): urn:appgrove:invitation:already-member e urn:appgrove:invitation:already-invited. Alternative scartate: (a) far interpretare al frontend il messaggio del server — è in italiano e l'interfaccia parla cinque lingue; (b) dedurre la causa dagli elenchi già caricati nella pagina — funzionerebbe solo se gli elenchi sono caricati, cioè un messaggio che dipende dallo stato della cache. Poiché il mapper delle eccezioni riscrive sempre `type` ad about:blank, il rifiuto viene RESTITUITO dal resource come Response e non sollevato come eccezione.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationResource.java",
+        "description": "create(): due rifiuti tipizzati restituiti come Response con problem+json e `type` stabile."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La riservatezza sull'esistenza dell'identità si tiene per COSTRUZIONE, non per simmetria di codice: la lettura «esiste un'identità con questo indirizzo?» si esegue SEMPRE, in entrambi i rami, e il suo risultato cambia solo il valore scritto in invitations.identity_id — mai il codice di stato, mai il corpo, mai un ramo di lavoro in più. Il collaudo dedicato confronta le due risposte campo per campo. NESSUNA asserzione sui tempi: una soglia temporale in una suite condivisa è un collaudo instabile, e instabile vuol dire disattivato. Il motivo è scritto accanto al codice."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Lo stato «appartenenza in attesa di accettazione» NON viene introdotto, chiudendo il rimando di UC 0116: l'attesa è già la riga di invito (platform.invitations, stato pending) e l'accettazione crea l'appartenenza già attiva. Un secondo modo di dire la stessa cosa servirebbe solo a tenere occupato un posto acquistato in anticipo, che è materia di UC 0103. Il vincolo parziale ux_membership_tenant_identity resta quindi valido così com'è."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) La schermata per scegliere l'account senza sessione si realizza come SFIDA DI SCELTA sul modello della sfida del secondo fattore (seconda delle due vie indicate da UC 0117), e non rendendo navigabile una sessione priva del claim dell'account. Motivo tecnico decisivo: in services/core il risolutore del tenant è a chiusura e solleva un rifiuto appena si apre una sessione verso la banca dati, quindi un token senza claim non potrebbe nemmeno leggere /me/memberships; l'alternativa avrebbe richiesto di indebolire il presidio dell'invariante 1 per servire un caso raro. La sfida vive invece nel servizio di autenticazione, che legge la banca dati via JDBC diretto senza discriminatore.",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/IdentityProvider.java",
+        "description": "LoginResult acquista il terzo esito AccountSelectionRequired; loginMfa ritorna LoginResult e non Session, perché la scelta può servire anche dopo il secondo fattore."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La sfida di scelta è attuata in ENTRAMBI i fornitori di identità, con la stessa forma di risposta. Sul fornitore locale il token di scelta è un JWT a vita breve con uso `account_choice`; su Cognito è il valore opaco già usato per le altre coppie (sub + refresh token), perché la sessione si riottiene rinnovando dopo aver conservato la scelta. Su Cognito il caso si riconosce dall'ASSENZA del claim tenant_id nell'access token appena emesso: la funzione che compone il token non solleva eccezioni (restituisce l'evento inalterato), quindi l'accesso riesce e il token esce senza claim. Non implementarla su Cognito avrebbe lasciato la divergenza fra fornitori che l'epica elenca fra i rischi."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Sui percorsi NON interattivi (rinnovo della sessione, verifica dell'indirizzo con accesso automatico) l'esito «scegli l'account» resta il rifiuto 409 di UC 0117: non c'è nessuno a cui mostrare una schermata, e a chiusura in caso di dubbio è l'esito giusto. Il rinnovo che fallisce riporta la persona all'accesso, dove la sfida di scelta esiste: la scelta si fa in un posto solo. La chiave di traduzione errors.accountSelectionRequired resta quindi in uso come rete di ritorno sulla pagina di accesso."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Il percorso B (chi è già membro apre un proprio account) è POST /api/platform/v1/me/accounts, aperto a qualunque persona autenticata, con superficie nella pagina Account («Apri un altro account»). Alternative scartate: metterlo nel selettore dell'account (con una sola appartenenza il selettore non è reso affatto, quindi il comando sarebbe irraggiungibile proprio per chi ne ha bisogno) e una pagina dedicata (una pagina per un modulo con un campo). La registrazione con un indirizzo già registrato continua a rifiutare — non si può creare un account per conto di un'identità senza autenticarla — ma il testo mostrato diventa azionabile."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il numero massimo di account che una persona può aprire NON viene deciso qui: è direzione di prodotto e ha effetti commerciali. Rimando tracciato nei punti aperti di UC 0118 con proprietario UC 0103 (posti a pagamento), perché è lì che l'apertura di un account acquista un costo."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il controllo di esistenza dell'identità nei percorsi d'ingresso diventa INCONDIZIONATO (guarda anche le righe cancellate), perché tale è l'unicità di platform.identity su indirizzo e identificativo di autenticazione. Chiude il rimando di UC 0116 sul riuso di un indirizzo dopo la cancellazione di un'identità: prima quel caso passava il controllo e sbatteva contro l'indice unico (errore 500), ora riceve lo stesso messaggio comprensibile di sempre — che non rivela nulla in più, perché è identico a quello di un indirizzo vivo."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) I posti: nessuna modifica al calcolo (non esiste ancora, è di UC 0103). Questa change scrive soltanto la REGOLA NEL TESTO mostrato al cliente nel riquadro dell'invito — «il posto è dell'account, non della persona» — perché la prima reazione di chi invita qualcuno che ha già un account altrove sarà «ma la paga già l'altra azienda». Il rifiuto per posti esauriti resta di UC 0103."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La chiusura dell'invito avviene PRIMA della creazione dell'appartenenza, ed è condizionata a `status = 'pending'` nella scrittura stessa: due richieste simultanee vedono una sola vincitrice e la seconda non arriva mai a creare un'appartenenza doppia. L'ordine inverso avrebbe lasciato quella corsa aperta. Il caso «già membro e invito ancora in attesa» (invitata, entrata per un'altra via, poi accetta) chiude l'invito senza creare nulla e senza toccare l'account attivo: non è quello l'atto con cui la persona ha scelto dove lavorare.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MeInvitationsResource.java",
+        "description": "accept(): chiusura condizionata, poi appartenenza; ramo «già membro» esplicito."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationRepository.java",
+        "description": "Letture della persona invitata (native, senza filtro per account) separate e dichiarate dalle letture dell'account che invita."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) La creazione di un'appartenenza in un account che NON è quello del token usa una scrittura nativa con tenant_id esplicito (MembershipRepository.createMembership) e non l'entità tenant-scoped: con l'entità Hibernate scriverebbe il tenant_id del token, cioè l'account sbagliato. Il dovere di chi chiama è ricavare quel tenant_id da una riga di invito verificata o da un account appena creato per la persona del token — mai da un valore arrivato dal chiamante. È scritto nel javadoc del metodo, perché è l'unico posto del core in cui il confine si attraversa di proposito."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) L'accettazione dell'invito e l'apertura di un proprio account impostano entrambe identity.active_membership_id sulla nuova appartenenza, come la conseguenza operativa lasciata da UC 0117 pretende: senza quella riga la persona si troverebbe, al prossimo accesso, con più appartenenze e nessuna scelta. È anche il comportamento giusto di prodotto: si è appena detto di volerci andare."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Sfida di scelta: loginMfa cambia tipo di ritorno da Session a LoginResult in ENTRAMBI i provider. Restituire direttamente una sessione dopo il secondo fattore avrebbe reso la scelta dell'account irraggiungibile per chi ha il secondo fattore attivo — i due passaggi sono indipendenti e vanno tenuti tali. La traduzione HTTP dei tre esiti vive in AuthResource e non nei provider, perché la forma della risposta deve essere identica fra gli ambienti (#02).",
+    "files": [
+      {
+        "file": "services/auth/src/main/java/app/appgrove/auth/AuthResource.java",
+        "description": "loginOutcome(): un solo posto per i tre esiti; POST /login/account completa la sfida."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Nuovo endpoint POST /api/auth/invitations/lookup: dato il token dell'invito dice se serve una parola d'accesso (`register`) o solo di autenticarsi (`signin`). Esiste per non far compilare un modulo destinato al rifiuto — scoprire dopo aver premuto «accetta» che la parola d'accesso non serviva è il modo peggiore di dirlo. Non rivela nulla a chi non lo sappia già: la risposta la ottiene solo chi ha in mano il token, cioè la persona invitata; token non valido/scaduto/usato risponde con lo stesso codice e lo stesso messaggio dell'accettazione."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Corretto il difetto ereditato dalla change 0088 (tracciato nei punti aperti di UC 0116, proprietario UC 0011): il ri-seme delle appartenenze usava `ON CONFLICT (id)` invece del vincolo vero (tenant_id, identity_id) sulle righe vive, e su ogni banca dati che aveva attraversato la migrazione V17 — dove il travaso conia identificativi nuovi — falliva con «duplicate key ... ux_membership_tenant_identity» senza aggiornare le righe. Corretto qui perché ostruisce direttamente la verifica manuale di QUESTA storia (how-to-test riparte dal ri-seme) ed è una riga in un file di solo sviluppo. Conseguenza accettata e scritta nel file: su una banca dati migrata gli identificativi delle appartenenze restano quelli del travaso.",
+    "files": [
+      {
+        "file": "dev/seed/seed.sql",
+        "description": "Arbitro del conflitto = ux_membership_tenant_identity; il perché scritto accanto."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Difetto trovato e corretto nel client condiviso: `unwrap` costruiva l'ApiError con `toApiError(response)`, ma openapi-fetch CONSUMA il corpo della risposta d'errore prima di restituirla, quindi `response.clone()` fallisce e il campo `problem` risultava sempre nullo — cioè ogni informazione dell'errore oltre al codice di stato andava perduta in silenzio in tutte le chiamate passate dal client generato. Ora `unwrap` passa a `toApiError` il corpo già letto. Senza questa correzione i due rifiuti tipizzati dell'invito sarebbero stati indistinguibili nell'interfaccia, cioè la decisione 4 non avrebbe funzionato — ed è un difetto che riguarda molto più degli inviti.",
+    "files": [
+      {
+        "file": "frontend/packages/api-client/src/problem.ts",
+        "description": "toApiError(response, parsedBody?) e unwrap che gli passa `error`."
+      },
+      {
+        "file": "frontend/packages/api-client/src/problem.test.ts",
+        "description": "Collaudo del caso «corpo già consumato»: il problem+json non si perde."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Classificazione privacy della change: MINORE. Un solo dato nuovo, `invitations.identity_id`: natura = identificativo online (riferimento all'identità della persona invitata), finalità = collegare l'invito a una persona che esiste già per farla entrare senza coniarne una seconda identità, base giuridica = misure precontrattuali/contratto (art. 6.1.b, la stessa dell'indirizzo dell'invito che già c'era), conservazione = quella della riga di invito, categoria ordinaria. Nessuna finalità nuova, nessuna base nuova, nessuna categoria particolare, nessun responsabile esterno nuovo, nessun aumento di versione di privacy policy o termini. Rilevatore di segnali eseguito: ha segnalato esattamente le due voci attese (colonna della migrazione e campo dell'entità), nessun'altra."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) `invitations.identity_id` È dichiarato nel manifesto dati e annotato @PersonalData, ma la sua ESPORTAZIONE è ristretta agli inviti ACCETTATI. La tensione: il collaudo di contratto pretende che ogni voce del manifesto compaia nell'esportazione dell'account, mentre su un invito ancora in attesa quel valore direbbe all'account che la persona invitata ha già un rapporto con la piattaforma — l'informazione che UC 0118 §5 vieta. A invito accettato quella persona è invece un membro noto dell'account, quindi il riferimento non rivela nulla di nuovo. Alternativa scartata: NON dichiarare il campo (col precedente di `accepted_user_id` nella stessa tabella), perché un campo non dichiarato è un campo che nessuno riesamina più. La forma della restrizione è la stessa già usata per `identity.active_membership_id` in UC 0117: due precedenti sono un motivo per dare al problema un nome, e la domanda generale è tracciata in docs/_BACKLOG.md.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "Voce invitations.identity_id, con la restrizione dell'esportazione scritta nella conservazione."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "Esportazione degli inviti: identity_id solo per gli inviti accettati, con la ragione accanto."
+      },
+      {
+        "file": "docs/compliance/ropa.it.md",
+        "description": "Registro dei trattamenti rigenerato (non si edita a mano)."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Copertura end-to-end: TRE percorsi nuovi. `J-INVITE-EXISTING` (stack vero) — un'azienda invita chi ha già un account, la risposta non contiene traccia dell'identità collegata (che però esiste in banca dati), la persona vede l'invito nel cruscotto col numero nel menu, accetta, si ritrova con due appartenenze e una sola identità e passa fra i due account; `L2-INVITE-EXISTING` — sezione del cruscotto, numero, accettazione con ricaricamento, rifiuto, con finto server CON STATO (senza stato il ricaricamento non proverebbe nulla); `L2-ACCOUNT-CHOICE` — la schermata di scelta all'accesso. Lo use case 0118 passa da esenzione `non-implementato` a use case CON superficie, e il motivo dell'esenzione di 0116 è stato aggiornato: il modello «una persona, due account» è ora esercitato da un percorso di PRODOTTO e non più da una leva d'ambiente.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0118 fra gli use case con superficie; tre percorsi nuovi; esenzione 0118 rimossa."
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) I passi di browser resi robusti da J-ACCOUNT-SWITCH (attesa della risposta che decide il gate legale + insistenza sull'esito) sono stati ESTRATTI in tools/platform-e2e/helpers/browser.ts come expectInsideAccount / loginIntoAccount / switchAccountTo, perché servivano a un secondo percorso e duplicarli era il momento sbagliato. `browserLogin` — usato dagli altri percorsi — NON è stato toccato: resta il lavoro tracciato in docs/_BACKLOG.md, ora più semplice perché la versione corretta esiste accanto ad esso. La leva d'ambiente `dbExec` di J-ACCOUNT-SWITCH resta invece dov'è: quel percorso deve PARTIRE dal proprio account, mentre l'accettazione vera rende attivo l'account appena accettato — sostituirla richiederebbe comunque una scrittura per riportare indietro l'account attivo.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/helpers/browser.ts",
+        "description": "I tre passi condivisi, con il perché del fail-open scritto una volta sola."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Il rifiuto `409` dell'accettazione via collegamento per chi ha già un'identità RESTA in entrambi i fornitori, come rete di sicurezza, ma l'interfaccia non ci arriva più: la pagina di accettazione interroga prima `POST /api/auth/invitations/lookup` e, in modalità `signin`, non rende affatto il campo della parola d'accesso. Far compilare un modulo destinato al rifiuto è il modo peggiore di dire «non ti serve una password nuova». Sul provider Cognito il messaggio del rifiuto è stato allineato a quello locale (prima diceva «Email già registrata», che mandava la persona a cercare un problema che non ha).",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/auth/AcceptInvitePage.tsx",
+        "description": "Tre stati: verifica in corso, modulo di registrazione, invito ad accedere."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) La sezione degli inviti ricevuti NON ha stati di caricamento né di errore propri: se la lettura non riesce non compare affatto. Un guasto di rete non deve annunciare inviti che non sappiamo se esistono, né occupare la testa del cruscotto con un errore su una lettura secondaria — è la stessa regola che governa il resto del cruscotto (ogni sezione possiede i propri stati e degrada da sola, UC 0097)."
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Documenti aggiornati dove dicevano il falso o l'incompleto: docs/02 §10 acquista la sfida di scelta dell'account (con il modo in cui si riconosce su Cognito) e §14 dice cosa fanno ora i due percorsi d'ingresso; l'epica E22.5 è dichiarata COMPLETA e il suo punto aperto «dove si vedono gli inviti in attesa» corretto — diceva «nell'intestazione accanto al selettore» e citava un componente (`shell/InvitesMenu.tsx`) che il drill-down della storia aveva già scartato in favore della sezione del cruscotto. Un documento vivo che resta indietro è un documento falso, e nessun collaudo lo dice."
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Rimandi tracciati prima di chiudere, ognuno nello use case che lo possiede: UC 0103 riceve il limite al numero di account che una persona può aprire (direzione di prodotto, e diventa una domanda vera solo quando aprire un account costa) e il conteggio dei posti con il rifiuto per posti esauriti; UC 0033 riceve «liberare un indirizzo dopo la cancellazione di un'identità», che è materia della cancellazione e non dei percorsi d'ingresso; docs/_BACKLOG.md riceve la tensione fra manifesto dei dati ed esportazione dell'account, e l'aggiornamento della voce sul passo condiviso del gate legale. UC 0116 e UC 0117 hanno i loro punti aperti CHIUSI, non spostati."
+  }
+]

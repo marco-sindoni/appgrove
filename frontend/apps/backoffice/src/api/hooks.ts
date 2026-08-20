@@ -221,3 +221,72 @@ export function useSetActiveAccount() {
       unwrap(client.POST('/api/platform/v1/me/active-account', { body: { accountId } })),
   })
 }
+
+// ── Inviti ricevuti dalla persona in sessione (UC 0118) ─────────────────────
+
+export const MY_INVITATIONS_KEY = ['me', 'invitations'] as const
+
+/**
+ * Gli inviti in attesa indirizzati alla persona in sessione (`GET /me/invitations`).
+ *
+ * <p>Diversa da {@link useInvitations}, che è la lettura dell'**account** («chi ho invitato io», solo
+ * owner/admin): questa ha per soggetto la **persona** e attraversa gli account per costruzione. Non è
+ * riservata a nessun ruolo — un invito lo può ricevere chiunque.
+ *
+ * <p>Si rinfresca al ritorno sulla scheda, come le appartenenze: un invito che arriva mentre la
+ * scheda è aperta deve poter comparire senza ricaricare.
+ */
+export function useMyInvitations() {
+  const client = useApiClient()
+  const status = useAuthStore((s) => s.status)
+  return useQuery({
+    queryKey: MY_INVITATIONS_KEY,
+    enabled: status === 'authenticated',
+    refetchOnWindowFocus: true,
+    queryFn: () => unwrap(client.GET('/api/platform/v1/me/invitations')),
+  })
+}
+
+/**
+ * Accetta un invito ricevuto (`POST /me/invitations/{id}/accept`). Nasce una **appartenenza** in più,
+ * non una seconda identità, e l'account accettato diventa quello attivo: per questo chi chiama
+ * **ricarica** l'applicazione, come fa il selettore dell'account (UC 0117) — è il ricaricamento a far
+ * nascere il token con il claim nuovo.
+ */
+export function useAcceptMyInvitation() {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        client.POST('/api/platform/v1/me/invitations/{id}/accept', { params: { path: { id } } }),
+      ),
+  })
+}
+
+/** Rifiuta un invito ricevuto (`POST /me/invitations/{id}/reject`): si chiude e il posto si libera. */
+export function useRejectMyInvitation() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      unwrap(
+        client.POST('/api/platform/v1/me/invitations/{id}/reject', { params: { path: { id } } }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: MY_INVITATIONS_KEY }),
+  })
+}
+
+/**
+ * Apre un **proprio** account (`POST /me/accounts`, UC 0118 percorso B): serve solo il nome — chi
+ * chiama è già una persona conosciuta, e chiedergli di nuovo indirizzo e parola d'accesso è il modo
+ * in cui si finisce per crearsi una seconda identità con un altro indirizzo.
+ *
+ * <p>Il nuovo account diventa quello attivo: chi chiama **ricarica**, come per il cambio di account.
+ */
+export function useCreateOwnAccount() {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (name: string) =>
+      unwrap(client.POST('/api/platform/v1/me/accounts', { body: { name } })),
+  })
+}

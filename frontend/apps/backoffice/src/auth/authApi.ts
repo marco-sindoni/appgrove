@@ -17,10 +17,22 @@ export interface SessionTokens {
   idToken: string | null
 }
 
-/** Esito di `login`: sessione stabilita, oppure challenge 2FA da superare. */
+/** Un account fra cui scegliere all'accesso (UC 0118). Nessuna etichetta di ruolo. */
+export interface AccountOption {
+  accountId: string
+  accountName: string
+}
+
+/**
+ * Esito di `login`: sessione stabilita, challenge 2FA da superare, oppure **scelta dell'account**
+ * (UC 0118) quando la persona appartiene a più account e nessuno è indicato come attivo.
+ *
+ * Il terzo esito è additivo esattamente come fu il secondo: nessun token finché non ha scelto.
+ */
 export type LoginResult =
   | { kind: 'session'; tokens: SessionTokens }
   | { kind: 'mfa'; challengeToken: string }
+  | { kind: 'chooseAccount'; choiceToken: string; accounts: AccountOption[] }
 
 export interface EnrollResult {
   secret: string
@@ -106,24 +118,61 @@ export async function login(
   authBaseUrl: string,
   body: { email: string; password: string },
 ): Promise<LoginResult> {
-  const res = await post(authBaseUrl, '/login', body)
-  const json = (await res.json()) as TokenResponse & { mfa_required?: boolean; challenge_token?: string }
-  if (json.mfa_required && json.challenge_token) {
-    return { kind: 'mfa', challengeToken: json.challenge_token }
-  }
-  return { kind: 'session', tokens: toSession(json) }
+  return loginOutcome(await post(authBaseUrl, '/login', body))
 }
 
-/** `POST /api/auth/login/2fa` → sessione dopo la challenge TOTP. */
+/**
+ * `POST /api/auth/login/2fa` → sessione dopo la challenge TOTP, **oppure** la scelta dell'account: i
+ * due passaggi sono indipendenti, e chi ha il secondo fattore attivo può avere anche più account.
+ */
 export async function loginTwoFa(
   authBaseUrl: string,
   body: { challengeToken: string; code: string },
+): Promise<LoginResult> {
+  return loginOutcome(
+    await post(authBaseUrl, '/login/2fa', {
+      challenge_token: body.challengeToken,
+      code: body.code,
+    }),
+  )
+}
+
+/** `POST /api/auth/login/account` → sessione con l'account scelto (UC 0118). */
+export async function chooseAccount(
+  authBaseUrl: string,
+  body: { choiceToken: string; accountId: string },
 ): Promise<SessionTokens> {
-  const res = await post(authBaseUrl, '/login/2fa', {
-    challenge_token: body.challengeToken,
-    code: body.code,
+  const res = await post(authBaseUrl, '/login/account', {
+    choice_token: body.choiceToken,
+    account_id: body.accountId,
   })
   return toSession((await res.json()) as TokenResponse)
+}
+
+/** I tre esiti dell'accesso letti da una sola risposta: la forma è identica fra gli ambienti. */
+async function loginOutcome(res: Response): Promise<LoginResult> {
+  const json = (await res.json()) as TokenResponse & {
+    mfa_required?: boolean
+    challenge_token?: string
+    account_selection_required?: boolean
+    choice_token?: string
+    accounts?: { account_id?: string; account_name?: string }[]
+  }
+  if (json.mfa_required && json.challenge_token) {
+    return { kind: 'mfa', challengeToken: json.challenge_token }
+  }
+  if (json.account_selection_required && json.choice_token) {
+    return {
+      kind: 'chooseAccount',
+      choiceToken: json.choice_token,
+      // Le voci incomplete si scartano qui invece di essere inventate a valle: un account senza
+      // identificativo non è selezionabile.
+      accounts: (json.accounts ?? []).flatMap((a) =>
+        a.account_id ? [{ accountId: a.account_id, accountName: a.account_name ?? a.account_id }] : [],
+      ),
+    }
+  }
+  return { kind: 'session', tokens: toSession(json) }
 }
 
 // ── Flussi (UC 0058) ────────────────────────────────────────────────────────
@@ -180,6 +229,23 @@ export async function acceptInvitation(
 ): Promise<SessionTokens> {
   const res = await post(authBaseUrl, '/invitations/accept', body)
   return toSession((await res.json()) as TokenResponse)
+}
+
+/**
+ * `POST /api/auth/invitations/lookup` — che cosa chiedere a chi apre il collegamento d'invito
+ * (UC 0118): `register` se quell'indirizzo non ha ancora un'identità (serve la parola d'accesso),
+ * `signin` se ce l'ha già (serve solo che si autentichi).
+ *
+ * Esiste per non far compilare un modulo destinato al rifiuto: una parola d'accesso nuova su
+ * un'identità che esiste già sarebbe una seconda identità mascherata, e il backend la rifiuta.
+ */
+export async function lookupInvitation(
+  authBaseUrl: string,
+  token: string,
+): Promise<{ mode: 'register' | 'signin'; email: string }> {
+  const res = await post(authBaseUrl, '/invitations/lookup', { token })
+  const json = (await res.json()) as { mode?: string; email?: string }
+  return { mode: json.mode === 'signin' ? 'signin' : 'register', email: json.email ?? '' }
 }
 
 /**

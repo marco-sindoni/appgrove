@@ -23,6 +23,16 @@ describe('problem+json mapping', () => {
     expect(err.message).toBe('HTTP 500')
   })
 
+  it('toApiError usa il corpo già letto quando la Response è stata consumata', async () => {
+    // È il caso reale di openapi-fetch: legge il corpo dell'errore e poi la Response non è più
+    // clonabile. Senza questo ripiego `problem` sarebbe null e il `type` — l'unico modo di
+    // distinguere due rifiuti con lo stesso codice — andrebbe perduto in silenzio.
+    const consumed = problemResponse()
+    await consumed.text()
+    const err = await toApiError(consumed, { type: 'urn:appgrove:test', title: 'Forbidden' })
+    expect(err.problem?.type).toBe('urn:appgrove:test')
+  })
+
   it('unwrap ritorna data su 2xx e solleva ApiError su errore', async () => {
     const ok = await unwrap(
       Promise.resolve({ data: { id: '1' }, response: new Response('', { status: 200 }) }),

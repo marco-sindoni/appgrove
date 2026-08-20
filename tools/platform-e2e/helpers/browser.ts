@@ -60,3 +60,64 @@ export async function adminSession(browser: Browser): Promise<{ context: Browser
   await expect(page.getByRole('navigation', { name: 'Platform admin' })).toBeVisible()
   return { context, page }
 }
+
+/** La risposta che DECIDE il gate legale: prima che arrivi, la shell è navigabile per fail-open. */
+const LEGAL_SETTLED = (r: { url(): string }) => r.url().includes('/me/legal/status')
+
+/**
+ * Attende di essere <b>davvero</b> dentro l'account atteso, attraversando il gate legale quando
+ * compare, e insistendo sull'<b>esito</b> — il nome dell'account nella barra laterale.
+ *
+ * Perché non basta {@link acceptLegalGateIfPresent} da solo: il gate è **fail-open mentre il suo
+ * stato carica** — per un istante la shell è navigabile e solo dopo il gate la sostituisce. Chiedere
+ * «gate oppure shell» una volta sola perde quella corsa, e il gate si apre un attimo dopo. Serve ai
+ * journey che entrano in PIÙ di un account: sono quelli che incontrano il gate più volte, e quindi
+ * quelli che la pagano. Entrando per la prima volta in un account nuovo il gate è pendente perché
+ * l'accettazione dei documenti è per ACCOUNT e non per persona (UC 0056): ogni account è un
+ * contratto a sé, e attraversarlo è parte del percorso reale.
+ */
+export async function expectInsideAccount(page: Page, accountName: string): Promise<void> {
+  await expect(async () => {
+    await acceptLegalGateIfPresent(page)
+    await expect(page.getByRole('navigation', { name: 'Platform' }).getByTestId('active-account-name'))
+      .toHaveText(accountName, { timeout: 1_000 })
+  }).toPass({ timeout: 20_000 })
+}
+
+/**
+ * Accesso dal browser con attesa dell'account in cui si atterra. Non usa {@link browserLogin} di
+ * proposito: quel passo dà per assodato che la shell sia visibile appena attraversato il gate, e con
+ * il fail-open descritto sopra non è sempre vero. Il presidio condiviso resta valido per i journey
+ * che incontrano il gate una volta sola.
+ */
+export async function loginIntoAccount(
+  page: Page,
+  email: string,
+  password: string,
+  accountName: string,
+): Promise<void> {
+  await page.goto('/login')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill(password)
+  const legalSettled = page.waitForResponse(LEGAL_SETTLED)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await legalSettled
+  await expectInsideAccount(page, accountName)
+}
+
+/**
+ * Cambia account dal selettore e arriva nell'account nuovo. Il <b>ricaricamento è parte del
+ * comportamento</b> (UC 0117: mezza applicazione con l'account nuovo e mezza col vecchio è il modo
+ * peggiore di sbagliare), quindi si attende l'evento di caricamento e non un istante fisso —
+ * altrimenti l'asserzione successiva guarderebbe ancora il documento vecchio e leggerebbe il nome
+ * dell'account di prima.
+ */
+export async function switchAccountTo(page: Page, accountName: string): Promise<void> {
+  await page.getByLabel('Switch account').click()
+  const reloaded = page.waitForEvent('load')
+  const legalSettled = page.waitForResponse(LEGAL_SETTLED)
+  await page.getByRole('button', { name: new RegExp(accountName) }).click()
+  await reloaded
+  await legalSettled
+  await expectInsideAccount(page, accountName)
+}

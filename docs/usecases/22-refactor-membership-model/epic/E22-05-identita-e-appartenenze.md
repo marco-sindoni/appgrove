@@ -1,7 +1,7 @@
 # E22.5 — Identità della persona e appartenenze agli account
 
 **Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0116, 0117, 0118
-**Stato**: 🟢 analisi scritta · **0116 implementata** (change `0088`) · **0117 implementata** (change `0089`) · **Ultimo aggiornamento**: 2026-08-20
+**Stato**: ✅ **sotto-epica completa** — 0116 (change `0088`), 0117 (change `0089`), 0118 (change `0090`) · **Ultimo aggiornamento**: 2026-08-21
 
 > **Numerata per ultima, si esegue per prima.** Le sotto-epiche portano il numero nell'ordine in cui sono
 > state scritte, non in quello in cui si eseguono — come gli identificativi del registro delle decisioni,
@@ -51,8 +51,13 @@ Il costo di anticiparla è basso: 0098 nasce direttamente col riferimento all'id
    nella barra laterale sotto il marchio — assente con una sola appartenenza. Resta fuori la schermata
    per scegliere l'account *senza* una sessione: appartiene a 0118, che è la storia che rende
    raggiungibile quel caso.
-3. **[0118 — Inviti e registrazione con identità esistente](../story/0118-inviti-e-registrazione-con-identita-esistente.md).**
-   I due percorsi d'ingresso, e i messaggi comprensibili al posto delle violazioni di indice.
+3. **[0118 — Inviti e registrazione con identità esistente](../story/0118-inviti-e-registrazione-con-identita-esistente.md)** —
+   ✅ **implementata** (change `0090`). I due percorsi d'ingresso funzionano: l'invito a chi ha già
+   un'identità la collega lato server e la persona **accetta dalla propria sessione**, dalla sezione in
+   testa al cruscotto; chi è già membro apre un proprio account dalla pagina Account, senza una seconda
+   identità. Le due collisioni lecite hanno messaggi distinti e riconoscibili da un programma; l'esito
+   dell'invito è invece **identico** esista l'identità o no. Chiusa anche la superficie che 0117 aveva
+   rimandato: la **scelta dell'account all'accesso**, come sfida sul modello del secondo fattore.
 
 ## Le decisioni portanti
 
@@ -110,5 +115,9 @@ sotto-epica lo rende **possibile**, ma il prodotto non lo prevede e la decisione
   Proprietario: [UC 0103](../story/0103-acquisto-anticipato-posto-invito.md).
 - **Durata del token e ritardo massimo di una revoca**: legame che c'era già e che questa sotto-epica rende
   visibile. Va **scritto**, non lasciato implicito. Proprietario: UC 0017.
-- ~~**Dove si vedono gli inviti in attesa**~~ — **chiuso**: nell'intestazione, accanto al selettore
-  dell'account. Reso nei prototipi (`admin.html`) e mappato su `shell/InvitesMenu.tsx`.
+- ~~**Dove si vedono gli inviti in attesa**~~ — **chiuso**, e non dove si era detto qui: non
+  nell'intestazione accanto al selettore, ma in una **sezione in testa al cruscotto**
+  (`pages/dashboard/PendingInvitesSection.tsx`), con il **numero** riportato sulla voce «Dashboard» del
+  menu perché resti visibile anche da un'altra schermata. L'ipotesi dell'intestazione è stata scartata
+  nel drill-down della storia 0118: un pulsantino passa inosservato, e un invito non risposto non è una
+  notifica — è un rapporto di lavoro in sospeso. Implementato dalla change `0090`.

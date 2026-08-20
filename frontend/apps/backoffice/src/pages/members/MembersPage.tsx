@@ -33,8 +33,30 @@ const statusBadge = (t: TFn, status?: string) =>
     <Badge tone="success">{t('members.statusActive')}</Badge>
   )
 
+/**
+ * Le due collisioni **lecite** dell'invito (UC 0118 §5) hanno due messaggi distinti, e la causa la
+ * dice il campo `type` del corpo problem+json — non il testo del server, che è in italiano mentre
+ * questa interfaccia parla cinque lingue.
+ *
+ * Ciò che **non** esiste, e non deve esistere, è un messaggio per «questa persona ha già un account
+ * appgrove»: sarebbe comodo per chi invita e rivelerebbe a un'azienda l'esistenza di un rapporto fra
+ * quella persona e la piattaforma, che non le appartiene. Il server risponde `201` in quel caso,
+ * esattamente come per un indirizzo sconosciuto: qui non c'è nulla da distinguere, ed è voluto. La
+ * tentazione tornerà a ogni revisione di questa pagina.
+ */
 function inviteErrorMessage(err: unknown, t: TFn): string {
-  if (err instanceof ApiError && err.status === 409) return t('members.emailAlreadyMember')
+  if (err instanceof ApiError && err.status === 409) {
+    switch (err.problem?.type) {
+      case 'urn:appgrove:invitation:already-member':
+        return t('members.emailAlreadyMemberOnly')
+      case 'urn:appgrove:invitation:already-invited':
+        return t('members.emailAlreadyInvited')
+      default:
+        // Rifiuto 409 senza identificativo (versione precedente del servizio): il messaggio storico,
+        // che copre entrambi i casi senza mentire.
+        return t('members.emailAlreadyMember')
+    }
+  }
   return t('errors.generic')
 }
 
@@ -219,6 +241,12 @@ export function MembersPage() {
               {t('members.inviteSubmit')}
             </Button>
           </form>
+
+          {/* Il posto è dell'ACCOUNT, non della persona (UC 0118 §7): la stessa persona in due
+              account occupa un posto in ciascuno, perché ogni account paga le persone che usano le
+              *sue* applicazioni. Va scritto qui perché la prima reazione sarà «ma la paga già
+              l'altra azienda» — e una regola che il cliente scopre in fattura è una regola sbagliata. */}
+          <p className="mt-3 text-[12.5px] text-fg-muted">{t('members.seatNote')}</p>
 
           {inviteError && (
             <p role="alert" className="mt-3 text-sm text-danger">

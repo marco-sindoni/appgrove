@@ -115,16 +115,95 @@ public class PlatformWriter {
      * che la sta invitando, e anche senza appartenere a nessuno.
      *
      * <p>Serve ai percorsi d'ingresso per rifiutare in modo <b>comprensibile</b> invece di sbattere contro
-     * una violazione di indice. Far entrare davvero chi esiste già — senza rimetterne in gioco la password
-     * — è di <b>UC 0118</b>: qui ci si limita a non rompere nulla in silenzio.
+     * una violazione di indice.
+     *
+     * <p><b>Guarda anche le righe cancellate, di proposito</b> (UC 0118). L'unicità di
+     * {@code platform.identity} su indirizzo è <b>incondizionata</b> — vale anche sulle identità
+     * cancellate, esattamente come era su {@code platform.users} — quindi un controllo che le
+     * ignorasse lascerebbe passare chi si ripresenta con l'indirizzo di un'identità cancellata, per
+     * poi far fallire l'inserimento contro l'indice: un errore del servizio al posto di un messaggio.
+     * Il messaggio che ne esce è lo <b>stesso</b> di un indirizzo vivo, quindi non rivela nulla in più.
      */
     public boolean identityExists(String email) {
-        String sql = "select 1 from platform.identity where lower(email) = lower(?) and deleted_at is null";
+        String sql = "select 1 from platform.identity where lower(email) = lower(?)";
         try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Gli account a cui la persona appartiene <b>attivamente</b>, con il nome, in ordine di anzianità
+     * dell'appartenenza (UC 0118): quanto serve alla sfida di scelta dell'account e nulla di più.
+     *
+     * <p>Lettura di <b>piattaforma</b>: nessun filtro per account, perché la domanda «a quali account
+     * appartengo?» per costruzione li attraversa. Gemella di
+     * {@code MembershipRepository.activeAccountsOf} nel servizio core — vive anche qui perché il
+     * percorso di accesso non può dipendere da una chiamata di rete verso un altro servizio: deve
+     * funzionare sempre.
+     *
+     * <p>Nessun ruolo fra i campi restituiti: l'elenco serve a scegliere <b>dove</b> lavorare, e il
+     * ruolo è per applicazione (UC 0117 §4.6).
+     */
+    public java.util.List<IdentityProvider.AccountRef> activeAccountsOf(String sub) {
+        String sql = "select m.tenant_id, a.name from platform.identity i"
+                + " join platform.membership m on m.identity_id = i.id"
+                + " join platform.accounts a on a.id = m.tenant_id::uuid"
+                + " where i.cognito_sub = ? and i.status = 'active' and i.deleted_at is null"
+                + " and m.status = 'active' and m.deleted_at is null and a.deleted_at is null"
+                + " order by m.created_at, m.id";
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, sub);
+            try (ResultSet rs = ps.executeQuery()) {
+                java.util.List<IdentityProvider.AccountRef> out = new java.util.ArrayList<>();
+                while (rs.next()) {
+                    out.add(new IdentityProvider.AccountRef(rs.getString(1), rs.getString(2)));
+                }
+                return out;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Conserva l'account scelto dalla persona, se quell'account è davvero una sua appartenenza
+     * <b>attiva</b> (UC 0118). Ritorna falso quando non lo è: chi chiama risponde «non trovato», che è
+     * indistinguibile da «non esiste» — l'esistenza di un account non è informazione di chi chiede.
+     *
+     * <p>La riverifica si fa <b>qui</b> e non si fida dell'elenco mostrato un istante prima: fra la
+     * schermata e la scelta l'appartenenza può essere stata revocata, e in quel caso la scelta non
+     * deve avere effetto.
+     */
+    public boolean chooseActiveAccount(String sub, String accountId) {
+        String select = "select m.id from platform.identity i"
+                + " join platform.membership m on m.identity_id = i.id"
+                + " where i.cognito_sub = ? and m.tenant_id = ?"
+                + " and i.status = 'active' and i.deleted_at is null"
+                + " and m.status = 'active' and m.deleted_at is null";
+        try (Connection c = ds.getConnection()) {
+            UUID membershipId;
+            try (PreparedStatement ps = c.prepareStatement(select)) {
+                ps.setString(1, sub);
+                ps.setString(2, accountId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        return false;
+                    }
+                    membershipId = rs.getObject(1, UUID.class);
+                }
+            }
+            exec(c, "update platform.identity set active_membership_id = ?, updated_at = now()"
+                            + " where cognito_sub = ?",
+                    ps -> {
+                        ps.setObject(1, membershipId);
+                        ps.setString(2, sub);
+                    });
+            return true;
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
