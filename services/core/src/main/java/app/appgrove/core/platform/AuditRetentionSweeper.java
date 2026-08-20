@@ -20,7 +20,8 @@ import org.jboss.logging.Logger;
  * <ul>
  *   <li>{@code gdpr_purge_audit} — prova dell'erasure (#13 L70);
  *   <li>{@code gdpr_restriction_audit} — prova della limitazione art. 18 (#13 L75);
- *   <li>{@code app_status_audit} — prova della disabilitazione/riabilitazione di un'app (UC 0076).
+ *   <li>{@code app_status_audit} — prova della disabilitazione/riabilitazione di un'app (UC 0076);
+ *   <li>{@code active_account_audit} — prova del cambio di account attivo di una persona (UC 0117).
  * </ul>
  *
  * <p>La copia forense lunga degli eventi di audit resta sull'archivio S3/Glacier a 12 mesi (UC 0006);
@@ -46,7 +47,10 @@ public class AuditRetentionSweeper {
 
     /** Tabelle spazzate: tutte hanno {@code executed_at} come istante dell'evento. */
     private static final List<String> TABLES = List.of(
-            "platform.gdpr_purge_audit", "platform.gdpr_restriction_audit", "platform.app_status_audit");
+            "platform.gdpr_purge_audit",
+            "platform.gdpr_restriction_audit",
+            "platform.app_status_audit",
+            "platform.active_account_audit");
 
     @Inject
     AgroalDataSource ds;

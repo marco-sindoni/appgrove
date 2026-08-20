@@ -126,3 +126,12 @@ _Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente), o
   subito. La persona deve prima uscire dagli account (o esserne rimossa), perché non può cancellare
   unilateralmente dati di cui sono titolari altri. Va **detto nella schermata**, non scoperto a operazione
   rifiutata. Proprietario: [UC 0118](../22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md).
+
+- **Un account in eliminazione resta selezionabile nel selettore dell'account** (rimando dalla change
+  `0089`, UC 0117). La regola che scegli l'account attivo **non** filtra per stato dell'account: è quello
+  l'insieme di candidati che la funzione del token vedeva prima, e soprattutto è *da dentro* l'account in
+  eliminazione che l'eliminazione si annulla — escluderlo chiuderebbe fuori la persona proprio quando
+  deve poter tornare indietro. Resta da decidere se l'interfaccia deve **dirlo** (per esempio marcare
+  l'account come «in eliminazione» nel selettore, così che nessuno ci lavori credendolo normale): è
+  materia del ciclo di vita dell'account, non della scelta dell'account attivo. Proprietario: questo use
+  case.

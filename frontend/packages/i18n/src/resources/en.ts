@@ -106,6 +106,16 @@ export const en = {
     userMenu: 'User menu',
     logout: 'Log out',
   },
+  // Selettore dell'account attivo nella barra laterale (UC 0117).
+  accountSwitch: {
+    label: 'Switch account',
+    hint_one: '{{count}} account · switch',
+    hint_other: '{{count}} accounts · switch',
+    switching: 'Switching account…',
+    error: 'Couldn’t switch account. Please try again.',
+    changed: 'The active account changed in another tab.',
+    reload: 'Reload',
+  },
   states: {
     loading: 'Loading…',
     empty: 'Nothing here yet',
@@ -377,6 +387,7 @@ export const en = {
     tooLong: 'Too long (max {{max}})',
   },
   errors: {
+    accountSelectionRequired: 'You belong to more than one account and none is set as active. Choose the account you want to work in.',
     emailTaken: 'This email is already registered.',
     invalidCredentials: 'Invalid email or password.',
     emailNotVerified: 'Your email isn’t verified yet. Check your inbox.',

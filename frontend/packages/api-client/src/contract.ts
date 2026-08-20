@@ -11,6 +11,10 @@ export type UserView =
 export type AccountView =
   paths['/api/platform/v1/accounts/me']['get']['responses']['200']['content']['application/json']
 
+/** Appartenenze della persona in sessione e account attivo (UC 0117). */
+export type MyMembershipsView =
+  paths['/api/platform/v1/me/memberships']['get']['responses']['200']['content']['application/json']
+
 // NB: l'OpenAPI del core per `POST /invitations` non documenta il body di risposta (200 senza content),
 // benché il servizio ritorni `InvitationView` col token grezzo → usiamo il componente schema, non il path.
 // Gap backend tracciato in UC 0013 (response body + status 201 da annotare).

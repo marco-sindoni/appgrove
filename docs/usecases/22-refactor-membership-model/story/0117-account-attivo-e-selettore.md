@@ -1,10 +1,10 @@
 # UC 0117 — Account attivo nella sessione e selettore
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0089`)
 **Epica**: [E22.5 Identità e appartenenze](../epic/E22-05-identita-e-appartenenze.md)
 **Dipendenze**: [UC 0116](0116-identita-e-appartenenze.md), UC 0010 (accesso locale), UC 0017 (flussi di autenticazione)
 **Piano di lavoro**: [task/0117](../task/0117-account-attivo-e-selettore.md)
-**Ultimo aggiornamento**: 2026-08-20
+**Ultimo aggiornamento**: 2026-08-20 (implementata dalla change `0089`)
 
 ## 1. Obiettivo / Scope
 
@@ -162,18 +162,54 @@ appartenenza revocata a menu aperto).
 
 ## Punti aperti / decisioni differite
 
-- **Ripiego lasciato dalla change `0088` (UC 0116), da sostituire qui**: con più appartenenze attive, il
-  fornitore locale ([UserDirectory.java](../../../../services/auth/src/main/java/app/appgrove/auth/local/UserDirectory.java))
-  e la funzione che compone il token ([handler.py](../../../../infra/modules/platform_shared/lambda/pre_token_gen/handler.py))
-  prendono in modo deterministico l'appartenenza **più antica** (`order by m.created_at, m.id limit 1`).
-  È scritto a voce alta nel commento di entrambe, con la nota che il criterio vero è di questo use case.
-  Attenzione: la sostituzione va fatta **nelle due implementazioni insieme** — la parità fra locale e
-  cloud è la cosa che tiene onesti i collaudi locali. Il collaudo
-  `test_piu_appartenenze_prende_la_piu_antica` (test_handler.py) va riscritto, non cancellato.
+- ~~**Ripiego lasciato dalla change `0088` (UC 0116)**~~ — **chiuso** dalla change `0089`: il criterio
+  «l'appartenenza più antica» è stato sostituito, **nelle due implementazioni insieme**, dalla regola
+  dell'account attivo — funzione pura
+  [`ActiveAccount`](../../../../services/commons/src/main/java/app/appgrove/commons/membership/ActiveAccount.java)
+  (usata dal fornitore locale) e sua gemella Python in
+  [handler.py](../../../../infra/modules/platform_shared/lambda/pre_token_gen/handler.py). Il collaudo
+  `test_piu_appartenenze_prende_la_piu_antica` è stato **riscritto** (non cancellato) come tabella di
+  casi eseguita su entrambe le attuazioni.
 
-- **Durata del token e ritardo della revoca**: questa storia rende visibile un legame che c'era già. La
-  scelta della durata resta di UC 0017; qui si pretende solo che sia **scritta** e non implicita.
-  Proprietario: UC 0017.
+- ~~**Durata del token e ritardo della revoca**~~ — **scritto** dove va scritto:
+  [docs/02 §10](../../../02-auth-sicurezza.md) dice a voce alta che la durata dell'access token (15
+  minuti) è il ritardo massimo con cui una revoca ha effetto. La **scelta** della durata resta di
+  UC 0017; la stretta per le operazioni che modificano dati è di UC 0099.
+
+- **Superficie per scegliere l'account senza una sessione** — *differita a UC 0118*. L'esito «più
+  appartenenze e nessuna scelta valida» è implementato, tipizzato e a chiusura in entrambe le
+  attuazioni, e all'accesso produce un `409` con un messaggio comprensibile invece di «credenziali non
+  valide». Manca la **schermata** per rispondere a quella richiesta quando non si ha ancora un token.
+  Perché differita: oggi **nessun percorso di prodotto** crea una seconda appartenenza (è UC 0118 a
+  introdurli), e costruire quella schermata richiederebbe rendere navigabile una sessione priva del
+  claim dell'account — cioè allargare il raggio d'azione del percorso più delicato del prodotto per un
+  caso che nessuno può raggiungere. Il caso è inoltre **raro per costruzione**: ogni appartenenza nuova
+  nasce già indicata come attiva, e con una sola appartenenza residua la regola la sceglie da sé, quindi
+  serve la revoca dell'appartenenza attiva con **almeno altre due** ancora vive. Proprietario: UC 0118.
+
+- **Account sospeso o cancellato fra i candidati** — *differito a UC 0033*. Lo stato dell'**account**
+  non filtra i candidati: un account in eliminazione (periodo di grazia) resta selezionabile, perché è
+  *da dentro* quell'account che l'eliminazione si annulla, ed escluderlo chiuderebbe fuori la persona
+  proprio quando deve poter tornare indietro. È anche l'insieme di candidati che la funzione del token
+  vedeva prima di questa storia, quindi nessun accesso che funzionava smette di funzionare. Rendere
+  l'esperienza esplicita (per esempio mostrare l'account come «in eliminazione» nel selettore) appartiene
+  al ciclo di vita dell'account. Proprietario: UC 0033.
+
+- **Etichetta owner/collaboratore nel selettore** — *differita a UC 0107*. I prototipi mostrano «Sei il
+  titolare / Sei collaboratore» sotto il nome dell'account; l'implementazione non la rende, perché §4.6
+  di questa storia vieta le etichette di ruolo nell'interfaccia di piattaforma. La distinzione
+  owner/collaboratore diventa vera e visibile con UC 0107, che è la storia che porta il ruolo dove è
+  vero. Proprietario: UC 0107.
+- **Entrando in un account nuovo il gate legale ricompare** — *osservato dalla change `0089`, esito
+  atteso, esperienza da rifinire in UC 0056*. L'accettazione dei documenti legali è registrata **per
+  account** (`platform.legal_acceptance` è tenant-scoped), perché ogni account è un contratto a sé:
+  quindi la prima volta che una persona entra nel secondo account il gate bloccante le chiede di
+  accettare di nuovo. È corretto e non si cambia qui. Quello che manca è **dirlo**: la schermata non
+  spiega che sta chiedendo l'accettazione *per quell'account*, e chi ha appena cambiato account può
+  crederla una ripetizione inutile. Il percorso di piattaforma `J-ACCOUNT-SWITCH` attraversa il gate
+  come farebbe l'utente, quindi il comportamento è scritto in un collaudo e non lasciato da scoprire.
+  Proprietario: **UC 0056**.
+
 - **Ultimo account usato come predefinito, o scelta a ogni accesso?** Si adotta l'ultimo usato, perché con
   una sola appartenenza deve essere invisibile e con più appartenenze è ciò che la persona si aspetta.
   Rivedibile se emergesse un rischio di «lavorare sull'account sbagliato senza accorgersene» — mitigato dal

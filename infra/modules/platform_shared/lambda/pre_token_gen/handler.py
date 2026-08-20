@@ -5,14 +5,25 @@ della persona dallo schema `platform` (via RDS Proxy) e inietta i claim
 `tenant_id` (stringa) + `roles` (array) nell'ACCESS token — il meccanismo che
 rende vera l'invariante "tenant_id solo dal JWT verificato".
 
-Dopo UC 0116 la lettura è identità (`platform.identity`) ⋈ appartenenza
+Dopo UC 0116 la lettura è identità (`platform.identity`) ⋈ appartenenze
 (`platform.membership`): la persona è unica sulla piattaforma, le sue
-appartenenze possono essere più di una. Con UNA sola appartenenza attiva —
-il caso di tutti gli utenti di oggi — il comportamento è identico a prima.
-Con PIÙ appartenenze attive si prende la più ANTICA, in modo deterministico:
-è un ripiego dichiarato, non una scelta di prodotto. Quale account è attivo
-in una sessione, e come si cambia, è materia di UC 0117: scegliere qui senza
-un criterio scritto significherebbe scegliere male.
+appartenenze possono essere più di una. Con UC 0117 quale appartenenza
+diventa l'account della sessione non è più un ripiego («la più antica») ma
+una regola scritta, applicata al riferimento conservato in
+`identity.active_membership_id`:
+
+  | Appartenenze attive | Valore conservato          | Esito                  |
+  |---------------------|----------------------------|------------------------|
+  | nessuna             | qualunque                  | nessun claim           |
+  | una sola            | qualunque, anche assente   | quella (ignora il valore) |
+  | più di una          | corrisponde a una di esse  | quella                 |
+  | più di una          | assente o non corrisponde  | nessun claim           |
+
+**Il valore conservato NON è creduto**: vale solo se corrisponde a
+un'appartenenza attiva trovata adesso. È la riga che impedisce che una
+manomissione di quella colonna diventi un varco fra due aziende — l'invariante
+«account solo dal token verificato» resta intatta, perché cambia la funzione
+che CALCOLA il claim, non chi se ne fida.
 
 **Fail-closed**: se la persona non ha un'appartenenza attiva, NON viene iniettato
 alcun claim → il token esce senza `tenant_id`/`roles` e i servizi lo rifiutano
@@ -29,8 +40,16 @@ Driver `pg8000` puro-Python vendorizzato in `vendor/` (nessun binario nativo,
 archive_file autocontenuto).
 
 Parità col provider locale (UC 0010): stessi claim (`tenant_id`, `roles`,
-`token_use=access`) e stessa regola `platform-admin` (allow-list di `sub`),
-così i servizi hanno un unico percorso di codice in locale e in cloud.
+`token_use=access`), stessa regola `platform-admin` (allow-list di `sub`) e
+stessa tabella di casi per la scelta dell'account attivo, così i servizi
+hanno un unico percorso di codice in locale e in cloud. La regola è attuata
+DUE volte — qui in Python e in Java
+(services/commons/src/main/java/app/appgrove/commons/membership/ActiveAccount.java,
+usata dal provider locale) — perché questa funzione gira dentro
+l'infrastruttura e non può chiamare il codice dei servizi. Due attuazioni
+della stessa regola sono un debito: si tiene onesto con la stessa tabella di
+casi eseguita dai collaudi di entrambe (`test_handler.py` e
+`ActiveAccountTest`). Se una cambia, l'altra cambia con essa.
 
 Evento: Cognito Pre-Token-Generation **V2_0** (necessario per personalizzare
 l'access token; richiede il piano funzionalità Essentials del pool).
@@ -95,23 +114,57 @@ def _connect():
     return _connection
 
 
-# Identità ⋈ appartenenza (UC 0116). PARITÀ con il fornitore locale
+# Identità ⋈ appartenenze ATTIVE + riferimento all'account attivo (UC 0116/0117).
+# PARITÀ con il fornitore locale
 # (services/auth/src/main/java/app/appgrove/auth/local/UserDirectory.java): stessa
-# condizione, stesso ordine, stesso ripiego sull'appartenenza più antica. Se una
-# delle due cambia, l'altra cambia con essa — altrimenti i collaudi locali dicono
-# una cosa e l'ambiente reale un'altra.
+# condizione, stesso ordine, stessa tabella di casi. Si leggono TUTTE le appartenenze
+# attive (non più `LIMIT 1`): è la scelta dell'account attivo a stabilire quale vale,
+# e per riverificarla servono tutte.
 _MEMBERSHIP_SQL = (
-    "SELECT m.tenant_id, m.role FROM platform.identity i "
+    "SELECT m.id, m.tenant_id, m.role, i.active_membership_id "
+    "FROM platform.identity i "
     "JOIN platform.membership m ON m.identity_id = i.id "
     "WHERE i.cognito_sub = :sub "
     "AND i.status = 'active' AND i.deleted_at IS NULL "
     "AND m.status = 'active' AND m.deleted_at IS NULL "
-    "ORDER BY m.created_at, m.id LIMIT 1"
+    "ORDER BY m.created_at, m.id"
 )
 
+# Esiti della scelta dell'account attivo: tre, mai un quarto implicito. Sono gli stessi
+# tre di ActiveAccount.Choice in Java (None / Chosen / MustChoose).
+CHOICE_NONE = "none"
+CHOICE_CHOSEN = "chosen"
+CHOICE_MUST_CHOOSE = "must_choose"
 
-def _lookup_membership(sub):
-    """Ritorna (tenant_id, role) dell'appartenenza attiva più antica della persona, o None.
+
+def choose_active_account(memberships, stored_membership_id):
+    """La tabella dei casi di UC 0117 §4.2. Funzione PURA: nessun accesso alla banca dati.
+
+    `memberships` è la lista delle appartenenze ATTIVE, in ordine deterministico
+    (anzianità), ognuna come (membership_id, tenant_id, role). `stored_membership_id`
+    è il valore conservato, eventualmente None o non più valido.
+
+    Ritorna (esito, appartenenza) dove l'appartenenza è valorizzata solo con
+    CHOICE_CHOSEN. Gemella di ActiveAccount.choose (Java): se una cambia, l'altra
+    cambia con essa.
+    """
+    if not memberships:
+        return (CHOICE_NONE, None)
+    if len(memberships) == 1:
+        # Il caso di tutti gli utenti di oggi: il valore conservato è IRRILEVANTE, anche
+        # se manomesso. Deve restare a costo zero e senza modi di sbagliare.
+        return (CHOICE_CHOSEN, memberships[0])
+    if stored_membership_id is not None:
+        for membership in memberships:
+            if str(membership[0]) == str(stored_membership_id):
+                return (CHOICE_CHOSEN, membership)
+    # Più appartenenze e nessuna scelta valida: nessun claim. Nessuno può decidere al
+    # posto della persona per conto di chi sta agendo.
+    return (CHOICE_MUST_CHOOSE, None)
+
+
+def _lookup_active_account(sub):
+    """Ritorna (esito, (tenant_id, role)) per la persona, riverificando le appartenenze.
 
     Entrambi gli stati devono essere attivi: la persona (leva del titolare, art. 18)
     e l'appartenenza (leva dell'owner dell'account). A chiusura in caso di dubbio.
@@ -125,10 +178,12 @@ def _lookup_membership(sub):
         _connection = None
         conn = _connect()
         rows = conn.run(_MEMBERSHIP_SQL, sub=sub)
-    if not rows:
-        return None
-    tenant_id, role = rows[0][0], rows[0][1]
-    return (tenant_id, role)
+    memberships = [(r[0], r[1], r[2]) for r in rows]
+    stored = rows[0][3] if rows else None
+    outcome, chosen = choose_active_account(memberships, stored)
+    if outcome != CHOICE_CHOSEN:
+        return (outcome, None)
+    return (outcome, (chosen[1], chosen[2]))
 
 
 def _roles_for(sub, role):
@@ -152,10 +207,19 @@ def handler(event, _context):
         _log("WARN", "pre-token-gen: sub assente nell'evento (fail-closed)")
         return event  # nessun claim iniettato
 
-    membership = _lookup_membership(sub)
-    if membership is None:
+    outcome, membership = _lookup_active_account(sub)
+    if outcome == CHOICE_NONE:
         # Fail-closed: persona senza appartenenza attiva → nessun claim (#02 10).
         _log("WARN", "pre-token-gen: nessuna appartenenza attiva (fail-closed)", user_id=sub)
+        return event
+    if outcome == CHOICE_MUST_CHOOSE:
+        # Fail-closed: più appartenenze attive e nessun account attivo valido (UC 0117).
+        # Distinto dal caso precedente perché la persona PUÒ lavorare: manca solo la scelta.
+        _log(
+            "WARN",
+            "pre-token-gen: più appartenenze attive e nessun account attivo scelto (fail-closed)",
+            user_id=sub,
+        )
         return event
 
     tenant_id, role = membership

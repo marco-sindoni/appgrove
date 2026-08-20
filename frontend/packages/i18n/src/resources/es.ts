@@ -106,6 +106,16 @@ export const es: Resources = {
     userMenu: 'Menú de usuario',
     logout: 'Cerrar sesión',
   },
+  // Selettore dell'account attivo nella barra laterale (UC 0117).
+  accountSwitch: {
+    label: 'Cambiar de cuenta',
+    hint_one: '{{count}} cuenta · cambiar',
+    hint_other: '{{count}} cuentas · cambiar',
+    switching: 'Cambiando de cuenta…',
+    error: 'No se pudo cambiar de cuenta. Inténtalo de nuevo.',
+    changed: 'La cuenta activa cambió en otra pestaña.',
+    reload: 'Recargar',
+  },
   states: {
     loading: 'Cargando…',
     empty: 'Aún no hay nada aquí',
@@ -377,6 +387,7 @@ export const es: Resources = {
     tooLong: 'Demasiado largo (máx. {{max}})',
   },
   errors: {
+    accountSelectionRequired: 'Perteneces a más de una cuenta y ninguna está marcada como activa. Elige la cuenta en la que quieres trabajar.',
     emailTaken: 'Este email ya está registrado.',
     invalidCredentials: 'Email o contraseña no válidos.',
     emailNotVerified: 'Tu email aún no está verificado. Revisa tu bandeja de entrada.',

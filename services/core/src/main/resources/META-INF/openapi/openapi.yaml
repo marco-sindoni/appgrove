@@ -466,6 +466,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/EntitlementView"
+    MembershipRef:
+      type: object
+      properties:
+        accountId:
+          type: string
+        accountName:
+          type: string
     MessageView:
       type: object
       properties:
@@ -487,6 +494,15 @@ components:
           type: string
         window:
           type: string
+    MyMembershipsView:
+      type: object
+      properties:
+        activeAccountId:
+          type: string
+        memberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/MembershipRef"
     MySubscriptionsView:
       type: object
       properties:
@@ -831,6 +847,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RestrictionAuditView"
+    SetActiveAccount:
+      type: object
+      required:
+      - accountId
+      properties:
+        accountId:
+          type: string
+          pattern: \S
     StartCheckoutRequest:
       type: object
       properties:
@@ -1984,6 +2008,28 @@ paths:
       - Legal Document Resource
       security:
       - SecurityScheme: []
+  /api/platform/v1/me/active-account:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetActiveAccount"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Set Active Account
+      tags:
+      - Me Memberships Resource
+      security:
+      - SecurityScheme: []
   /api/platform/v1/me/catalog:
     get:
       responses:
@@ -2062,6 +2108,24 @@ paths:
       summary: Status
       tags:
       - Legal Resource
+      security:
+      - SecurityScheme: []
+  /api/platform/v1/me/memberships:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyMembershipsView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Memberships
+      tags:
+      - Me Memberships Resource
       security:
       - SecurityScheme: []
   /api/platform/v1/me/payments:

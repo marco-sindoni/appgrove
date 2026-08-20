@@ -180,3 +180,44 @@ export function useLegalDoc(component: string | undefined, lang: string) {
     enabled: component != null,
   })
 }
+
+// ── Appartenenze e account attivo (UC 0117) ───────────────────────────────────
+
+/** Chiave della lettura delle appartenenze: condivisa con chi la invalida dopo un cambio. */
+export const MEMBERSHIPS_KEY = ['me', 'memberships'] as const
+
+/**
+ * Gli account a cui la persona in sessione appartiene, e quale è **attivo**
+ * (`GET /me/memberships`).
+ *
+ * <p>Il campo `activeAccountId` è la verità corrente lato server, non il valore grezzo conservato:
+ * serve al selettore per marcare l'account su cui si sta lavorando e — confrontato con l'account del
+ * token che la scheda ha in mano — per accorgersi che l'account attivo è **cambiato in un'altra
+ * scheda**. Per questo la lettura si rinfresca al ritorno sulla scheda, come già fa quella degli
+ * entitlement: è l'unico modo perché una scheda dimenticata aperta si accorga del cambio.
+ */
+export function useMyMemberships() {
+  const client = useApiClient()
+  const status = useAuthStore((s) => s.status)
+  return useQuery({
+    queryKey: MEMBERSHIPS_KEY,
+    enabled: status === 'authenticated',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    queryFn: () => unwrap(client.GET('/api/platform/v1/me/memberships')),
+  })
+}
+
+/**
+ * Cambia l'account attivo (`POST /me/active-account`). **Non** restituisce token: il rinnovo passa
+ * dal percorso di rinnovo esistente, così l'account si stabilisce in un posto solo. Chi chiama deve
+ * **ricaricare** l'applicazione — è il ricaricamento a far nascere il token nuovo. Vedi
+ * `AccountSwitcher` nella shell.
+ */
+export function useSetActiveAccount() {
+  const client = useApiClient()
+  return useMutation({
+    mutationFn: (accountId: string) =>
+      unwrap(client.POST('/api/platform/v1/me/active-account', { body: { accountId } })),
+  })
+}

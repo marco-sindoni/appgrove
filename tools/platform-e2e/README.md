@@ -39,6 +39,7 @@ Prerequisiti: Docker (Colima), Java/Maven, Node. Nessun ambiente cloud.
 | `A-CONSOLE` | Disabilitazione applicazione fra due attori: l'admin disabilita → il cliente perde app e rotta ma **non** i dati → riabilita → registro delle transizioni | progetto `admin-serial` |
 | `F-DEGRADE` | Guasti veri: servizio **fermato davvero** → errore con "riprova" e mai diniego → riavvio → rientro senza ricaricare → sessione invalidata lato server | progetto `degrade-serial` |
 | `J-LEGAL` | Ri-accettazione legale: nuova major via leva d'ambiente → gate bloccante, esenzione `/privacy`, accettazione registrata | progetto `legal-serial`, ultimo |
+| `J-ACCOUNT-SWITCH` | Account attivo e selettore: la stessa persona in due account, cambio con ricarica, menu che seguono l'account, traccia di controllo | UC 0117; la seconda appartenenza nasce da una leva d'ambiente finché UC 0118 non esiste |
 
 Stato di catalogo: il **global-setup** attiva l'app `crm` (leva admin del seed platform-admin) per
 l'intera esecuzione e il teardown la ripristina `inactive` — è l'unica app del registry frontend con

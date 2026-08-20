@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
@@ -75,6 +76,27 @@ public class Identity extends BaseEntity {
     @Column(name = "suspended_reason", length = 32)
     private String suspendedReason;
 
+    /**
+     * Appartenenza attiva nella sessione (UC 0117): l'account per conto del quale la persona sta
+     * lavorando. È un <b>suggerimento</b>, non una fonte di verità — la verità è l'appartenenza
+     * riverificata al momento della creazione del token
+     * ({@link app.appgrove.commons.membership.ActiveAccount}). Null è normale: con una sola
+     * appartenenza non c'è niente da scegliere, ed è il caso di tutti gli utenti di oggi.
+     *
+     * <p><b>Classificazione</b>: è una <i>preferenza</i> della persona, della stessa natura di
+     * {@link #locale} — non aggiunge alcun legame fra persona e azienda (quello è già dichiarato
+     * sull'{@link Membership appartenenza}), ma dice quale account la persona stava usando. Lo
+     * use case la descriveva come «preferenza tecnica di sessione» e non come dato personale nuovo:
+     * si dichiara comunque, perché la coerenza col trattamento della lingua vale più della
+     * distinzione fine, e un campo non dichiarato è un campo che nessuno riesamina.
+     */
+    @PersonalData(
+            category = "preferenza (account attivo della sessione)",
+            purpose = "ricordare su quale account la persona stava lavorando (UC 0117)",
+            retention = "identità attiva (ultima appartenenza) + grace 14gg (#13 E25)")
+    @Column(name = "active_membership_id")
+    private UUID activeMembershipId;
+
     protected Identity() {
         // richiesto da JPA
     }
@@ -127,5 +149,13 @@ public class Identity extends BaseEntity {
 
     public void setSuspendedReason(String suspendedReason) {
         this.suspendedReason = suspendedReason;
+    }
+
+    public UUID getActiveMembershipId() {
+        return activeMembershipId;
+    }
+
+    public void setActiveMembershipId(UUID activeMembershipId) {
+        this.activeMembershipId = activeMembershipId;
     }
 }

@@ -43,6 +43,11 @@ export function dbRows(sql: string, params: string[] = []): string[][] {
  *    invalidare la sessione **dal lato server**: nessuna azione utente la produce, e le uniche vie
  *    di prodotto che ci arrivano (rimozione del membro, limitazione art. 18) appartengono ad altri
  *    journey — usarle qui sarebbe duplicazione, non copertura.
+ * 3. **J-ACCOUNT-SWITCH** (UC 0117) — **seconda appartenenza** della stessa persona a un altro
+ *    account, più l'account attivo iniziale: nessun percorso di prodotto crea una seconda
+ *    appartenenza finché non esiste UC 0118 (inviti e registrazione con identità esistente). La
+ *    leva sparirà quando quel percorso esisterà: allora la seconda appartenenza nascerà da un
+ *    invito accettato, come per un utente vero.
  *
  * Ogni nuovo uso va aggiunto a questo elenco e motivato: la lista corta è il presidio.
  */

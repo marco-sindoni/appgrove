@@ -1,7 +1,7 @@
 # E22.5 — Identità della persona e appartenenze agli account
 
 **Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0116, 0117, 0118
-**Stato**: 🟢 analisi scritta · **0116 implementata** (change `0088`) · **Ultimo aggiornamento**: 2026-08-20
+**Stato**: 🟢 analisi scritta · **0116 implementata** (change `0088`) · **0117 implementata** (change `0089`) · **Ultimo aggiornamento**: 2026-08-20
 
 > **Numerata per ultima, si esegue per prima.** Le sotto-epiche portano il numero nell'ordine in cui sono
 > state scritte, non in quello in cui si eseguono — come gli identificativi del registro delle decisioni,
@@ -45,9 +45,12 @@ Il costo di anticiparla è basso: 0098 nasce direttamente col riferimento all'id
    deve stare, migrazione senza perdite. `platform.users` resta come rete di ritorno, fredda. Il ripiego
    lasciato in eredità (con più appartenenze si prende la più antica) è scritto nei commenti delle due
    implementazioni e appartiene alla storia successiva.
-2. **[0117 — Account attivo e selettore](../story/0117-account-attivo-e-selettore.md).** Se le appartenenze
-   sono più di una, il token deve dire *per conto di chi* stai agendo. È la storia più delicata dell'intera
-   epica: tocca il punto in cui si stabilisce l'identità e l'account, cioè l'invariante numero uno.
+2. **[0117 — Account attivo e selettore](../story/0117-account-attivo-e-selettore.md)** — ✅
+   **implementata** (change `0089`). L'account attivo vive sull'identità, la regola che lo scegli è
+   scritta una volta e attuata due (Java e Python) con la stessa tabella di casi, e il selettore vive
+   nella barra laterale sotto il marchio — assente con una sola appartenenza. Resta fuori la schermata
+   per scegliere l'account *senza* una sessione: appartiene a 0118, che è la storia che rende
+   raggiungibile quel caso.
 3. **[0118 — Inviti e registrazione con identità esistente](../story/0118-inviti-e-registrazione-con-identita-esistente.md).**
    I due percorsi d'ingresso, e i messaggi comprensibili al posto delle violazioni di indice.
 
