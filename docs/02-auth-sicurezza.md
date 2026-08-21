@@ -46,8 +46,17 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
    + `api.appgrove.app`, cookie su `.appgrove.app`) per avere il cookie **first-party**.
 
 ### Modello ruoli & authz (topic D, da #01)
-7. **Ruoli tenant-level**: `owner`, `admin`, `member` (nel claim `roles`). **`platform-admin`** separato
-   (livello piattaforma) per il backoffice admin.
+7. **Ruoli di account**: `owner` e `member` (nel claim `roles`) — **due valori**, dalla change 0091
+   (UC 0098). **`platform-admin`** separato (livello piattaforma) per il backoffice admin.
+
+    **~~Ruolo `admin` di account~~ — RITIRATO** (UC 0098). Era un potere che valeva per *tutto*: ogni
+    applicazione dell'account e anche le schermate di piattaforma. Nel modello centralizzato il potere sta
+    sull'**applicazione**: `admin` riappare come ruolo di `platform.app_access` su *una* applicazione,
+    accanto a `editor` e `viewer`, e non entra nel claim (un cambio di ruolo avrebbe effetto solo al
+    rinnovo del token, e dieci applicazioni gonfierebbero ogni richiesta — UC 0099). Cosa **resta vero**:
+    il claim `roles` continua a portare il ruolo di account, `@RolesAllowed` continua a governare le
+    operazioni di piattaforma, e le annotazioni che nominano ancora `admin` restano come **tolleranza dei
+    token già emessi** finché UC 0113 non la ritira con la sua data.
 8. **Divisione delle responsabilità** *(rivista dalla change 0039, UC 0014)*: l'**API Gateway** usa l'**authorizer JWT
    nativo** — verifica firma/emittente/destinatario/**scadenza** e respinge con **401**; il **servizio** ri-valida il JWT
    (smallrye-jwt: `token_use`/`client_id`) e applica **authz sui ruoli** (`@RolesAllowed`) **e** l'**entitlement** (402,
@@ -116,8 +125,10 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
 ### Signup & inviti (topic G)
 13. **Signup self-service aperto**: nuovo utente → **nuovo account (tenant) + membership owner**; email
     verification via Cognito.
-14. **Flusso inviti**: owner/admin invita una email → **invitation** con token **single-use** e **scadenza**
-    (default 7 giorni) → all'accept l'invitato entra **nel tenant che invita** con il ruolo assegnato.
+14. **Flusso inviti**: l'owner invita una email → **invitation** con token **single-use** e **scadenza**
+    (default 7 giorni) → all'accept l'invitato entra **nel tenant che invita** come `member`. Dalla change
+    0091 (UC 0098) l'invito **non assegna più un ruolo**: chi entra non porta con sé alcun potere, e i
+    poteri si concedono dopo, una applicazione alla volta.
 
     **~~Vincolo «1 utente → 1 tenant»~~ — SUPERATO** (UC 0116, change 0088). Era una scelta dichiarata e
     non una dimenticanza: con un solo utente per cliente, ripiegare l'appartenenza sull'utente

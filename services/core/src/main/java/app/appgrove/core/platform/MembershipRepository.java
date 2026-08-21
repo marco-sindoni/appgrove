@@ -30,6 +30,25 @@ public class MembershipRepository implements PanacheRepositoryBase<Membership, U
         return listAll();
     }
 
+    /**
+     * Gli owner dell'account corrente. Oggi è sempre <b>uno</b> — «un solo owner» è una regola
+     * applicativa e non una chiave unica sulla riga (scelta della storia 0098, per non precludere più
+     * di un owner in futuro) — ma il metodo ritorna una lista perché è la forma vera del modello.
+     * Serve a due cose: aggiungere l'owner all'elenco di chi ha accesso a una applicazione (non ha
+     * righe: l'accesso gli è implicito) e sorvegliare il vincolo dell'ultimo owner.
+     */
+    public List<Membership> owners() {
+        return list("role", MembershipRole.owner);
+    }
+
+    /**
+     * Quanti owner <b>vivi</b> ha l'account corrente. Un valore ≤ 1 rende l'owner intoccabile:
+     * non rimovibile, non retrocedibile, non sospendibile (UC 0098 §5).
+     */
+    public long countOwners() {
+        return count("role", MembershipRole.owner);
+    }
+
     /** L'appartenenza dell'account corrente per quell'identità, se esiste. */
     public Optional<Membership> findByIdentity(UUID identityId) {
         return find("identityId", identityId).firstResultOptional();

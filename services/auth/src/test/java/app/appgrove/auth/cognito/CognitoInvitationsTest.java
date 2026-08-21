@@ -111,8 +111,9 @@ class CognitoInvitationsTest {
                 "select count(*) from platform.identity i"
                         + " join platform.membership m on m.identity_id = i.id"
                         + " where i.cognito_sub = '" + SUB
-                        + "' and m.tenant_id = '" + ACME + "' and m.role = 'admin'"),
-                "appartenenza creata nel tenant Acme col sub Cognito e ruolo dell'invito");
+                        + "' and m.tenant_id = '" + ACME + "' and m.role = 'member'"),
+                "appartenenza creata nel tenant Acme col sub Cognito e ruolo dell'invito (member: il ruolo"
+                        + " di piattaforma ha due soli valori dopo UC 0098)");
         assertEquals("accepted", TestDb.text(ds,
                 "select status from platform.invitations where token_hash = '"
                         + TokenHashes.sha256Hex("seed-invite-acme-admin") + "'"));

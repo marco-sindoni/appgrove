@@ -136,3 +136,15 @@ e descritto per gli strumenti di assistenza.
   (UC 0088).
 - **Come mostrare una persona sospesa per limitazione del trattamento** senza rivelare più del dovuto:
   da rifinire con chi cura la conformità. Proprietario: UC 0033.
+
+### Lasciato da UC 0098 (change 0091)
+
+- **Il selettore del ruolo è già sparito** dalla schermata dei membri — dal modulo di invito e dalla riga
+  della tabella — perché con due soli valori non c'era nulla da scegliere e un comando che offre un valore
+  che il servizio rifiuta è un difetto. Resta a questa storia tutto il resto: la **colonna** del ruolo (oggi
+  una etichetta in sola lettura), l'elenco unico con gli inviti in attesa, la colonna delle applicazioni,
+  l'invito riservato all'owner e la restrizione della rotta. Le chiavi di traduzione `members.roleAdmin`,
+  `members.inviteRole` e `members.changeRole` sono state rimosse dalle cinque lingue perché nessuno le usava
+  più; `members.roleOwner` e `members.roleMember` restano finché la colonna esiste.
+- **Il campo `role` del corpo dell'invito** è ancora nel contratto e accetta il solo valore `member`.
+  Toglierlo è un cambio di contratto e appartiene a questa storia, che rifà quella schermata.

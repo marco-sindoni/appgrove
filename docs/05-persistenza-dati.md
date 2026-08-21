@@ -55,9 +55,21 @@ Non copre l'authz/verifica JWT (→ [02-auth-sicurezza](02-auth-sicurezza.md)) n
      `locale`, `status` (active/suspended) + `suspended_reason`. È il posto in cui «una persona = un
      indirizzo» diventa vero per la piattaforma intera.
    - **membership** (UC 0116; entità di **account**): `id`, `tenant_id`→accounts, `identity_id`→identity,
-     `role` (owner/admin/member), `status` (active/suspended). Unico su `(tenant_id, identity_id)`
-     **sulle righe vive** — «non due volte nello stesso account» — e indice su `identity_id` per
-     rispondere a «a quali account appartiene questa persona?».
+     `role` (**owner/member**, due soli valori dopo UC 0098 — change 0091), `status` (active/suspended).
+     Unico su `(tenant_id, identity_id)` **sulle righe vive** — «non due volte nello stesso account» — e
+     indice su `identity_id` per rispondere a «a quali account appartiene questa persona?». Il valore
+     `admin` è stato **ritirato da questo livello**: era un potere che valeva per ogni applicazione e
+     anche per le schermate di piattaforma, e riappare circoscritto su `app_access`. La conversione delle
+     righe esistenti (`admin` → `member` più accesso `admin` su ogni applicazione dell'account) e il
+     vincolo di controllo che la sigilla sono di UC 0113.
+   - **app_access** (UC 0098, change 0091; entità di **account**): `id`, `tenant_id`, `app_id`→app,
+     `identity_id`→identity, `role` (viewer/editor/admin), `granted_by`. È il luogo in cui vive «questa
+     persona può usare questa applicazione con questo ruolo»: unico sulla terna
+     `(tenant_id, app_id, identity_id)` **sulle righe vive**, più due indici di lettura — per persona
+     («quali applicazioni vede?») e per applicazione («chi ha accesso?»). Riferisce l'**identità** e non
+     l'appartenenza, perché l'appartenenza si chiude e riapre mentre l'identità no. L'**owner non ha
+     righe**: l'accesso gli è implicito su tutte le applicazioni dell'account, e ogni lettura lo aggiunge
+     al risultato.
    - ~~**users**~~: **superata** da `identity` + `membership`. La tabella resta nello schema come **rete
      di ritorno** del travaso (change 0088): nessun codice la legge e nessuno la scrive; la rimozione
      fisica è di una migrazione successiva. I due indici unici globali che imponevano «1 utente → 1

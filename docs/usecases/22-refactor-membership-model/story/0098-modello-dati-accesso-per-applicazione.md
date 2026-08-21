@@ -1,11 +1,11 @@
 # UC 0098 — Modello dati dell'accesso per applicazione e ruolo di piattaforma
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change 0091)
 **Epica**: [E22.1 Fondamenta](../epic/E22-01-fondamenta-modello-centralizzato.md)
 **Dipendenze**: [UC 0116](0116-identita-e-appartenenze.md) (identità e appartenenze: la tabella riferisce l'identità), UC 0013 (account, utenti, inviti e interfaccia del core), UC 0059 (schermata membri)
 **Sostituisce**: UC 0072 e UC 0073 dell'epica 14 (appartenenza e posti per applicazione)
 **Piano di lavoro**: [task/0098](../task/0098-modello-dati-accesso-per-applicazione.md)
-**Ultimo aggiornamento**: 2026-08-19
+**Ultimo aggiornamento**: 2026-08-21
 
 ## 1. Obiettivo / Scope
 
@@ -163,5 +163,16 @@ piattaforma non cambia alcuna categoria di dato.
   andrebbe mantenuta a ogni applicazione installata e potrebbe essere cancellata per errore. Costo da
   ricordare: ogni lettura di «chi ha accesso» deve **aggiungere** l'owner al risultato. Sorvegliato dai
   collaudi di UC 0111.
-- **Ruolo predefinito quando si concede accesso**: proposto `viewer` (il più prudente). Conferma in sede
-  di implementazione dell'interfaccia. Proprietario: UC 0111.
+- **Ruolo predefinito quando si concede accesso** — **chiuso** (change 0091): il servizio **non** ha un
+  valore predefinito, il ruolo è obbligatorio nel corpo della richiesta, perché un potere concesso per
+  omissione di un campo è il modo peggiore di concederlo. Il predefinito prudente da *proporre* resta
+  `viewer` e appartiene all'interfaccia: rimando tracciato in UC 0111.
+- **Accesso già esistente** — **chiuso** (change 0091): la concessione su una terna che esiste già non è un
+  errore ma un **cambio di ruolo**, deciso dal servizio e non dedotto dall'interfaccia. L'arbitro
+  dell'unicità è l'indice della banca dati, non la lettura che precede la scrittura: due concessioni
+  simultanee producono una riga e un rifiuto.
+- **Rimandi lasciati alle storie successive** (change 0091): l'evento di invalidazione della copia locale e
+  la lettura «dove può entrare questa persona» → UC 0099; la conversione dei dati reali, il vincolo di
+  controllo sui valori del ruolo di piattaforma e il ritiro della tolleranza `admin` nel token → UC 0113;
+  la schermata dei membri senza colonna del ruolo e il campo `role` dell'invito → UC 0100; il predefinito
+  dell'interfaccia e le schermate che consumano le nuove operazioni → UC 0111.

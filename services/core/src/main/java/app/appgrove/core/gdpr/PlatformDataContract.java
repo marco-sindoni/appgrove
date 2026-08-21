@@ -10,6 +10,7 @@ import app.appgrove.core.billing.BillingTransaction;
 import app.appgrove.core.legal.LegalAcceptance;
 import app.appgrove.core.newsletter.NewsletterSubscriber;
 import app.appgrove.core.platform.Account;
+import app.appgrove.core.platform.AppAccess;
 import app.appgrove.core.platform.Invitation;
 import app.appgrove.core.platform.Membership;
 import app.appgrove.core.platform.Identity;
@@ -105,6 +106,16 @@ public class PlatformDataContract implements AppDataContract {
                         + " from platform.membership where tenant_id = ? order by created_at",
                 scope.tenantId(),
                 "id", "identity_id", "role", "status", "created_at", "deleted_at"));
+
+        // Accessi per applicazione (UC 0098): riga di autorizzazione dell'account, tenant-scoped —
+        // nessuna restrizione da applicare, perché non contiene nulla che riguardi altri account.
+        entities.put("app_access", query(
+                "select aa.id, app.slug as app, aa.identity_id, aa.role, aa.granted_by, aa.created_at, aa.deleted_at"
+                        + " from platform.app_access aa"
+                        + " join platform.app app on app.id = aa.app_id"
+                        + " where aa.tenant_id = ? order by app.slug, aa.created_at",
+                scope.tenantId(),
+                "id", "app", "identity_id", "role", "granted_by", "created_at", "deleted_at"));
 
         // `identity_id` è RISTRETTO agli inviti accettati, e la restrizione è la parte importante
         // (UC 0118 §5): a invito accettato quella persona è un membro dell'account, quindi il
@@ -229,6 +240,11 @@ public class PlatformDataContract implements AppDataContract {
                     delete(c, "delete from platform.billing_transaction where tenant_id = ?", scope.tenantId()));
             deleted.put("subscription",
                     delete(c, "delete from platform.subscription where tenant_id = ?", scope.tenantId()));
+            // Gli accessi per applicazione (UC 0098) vanno via prima delle appartenenze e delle
+            // identità: referenziano l'identità, e la persona rimossa dall'account non conserva
+            // permessi su nulla.
+            deleted.put("app_access",
+                    delete(c, "delete from platform.app_access where tenant_id = ?", scope.tenantId()));
             // Prima le appartenenze di questo account, poi le identità rimaste orfane (FK).
             deleted.put("membership",
                     delete(c, "delete from platform.membership where tenant_id = ?", scope.tenantId()));
@@ -250,6 +266,7 @@ public class PlatformDataContract implements AppDataContract {
         DataManifests.collectPersonalData(Account.class, "accounts", entries);
         DataManifests.collectPersonalData(Identity.class, "identities", entries);
         DataManifests.collectPersonalData(Membership.class, "memberships", entries);
+        DataManifests.collectPersonalData(AppAccess.class, "app_access", entries);
         DataManifests.collectPersonalData(Invitation.class, "invitations", entries);
         DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
         DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);

@@ -51,7 +51,7 @@ class InvitationLifecycleTest {
     @Test
     void createListRevoke() {
         String id = given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-flow@example.test", "role", "admin"))
+                .contentType(ContentType.JSON).body(Map.of("email", "lc-flow@example.test", "role", "member"))
                 .when().post(PATH)
                 .then().statusCode(201)
                 .extract().path("id");

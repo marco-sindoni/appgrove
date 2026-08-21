@@ -1,7 +1,7 @@
 # E22.1 — Fondamenta del modello centralizzato
 
-**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0098, 0099, 0100, 0101
-**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-19
+**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: **0098 ✅**, 0099, 0100, 0101
+**Stato**: 🟡 in corso (0098 implementata dalla change 0091) · **Ultimo aggiornamento**: 2026-08-21
 
 ## Obiettivo
 
@@ -16,9 +16,10 @@ possibile tutto il resto, e sbagliarle costringerebbe a rifare le altre dodici.
 
 ## Perché in questo ordine
 
-1. **0098 — i dati.** Prima serve un posto dove scrivere «Marta è `admin` sul Mini-CRM». Finché non
-   esiste, ogni discorso su menu, prezzi e schermate è aria. La storia porta anche la mutazione del
-   ruolo di piattaforma da tre valori a due (`owner` e `member`).
+1. **0098 — i dati** ✅ *(change 0091)*. Prima serve un posto dove scrivere «Marta è `admin` sul
+   Mini-CRM». Finché non esiste, ogni discorso su menu, prezzi e schermate è aria. La storia porta anche la
+   mutazione del ruolo di piattaforma da tre valori a due (`owner` e `member`) — fatta
+   nell'**enumerazione**, mentre la conversione dei dati reali resta a UC 0113.
 2. **0099 — l'autorizzazione.** Avere il dato non basta: i servizi devono **negare** in base ad esso, e
    devono farlo in un modo unico e riusabile, non applicazione per applicazione. Qui si decide la cosa
    più delicata dell'intera epica: **il ruolo per applicazione non entra nel token**.

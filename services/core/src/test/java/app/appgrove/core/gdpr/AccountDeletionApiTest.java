@@ -97,6 +97,8 @@ class AccountDeletionApiTest {
 
     @Test
     void deletionIsOwnerOnly() {
+        // Ruoli del CLAIM, non righe di appartenenza: `admin` non è più un ruolo di piattaforma
+        // (UC 0098) ma può comparire in un token già emesso, e nemmeno quello apre questa porta.
         for (String role : List.of("admin", "member")) {
             String token = TestTokens.withTenant(TENANT, role);
             given().header("Authorization", "Bearer " + token)

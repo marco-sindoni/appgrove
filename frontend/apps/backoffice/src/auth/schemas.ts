@@ -53,5 +53,7 @@ export const workspaceSchema = (t: TFn) => z.object({ name: nameField(t) })
 export const inviteSchema = (t: TFn) =>
   z.object({
     email: emailField(t).refine((v) => v.length <= 320, t('validation.tooLong', { max: 320 })),
-    role: z.enum(['admin', 'member']),
+    // Un solo valore ammesso: il ruolo di piattaforma ha due valori e l'owner nasce con l'account
+    // (UC 0098). Il campo resta perché il contratto dell'invito lo prevede ancora; sparirà con UC 0100.
+    role: z.enum(['member']),
   })

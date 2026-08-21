@@ -71,17 +71,34 @@ class SeedDataTest {
         assertEquals(3, scalar("select count(*) from platform.accounts where created_by = 'seed'"),
                 "3 account: Acme (B2B), Bob (B2C), Platform");
         assertEquals(5, scalar("select count(*) from platform.identity where created_by = 'seed'"),
-                "5 persone: Acme owner/admin/member, Bob, Platform admin");
+                "5 persone: Acme owner + due member, Bob, Platform admin");
         assertEquals(5, scalar("select count(*) from platform.membership where created_by = 'seed'"),
                 "5 appartenenze: una per persona (il caso normale, UC 0116)");
         assertEquals(2, scalar(
                 "select count(*) from platform.invitations where created_by = 'seed' and status = 'pending'"),
                 "2 inviti pending (Acme)");
 
-        // ── ruoli (B2B) ──────────────────────────────────────────────────────
+        // ── ruoli di piattaforma: DUE valori (UC 0098) ───────────────────────
         assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'owner' and tenant_id = 'a0000000-0000-4000-8000-000000000001'"));
-        assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'admin'"));
-        assertEquals(1, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'member'"));
+        assertEquals(2, scalar("select count(*) from platform.membership where created_by = 'seed' and role = 'member' and tenant_id = 'a0000000-0000-4000-8000-000000000001'"),
+                "Acme: due member (chi era admin di piattaforma ora è member con ruolo admin sul crm)");
+        assertEquals(0, scalar("select count(*) from platform.membership where role = 'admin'"),
+                "il ruolo di piattaforma 'admin' è stato ritirato: nessuna riga può portarlo");
+
+        // ── accessi per applicazione (UC 0098) ───────────────────────────────
+        // Il potere sta sull'applicazione: `admin@acme.test` è admin del crm, `member@acme.test` editor.
+        // L'owner non ha righe: l'accesso gli è implicito.
+        assertEquals(2, scalar("select count(*) from platform.app_access where created_by = 'seed'"),
+                "2 accessi al crm: uno admin, uno editor");
+        assertEquals("admin", text("select aa.role from platform.app_access aa"
+                + " join platform.app app on app.id = aa.app_id"
+                + " where app.slug = 'crm' and aa.identity_id = 'b0000000-0000-4000-8000-000000000002'"));
+        assertEquals("editor", text("select aa.role from platform.app_access aa"
+                + " join platform.app app on app.id = aa.app_id"
+                + " where app.slug = 'crm' and aa.identity_id = 'b0000000-0000-4000-8000-000000000003'"));
+        assertEquals(0, scalar("select count(*) from platform.app_access"
+                + " where identity_id = 'b0000000-0000-4000-8000-000000000001'"),
+                "l'owner non ha righe di accesso: gli è implicito");
 
         // ── catalogo (single/multi/disabled) ─────────────────────────────────
         // Non più nel seed: con il pricing-as-code (UC 0022) il catalogo è prodotto dal loader allo startup

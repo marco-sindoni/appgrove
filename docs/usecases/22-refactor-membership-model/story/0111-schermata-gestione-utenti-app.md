@@ -138,3 +138,17 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
 - **Dove vive il componente condiviso** (pacchetto dei componenti o shell): decisione di implementazione;
   la seconda è più semplice, la prima più riusabile. Proprietario: questa storia.
 - **Aggiunta di più persone in una volta**: comoda per un'applicazione con molti utenti. Rimandata.
+
+### Lasciato da UC 0098 (change 0091)
+
+- **Il ruolo predefinito quando si concede un accesso** è una scelta dell'**interfaccia**, non del servizio:
+  il servizio pretende un valore esplicito, perché un potere concesso per omissione di un campo è il modo
+  peggiore di concederlo. Il valore prudente da proporre resta `viewer`, e la conferma è di questa storia.
+- **Le operazioni di rete esistono già** (`/api/platform/v1/apps/{appId}/access`: elenco, concessione,
+  cambio di ruolo, revoca) e nessuna schermata le consuma: sono il contratto su cui questa storia
+  costruisce. L'elenco **aggiunge l'owner in testa** con `implicit: true`, perché non ha righe proprie —
+  è il costo dell'accesso implicito, ed è già pagato dal servizio.
+- **L'elenco espone indirizzo e nome** delle persone abilitate anche a chi ha ruolo `viewer` su quella
+  applicazione: sono i colleghi del proprio gruppo di lavoro, e un elenco di accessi senza nomi sarebbe
+  inutilizzabile. Se questa storia volesse restringerlo (per esempio mostrando i nomi solo a chi governa
+  gli accessi), è la sua schermata a stabilirlo.

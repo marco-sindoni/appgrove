@@ -73,7 +73,7 @@ afterAll(() => server.close())
 beforeEach(() => {
   members = [
     { id: 'u-owner', email: 'owner@test', displayName: 'Owner', role: 'owner', status: 'active' },
-    { id: 'u-admin', email: 'admin@test', displayName: 'Admin', role: 'admin', status: 'active' },
+    { id: 'u-admin', email: 'admin@test', displayName: 'Admin', role: 'member', status: 'active' },
     { id: 'u-member', email: 'member@test', displayName: 'Member', role: 'member', status: 'active' },
   ]
   invites = [
@@ -147,13 +147,19 @@ describe('MembersPage (UC 0059)', () => {
     await vi.waitFor(() => expect(screen.queryByText('pending@test')).not.toBeInTheDocument())
   })
 
-  it('cambia il ruolo di un membro (PATCH)', async () => {
-    const user = userEvent.setup()
+  /**
+   * Il ruolo di piattaforma ha due soli valori (UC 0098): non c'è nulla da scegliere, quindi la colonna
+   * è una etichetta e non un selettore. Il collaudo che esercitava il cambio di ruolo è stato
+   * **sostituito** da questo, che pretende l'assenza del comando: cancellarlo senza rimpiazzo avrebbe
+   * lasciato tornare il selettore senza che nulla diventasse rosso.
+   */
+  it('il ruolo è una etichetta, non un selettore (due soli valori di piattaforma)', async () => {
     renderWithProviders(<MembersPage />)
     await screen.findByText('admin@test')
 
-    await user.selectOptions(screen.getByLabelText('Change role: admin@test'), 'member')
-    await vi.waitFor(() => expect(members.find((m) => m.id === 'u-admin')?.role).toBe('member'))
+    expect(screen.queryAllByRole('combobox')).toHaveLength(0)
+    const adminRow = screen.getByText('admin@test').closest('tr') as HTMLElement
+    expect(within(adminRow).getByText('Member')).toBeInTheDocument()
   })
 
   it('protezioni UX: azioni distruttive disabilitate su se stessi / ultimo owner', async () => {

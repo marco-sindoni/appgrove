@@ -75,7 +75,7 @@ percorsi:
         file: tools/platform-e2e/journeys/J-QUOTA.spec.ts
 
   - id: J-MEMBERS
-    titolo: Inviti fra aziende — email reale, seconda sessione, posti esauriti, passaggio di fascia, ruoli e revoca
+    titolo: Inviti fra aziende — email reale, seconda sessione, posti esauriti, passaggio di fascia, revoca e ultimo owner
     usecases: ["0013", "0026", "0027", "0054", "0059"]
     stato: coperto
     test:
@@ -694,8 +694,14 @@ esenzioni:
   # listino e strumenti). L'indicazione di quale sarà la classificazione giusta è già scritta qui accanto,
   # per non doverla ricostruire fra sei mesi.
   - usecase: "0098"
-    categoria: non-implementato
-    motivo: Modello dati dell'accesso per applicazione — nessuna superficie propria (diventerà senza-superficie).
+    categoria: senza-superficie
+    motivo: >-
+      Modello dati dell'accesso per applicazione e ruolo di piattaforma a due valori — storia di modello
+      dati (change 0091): nessuna superficie propria. La tabella e le sue regole sono provate dai collaudi
+      di integrazione e dalla prova di separazione fra account; le superfici che la consumano arrivano con
+      0100 (elenco unico), 0107 (menu per ruolo) e 0111 (gestione utenti dentro l'applicazione). L'unico
+      effetto visibile qui è una SPARIZIONE — il selettore del ruolo nella schermata dei membri — e J-MEMBERS
+      ne pretende l'assenza invece di esercitarlo.
   - usecase: "0099"
     categoria: non-implementato
     motivo: Autorizzazione per applicazione (token, propagazione, varco) — nessuna superficie propria (diventerà senza-superficie).

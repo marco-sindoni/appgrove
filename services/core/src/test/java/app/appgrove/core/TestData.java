@@ -131,6 +131,21 @@ public class TestData {
                 id, slug, slug, "single_user", "active", OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /**
+     * Accesso di una persona a una applicazione (UC 0098); idempotente sulla terna viva. Il
+     * {@code tenant_id} è esplicito perché fuori da una richiesta autenticata il resolver è a chiusura.
+     */
+    public UUID appAccess(String tenantId, UUID appId, UUID identityId, String role) {
+        exec("insert into platform.app_access(id,tenant_id,app_id,identity_id,role,created_at,updated_at)"
+                        + " values (?,?,?,?,?,?,?)"
+                        + " on conflict (tenant_id,app_id,identity_id) where deleted_at is null do nothing",
+                UUID.randomUUID(), tenantId, appId, identityId, role,
+                OffsetDateTime.now(), OffsetDateTime.now());
+        return queryUuid("select id from platform.app_access"
+                + " where tenant_id = ? and app_id = ? and identity_id = ? and deleted_at is null",
+                tenantId, appId, identityId);
+    }
+
     /** Forza lo stato di un'app di catalogo ({@code active} | {@code inactive}) — leva di UC 0076. */
     public void appStatus(UUID appId, String status) {
         exec("update platform.app set status = ?, updated_at = ? where id = ?",
@@ -322,10 +337,49 @@ public class TestData {
         return queryString("select status from platform.identity where id = ?", identityId);
     }
 
+    /** Ruolo dell'appartenenza a un account (owner | member dopo UC 0098). */
+    public String membershipRole(String tenantId, UUID identityId) {
+        return queryString("select role from platform.membership where tenant_id = ? and identity_id = ?"
+                + " and deleted_at is null", tenantId, identityId);
+    }
+
     /** Stato dell'appartenenza a un account (leva dell'owner, distinta da {@link #userStatus}). */
     public String membershipStatus(String tenantId, UUID identityId) {
         return queryString("select status from platform.membership where tenant_id = ? and identity_id = ?"
                 + " and deleted_at is null", tenantId, identityId);
+    }
+
+    /** Cambia lo stato dell'appartenenza (leva dell'owner): serve al caso «persona non attiva» di UC 0098. */
+    public void setMembershipStatus(String tenantId, UUID identityId, String status) {
+        exec("update platform.membership set status = ?, updated_at = ?"
+                        + " where tenant_id = ? and identity_id = ? and deleted_at is null",
+                status, OffsetDateTime.now(), tenantId, identityId);
+    }
+
+    /** Accessi vivi di una persona a una applicazione (UC 0098): 0 o 1, per il vincolo della terna. */
+    public int appAccessCount(String tenantId, UUID appId, UUID identityId) {
+        return queryInt("select count(*) from platform.app_access"
+                + " where tenant_id = ? and app_id = ? and identity_id = ? and deleted_at is null",
+                tenantId, appId, identityId);
+    }
+
+    /** Accessi vivi di una applicazione, indipendentemente dalla persona. */
+    public int appAccessCount(String tenantId, UUID appId) {
+        return queryInt("select count(*) from platform.app_access"
+                + " where tenant_id = ? and app_id = ? and deleted_at is null", tenantId, appId);
+    }
+
+    /** Righe di accesso (anche cancellate) di una persona: prova che l'owner non ne ha nessuna. */
+    public int appAccessRowsOf(String tenantId, UUID identityId) {
+        return queryInt("select count(*) from platform.app_access where tenant_id = ? and identity_id = ?",
+                tenantId, identityId);
+    }
+
+    /** Ruolo vivo di una persona su una applicazione, o {@code null}. */
+    public String appAccessRole(String tenantId, UUID appId, UUID identityId) {
+        return queryString("select role from platform.app_access"
+                + " where tenant_id = ? and app_id = ? and identity_id = ? and deleted_at is null",
+                tenantId, appId, identityId);
     }
 
     /** Sospende un account con causale amministrativa (per i test di conflitto art. 18). */

@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -129,6 +130,51 @@ class MultiTenancyTest {
         assertFalse(exported.contains(TENANT_UNO), "l'export dentro il conto due non deve nominare il conto uno");
         assertFalse(exported.contains("mt-solo-del-conto-uno@example.test"),
                 "l'export dentro il conto due non deve contenere dati del conto uno");
+    }
+
+    /**
+     * Separazione fra account sulla tabella degli <b>accessi per applicazione</b> (UC 0098 §9: prova di
+     * sicurezza dedicata). Sta qui, dove vivono già le prove di separazione, e non in un file nuovo.
+     *
+     * <p>Tre affermazioni, in ordine di gravità: l'owner del conto A non <b>legge</b> gli accessi del
+     * conto B; non li <b>concede</b> a una persona del conto B (che per lui non esiste: «non trovato»,
+     * non «vietato»); e non li <b>revoca</b> passando l'identificativo dell'accesso altrui.
+     */
+    @Test
+    void appAccessesDoNotCrossTheAccountBoundary() {
+        data.account(TENANT_A, "Conto A accessi");
+        data.account(TENANT_B, "Conto B accessi");
+        UUID appId = UUID.randomUUID();
+        data.app(appId, "mt-app-0098-" + appId.toString().substring(0, 8));
+        data.subscription(TENANT_A, appId, "active");
+        data.subscription(TENANT_B, appId, "active");
+        data.user(TENANT_A, TestTokens.subjectFor(TENANT_A), "mt-owner-a@example.test", "owner");
+        data.user(TENANT_B, TestTokens.subjectFor(TENANT_B), "mt-owner-b@example.test", "owner");
+        UUID personaDiB = data.user(TENANT_B, "sub-mt-b-0098", "mt-persona-b@example.test", "member");
+        data.appAccess(TENANT_B, appId, personaDiB, "editor");
+
+        String tokenA = TestTokens.withTenant(TENANT_A, "owner");
+        String path = "/api/platform/v1/apps/" + appId + "/access";
+
+        // 1. non legge: l'accesso del conto B non compare nell'elenco visto dal conto A
+        given().header("Authorization", "Bearer " + tokenA)
+                .when().get(path)
+                .then().statusCode(200)
+                .body("identityId", not(hasItem(personaDiB.toString())));
+
+        // 2. non concede: la persona del conto B non esiste, per il conto A
+        given().header("Authorization", "Bearer " + tokenA)
+                .contentType(ContentType.JSON)
+                .body(Map.of("identityId", personaDiB.toString(), "role", "admin"))
+                .when().post(path)
+                .then().statusCode(404);
+
+        // 3. non revoca: l'accesso del conto B resta intatto (leak detector sulla riga vera)
+        given().header("Authorization", "Bearer " + tokenA)
+                .when().delete(path + "/" + personaDiB)
+                .then().statusCode(404);
+        assertEquals("editor", data.appAccessRole(TENANT_B, appId, personaDiB),
+                "l'accesso del conto B non deve essere toccato da un'operazione del conto A");
     }
 
     private static void invite(String token, String email) {
