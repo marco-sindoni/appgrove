@@ -47,6 +47,19 @@ ON CONFLICT (id) DO UPDATE SET
 -- Tutte le persone del seme hanno UNA sola appartenenza: è il caso di tutti gli utenti di oggi, e il
 -- seme deve restare la fotografia del caso normale. Il caso «una persona, due account» si costruisce
 -- nei collaudi, non qui.
+-- Prima di reinserire: si liberano le righe del SEME rimaste CANCELLATE LOGICAMENTE. Serve perché
+-- l'arbitro scelto qui sotto — l'indice unico su (tenant_id, identity_id) — è PARZIALE sulle righe vive:
+-- una riga morta non lo attiva, quindi l'inserimento non trova conflitto e sbatte invece sulla chiave
+-- primaria («duplicate key ... membership_pkey»), che nessun ON CONFLICT copre. Il caso si crea appena un
+-- collaudo rimuove una persona dall'account — cioè proprio quando si vuole rimettere il seme come prima —
+-- e faceva fallire `./dev.sh seed` lasciando la persona fuori dall'account (trovato collaudando la change
+-- 0091, corretto qui). Il filtro su `created_by = 'seed'` è ciò che rende la cancellazione lecita: si
+-- tolgono solo righe che questo file ha creato, mai quelle nate da un collaudo o da un utente. La
+-- cancellazione fisica è sicura: l'unico riferimento a `membership.id` è `identity.active_membership_id`,
+-- che è `ON DELETE SET NULL` (change 0089, decisione 15).
+DELETE FROM platform.membership
+ WHERE created_by = 'seed' AND deleted_at IS NOT NULL;
+
 INSERT INTO platform.membership (id, tenant_id, identity_id, role, status, created_at, updated_at, created_by) VALUES
   ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
@@ -71,6 +84,14 @@ ON CONFLICT (tenant_id, identity_id) WHERE deleted_at IS NULL DO UPDATE SET
 -- pricing-as-code con identificativi deterministici): la forma `INSERT … SELECT` fa sì che dove il
 -- catalogo non esiste — i servizi di sola identità applicano solo questo seed.sql — non venga inserito
 -- nulla, invece di fallire.
+-- Stessa cura delle appartenenze, e per la stessa ragione: l'indice unico è PARZIALE sulle righe vive,
+-- quindi una riga REVOCATA occupa la chiave primaria senza attivare l'ON CONFLICT, e l'inserimento sbatte
+-- su «duplicate key ... app_access_pkey». Qui il caso è ancora più facile da incontrare: revocare un
+-- accesso è un'operazione ordinaria (e la revoca è per definizione logica), quindi bastava un collaudo
+-- del §4 di UC 0098 per rendere `./dev.sh seed` non più ripetibile.
+DELETE FROM platform.app_access
+ WHERE created_by = 'seed' AND deleted_at IS NOT NULL;
+
 INSERT INTO platform.app_access (id, tenant_id, app_id, identity_id, role, granted_by, created_at, updated_at, created_by)
 -- I cast espliciti servono: in un `INSERT … SELECT` i letterali della SELECT nascono `text` e non
 -- vengono adattati alla colonna come accade in un `INSERT … VALUES`.

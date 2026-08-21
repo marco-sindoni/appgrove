@@ -593,6 +593,37 @@ in ordine:
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).
 
+## Difetto — l'esportazione dei dati dell'account non è collaudabile in locale: `500` per una coda che non esiste (trovato 2026-08-21)
+
+**Il fatto.** `POST /api/platform/v1/gdpr/exports` con `{"kind":"account"}` come `owner@acme.test` risponde **`500`**.
+Nel registro del servizio `core`:
+`software.amazon.awssdk.services.sqs.model.QueueDoesNotExistException: The specified queue does not exist`,
+riportata da `UncaughtExceptionMapper` — cioè eccezione **non gestita**.
+
+**Causa.** L'esportazione dell'account interpella **tutte** le applicazioni a cui l'account ha diritto. Il seme dà ad
+Acme abbonamenti a `teams`, `legacy` e `notes`: applicazioni **del catalogo di prova**, che non hanno un servizio
+reale nel monorepo e quindi non hanno la loro coda locale. In ElasticMQ esistono solo `gdpr-export-crm`,
+`gdpr-export-fatture`, `gdpr-export-platform` (più le rispettive code di scarto) — le sole app con un servizio vero.
+In cloud il problema non si porrebbe: ogni app nasce dal modulo Terraform con la propria coda. È quindi un difetto
+**dell'ambiente locale**, non del codice dell'esportazione.
+
+**Perché conta.** Rende non verificabile a mano un diritto GDPR (art. 20) proprio nell'ambiente in cui si collauda:
+è l'ultima riga del §9 della guida della change `0091`, e nessuno l'aveva mai eseguita. Inoltre il modo in cui
+fallisce è sbagliato a prescindere dalla causa: un `500` con eccezione non gestita, invece di saltare le
+applicazioni prive di coda o di rispondere con un errore comprensibile.
+
+**Due rimedi, indipendenti.**
+1. *Ambiente*: far creare allo stack locale una coda per **ogni** applicazione del catalogo, non solo per quelle con
+   un servizio; oppure non dare al seme abbonamenti ad applicazioni senza servizio (ma servono ad altri collaudi,
+   quindi la prima via è preferibile).
+2. *Robustezza*: l'esportazione deve **tollerare** un'applicazione che non risponde — saltarla registrando il fatto,
+   o completare in stato parziale dichiarato. Un diritto dell'interessato che si blocca perché una coda non esiste è
+   fragile anche in cloud, dove una coda può esistere ed essere irraggiungibile.
+
+**Verificato per altra via, nel frattempo**: l'atteso della guida è corretto. `PlatformDataContract.java:112` include
+l'entità `app_access` nell'esportazione con `app` (slug), `role` e `identity_id`, esattamente come promesso.
+Owner: **#08 (compliance/privacy)** con #11 (sviluppo locale) per la parte ambientale.
+
 ## Difetto — due corse di `run-tests.sh` insieme producono rossi falsi (trovato e CORRETTO 2026-08-21)
 
 **Il fatto.** Durante il collaudo manuale del lotto 0088–0092, sviluppatore e agente hanno lanciato

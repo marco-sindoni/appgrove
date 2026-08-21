@@ -28,6 +28,12 @@ Ogni comando della guida è **completo e pronto da incollare**: nessuna scorciat
 > Se lo stack era già acceso, rilancia `./app-start.sh`: il seme è idempotente ed è **cambiato** con questa change.
 > Il ri-seme deve aggiornare le righe esistenti **senza errori**: la persona `admin@acme.test` passa da ruolo
 > `admin` a `member`. Un messaggio `duplicate key` sarebbe un difetto da riportare.
+>
+> **Se invece hai appena azzerato la banca dati** (per esempio venendo dal collaudo della 0090), qui non c'è
+> nulla da *aggiornare*: il seme nasce già col nuovo assetto, e `admin@acme.test` è `member` dalla nascita. La
+> conversione delle righe preesistenti non è quindi osservabile, e non è un difetto: quello che resta da
+> verificare è l'esito, cioè le righe attese del punto 2. Per vedere la conversione all'opera servirebbe una
+> base creata prima della change 0091 — ed è materia di UC 0113, che possiede la migrazione dei dati reali.
 
 ### 0.1 La migrazione è passata
 
@@ -206,6 +212,27 @@ curl -sk -o /dev/null -w '%{http_code}\n' -X POST \
 **Risultato atteso** — **`404`**, non `403`. La differenza *è* il punto: un `403` direbbe «esiste ma non puoi», cioè
 rivelerebbe a Acme l'esistenza di una persona del conto di Bob.
 
+> **Attenzione se vieni dal collaudo della change 0090.** Là il §1 fa **entrare Bob in Acme** (accetta l'invito):
+> è il cuore di quella storia. Da quel momento Bob **è** una persona di Acme, quindi questa chiamata risponde
+> **`201`** — e ha ragione. Non è un difetto: è l'atteso di questo punto che presuppone Bob estraneo, vero solo
+> sul seme intatto.
+>
+> Per provare davvero il caso serve una persona di un **altro** conto. Sul seme va bene
+> `admin@appgrove.test`, che sta nel conto «Appgrove Platform»:
+>
+> ```bash
+> ESTRANEO=$(docker compose -f dev/docker-compose.yml exec -T postgres \
+>   psql -U appgrove -d appgrove -tAc "select id from platform.identity where email='admin@appgrove.test';")
+> curl -sk -o /dev/null -w '%{http_code}\n' -X POST \
+>   https://app.local.appgrove.app/api/platform/v1/apps/$CRM/access \
+>   -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+>   -d "{\"identityId\":\"$ESTRANEO\",\"role\":\"viewer\"}"
+> ```
+>
+> Atteso **`404`** con «Utente non trovato», e **nessuna** riga creata in `platform.app_access`. Se invece hai
+> concesso per errore un accesso a Bob, revocalo:
+> `curl -sk -X DELETE .../apps/$CRM/access/$BOB -H "Authorization: Bearer $TOKEN"` (atteso `204`).
+
 ### 4.5 Una persona non attiva non riceve accesso
 
 **Azione** — sospendi `member@acme.test` dalla schermata **Members** del backoffice (come owner), poi:
@@ -347,8 +374,10 @@ Esci ed entra come **`admin@acme.test`**.
 
 | Cosa guardare | Risultato atteso |
 |---|---|
-| Menu laterale | **non** compaiono più **Account**, **Billing** e **Members**: erano riservate a owner e admin, e `admin` non è più un ruolo di conto. È il modello nuovo, **non** un difetto |
-| Rotta `/members` scritta a mano nella barra dell'indirizzo | la pagina non è utilizzabile: la rotta è protetta o le sue letture rispondono «vietato» |
+| Menu laterale | **non** compare più **Members**. **Account** e **Billing** invece **restano visibili**, e va bene così: questa change non le tocca. Nasconderle e proteggerle è di [UC 0107](../../docs/usecases/22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md), che lo dichiara esplicitamente («Account e Billing oggi non hanno guardia e vanno protette»). Verificato collaudando: come collaboratore, `GET /accounts/me` e `GET /me/subscriptions` rispondono **200**, mentre `GET /users` risponde **403** — cioè l'elenco delle persone è già protetto, il governo dell'account non ancora |
+| Perché «Members» sparisce, se la condizione non è stata riscritta | curiosità utile a chi implementerà UC 0107: in `shell/Sidebar.tsx` la guardia è **ancora** `owner ∨ admin`. La voce scompare perché la change **0092** ha tolto `admin` dal claim `roles` del token, quindi per questa persona la condizione è falsa. Funziona, ma per via indiretta: la riscrittura in `isOwner` resta da fare |
+| Rotta `/members` scritta a mano nella barra dell'indirizzo | la pagina non è utilizzabile: la rotta è protetta o le sue letture rispondono «vietato» (verificato: `GET /users` → **403**) |
+| Rotte `/account` e `/billing` scritte a mano | **sono utilizzabili**, ed è lo stesso punto di sopra: la guardia arriva con UC 0107. Non riportarlo come difetto di questa change |
 | Il resto | Dashboard, catalogo, supporto e «I miei dati» funzionano **come prima** |
 
 > È la voce più importante della verifica visiva, e quella che sorprende: è il senso della storia. Il potere di quella
@@ -362,6 +391,6 @@ Esci ed entra come **`admin@acme.test`**.
 | Accesso, uscita e ripresa della sessione con tutti gli utenti del seme | funzionano come prima |
 | Selettore dell'account (se hai costruito una persona con due conti) | funziona come prima |
 | Sezione **Billing** entrando come `owner@acme.test` | funziona come prima |
-| Mini-CRM: elenco contatti, creazione, posti | funzionano come prima — il varco dei ruoli nei servizi delle applicazioni è di UC 0099, questa change non lo tocca |
+| Mini-CRM: elenco contatti, creazione, posti | funzionano come prima **rispetto alla 0091**, che il varco dei ruoli non lo tocca. **Dopo la change 0092** (UC 0099) però quel varco **esiste** e convive con quello dei posti: per usare il Mini-CRM servono ora **entrambi** — il posto *e* l'accesso all'applicazione. Nel seme i due sono coerenti (`admin@acme.test` ha ruolo `admin` sul `crm`, `member@acme.test` ha `editor`), quindi non vedrai differenze; le vedresti solo togliendo a mano una riga di `platform.app_access`. Il ritiro del vecchio varco dei posti è di UC 0111 |
 | «I miei dati» → esporta i dati del conto | il file scaricato contiene una sezione **`app_access`** con lo *slug* dell'applicazione, il ruolo e l'identificativo della persona: dato nuovo nell'esportazione, dichiarato nel manifesto |
 | Elimina un conto di prova (creane uno nuovo dalla registrazione) | l'eliminazione va a termine: le righe di accesso sono cancellate **prima** delle appartenenze, senza errori di chiave esterna |
