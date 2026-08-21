@@ -100,6 +100,70 @@ describe('Modulo crm', () => {
     expect(screen.getByRole('button', { name: 'Membri' })).toBeInTheDocument()
   })
 
+  it('un rifiuto che PARLA vince sul testo del posto: si mostra la frase del server', async () => {
+    // UC 0099: i varchi sono tre (posto, accesso all'applicazione, ruolo) e rispondono tutti 403.
+    // Solo il server sa quale ha risposto: se manda la sua frase, è quella che la persona deve leggere.
+    server.use(
+      http.get(`${API}/contacts`, () =>
+        HttpResponse.json(
+          {
+            type: 'about:blank',
+            title: 'Forbidden',
+            status: 403,
+            detail: 'Non hai accesso a Mini-CRM: chiedi l\'abilitazione al titolare dell\'account.',
+          },
+          { status: 403, headers: { 'content-type': 'application/problem+json' } },
+        ),
+      ),
+    )
+    renderApp({ route: '/app/crm', entitled: ['crm'] })
+    expect(
+      await screen.findByText(/Non hai accesso a Mini-CRM/i, {}, { timeout: 4000 }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Non hai un posto assegnato/i)).not.toBeInTheDocument()
+  })
+
+  it('in creazione, un ruolo insufficiente dice QUALE ruolo serve, non «si è verificato un errore»', async () => {
+    server.use(
+      http.post(`${API}/contacts`, () =>
+        HttpResponse.json(
+          {
+            type: 'about:blank',
+            title: 'Forbidden',
+            status: 403,
+            detail: 'Per questa operazione serve almeno il ruolo editor: il tuo ruolo è viewer.',
+          },
+          { status: 403, headers: { 'content-type': 'application/problem+json' } },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderApp({ route: '/app/crm/new', entitled: ['crm'] })
+    await user.type(await screen.findByLabelText('Nome'), 'Contatto Vietato')
+    await user.click(screen.getByRole('button', { name: 'Crea contatto' }))
+
+    expect(await screen.findByText(/serve almeno il ruolo editor/i)).toBeInTheDocument()
+    expect(screen.queryByText(/Si è verificato un errore/i)).not.toBeInTheDocument()
+  })
+
+  it('un guasto del server NON espone il suo dettaglio: resta il messaggio generico', async () => {
+    server.use(
+      http.post(`${API}/contacts`, () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Internal Server Error', status: 500, detail: 'PSQLException: relation does not exist' },
+          { status: 500, headers: { 'content-type': 'application/problem+json' } },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderApp({ route: '/app/crm/new', entitled: ['crm'] })
+    await user.type(await screen.findByLabelText('Nome'), 'Contatto Sfortunato')
+    await user.click(screen.getByRole('button', { name: 'Crea contatto' }))
+
+    expect(await screen.findByText(/Si è verificato un errore/i)).toBeInTheDocument()
+    expect(screen.queryByText(/PSQLException/)).not.toBeInTheDocument()
+  })
+
   it('stato vuoto quando non ci sono contatti', async () => {
     contacts = []
     renderApp({ route: '/app/crm', entitled: ['crm'] })

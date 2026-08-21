@@ -10,6 +10,7 @@ import {
   useInteractions,
   useUpdateContact,
 } from '../api/hooks'
+import { refusalMessage } from '../api/errors'
 import { StageBadge } from '../components/StageBadge'
 import { kindLabel, stageLabel, t } from '../strings'
 
@@ -38,8 +39,8 @@ export function ContactDetailScreen() {
     setError(null)
     try {
       await update.mutateAsync({ id, body: { stage } })
-    } catch {
-      setError(t.errorGeneric)
+    } catch (err) {
+      setError(refusalMessage(err, t.errorGeneric))
     }
   }
 
@@ -49,8 +50,8 @@ export function ContactDetailScreen() {
     try {
       await remove.mutateAsync(id)
       navigate('..', { relative: 'path' })
-    } catch {
-      setError(t.errorGeneric)
+    } catch (err) {
+      setError(refusalMessage(err, t.errorGeneric))
       setConfirmDelete(false)
     }
   }
@@ -62,8 +63,8 @@ export function ContactDetailScreen() {
     try {
       await addInteraction.mutateAsync({ kind, note })
       setNote('')
-    } catch {
-      setError(t.errorGeneric)
+    } catch (err) {
+      setError(refusalMessage(err, t.errorGeneric))
     }
   }
 

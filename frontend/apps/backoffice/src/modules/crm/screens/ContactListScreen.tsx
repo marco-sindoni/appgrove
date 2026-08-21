@@ -17,6 +17,7 @@ import { useContacts } from '../api/hooks'
 import { QuotaBanner } from '../components/QuotaBanner'
 import { ContactAvatar } from '../components/ContactAvatar'
 import { StageBadge } from '../components/StageBadge'
+import { refusalMessage } from '../api/errors'
 import { t } from '../strings'
 
 const STAGES = ['lead', 'qualified', 'negotiating', 'won', 'lost'] as const
@@ -29,9 +30,12 @@ export function ContactListScreen() {
   const contacts = useContacts({ q, stage })
   const rows = contacts.data?.content ?? []
   const filtered = q !== '' || stage !== ''
-  // Il dominio è gated dal possesso di un posto: un 403 qui non è un guasto, è "non hai un posto".
-  // Va detto per quello che è, con la via d'uscita (chiedere un posto in «Membri»), non con un retry cieco.
-  const noSeat = (contacts.error as ApiError | null)?.status === 403
+  // Un 403 qui non è un guasto: è un varco che ha detto no. Ma i varchi sono TRE e parlano di cose
+  // diverse — il posto (UC 0054), l'accesso all'applicazione e il ruolo su di essa (UC 0099) — e solo il
+  // server sa quale ha risposto. Si mostra quindi la SUA frase, che nomina il varco e la via d'uscita;
+  // il testo sul posto resta come ripiego per quando il server non ne manda una.
+  const refused = (contacts.error as ApiError | null)?.status === 403
+  const refusalText = refused ? refusalMessage(contacts.error, t.errorNoSeat) : null
 
   return (
     <div className="space-y-[22px]">
@@ -53,13 +57,13 @@ export function ContactListScreen() {
 
       <QuotaBanner />
 
-      {noSeat ? (
+      {refused ? (
         <div
           role="status"
           className="rounded-lg border border-line bg-surface px-6 py-12 text-center shadow-sm"
         >
           <Icon name="lock" size={42} className="text-fg-faint" />
-          <p className="mx-auto mt-3 max-w-md text-[15px] font-bold text-fg">{t.errorNoSeat}</p>
+          <p className="mx-auto mt-3 max-w-md text-[15px] font-bold text-fg">{refusalText}</p>
           <div className="mt-4">
             <Button variant="secondary" size="sm" onClick={() => navigate('members')}>
               <Icon name="group" size={18} />

@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
 import { Field } from '../../../pages/auth/Field'
 import { useCreateContact } from '../api/hooks'
+import { refusalMessage } from '../api/errors'
 import type { CreateContact } from '../api/client'
 import { t } from '../strings'
 
@@ -42,8 +43,8 @@ export function ContactCreateScreen() {
     try {
       await create.mutateAsync(body)
       navigate('..', { relative: 'path' })
-    } catch {
-      setError(t.errorGeneric)
+    } catch (err) {
+      setError(refusalMessage(err, t.errorGeneric))
     }
   })
 

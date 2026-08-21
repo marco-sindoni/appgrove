@@ -36,6 +36,7 @@ usecases_con_superficie:
   - "0095" # Pagina "App catalog" del backoffice (vetrina, stati, ricerca, paginazione)
   - "0096" # Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute)
   - "0097" # Dashboard operativa del workspace (+ Workspace ID in Account)
+  - "0099" # Rifiuti dell'autorizzazione per applicazione, letti a schermo nel Mini-CRM
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
   - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
 
@@ -358,6 +359,23 @@ percorsi:
       sulla metrica a giacenza (posti) del mini-CRM dentro J-MEMBERS. Da estendere quando `fatture` avrà
       una fascia a pagamento (decisione di listino, skill `pricing-change`).
     possiede: "0091"
+
+  - id: J-APP-ROLE-REFUSALS
+    titolo: Autorizzazione per applicazione — i due rifiuti si distinguono a parole sullo schermo
+    usecases: ["0099"]
+    stato: da-coprire
+    motivo: >-
+      L'esito visibile della storia sono DUE rifiuti che una persona legge e distingue: «non hai accesso a
+      questa applicazione, chiedi l'abilitazione» e «serve almeno editor, il tuo ruolo è viewer». La prima
+      classificazione li dava per non-superficie («nessun comando visibile»), e il 2026-08-21 il collaudo
+      manuale ha mostrato il costo dell'errore: le schermate del Mini-CRM buttavano via la frase del server
+      e mostravano «si è verificato un errore», senza che nulla diventasse rosso. Oggi i due messaggi sono
+      coperti al livello di modulo (`frontend/apps/backoffice/src/modules/crm/crm.test.tsx`), non
+      end-to-end. L'impedimento al percorso vero è concreto e non è pigrizia: il Mini-CRM è `inactive` nel
+      listino e accenderlo è un cambiamento GLOBALE di piattaforma, non per-conto — un percorso che lo
+      accende disturberebbe tutti quelli in esecuzione in parallelo. Si copre quando l'accensione di
+      un'applicazione sarà isolabile per conto, o quando `fatture` (già attiva) adotterà il varco del ruolo.
+    possiede: "0099"
 
   - id: J-PWD-REVOKE
     titolo: Reimpostazione password — le sessioni aperte in precedenza smettono di valere
@@ -702,16 +720,6 @@ esenzioni:
       0100 (elenco unico), 0107 (menu per ruolo) e 0111 (gestione utenti dentro l'applicazione). L'unico
       effetto visibile qui è una SPARIZIONE — il selettore del ruolo nella schermata dei membri — e J-MEMBERS
       ne pretende l'assenza invece di esercitarlo.
-  - usecase: "0099"
-    categoria: senza-superficie
-    motivo: >-
-      Autorizzazione per applicazione: varco riusabile in commons, ruolo fuori dal token (change 0092) —
-      storia di piattaforma senza superficie propria. Non aggiunge né toglie alcun comando visibile: il
-      claim del token perde un valore, nasce una lettura di servizio («dove posso entrare e con che ruolo»)
-      e un varco dichiarativo che le applicazioni usano. Provata dai collaudi di unità e di integrazione dei
-      tre servizi (varco a tre esiti, invalidazione della copia locale, fallimento chiuso, parità del claim
-      fra locale e cloud). Le superfici che consumeranno la lettura arrivano con 0107 (menu e rotte per
-      ruolo) e 0111 (gestione utenti dentro l'applicazione).
   - usecase: "0100"
     categoria: non-implementato
     motivo: «Members» come elenco unico senza ruolo — avrà superficie, coperta dal percorso di livello 2 dei membri e da J-ROLES.
