@@ -1,5 +1,7 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.access.AppRole;
+
 /**
  * Regola <b>unica</b> di chi-può-cosa sugli accessi per applicazione (UC 0098 §8), sul modello di
  * {@code EntitlementAccess}: classe senza stato e <b>senza accesso alla banca dati</b>. I chiamanti

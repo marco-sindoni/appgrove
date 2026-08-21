@@ -52,7 +52,7 @@ Processo di Incident Response predisposto in anticipo (le 72 ore partono da quan
 
 ## App Mini-CRM (gestione contatti B2B multi-utente)
 
-Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel proprio CRM (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi.
+Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel proprio CRM (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi. Lo stesso vale per le due **copie locali** dello schema (`entitlement_projection`, `app_role_projection`): contengono l'identificativo dell'account, l'identificativo interno di autenticazione della persona e il suo ruolo sull'app — nessun nome, nessun indirizzo. Sono la copia di dati di cui core è titolare (`platform.app_access`, UC 0098/0099), servono solo a non interrogare core a ogni richiesta, e vengono cancellate fisicamente con l'account quando si esercita il diritto di cancellazione (il conteggio entra nella traccia di controllo della purga).
 
 ### Trattamenti
 
@@ -66,7 +66,7 @@ Dati dei contatti (persone delle organizzazioni clienti) inseriti dal tenant nel
 
 ## App Fatture (fatturazione B2C single-user)
 
-Dati dei clienti finali inseriti dal tenant nelle proprie fatture (schema `app_fatture`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13).
+Dati dei clienti finali inseriti dal tenant nelle proprie fatture (schema `app_fatture`). Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13). Le due **copie locali** dello schema (`entitlement_projection`, `app_role_projection`) contengono l'identificativo dell'account, l'identificativo interno di autenticazione della persona e il suo ruolo sull'app — nessun nome, nessun indirizzo: sono la copia di dati di cui core è titolare (`platform.app_access`, UC 0098/0099), servono solo a non interrogare core a ogni richiesta e vengono cancellate fisicamente con l'account quando si esercita il diritto di cancellazione.
 
 ### Trattamenti
 

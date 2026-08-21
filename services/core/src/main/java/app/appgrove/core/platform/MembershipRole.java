@@ -7,12 +7,12 @@ package app.appgrove.core.platform;
  *   <li>{@code owner} — chi possiede l'account: unico, non rimovibile, non retrocedibile, con accesso
  *       <b>implicito</b> a tutte le applicazioni dell'account;</li>
  *   <li>{@code member} — tutte le altre persone dell'account. Che cosa possono <i>fare</i> non lo dice
- *       questo ruolo: lo dice il ruolo su ciascuna applicazione ({@link AppRole}, {@code platform.app_access}).</li>
+ *       questo ruolo: lo dice il ruolo su ciascuna applicazione ({@code AppRole} in commons, {@code platform.app_access}).</li>
  * </ul>
  *
  * <p><b>Il valore {@code admin} è stato ritirato da questo livello</b> (UC 0098): era un potere che
  * valeva per tutto — ogni applicazione e anche le schermate di piattaforma — e riappare, molto più
- * circoscritto, come {@link AppRole#admin} su <i>una</i> applicazione. La conversione delle righe
+ * circoscritto, come {@code AppRole.admin} su <i>una</i> applicazione. La conversione delle righe
  * esistenti ({@code admin} → {@code member} più accesso {@code admin} su ogni applicazione dell'account)
  * è di UC 0113, con il vincolo di controllo che la sigilla.
  *

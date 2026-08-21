@@ -173,3 +173,15 @@ il collegamento all'invito, come oggi.
   perché la prima reazione di chi invita qualcuno che ha già un account altrove è «ma la paga già
   l'altra azienda». Applicare la regola — contare i posti e rifiutare quando sono esauriti — è di questa
   storia.
+
+### Lasciato da UC 0099 (change 0092)
+
+- **La voce di catalogo di piattaforma dei posti va ESCLUSA dalla lettura «dove posso entrare»**
+  (`GET /api/platform/v1/me/app-access`, change 0092). Quella lettura deriva l'elenco dal diritto
+  dell'account: una voce di catalogo che rappresenta i *posti* e non una applicazione comparirebbe nel menu
+  laterale come se fosse una applicazione da aprire. Non è stato possibile implementare l'esclusione in
+  anticipo perché la voce **non esiste ancora** e nessun attributo del catalogo distingue una applicazione di
+  marketplace da una voce di piattaforma: un elenco di slug da escludere sarebbe una regola destinata a
+  invecchiare in silenzio. Questa storia, che crea la voce, deve escluderla **nello stesso momento** —
+  il punto esatto del codice è segnato da un commento in `MeAppAccessResource.entitledSlugs()`, e la scelta
+  naturale è un attributo del catalogo («questa voce è una applicazione da aprire?») invece di un elenco.

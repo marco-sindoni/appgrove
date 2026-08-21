@@ -1,6 +1,7 @@
 package app.appgrove.commons.entitlement.projection;
 
 import app.appgrove.commons.entitlement.EntitlementView;
+import app.appgrove.commons.projection.LocalProjection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,7 +31,12 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * fallire all'avvio.
  */
 @ApplicationScoped
-public class EntitlementProjectionStore {
+public class EntitlementProjectionStore implements LocalProjection {
+
+    @Override
+    public String name() {
+        return "entitlement_projection";
+    }
 
     /** Identificatore SQL qualificato: la config non può iniettare SQL arbitrario. */
     private static final Pattern TABLE_NAME = Pattern.compile("[a-z_][a-z0-9_]*(\\.[a-z_][a-z0-9_]*)?");
@@ -45,6 +51,7 @@ public class EntitlementProjectionStore {
     Optional<String> table;
 
     /** {@code true} se il servizio ha una proiezione configurata (è un'app di marketplace). */
+    @Override
     public boolean enabled() {
         return table.isPresent();
     }
@@ -71,6 +78,7 @@ public class EntitlementProjectionStore {
      *
      * @return righe cancellate (entra nell'audit della purge come prova)
      */
+    @Override
     public int purgeTenant(String tenantId) {
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement("delete from " + table() + " where tenant_id = ?")) {
@@ -145,6 +153,7 @@ public class EntitlementProjectionStore {
      *
      * @return righe marcate (0 = nessuna proiezione per quel tenant: la prima richiesta la creerà)
      */
+    @Override
     public int markStale(String tenantId) {
         String sql = "update " + table() + " set stale = true, invalidated_at = ? where tenant_id = ?";
         try (Connection c = ds.getConnection();

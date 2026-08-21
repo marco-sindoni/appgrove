@@ -3,8 +3,8 @@ package app.appgrove.core;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import app.appgrove.commons.access.AppRole;
 import app.appgrove.core.platform.AppAccessRules;
-import app.appgrove.core.platform.AppRole;
 import app.appgrove.core.platform.MembershipRole;
 import org.junit.jupiter.api.Test;
 

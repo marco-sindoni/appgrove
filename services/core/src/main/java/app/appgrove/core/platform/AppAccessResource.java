@@ -1,8 +1,10 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.access.AppRole;
 import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.entitlement.EntitlementView;
 import app.appgrove.commons.web.ProblemDetail;
+import app.appgrove.core.billing.EntitlementInvalidationPublisher;
 import app.appgrove.core.billing.EntitlementReadModel;
 import app.appgrove.core.catalog.App;
 import app.appgrove.core.catalog.AppRepository;
@@ -49,9 +51,11 @@ import org.jboss.logging.Logger;
  * <p>L'<b>owner</b> non ha righe di accesso: gliele si aggiunge in testa in lettura, e ogni tentativo di
  * concedergli, cambiargli o revocargli l'accesso è rifiutato — non è un ruolo di applicazione.
  *
- * <p><b>Nessun evento viene emesso.</b> L'invalidazione della copia locale del ruolo nei servizi delle
- * applicazioni è il meccanismo di UC 0099: i tre punti di scrittura di questa classe sono i luoghi da cui
- * andrà emessa, e lo dicono a voce alta perché quella storia non debba cercarli.
+ * <p><b>Ogni scrittura emette l'evento di invalidazione</b> (UC 0099) sulla coda dell'applicazione, la
+ * stessa già usata per i diritti d'accesso: il servizio dell'applicazione marca da rinfrescare la propria
+ * copia locale del ruolo e il nuovo ruolo vale entro pochi secondi, <b>senza che la persona rientri</b>.
+ * L'evento parte dopo che la scrittura è stata applicata e non è bloccante: un guasto del bus non annulla
+ * una revoca decisa (la copia scade comunque per durata massima, che è la rete di questo caso).
  */
 @Path("/api/platform/v1/apps/{appId}/access")
 @Authenticated
@@ -92,6 +96,9 @@ public class AppAccessResource {
 
     @Inject
     AuditLogger audit;
+
+    @Inject
+    EntitlementInvalidationPublisher invalidation;
 
     // ── lettura ──────────────────────────────────────────────────────────────
 
@@ -187,7 +194,7 @@ public class AppAccessResource {
             throw new ClientErrorException(
                     "Accesso già presente per questa persona su questa applicazione.", Response.Status.CONFLICT, e);
         }
-        // UC 0099: da qui andrà emesso l'evento di invalidazione della copia locale del ruolo.
+        invalidation.invalidate(me.getTenantId(), appId, "app_access.granted");
         audit.success("app_access.granted", Map.of(
                 "app_id", appId.toString(),
                 "user_id", target.getIdentityId().toString(),
@@ -246,7 +253,7 @@ public class AppAccessResource {
         AppAccess access = accesses.findOne(appId, identityId)
                 .orElseThrow(() -> new NotFoundException("Accesso non trovato"));
         access.markDeleted();
-        // UC 0099: da qui andrà emesso l'evento di invalidazione della copia locale del ruolo.
+        invalidation.invalidate(me.getTenantId(), appId, "app_access.revoked");
         audit.success("app_access.revoked", Map.of(
                 "app_id", appId.toString(),
                 "user_id", identityId.toString(),
@@ -262,7 +269,7 @@ public class AppAccessResource {
         AppRole before = access.getRole();
         access.setRole(role);
         if (before != role) {
-            // UC 0099: da qui andrà emesso l'evento di invalidazione della copia locale del ruolo.
+            invalidation.invalidate(access.getTenantId(), appId, "app_access.role_changed");
             audit.success("app_access.role_changed", Map.of(
                     "app_id", appId.toString(),
                     "user_id", access.getIdentityId().toString(),

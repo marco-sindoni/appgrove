@@ -2,6 +2,7 @@ package app.appgrove.auth.local;
 
 import app.appgrove.auth.AuthUser;
 import app.appgrove.auth.InvalidTokenException;
+import app.appgrove.commons.membership.PlatformRoles;
 import io.smallrye.jwt.build.Jwt;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -101,12 +102,23 @@ public class TokenService {
         return platformAdminSubjects.contains(sub);
     }
 
-    /** Gruppi/ruoli del token: ruolo tenant (+ platform-admin se il subject è configurato). */
+    /**
+     * Gruppi/ruoli del token: <b>ruolo di piattaforma</b> (+ {@code platform-admin} se il subject è
+     * configurato). Nient'altro: il claim non porta i ruoli per applicazione, ed è la decisione centrale
+     * di UC 0099 — nel token un cambio di ruolo avrebbe effetto solo al rinnovo, e un account con dieci
+     * applicazioni gonfierebbe ogni richiesta. Quei ruoli si leggono dal core ({@code /me/app-access})
+     * attraverso il varco condiviso dei servizi.
+     *
+     * <p>Il valore {@code admin}, ritirato da UC 0098, viene convertito in {@code member} da
+     * {@link PlatformRoles#claimRole}: gemello di {@code _roles_for} nella funzione che compone il token
+     * in cloud. La parità fra locale e cloud è un invariante — se i due divergono, i servizi hanno due
+     * comportamenti e il difetto si vede solo in produzione.
+     */
     public Set<String> groupsFor(AuthUser user) {
         Set<String> groups = new java.util.LinkedHashSet<>();
-        groups.add(user.role());
+        groups.add(PlatformRoles.claimRole(user.role()));
         if (isPlatformAdmin(user.sub())) {
-            groups.add("platform-admin");
+            groups.add(PlatformRoles.PLATFORM_ADMIN);
         }
         return groups;
     }

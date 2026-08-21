@@ -152,3 +152,19 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
   applicazione: sono i colleghi del proprio gruppo di lavoro, e un elenco di accessi senza nomi sarebbe
   inutilizzabile. Se questa storia volesse restringerlo (per esempio mostrando i nomi solo a chi governa
   gli accessi), è la sua schermata a stabilirlo.
+
+### Lasciato da UC 0099 (change 0092)
+
+- **Nel Mini-CRM convivono DUE varchi delle persone**, e la fine della convivenza è di questa storia. Il
+  varco nuovo è quello di piattaforma (`@RequiresAppRole` in `commons`: letture `viewer`, scritture
+  `editor` su contatti e interazioni); quello vecchio è il **posto** (`SeatAccess` + tabella `seat` +
+  `SeatResource`), il meccanismo che quell'applicazione si era costruita da sé. Due varchi contemporanei
+  sono accettabili per una change, **non per due**: quando questa storia rifà la schermata di gestione delle
+  persone dentro l'applicazione, il posto va **ritirato** — varco, tabella, API e schermata — e non
+  affiancato una terza volta. Conseguenza pratica da non dimenticare: oggi, per usare il Mini-CRM, servono
+  *entrambi* (un posto **e** un ruolo).
+- **Il ruolo della persona è già disponibile all'interfaccia**: la lettura
+  `GET /api/platform/v1/me/app-access` restituisce `appId`, `appSlug`, `appName` e `role`, e i rifiuti del
+  varco portano identificativi stabili (`urn:appgrove:app-role:no-access`, `:insufficient`, `:unavailable`)
+  più i campi `requiredRole` e `role`. La schermata può quindi disabilitare i comandi invece di far
+  scoprire il rifiuto premendo un pulsante.

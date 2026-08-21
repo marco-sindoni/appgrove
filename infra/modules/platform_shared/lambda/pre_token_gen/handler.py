@@ -25,6 +25,13 @@ manomissione di quella colonna diventi un varco fra due aziende — l'invariante
 «account solo dal token verificato» resta intatta, perché cambia la funzione
 che CALCOLA il claim, non chi se ne fida.
 
+Con UC 0099 il claim `roles` porta SOLO il ruolo di piattaforma (`owner` o
+`member`, più `platform-admin` per chi amministra la piattaforma): niente ruoli
+per applicazione, che si leggono dal core (`/me/app-access`) attraverso il varco
+condiviso dei servizi. Il valore `admin`, ritirato da UC 0098, viene convertito
+in `member` mentre si compone il claim (vedi `_claim_role`): è la tolleranza dei
+dati non ancora convertiti, e la ritira UC 0113.
+
 **Fail-closed**: se la persona non ha un'appartenenza attiva, NON viene iniettato
 alcun claim → il token esce senza `tenant_id`/`roles` e i servizi lo rifiutano
 (TenantResolver fail-closed, UC 0012). Non solleviamo eccezioni per non
@@ -186,10 +193,45 @@ def _lookup_active_account(sub):
     return (outcome, (chosen[1], chosen[2]))
 
 
+# Valore RITIRATO dal ruolo di piattaforma (UC 0098): l'appartenenza ammette due soli
+# valori, `owner` e `member`. Un ambiente i cui dati non sono ancora stati convertiti
+# (la conversione è di UC 0113) può però avere righe che valgono ancora `admin`.
+_RETIRED_PLATFORM_ROLE = "admin"
+
+
+def _claim_role(role):
+    """Il ruolo di piattaforma come va scritto nel claim (UC 0099): `admin` → `member`.
+
+    Si converte QUI, nel momento in cui si compone il claim, e non nel modello: una
+    persona di un ambiente non convertito accede così con il potere MINORE invece che
+    con NESSUN potere — che è il comportamento giusto, perché il valore vecchio
+    significava «membro con poteri in più», non «persona sconosciuta».
+
+    DA TOGLIERE con UC 0113, insieme alla conversione dei dati reali e al ritiro della
+    tolleranza dei token già emessi (`Roles.ADMIN` nei servizi): a quel punto nessuna
+    riga vale più `admin` e questa funzione diventa codice morto. Prima di quel giorno,
+    toglierla chiude fuori qualcuno.
+
+    PARITÀ con il gemello Java
+    (services/commons/src/main/java/app/appgrove/commons/membership/PlatformRoles.java,
+    usato dal fornitore di identità locale): stessa regola, attuata due volte perché
+    questa funzione gira dentro l'infrastruttura e non può chiamare il codice dei
+    servizi. Se una cambia, l'altra cambia con essa — altrimenti i collaudi locali
+    dicono una cosa e l'ambiente reale un'altra.
+    """
+    return "member" if role == _RETIRED_PLATFORM_ROLE else role
+
+
 def _roles_for(sub, role):
-    """Ruoli del claim: ruolo tenant + platform-admin se il `sub` è in allow-list
-    (stessa regola del provider locale, TokenService.groupsFor)."""
-    roles = [role]
+    """Ruoli del claim: ruolo di piattaforma (normalizzato) + platform-admin se il `sub`
+    è in allow-list (stessa regola del provider locale, TokenService.groupsFor).
+
+    Il claim NON porta i ruoli per applicazione, ed è la decisione centrale di UC 0099:
+    nel token un cambio di ruolo avrebbe effetto solo al rinnovo, e un account con dieci
+    applicazioni gonfierebbe ogni richiesta. Quei ruoli si leggono dal core
+    (`/me/app-access`) attraverso il varco condiviso dei servizi.
+    """
+    roles = [_claim_role(role)]
     if sub in PLATFORM_ADMIN_SUBS:
         roles.append("platform-admin")
     return roles

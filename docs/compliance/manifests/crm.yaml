@@ -13,11 +13,22 @@ description:
     (schema `app_crm`). Il tenant è titolare del trattamento; appgrove agisce come responsabile
     (#13 A2/C13). La tabella `seat` (posti) contiene il solo identificativo interno dei membri del
     tenant abilitati all'app — trattato da core come titolare — e non è quindi dato di terzi.
+    Lo stesso vale per le due **copie locali** dello schema (`entitlement_projection`,
+    `app_role_projection`): contengono l'identificativo dell'account, l'identificativo interno di
+    autenticazione della persona e il suo ruolo sull'app — nessun nome, nessun indirizzo. Sono la copia di
+    dati di cui core è titolare (`platform.app_access`, UC 0098/0099), servono solo a non interrogare core a
+    ogni richiesta, e vengono cancellate fisicamente con l'account quando si esercita il diritto di
+    cancellazione (il conteggio entra nella traccia di controllo della purga).
   en: >-
     Contact data (people at the tenant's client organizations) entered by the tenant into their CRM
     (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13).
     The `seat` table holds only the internal identifier of the tenant's members granted access to
     the app — processed by core as controller — and is therefore not third-party data.
+    The same holds for the two **local copies** in the schema (`entitlement_projection`,
+    `app_role_projection`): they hold the account identifier, the person's internal authentication
+    identifier and their role on the app — no name, no address. They are copies of data controlled by core
+    (`platform.app_access`, UC 0098/0099), exist only to avoid calling core on every request, and are
+    physically deleted with the account upon erasure (the count is recorded in the purge audit trail).
 
 entries:
   - key: contact.display_name

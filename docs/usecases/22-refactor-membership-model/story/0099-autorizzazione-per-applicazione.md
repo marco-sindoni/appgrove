@@ -1,10 +1,10 @@
 # UC 0099 — Autorizzazione per applicazione: token, propagazione del ruolo, varco riusabile
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0092-use-case-0099-autorizzazione-per-applicazione`)
 **Epica**: [E22.1 Fondamenta](../epic/E22-01-fondamenta-modello-centralizzato.md)
 **Dipendenze**: UC 0098 (modello dati dell'accesso), UC 0016 (funzione che costruisce il token), UC 0010 (fornitore di identità locale), UC 0027 (applicazione dei diritti e delle quote)
 **Piano di lavoro**: [task/0099](../task/0099-autorizzazione-per-applicazione.md)
-**Ultimo aggiornamento**: 2026-08-19
+**Ultimo aggiornamento**: 2026-08-21
 
 ## 1. Obiettivo / Scope
 
@@ -132,13 +132,44 @@ e ogni servizio la usa attraverso lo strato condiviso.
 
 ## Punti aperti / decisioni differite
 
-- **Durata massima della copia locale**: proposta di partenza sessanta secondi, allineata a quella dei
-  diritti d'accesso. Da confermare misurando il traffico. Proprietario: questa storia in implementazione.
-- **Nome definitivo dell'annotazione del varco**: da fissare con chi implementa, coerente con
-  `@RequiresEntitlement` già esistente.
+### Chiusi dalla change 0092
+
+- **Durata massima della copia locale**: fissata a **sessanta secondi**, chiave
+  `appgrove.app-role.projection.max-age`, configurabile per ambiente. Nota: la copia dei diritti d'accesso
+  **non** scade, questa sì — la differenza è voluta e scritta accanto al codice (un ruolo cambia più spesso e
+  la conseguenza di un evento perso è un permesso revocato che sopravvive). Da riconfermare misurando il
+  traffico reale, quando ci sarà traffico reale.
+- **Nome dell'annotazione del varco**: `@RequiresAppRole(AppRole.editor)`, coerente con
+  `@RequiresEntitlement`. Porta anche l'attributo `fresh = true` per le operazioni irreversibili, che salta
+  la copia locale.
+- **Due o tre rifiuti**: **tre**, non due. Oltre a «nessun accesso» e «ruolo insufficiente» (entrambi 403,
+  identificativi stabili distinti) esiste «non decidibile» → **503**, per non accusare l'utente di un guasto
+  nostro (§5).
+- **Una coda o due**: **una**, quella già esistente per i diritti d'accesso (`entitlement-<slug>`), con il
+  tipo di evento nel campo `reason`. Un solo consumatore marca da rinfrescare **tutte** le copie locali del
+  servizio, attraverso l'interfaccia comune `LocalProjection` di `commons`.
+
+### Aperti
+
+- **Misure e allarmi della copia locale del ruolo**: la copia dei diritti d'accesso ha contatori
+  (`safety_net`, `stale_served`, `denied_unknown`) e allarmi nel modulo Terraform; quella del ruolo per ora
+  ha solo i **log strutturati** (avviso quando serve una copia vecchia, errore quando non c'è base per
+  decidere). Motivo del rimando: aggiungere allarmi tocca il modulo dell'infrastruttura, che questa storia
+  non ha ragione di toccare, e senza traffico reale le soglie sarebbero inventate. Da riprendere insieme
+  all'osservabilità dell'epica ([docs/_BACKLOG.md](../../../_BACKLOG.md)).
+- **Rilettura obbligatoria non ancora usata da nessuna rotta**: `fresh = true` esiste, è collaudato, e nel
+  Mini-CRM non è usato — le sue operazioni non sono nell'elenco della storia (cancellazioni di massa, cambi
+  di ruolo, revoche) e la storia stessa avverte di non usarlo «per sicurezza» ovunque. Le operazioni
+  irreversibili di oggi (concessione, cambio, revoca degli accessi) vivono in `core` e leggono il ruolo dalla
+  banca dati dentro la propria transazione: fresche per costruzione. Chi introdurrà un'operazione di massa
+  dentro un'applicazione lo userà.
 - **Se esporre anche il ruolo nel contratto fra shell e moduli del frontend**: sì, ed è necessario per
   UC 0111 (la schermata deve sapere se disabilitare i comandi). Il campo `roles` del contratto attuale va
-  ripensato in `appRole`. Proprietario: UC 0107.
+  ripensato in `appRole`. Proprietario: UC 0107. La lettura che glielo fornirà — `/me/app-access` — **esiste
+  da questa change**, e restituisce già `appId`, `appSlug`, `appName` e `role`.
+- **Il varco è disponibile in `fatture` ma nessuna rotta lo dichiara**: la tabella della copia locale e le
+  chiavi di configurazione ci sono (parità dei modelli di scaffolding), le annotazioni no. Annotare le rotte
+  di `fatture` col ruolo minimo appartiene a chi rivedrà quell'applicazione, non a questa storia.
 
 ### Lasciato da UC 0098 (change 0091)
 
