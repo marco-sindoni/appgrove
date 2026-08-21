@@ -74,5 +74,139 @@
         "description": "0098: non-implementato → senza-superficie; titolo di J-MEMBERS senza «ruoli»."
       }
     ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) La concessione è un INNESTO-o-CAMBIO (upsert) e non un errore quando la terna esiste già: la storia §5 dice che un accesso già esistente con ruolo diverso «non è un errore ma un cambio di ruolo», e farne due operazioni scaricherebbe sull'interfaccia una distinzione che il servizio conosce meglio di lei. L'arbitro dell'unicità resta la banca dati e non la lettura appena fatta: la scrittura fa un flush ESPLICITO e la perdente di una gara riceve 409 invece di creare una seconda riga. Senza il flush esplicito il conflitto emergerebbe al commit, cioè come 500.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AppAccessResource.java",
+        "description": "grant(): ramo «esiste già» → cambio di ruolo; persistAndFlush in try/catch → 409."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) I rifiuti che l'interfaccia deve poter distinguere hanno un `type` stabile in problem+json (RFC 9457): urn:appgrove:app-access:not-entitled, :person-not-active, :owner-implicit. Restituiti come Response e non sollevati come eccezione, perché il mapper delle eccezioni riscrive sempre `type` ad about:blank — stessa ragione e stesso precedente degli esiti tipizzati dell'invito (change 0090, decisione 4). Il rifiuto di permessi resta invece un 403 generico: non c'è nulla da distinguere.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AppAccessResource.java",
+        "description": "Tre identificativi stabili dichiarati come contratto."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) L'elenco di chi ha accesso è aperto anche a chi ha ruolo `viewer` (storia §2: «leggono chi ha accesso; non scrivono») e porta indirizzo e nome, perché un elenco di accessi senza nomi è inutilizzabile e quelle persone sono i colleghi del proprio gruppo di lavoro. Chi NON ha accesso all'applicazione non ne conosce nemmeno le persone (403). L'eventuale restrizione più fine — nomi solo a chi governa gli accessi — è della schermata: rimando tracciato in UC 0111.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AppAccessDtos.java",
+        "description": "AppAccessView con `implicit`, che distingue l'owner senza riga dalle persone abilitate una per una."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il diritto dell'account all'applicazione si verifica CONSUMANDO il read-model degli entitlement (EntitlementReadModel/EntitlementAccess) e non riscrivendo la condizione: è la regola già unica di UC 0077, e una seconda copia divergerebbe come già divergeva la matrice della console admin prima della change che l'ha unificata. Rifiuto tipizzato 409, non 403: non è una mancanza di permessi di chi chiede."
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il vincolo dell'ultimo owner è un rifiuto 409 sollevato come ClientErrorException e NON un Response tipizzato: cambiare il tipo di ritorno di PATCH/DELETE su /users da UserView a Response degraderebbe lo schema OpenAPI generato, da cui nasce il client TypeScript del frontend — cioè un difetto di tipi in cambio di un `type` stabile che a nessuno serve, perché quel caso l'interfaccia lo previene già disabilitando i comandi. Il 409 è la scelta giusta anche nel merito: è un conflitto con lo stato dell'account, non una mancanza di permessi (chi chiede è tipicamente l'owner stesso).",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "requireNotLastOwner su retrocessione, sospensione e rimozione; il perché del 409 nel javadoc."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MembershipRepository.java",
+        "description": "owners() e countOwners(): la lista serve anche ad aggiungere l'owner all'elenco degli accessi."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Nessun evento di invalidazione emesso, come da perimetro: i tre punti di scrittura portano un commento che dice quale evento andrà emesso da lì, così UC 0099 non deve cercarli. Rimando tracciato in UC 0099 insieme alla lettura «dove può entrare questa persona» (l'ingrediente c'è — findByIdentity — l'operazione di rete no) e al ritiro del valore admin dal claim."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Nel frontend i DUE selettori di ruolo della schermata dei membri sono stati rimossi — non ridotti a una sola opzione: con due soli valori di piattaforma e l'owner non assegnabile, un menu a tendina con una voce sola sarebbe un comando che finge di offrire una scelta. Il modulo di invito non chiede più il ruolo (si entra sempre come member) e la colonna del ruolo diventa una etichetta in sola lettura. È il minimo forzato dalla riduzione dell'enumerazione: lasciare un comando che offre un valore che il servizio rifiuta sarebbe un difetto. Tutto il resto del rifacimento della schermata resta a UC 0100, dove il rimando è tracciato.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/MembersPage.tsx",
+        "description": "Selettore dell'invito rimosso; ruolo come etichetta; onChangeRole eliminato."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/auth/schemas.ts",
+        "description": "inviteSchema: role z.enum(['member'])."
+      },
+      {
+        "file": "frontend/packages/i18n/src/resources/en.ts",
+        "description": "Rimosse roleAdmin, inviteRole, changeRole nelle cinque lingue: nessun consumatore."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) I collaudi che esercitavano un comportamento SPARITO non sono stati cancellati ma SOSTITUITI da collaudi che ne pretendono l'assenza: il cambio di ruolo nella schermata dei membri (unità e percorso J-MEMBERS) diventa «non esiste alcun selettore», e la promozione ad admin via API diventa «la richiesta è rifiutata con 400 e il ruolo non cambia». Cancellare senza rimpiazzo avrebbe lasciato tornare il terzo valore senza che nulla diventasse rosso.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/journeys/J-MEMBERS.spec.ts",
+        "description": "Segmento del cambio ruolo sostituito; il vincolo dell'ultimo owner ora prova ANCHE il rifiuto 409 del servizio, non solo il comando disabilitato."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/AccountUserApiTest.java",
+        "description": "patchUserRefusesTheRetiredAdminRole + theLastOwnerCannotBeDemotedSuspendedOrRemoved."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/MembersPage.test.tsx",
+        "description": "«il ruolo è una etichetta, non un selettore»."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Nel seme, il blocco degli accessi usa la forma INSERT … SELECT perché l'identificativo dell'applicazione va letto dal catalogo, che non sta in seed.sql (lo produce il loader del pricing-as-code): dove il catalogo non esiste — i servizi di sola identità applicano solo seed.sql — non viene inserito nulla invece di fallire. Difetto trovato dalla prima esecuzione: in un INSERT … SELECT i letterali nascono `text` e non vengono adattati alla colonna come in un INSERT … VALUES, quindi servono i cast espliciti a uuid e timestamptz. Il perché è scritto accanto, altrimenti il prossimo li toglierà.",
+    "files": [
+      {
+        "file": "dev/seed/seed.sql",
+        "description": "Blocco app_access con cast espliciti e la ragione della forma SELECT."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Classificazione privacy della change: MINORE. Un solo dato nuovo dichiarato, `app_access.identity_id`: natura = dato di autorizzazione (identificativo online associato al ruolo su una singola applicazione), finalità = consentire alle persone dell'account di usare le applicazioni acquistate con il ruolo assegnato, base giuridica = contratto con l'account titolare (art. 6.1.b), conservazione = legata alla vita dell'appartenenza, categoria ordinaria. Nessuna finalità nuova, nessuna base nuova, nessuna categoria particolare, nessun responsabile esterno nuovo, nessun aumento di versione di privacy policy o termini. Il rilevatore di segnali è stato eseguito e ha segnalato esattamente le voci attese (tabella della migrazione, quattro campi dell'entità, chiavi di classificazione del manifesto), nessun'altra. La tabella entra anche nell'ESPORTAZIONE dell'account (senza restrizioni: non contiene nulla che riguardi altri account) e nella CANCELLAZIONE, prima delle appartenenze e delle identità.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "Voce app_access.identity_id; il campo dichiarato è il nome JAVA (identityId), come membership."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "Export con lo slug dell'applicazione invece dell'identificativo opaco; purga prima di membership."
+      },
+      {
+        "file": "docs/compliance/ropa.it.md",
+        "description": "Registro dei trattamenti rigenerato (non si edita a mano)."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Documenti aggiornati dove dicevano il falso: docs/02 §7 dichiara RITIRATO il ruolo di account `admin` spiegando da cosa è sostituito e cosa NON cambia (il claim, le annotazioni, la tolleranza), §14 dice che l'invito non assegna più un ruolo; docs/05 descrive la nuova tabella e i due valori dell'appartenenza; docs/01 chiude la questione aperta «modello ruoli» rimandando alla decisione vera. Il piano di lavoro della storia è stato ALLINEATO in tre punti in cui era invecchiato (numero della migrazione, vincolo di controllo condizionato, annotazione di dato personale) invece di lasciarlo mentire. Le decine di occorrenze «owner/admin/member» negli use case non ancora implementati NON sono state riscritte: appartengono alle storie che rifanno quelle superfici (0107, 0111, 0113) e una di esse — la riga del template — è già nel piano di UC 0114."
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Trovato rileggendo il codice prima del commit: l'edge della storia §5 «persona rimossa dall'account → i suoi accessi vengono cancellati logicamente insieme a lei» non era implementato. Aggiunto: l'uscita dall'account cancella logicamente anche le righe di accesso di quella persona in quell'account, e la traccia di controllo `member.removed` porta quante ne sono state revocate. Senza questa regola un permesso sopravvivrebbe alla persona e tornerebbe valido il giorno in cui rientra — in silenzio, e con i poteri di prima. La cancellazione è LOGICA come quella dell'appartenenza: la storia resta leggibile, il permesso no. La sospensione, invece, NON tocca gli accessi: è reversibile per definizione.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "delete(): revoca logica degli accessi della persona che esce; il conteggio finisce nella traccia di controllo."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/AppAccessApiTest.java",
+        "description": "removingAPersonFromTheAccountRevokesTheirAccesses: zero accessi vivi, ma la riga resta."
+      }
+    ]
   }
 ]

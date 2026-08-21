@@ -139,3 +139,17 @@ e ogni servizio la usa attraverso lo strato condiviso.
 - **Se esporre anche il ruolo nel contratto fra shell e moduli del frontend**: sì, ed è necessario per
   UC 0111 (la schermata deve sapere se disabilitare i comandi). Il campo `roles` del contratto attuale va
   ripensato in `appRole`. Proprietario: UC 0107.
+
+### Lasciato da UC 0098 (change 0091)
+
+- **L'evento di invalidazione della copia locale non viene emesso.** `platform.app_access` esiste e le tre
+  operazioni che lo scrivono (concessione, cambio di ruolo, revoca) sono in `AppAccessResource`, con un
+  commento che dice a voce alta «da qui andrà emesso l'evento»: i punti sono già individuati, non vanno
+  cercati. Il meccanismo — copia locale nei servizi delle applicazioni e invalidazione a eventi — è di
+  questa storia.
+- **La lettura «dove può entrare questa persona, e con che ruolo»** non esiste ancora: il repository ha
+  `findByIdentity(identityId)`, che è l'ingrediente, ma nessuna operazione di rete la espone. È la lettura
+  che il backoffice usa per il menu laterale, e appartiene a questa storia.
+- **Il ritiro del valore `admin` dal claim dei ruoli**: la costante `Roles.ADMIN` e le annotazioni
+  `@RolesAllowed` che la nominano sono rimaste intatte, come tolleranza dei token già emessi. La riduzione
+  del claim è di questa storia; il ritiro della tolleranza, con la sua data, è di UC 0113.

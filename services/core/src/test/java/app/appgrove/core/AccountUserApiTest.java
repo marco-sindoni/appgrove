@@ -73,15 +73,49 @@ class AccountUserApiTest {
                 .body("tenantId", is(TENANT_A));
     }
 
+    /**
+     * Il ruolo di piattaforma ha <b>due soli valori</b> (UC 0098): {@code admin} non è più ammesso e la
+     * richiesta che lo tenta è rifiutata. Il collaudo che prima esercitava la promozione ad {@code admin}
+     * è stato sostituito da questo — cancellarlo senza rimpiazzo avrebbe lasciato tornare il terzo valore
+     * senza che nulla diventasse rosso.
+     */
     @Test
-    void patchUserUpdatesRole() {
+    void patchUserRefusesTheRetiredAdminRole() {
         data.account(TENANT_A, "Acme");
         UUID id = data.user(TENANT_A, "sub-patch", "patch@example.test", "member");
         given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT_A, "owner"))
                 .contentType(ContentType.JSON).body(Map.of("role", "admin"))
                 .when().patch(USERS + "/" + id)
-                .then().statusCode(200)
-                .body("role", is("admin"));
+                .then().statusCode(400);
+        assertEquals("member", data.membershipRole(TENANT_A, id), "il ruolo non è cambiato");
+    }
+
+    /**
+     * <b>L'ultimo owner è intoccabile</b> (UC 0098 §5): non si retrocede, non si sospende, non si
+     * rimuove — e il rifiuto arriva dal <b>servizio</b>, non dal comando disabilitato nell'interfaccia.
+     * Un divieto che vive solo nell'interfaccia si aggira con una richiesta diretta, e lascerebbe un
+     * account senza nessuno che possa governarlo: uno stato da cui non si torna indietro.
+     */
+    @Test
+    void theLastOwnerCannotBeDemotedSuspendedOrRemoved() {
+        data.account(TENANT_A, "Acme ultimo owner");
+        UUID owner = data.user(TENANT_A, TestTokens.subjectFor(TENANT_A), "ultimo-owner@example.test", "owner");
+        String token = "Bearer " + TestTokens.withTenant(TENANT_A, "owner");
+
+        given().header("Authorization", token)
+                .contentType(ContentType.JSON).body(Map.of("role", "member"))
+                .when().patch(USERS + "/" + owner)
+                .then().statusCode(409);
+        given().header("Authorization", token)
+                .contentType(ContentType.JSON).body(Map.of("status", "suspended"))
+                .when().patch(USERS + "/" + owner)
+                .then().statusCode(409);
+        given().header("Authorization", token)
+                .when().delete(USERS + "/" + owner)
+                .then().statusCode(409);
+
+        assertEquals("owner", data.membershipRole(TENANT_A, owner));
+        assertEquals("active", data.membershipStatus(TENANT_A, owner));
     }
 
     @Test
@@ -146,7 +180,7 @@ class AccountUserApiTest {
         data.account(TENANT_UNO, "Conto uno");
         UUID person = data.identity("sub-doppio", "doppio@example.test", "Doppio");
         data.membershipStrict(TENANT_UNO, person, "member");
-        assertThrows(RuntimeException.class, () -> data.membershipStrict(TENANT_UNO, person, "admin"));
+        assertThrows(RuntimeException.class, () -> data.membershipStrict(TENANT_UNO, person, "member"));
     }
 
     /**

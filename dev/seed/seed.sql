@@ -37,14 +37,19 @@ ON CONFLICT (id) DO UPDATE SET
   locale = EXCLUDED.locale, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
 
 -- ── membership (appartenenze: entità di ACCOUNT, porta tenant_id) ────────────
--- Acme: owner + admin + member · Bob: owner · Platform: persona di piattaforma
+-- Acme: owner + due member · Bob: owner · Platform: persona di piattaforma
+-- UC 0098: il ruolo di piattaforma ha DUE soli valori (owner | member). La persona `admin@acme.test`
+-- resta nel seme e resta la «amministratrice», ma il suo potere ora sta su una applicazione: è
+-- `member` di piattaforma con ruolo `admin` sul Mini-CRM (vedi il blocco app_access qui sotto). È la
+-- stessa traduzione che UC 0113 applicherà ai dati reali, fatta qui perché un seme che dichiara un
+-- ruolo che l'enumerazione non ammette più non si caricherebbe nemmeno.
 -- (il gruppo JWT 'platform-admin' è assegnato dall'auth locale, UC 0010).
 -- Tutte le persone del seme hanno UNA sola appartenenza: è il caso di tutti gli utenti di oggi, e il
 -- seme deve restare la fotografia del caso normale. Il caso «una persona, due account» si costruisce
 -- nei collaudi, non qui.
 INSERT INTO platform.membership (id, tenant_id, identity_id, role, status, created_at, updated_at, created_by) VALUES
   ('d0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
-  ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'admin',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('d0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000002', 'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000003', 'member', 'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000004', 'a0000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000004', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('d0000000-0000-4000-8000-000000000005', 'a0000000-0000-4000-8000-000000000003', 'b0000000-0000-4000-8000-000000000005', 'owner',  'active', '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
@@ -59,12 +64,39 @@ INSERT INTO platform.membership (id, tenant_id, identity_id, role, status, creat
 ON CONFLICT (tenant_id, identity_id) WHERE deleted_at IS NULL DO UPDATE SET
   role = EXCLUDED.role, status = EXCLUDED.status, updated_at = EXCLUDED.updated_at;
 
+-- ── app_access (accessi per applicazione: entità di ACCOUNT) ─────────────────
+-- UC 0098: qui vive «questa persona può usare questa applicazione con questo ruolo».
+-- L'OWNER non ha righe: l'accesso gli è implicito su tutte le applicazioni dell'account.
+-- L'app_id si legge dal CATALOGO, che non sta in questo file (è prodotto dal loader del
+-- pricing-as-code con identificativi deterministici): la forma `INSERT … SELECT` fa sì che dove il
+-- catalogo non esiste — i servizi di sola identità applicano solo questo seed.sql — non venga inserito
+-- nulla, invece di fallire.
+INSERT INTO platform.app_access (id, tenant_id, app_id, identity_id, role, granted_by, created_at, updated_at, created_by)
+-- I cast espliciti servono: in un `INSERT … SELECT` i letterali della SELECT nascono `text` e non
+-- vengono adattati alla colonna come accade in un `INSERT … VALUES`.
+SELECT 'e0000000-0000-4000-8000-000000000001'::uuid, 'a0000000-0000-4000-8000-000000000001', app.id,
+       'b0000000-0000-4000-8000-000000000002'::uuid, 'admin', 'b0000000-0000-4000-8000-000000000001'::uuid,
+       '2024-01-01T00:00:00Z'::timestamptz, '2024-01-01T00:00:00Z'::timestamptz, 'seed'
+  FROM platform.app app WHERE app.slug = 'crm'
+UNION ALL
+SELECT 'e0000000-0000-4000-8000-000000000002'::uuid, 'a0000000-0000-4000-8000-000000000001', app.id,
+       'b0000000-0000-4000-8000-000000000003'::uuid, 'editor', 'b0000000-0000-4000-8000-000000000001'::uuid,
+       '2024-01-01T00:00:00Z'::timestamptz, '2024-01-01T00:00:00Z'::timestamptz, 'seed'
+  FROM platform.app app WHERE app.slug = 'crm'
+-- Come per le appartenenze, l'arbitro del conflitto è il vincolo VERO — la terna sulle righe vive —
+-- e non la chiave primaria.
+ON CONFLICT (tenant_id, app_id, identity_id) WHERE deleted_at IS NULL DO UPDATE SET
+  role = EXCLUDED.role, granted_by = EXCLUDED.granted_by, updated_at = EXCLUDED.updated_at;
+
 -- ── invitations (Acme, pending) ──────────────────────────────────────────────
 -- token_hash = SHA-256(hex) dei token fissi documentati nel README.
---   admin  → token 'seed-invite-acme-admin'
---   member → token 'seed-invite-acme-member'
+--   invitee-admin@acme.test  → token 'seed-invite-acme-admin'
+--   invitee-member@acme.test → token 'seed-invite-acme-member'
+-- UC 0098: entrambi gli inviti sono di ruolo `member`, perché il ruolo di piattaforma ha due soli
+-- valori e chi entra non porta con sé alcun potere — i poteri si concedono dopo, una applicazione alla
+-- volta. Il primo indirizzo conserva il nome storico 'invitee-admin' perché i collaudi lo nominano.
 INSERT INTO platform.invitations (id, tenant_id, email, role, token_hash, status, expires_at, invited_by, accepted_user_id, created_at, updated_at, created_by) VALUES
-  ('c0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'invitee-admin@acme.test',  'admin',  '1ddd1a3f17c576bf0a17e22bdd4e136384a7d55d49bbbf53e58c11111b15ffb0', 'pending', '2999-12-31T00:00:00Z', 'b0000000-0000-4000-8000-000000000001', NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
+  ('c0000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'invitee-admin@acme.test',  'member', '1ddd1a3f17c576bf0a17e22bdd4e136384a7d55d49bbbf53e58c11111b15ffb0', 'pending', '2999-12-31T00:00:00Z', 'b0000000-0000-4000-8000-000000000001', NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed'),
   ('c0000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', 'invitee-member@acme.test', 'member', 'cc3424114feeb02469d842b816874ebd9844167135eda959e841d1e09191cd45', 'pending', '2999-12-31T00:00:00Z', 'b0000000-0000-4000-8000-000000000001', NULL, '2024-01-01T00:00:00Z', '2024-01-01T00:00:00Z', 'seed')
 ON CONFLICT (id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id, email = EXCLUDED.email, role = EXCLUDED.role,

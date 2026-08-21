@@ -5,9 +5,9 @@
 
 ## Passo 1 — Migrazione della banca dati
 
-**File nuovo**: `services/core/src/main/resources/db/migration/V18__app_access.sql`
-(`V17__identity_membership.sql` è di [UC 0116](0116-identita-e-appartenenze.md), **già in main** con la
-change `0088`: `V18` è quindi il numero giusto — **riverificarlo** comunque al momento dell'implementazione.
+**File nuovo**: `services/core/src/main/resources/db/migration/V20__app_access.sql`
+(numero **corretto in sede di implementazione**, change 0091: `V17` è di UC 0116, `V18` di UC 0117 e `V19`
+di UC 0118 — tutte già in main. Il piano diceva `V18` perché scritto prima di quelle due change.
 `platform.identity` e `platform.membership` esistono già: `app_access.identity_id` può riferire
 direttamente `platform.identity(id)`, senza migrazione doppia.)
 
@@ -16,28 +16,38 @@ terna limitata alle righe vive, indice per persona, indice per applicazione) e i
 dice a che serve. Nessun vincolo di chiave esterna verso `platform.accounts` sul campo `tenant_id`, coerentemente
 con la scelta già in vigore (il discriminatore è una chiave logica, non una chiave esterna).
 
-Nella stessa migrazione **non** si tocca il ruolo di piattaforma: la conversione dei valori è di UC 0113. Qui
-si aggiunge soltanto il vincolo di controllo sui valori ammessi **se** e solo se non esistono ancora righe
-`admin` (in sviluppo locale è così; in ambiente reale la conversione precede). Sicurezza: meglio nessun
-vincolo di controllo qui che una migrazione che non parte in produzione.
+Nella stessa migrazione **non** si tocca il ruolo di piattaforma: la conversione dei valori è di UC 0113.
+**Deciso in sede di implementazione (change 0091): nessun vincolo di controllo su `membership.role`, nemmeno
+condizionato.** L'ipotesi «lo aggiungo se non esistono righe `admin`» è stata scartata perché produrrebbe
+schemi diversi fra ambienti a seconda dei dati, che è peggio dell'assenza del vincolo; e un vincolo aggiunto
+prima della conversione rifiuterebbe di applicarsi — una migrazione che non parte. Il vincolo lo aggiunge
+UC 0113 dopo il passo 3 della conversione. Sulla nuova tabella il vincolo sul ruolo di **applicazione** c'è
+invece, perché non esistono righe pregresse da rispettare.
 
 ## Passo 2 — Entità e repository
 
 **File nuovi**, in `services/core/src/main/java/app/appgrove/core/platform/`:
 
-- `AppAccess.java` — entità che estende `BaseTenantEntity` (come `User` e `Invitation`), con
-  `@SQLRestriction("deleted_at is null")`, i campi `appId`, `identityId`, `role`, `grantedBy`. Nessuna
-  annotazione di dato personale: non ne contiene.
+- `AppAccess.java` — entità che estende `BaseTenantEntity` (come `Membership` e `Invitation`), con
+  `@SQLRestriction("deleted_at is null")`, i campi `appId`, `identityId`, `role`, `grantedBy`.
+  **Corretto in sede di implementazione (change 0091)**: `identityId` **è** annotato `@PersonalData`, come
+  `membership.identity_id` e per la stessa ragione — non contiene né nome né indirizzo ma dice qualcosa di
+  una persona, e qui dice di più (quale applicazione usa e con quale potere). Il collaudo del manifesto è
+  bidirezionale: una voce dichiarata senza annotazione è rossa quanto il contrario.
 - `AppRole.java` — enumerazione `viewer`, `editor`, `admin`, con il metodo di confronto
   `atLeast(AppRole)` che incarna l'ordinamento. Il metodo va qui e **non** duplicato altrove: lo useranno
   il varco di UC 0099 e l'interfaccia.
 - `AppAccessRepository.java` — repository su `PanacheRepositoryBase`, con: `findByIdentity(identityId)`,
-  `findByApp(appId)`, `findOne(appId, identityId)`, `existsForIdentity(appId, cognitoSub)`. Il filtro per
-  account è automatico (discriminatore), da **non** riscrivere a mano.
+  `findByApp(appId)`, `findOne(appId, identityId)`, `roleOf(appId, identityId)`. Il filtro per account è
+  automatico (discriminatore), da **non** riscrivere a mano. La lettura per identificativo di
+  autenticazione non serve qui: la fa il varco di UC 0099.
 
-**Modifica**: `UserRole.java` — rimozione del valore `admin` (l'enumerazione ora vive sull'appartenenza,
-[UC 0116](0116-identita-e-appartenenze.md)). Attenzione: rompe la compilazione in ogni punto
-che lo nomina. Elencarli prima di iniziare con `grep -rn "UserRole.admin\|Roles.ADMIN" services/`.
+**Modifica**: `MembershipRole.java` (il nome dopo la change 0088; il piano diceva ancora `UserRole`) —
+rimozione del valore `admin`. **Fin dove arriva la rimozione, deciso dalla change 0091**: si toglie
+dall'enumerazione e da tutto ciò che *offre* o *scrive* quel valore (invito, cambio di ruolo della persona,
+seme di sviluppo, i due selettori della schermata dei membri); **non** si tocca la costante `Roles.ADMIN` né
+le annotazioni `@RolesAllowed` che la nominano, che leggono il **claim del token** e restano come tolleranza
+dei token già emessi (UC 0113 §6). La compilazione, di conseguenza, non si rompe da nessuna parte.
 
 ## Passo 3 — Regole di autorizzazione, come funzione pura
 
@@ -103,9 +113,11 @@ cd .. && ./run-tests.sh backend
 
 ## Trappole note
 
-1. **La rimozione del valore `admin`** da `UserRole` rompe la compilazione in punti sparsi, compreso il
-   Mini-CRM ([Roles.java](../../../../services/crm/src/main/java/app/appgrove/crm/Roles.java)) e il fornitore
-   di identità locale. Fare l'elenco **prima**.
+1. **La rimozione del valore `admin`** — trappola **evitata** dalla change 0091 fermandosi al confine del
+   token: nessun servizio ha perso la compilazione, e nessuna operazione è stata riscritta. Quello che si
+   rompe davvero sono i **collaudi e i dati di prova** che scrivevano `admin` come ruolo di appartenenza
+   (seme, inviti del seme, alcune fixture): quelli sì, vanno cercati prima.
 2. **L'owner senza righe di accesso** va ricordato in ogni lettura: la prova più utile è chiedere l'elenco
    degli accessi di un'applicazione appena installata e pretendere che contenga l'owner.
 3. **Il numero della migrazione** va riverificato: se un'altra change ne ha aggiunta una, il numero cambia.
+   È successo due volte fra la scrittura del piano e l'implementazione: `V18` → `V20`.

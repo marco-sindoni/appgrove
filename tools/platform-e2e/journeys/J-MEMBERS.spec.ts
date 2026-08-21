@@ -16,11 +16,14 @@ const MEMBER_PASSWORD = 'Password1!'
  * del crm fino al tetto del tier free (2) → 429 reale + invito all'upgrade → acquisto del tier
  * Team (fake Paddle, webhook sulla pipeline reale) → l'assegnazione riesce di nuovo (è il ramo
  * «upgrade sblocca la quota» dello use case, sulla metrica a giacenza — decisione 4, change 0070)
- * → cambio ruolo e rimozione dall'owner; il membro rimosso perde l'accesso (assert dalla SUA
- * sessione) → protezione ultimo owner (assert UI).
+ * → rimozione dall'owner; il membro rimosso perde l'accesso (assert dalla SUA sessione) →
+ * protezione ultimo owner (comando disabilitato nell'interfaccia E rifiuto 409 del servizio).
+ *
+ * <p>Il cambio di ruolo di piattaforma non fa più parte del percorso: dopo UC 0098 quel ruolo ha due
+ * soli valori e il potere sta sull'applicazione.
  */
 
-test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 429 → upgrade sblocca → ruoli e revoca', async ({
+test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 429 → upgrade sblocca → revoca e ultimo owner', async ({
   page,
   browser,
 }) => {
@@ -113,11 +116,12 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
     { message: 'app_usage_stock non riflette i 3 posti occupati (coda app-usage non consumata?)' },
   )
 
-  // ── 3. cambio ruolo e rimozione; il membro rimosso perde l'accesso ──────────
+  // ── 3. rimozione; il membro rimosso perde l'accesso ────────────────────────
+  // Il CAMBIO DI RUOLO non esiste più: il ruolo di piattaforma ha due soli valori (UC 0098) e il
+  // potere sta sull'applicazione. Il segmento che lo esercitava è stato sostituito dalla verifica che
+  // il comando non ci sia — l'oggetto coperto è sparito, non la copertura. Chi entra è `member`.
   await page.goto('/members')
-  const roleSelect = page.getByLabel(`Change role: ${inviteeEmail}`)
-  await roleSelect.selectOption('admin')
-  await expect(roleSelect).toHaveValue('admin')
+  await expect(page.getByRole('combobox')).toHaveCount(0)
   expect(
     dbRow(
       `select m.role from platform.membership m
@@ -125,7 +129,7 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
         where lower(i.email) = lower($1) and m.deleted_at is null`,
       [inviteeEmail],
     )[0],
-  ).toBe('admin')
+  ).toBe('member')
 
   const memberRow = page.getByRole('row').filter({ hasText: inviteeEmail })
   await memberRow.getByRole('button', { name: 'Remove' }).click()
@@ -137,10 +141,24 @@ test('[J-MEMBERS] invito con email reale → seconda sessione → seat fino al 4
   await expect(memberPage.getByRole('button', { name: 'Sign in' })).toBeVisible()
   await memberContext.close()
 
-  // ── 4. protezione ultimo owner (assert UI): niente cambio ruolo, rimozione disabilitata ──
+  // ── 4. protezione ultimo owner: rimozione disabilitata nell'interfaccia E rifiutata dal servizio ──
   const ownerRow = page.getByRole('row').filter({ hasText: owner.email })
-  await expect(ownerRow.getByRole('combobox')).toHaveCount(0)
   await expect(ownerRow.getByRole('button', { name: 'Remove' })).toBeDisabled()
+  // Il divieto non vive più solo qui (UC 0098): una richiesta diretta riceve 409, altrimenti il comando
+  // disabilitato sarebbe tutta la protezione e un account potrebbe restare senza nessuno che lo governi.
+  const ownerId = dbRow(
+    `select m.identity_id from platform.membership m
+       join platform.identity i on i.id = m.identity_id
+      where lower(i.email) = lower($1) and m.tenant_id = $2 and m.deleted_at is null`,
+    [owner.email, owner.tenantId],
+  )[0]
+  const refused = await authedFetch(
+    BACKOFFICE_URL,
+    `/api/platform/v1/users/${ownerId}`,
+    owner.tokens,
+    { method: 'DELETE' },
+  )
+  expect(refused.status).toBe(409)
 
   // ── leak detector: le appartenenze del conto sono owner + membro (uscito, soft-delete) ──
   expect(dbRow(`select count(*) from platform.membership where tenant_id = $1`, [owner.tenantId])[0]).toBe('2')

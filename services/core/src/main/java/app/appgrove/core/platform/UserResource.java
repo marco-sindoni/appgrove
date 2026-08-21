@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -37,7 +38,11 @@ import org.jboss.logging.Logger;
  * quali altri account una persona appartenga</b> (UC 0116 §8).
  *
  * <p>Il contratto esposto non cambia (stessi percorsi, stessi campi, stesso {@code id} della
- * persona): cambia solo da dove vengono i campi. Gestione riservata a owner/admin.
+ * persona): cambia solo da dove vengono i campi.
+ *
+ * <p>Gestione riservata all'<b>owner</b>. Le annotazioni nominano ancora {@code admin} perché quel
+ * valore può comparire in un token già emesso (UC 0098: non è più un ruolo di appartenenza, e il ritiro
+ * della tolleranza è di UC 0113); nessun token nuovo lo porta.
  */
 @Path("/api/platform/v1/users")
 @Authenticated
@@ -55,6 +60,9 @@ public class UserResource {
 
     @Inject
     CallerContext caller;
+
+    @Inject
+    AppAccessRepository accesses;
 
     @Inject
     AuditLogger audit;
@@ -113,12 +121,20 @@ public class UserResource {
         Membership membership = requireMembership(id);
         Identity identity = requireIdentity(membership);
         if (body.role() != null) {
-            membership.setRole(parseRole(body.role()));
+            MembershipRole role = parseRole(body.role());
+            if (role != MembershipRole.owner) {
+                requireNotLastOwner(membership, "retrocedere");
+            }
+            membership.setRole(role);
         }
         if (body.status() != null) {
             // L'owner governa l'appartenenza al PROPRIO account, non l'identità della persona: una
             // sospensione decisa qui non la tocca negli altri account a cui appartiene.
-            membership.setStatus(parseStatus(body.status()));
+            MembershipStatus status = parseStatus(body.status());
+            if (status != MembershipStatus.active) {
+                requireNotLastOwner(membership, "sospendere");
+            }
+            membership.setStatus(status);
         }
         if (body.displayName() != null) {
             identity.setDisplayName(body.displayName());
@@ -151,10 +167,21 @@ public class UserResource {
     @Transactional
     public Response delete(@PathParam("id") UUID id) {
         Membership membership = requireMembership(id);
+        requireNotLastOwner(membership, "rimuovere");
         membership.markDeleted();
+        // Gli accessi alle applicazioni escono con la persona (UC 0098 §5): un permesso che sopravvive a
+        // chi non fa più parte dell'account tornerebbe valido il giorno in cui quella persona rientra —
+        // silenziosamente, e con i poteri di prima. La cancellazione è logica, come quella
+        // dell'appartenenza: la storia resta leggibile, il permesso no.
+        int revoked = 0;
+        for (AppAccess access : accesses.findByIdentity(membership.getIdentityId())) {
+            access.markDeleted();
+            revoked++;
+        }
         audit.success("member.removed", Map.of(
                 "user_id", membership.getIdentityId().toString(),
-                "actor", caller.subject()));
+                "actor", caller.subject(),
+                "app_accesses_revoked", Integer.toString(revoked)));
         return Response.noContent().build();
     }
 
@@ -191,6 +218,24 @@ public class UserResource {
     private UserView view(Membership membership) {
         Identity identity = identities.findById(membership.getIdentityId());
         return identity == null ? null : UserView.from(membership, identity);
+    }
+
+    /**
+     * <b>L'ultimo owner è intoccabile</b>: non si rimuove, non si retrocede, non si sospende (UC 0098
+     * §5). Fino a questa change il divieto viveva soltanto nell'interfaccia, come comando disabilitato
+     * ({@code isLastOwner} nella schermata dei membri): un divieto che sta solo lì è un divieto che si
+     * aggira con una richiesta diretta, e lascerebbe un account senza nessuno che possa governarlo —
+     * uno stato da cui non si torna indietro senza intervento manuale. Ora il rifiuto arriva dal
+     * servizio, e l'interfaccia resta una cortesia.
+     *
+     * <p>Rifiuto {@code 409}: è un conflitto con lo stato dell'account, non una mancanza di permessi
+     * (chi chiede è tipicamente proprio l'owner, che di permessi ne ha tutti).
+     */
+    private void requireNotLastOwner(Membership membership, String verb) {
+        if (membership.getRole() == MembershipRole.owner && memberships.countOwners() <= 1) {
+            throw new ClientErrorException(
+                    "Non si può " + verb + " l'ultimo owner dell'account.", Response.Status.CONFLICT);
+        }
     }
 
     private static MembershipRole parseRole(String value) {

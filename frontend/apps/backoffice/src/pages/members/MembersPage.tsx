@@ -21,10 +21,15 @@ import { QueryState } from '../../shell/QueryState'
 import { Field } from '../auth/Field'
 import { ConfirmDialog } from './ConfirmDialog'
 
-type Role = 'owner' | 'admin' | 'member'
-
+/**
+ * Il ruolo di piattaforma ha **due soli valori** (UC 0098): `owner` — chi possiede l'account — e
+ * `member`, tutte le altre persone. Che cosa una persona possa *fare* non lo dice questo ruolo: lo dice
+ * il ruolo su ciascuna applicazione, che si governa dalla gestione utenti dell'applicazione (UC 0111).
+ * Per questo il ruolo qui è una **etichetta in sola lettura** e non più un selettore: non c'è nulla da
+ * scegliere. La colonna sparirà del tutto con l'elenco unico di UC 0100.
+ */
 const roleLabel = (t: TFn, role?: string) =>
-  role === 'owner' ? t('members.roleOwner') : role === 'admin' ? t('members.roleAdmin') : t('members.roleMember')
+  role === 'owner' ? t('members.roleOwner') : t('members.roleMember')
 
 const statusBadge = (t: TFn, status?: string) =>
   status === 'suspended' ? (
@@ -137,15 +142,6 @@ export function MembersPage() {
     }
   })
 
-  const onChangeRole = async (u: UserView, role: Role) => {
-    setActionError(null)
-    try {
-      await updateMember.mutateAsync({ id: u.id as string, role })
-    } catch {
-      setActionError(t('errors.generic'))
-    }
-  }
-
   const onToggleStatus = async (u: UserView) => {
     setActionError(null)
     try {
@@ -224,19 +220,9 @@ export function MembersPage() {
                 {...form.register('email')}
               />
             </div>
-            <div>
-              <label htmlFor="invite-role" className="mb-1 block text-sm font-medium text-fg">
-                {t('members.inviteRole')}
-              </label>
-              <select
-                id="invite-role"
-                className="h-10 rounded-md border border-line bg-surface px-3 text-sm text-fg"
-                {...form.register('role')}
-              >
-                <option value="member">{t('members.roleMember')}</option>
-                <option value="admin">{t('members.roleAdmin')}</option>
-              </select>
-            </div>
+            {/* Nessun selettore di ruolo: si entra sempre come `member` (UC 0098), e i poteri si
+                concedono dopo, una applicazione alla volta. Il campo resta nel corpo della richiesta
+                finché il contratto lo prevede; sparirà con UC 0100. */}
             <Button type="submit" className="mt-6" disabled={form.formState.isSubmitting}>
               {t('members.inviteSubmit')}
             </Button>
@@ -307,20 +293,7 @@ export function MembersPage() {
                         <td className="py-2 pr-4">{u.email}</td>
                         <td className="py-2 pr-4 text-fg-muted">{u.displayName ?? '—'}</td>
                         <td className="py-2 pr-4">
-                          {u.role === 'owner' ? (
-                            <span>{roleLabel(t, u.role)}</span>
-                          ) : (
-                            <select
-                              aria-label={`${t('members.changeRole')}: ${u.email}`}
-                              className="h-9 rounded-md border border-line bg-surface px-2 text-sm text-fg disabled:opacity-50"
-                              value={u.role}
-                              disabled={isSelf(u) || busy}
-                              onChange={(e) => void onChangeRole(u, e.target.value as Role)}
-                            >
-                              <option value="member">{t('members.roleMember')}</option>
-                              <option value="admin">{t('members.roleAdmin')}</option>
-                            </select>
-                          )}
+                          <span>{roleLabel(t, u.role)}</span>
                         </td>
                         <td className="py-2 pr-4">{statusBadge(t, u.status)}</td>
                         <td className="py-2 pr-4">

@@ -79,8 +79,9 @@ né lo schema dati fisico (→ [05-persistenza-dati](05-persistenza-dati.md)).
     `app_name` resta display-only). **Claim JWT**: `tenant_id`, `roles` (namespace/meccanica → 02).
 
 ## Questioni aperte
-- **Modello ruoli** (owner/admin/member tenant-level e/o per-app; platform admin) → risolto in
-  [02-auth-sicurezza](02-auth-sicurezza.md). Tutto il resto di #01 è deciso.
+- **Modello ruoli** → risolto in [02-auth-sicurezza](02-auth-sicurezza.md) §7: **due** ruoli di account
+  (`owner`/`member`) più `platform-admin` di piattaforma, e il ruolo **per applicazione**
+  (`viewer`/`editor`/`admin`) su `platform.app_access` (UC 0098, change 0091). Tutto il resto di #01 è deciso.
 
 ## Alternative valutate / scartate
 - **Tenant = singolo utente (B2C puro)** — scartato: non copre il caso org multi-utente (CRM). Il modello

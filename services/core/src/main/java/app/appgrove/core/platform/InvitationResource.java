@@ -32,7 +32,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * API inviti del tenant. Tenant-scoped automatico (discriminator). Gestione riservata a owner/admin.
+ * API inviti del tenant. Tenant-scoped automatico (discriminator). Gestione riservata all'<b>owner</b>
+ * (le annotazioni nominano ancora {@code admin} solo come tolleranza dei token già emessi, UC 0098).
  * Il token grezzo è restituito SOLO alla creazione; su DB resta solo il suo hash (single-use).
  *
  * <p><b>Tre esiti all'invio, di cui due leciti</b> (UC 0118 §5). «Questa persona è già membro di
@@ -48,8 +49,13 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class InvitationResource {
 
-    /** Si possono invitare solo admin/member: l'owner nasce con l'account (signup). */
-    private static final Set<MembershipRole> INVITABLE = EnumSet.of(MembershipRole.admin, MembershipRole.member);
+    /**
+     * Si invita <b>solo</b> come {@code member}: l'owner nasce con l'account (iscrizione) e il valore
+     * {@code admin} non è più un ruolo di piattaforma (UC 0098). Chi entra non porta con sé alcun
+     * potere: i poteri si concedono dopo, una applicazione alla volta ({@code platform.app_access}).
+     * Il campo {@code role} del corpo resta nel contratto e sparirà con la schermata di UC 0100.
+     */
+    private static final Set<MembershipRole> INVITABLE = EnumSet.of(MembershipRole.member);
     private static final Duration TTL = Duration.ofDays(7);
 
     /**

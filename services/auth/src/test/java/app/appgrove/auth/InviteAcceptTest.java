@@ -35,7 +35,8 @@ class InviteAcceptTest {
 
     @Test
     void acceptSeedInviteCreatesUserInInvitingTenant() {
-        // seed: invito admin per invitee-admin@acme.test (token grezzo documentato nel README del seed)
+        // seed: invito (di ruolo `member`, l'unico possibile dopo UC 0098) per invitee-admin@acme.test —
+        // token grezzo documentato nel README del seed
         given().contentType(ContentType.JSON)
                 .body(Map.of("token", "seed-invite-acme-admin", "password", "Password1!", "displayName", "Invited Admin"))
                 .when().post("/api/auth/invitations/accept")
@@ -46,8 +47,8 @@ class InviteAcceptTest {
                 "select count(*) from platform.identity i"
                         + " join platform.membership m on m.identity_id = i.id"
                         + " where i.email = 'invitee-admin@acme.test'"
-                        + " and m.tenant_id = '" + ACME + "' and m.role = 'admin'"),
-                "appartenenza creata nel tenant Acme con ruolo admin");
+                        + " and m.tenant_id = '" + ACME + "' and m.role = 'member'"),
+                "appartenenza creata nel tenant Acme con ruolo member (il ruolo di piattaforma ha due valori)");
         assertEquals("accepted", text(
                 "select status from platform.invitations where token_hash = '"
                         + TokenHashes.sha256Hex("seed-invite-acme-admin") + "'"),

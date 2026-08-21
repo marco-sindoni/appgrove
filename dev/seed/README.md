@@ -25,7 +25,7 @@ ogni riferimento memorizzato altrove (per esempio `invitations.invited_by`) rest
 | Persona | identità (id) | appartenenza (id) | account | cognito_sub | email | ruolo |
 |---|---|---|---|---|---|---|
 | Acme Owner | `b0000000-…-001` | `d0000000-…-001` | Acme | `seed-acme-owner` | owner@acme.test | owner |
-| Acme Admin | `b0000000-…-002` | `d0000000-…-002` | Acme | `seed-acme-admin` | admin@acme.test | admin |
+| Acme Admin | `b0000000-…-002` | `d0000000-…-002` | Acme | `seed-acme-admin` | admin@acme.test | member ** |
 | Acme Member | `b0000000-…-003` | `d0000000-…-003` | Acme | `seed-acme-member` | member@acme.test | member |
 | Bob | `b0000000-…-004` | `d0000000-…-004` | Bob | `seed-bob-owner` | bob@bob.test | owner |
 | Platform Admin | `b0000000-…-005` | `d0000000-…-005` | Platform | `seed-platform-admin` | admin@appgrove.test | owner * |
@@ -40,12 +40,33 @@ collaudi automatici, non qui.
 \* La capacità **`platform-admin`** è un **gruppo JWT**, non il ruolo di un'appartenenza: l'auth locale
 (UC 0010) assegna il gruppo `platform-admin` al subject `seed-platform-admin`.
 
+\*\* Dalla change 0091 (UC 0098) il ruolo di piattaforma ha **due soli valori** — `owner` e `member` — e il
+potere sta sull'**applicazione**. `admin@acme.test` conserva il nome ma è `member` di piattaforma con ruolo
+`admin` sul Mini-CRM: **non** vede più le schermate riservate all'owner (Account, Billing, Members). È la
+stessa traduzione che UC 0113 applicherà agli account reali.
+
+## Accessi per applicazione (`platform.app_access`, tenant Acme)
+
+| id | persona | applicazione | ruolo |
+|---|---|---|---|
+| `e0000000-…-001` | admin@acme.test (`b0000000-…-002`) | `crm` | admin |
+| `e0000000-…-002` | member@acme.test (`b0000000-…-003`) | `crm` | editor |
+
+L'**owner non ha righe** qui: l'accesso gli è implicito su tutte le applicazioni dell'account, e ogni lettura
+di «chi ha accesso» lo aggiunge al risultato. L'`app_id` si legge dal catalogo, che non sta in `seed.sql`:
+dove il catalogo non esiste (i servizi di sola identità applicano solo `seed.sql`) il blocco non inserisce
+nulla invece di fallire.
+
 ## Inviti pending (tenant Acme)
 
 | Invito | id | email | role | token (grezzo) |
 |---|---|---|---|---|
-| admin | `c0000000-…-001` | invitee-admin@acme.test | admin | `seed-invite-acme-admin` |
-| member | `c0000000-…-002` | invitee-member@acme.test | member | `seed-invite-acme-member` |
+| primo | `c0000000-…-001` | invitee-admin@acme.test | member | `seed-invite-acme-admin` |
+| secondo | `c0000000-…-002` | invitee-member@acme.test | member | `seed-invite-acme-member` |
+
+Entrambi di ruolo `member`: chi entra **non porta con sé alcun potere** (UC 0098), i poteri si concedono dopo
+una applicazione alla volta. Il primo indirizzo conserva il nome storico `invitee-admin` perché i collaudi
+lo nominano.
 
 Su DB è salvato solo `token_hash = SHA-256(hex)` del token grezzo (single-use).
 

@@ -47,6 +47,9 @@ class PlatformGdprContractTest {
         java.util.UUID gdprApp = java.util.UUID.randomUUID();
         data.app(gdprApp, "gdpr-app-" + gdprApp.toString().substring(0, 8));
         data.billingTransaction(TENANT_A, gdprApp, "txn_gdpr_" + gdprApp, 1500);
+        // Accesso per applicazione (UC 0098): l'export dell'account deve restituire anche i permessi.
+        java.util.UUID abilitata = data.user(TENANT_A, "sub-gdpr-access", "gdpr-access@example.test", "member");
+        data.appAccess(TENANT_A, gdprApp, abilitata, "editor");
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());

@@ -139,3 +139,16 @@ implementano: è il dovere di ogni change, non una pulizia finale.
 - **Comunicazione ai collaboratori** del nuovo modello (che vedranno un prodotto diverso da un giorno
   all'altro): utile una nota nel prodotto al primo ingresso. Rimandata; annotata in
   [docs/_BACKLOG.md](../../../_BACKLOG.md).
+
+### Lasciato da UC 0098 (change 0091)
+
+- **La conversione delle righe `admin` esistenti** (`admin` → `member` più accesso `admin` su ogni
+  applicazione dell'account) resta interamente qui: la change 0091 ha ridotto l'**enumerazione** a due
+  valori ma non ha toccato un solo dato reale. Il **seme di sviluppo** è invece già convertito, perché un
+  seme che dichiara un ruolo non più ammesso non si caricherebbe.
+- **Il vincolo di controllo sui valori di `membership.role`** non è stato aggiunto da `V20__app_access.sql`,
+  di proposito: un vincolo aggiunto prima della conversione rifiuterebbe di applicarsi su una banca dati che
+  contiene ancora righe `admin` — una migrazione che non parte. Va aggiunto **dopo** il passo 3 della
+  conversione, ed è quello che la sigilla.
+- **Il ritiro della tolleranza `Roles.ADMIN`** (la costante e le annotazioni `@RolesAllowed` che la
+  nominano) va fatto qui, con la data dichiarata nel piano di rilascio: senza una data, resta per sempre.

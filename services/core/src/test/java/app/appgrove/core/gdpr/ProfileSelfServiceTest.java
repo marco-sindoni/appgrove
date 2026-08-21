@@ -67,7 +67,7 @@ class ProfileSelfServiceTest {
     @Test
     void profileExportDownloadsOwnDataOnly() {
         data.invitation(TENANT, memberEmail, "member");
-        data.invitation(TENANT, "altra-persona@esempio.it", "admin");
+        data.invitation(TENANT, "altra-persona@esempio.it", "member");
 
         given().header("Authorization", "Bearer " + memberToken)
                 .when().get(ME + "/export")

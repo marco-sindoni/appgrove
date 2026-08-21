@@ -189,6 +189,44 @@ entries:
         While the membership is live; deleted with the account (+ 14-day grace period, #13 E25).
         Leaving an account closes the membership and does not touch the person's identity
 
+  - key: app_access.identity_id
+    entity: app.appgrove.core.platform.AppAccess
+    field: identityId
+    location:
+      it: Tabella `platform.app_access` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.app_access` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persone dell'account abilitate a usare una applicazione
+      en: People of the account enabled to use an application
+    data_category:
+      it: >-
+        Dato di autorizzazione: identificativo online (riferimento all'identità della persona)
+        associato al ruolo su una singola applicazione. Non contiene né nome né indirizzo, ma dice
+        quale applicazione quella persona usa e con quale potere
+      en: >-
+        Authorisation data: online identifier (reference to the person's identity) paired with the
+        role on a single application. It contains neither name nor email, but it states which
+        application that person uses and with which power
+    purpose:
+      it: >-
+        Consentire alle persone dell'account di usare le applicazioni acquistate, con il ruolo
+        assegnato dall'owner o dall'amministratore di quella applicazione (UC 0098)
+      en: >-
+        Allowing the people of the account to use the purchased applications with the role assigned
+        by the owner or by that application's administrator (UC 0098)
+    legal_basis:
+      it: Contratto con l'account titolare (art. 6.1.b GDPR)
+      en: Contract with the controlling account (art. 6(1)(b) GDPR)
+    retention:
+      it: >-
+        Legata alla vita dell'appartenenza: l'accesso si cancella con la persona che esce dall'account
+        e con l'account stesso (+ 14 giorni di grace, #13 E25). La revoca è una cancellazione logica,
+        così che riconcedere l'accesso non richieda di ricostruirne la storia
+      en: >-
+        Tied to the life of the membership: access is deleted when the person leaves the account and
+        with the account itself (+ 14-day grace period, #13 E25). Revocation is a logical deletion, so
+        that re-granting access does not require rebuilding its history
+
   - key: invitations.email
     entity: app.appgrove.core.platform.Invitation
     field: email

@@ -367,6 +367,16 @@
           }
         }
       },
+      "ChangeRole" : {
+        "type" : "object",
+        "required" : [ "role" ],
+        "properties" : {
+          "role" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        }
+      },
       "ChangeTierRequest" : {
         "type" : "object",
         "required" : [ "targetTierKey", "billingCycle" ],
@@ -547,6 +557,19 @@
       "GdprExportStatus" : {
         "type" : "string",
         "enum" : [ "QUEUED", "RUNNING", "COMPLETED", "FAILED" ]
+      },
+      "GrantAccess" : {
+        "type" : "object",
+        "required" : [ "identityId", "role" ],
+        "properties" : {
+          "identityId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "role" : {
+            "type" : "string",
+            "pattern" : "\\S"
+          }
+        }
       },
       "Instant" : {
         "type" : "string",
@@ -2464,6 +2487,154 @@
         "tags" : [ "Admin Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "platform-admin" ]
+        } ]
+      }
+    },
+    "/api/platform/v1/apps/{appId}/access" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "appId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "App Access Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      },
+      "post" : {
+        "parameters" : [ {
+          "name" : "appId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/GrantAccess"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Grant",
+        "tags" : [ "App Access Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/apps/{appId}/access/{identityId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "appId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        }, {
+          "name" : "identityId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Revoke",
+        "tags" : [ "App Access Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      },
+      "put" : {
+        "parameters" : [ {
+          "name" : "appId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        }, {
+          "name" : "identityId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangeRole"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Change Role",
+        "tags" : [ "App Access Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
         } ]
       }
     },
