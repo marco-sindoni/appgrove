@@ -711,7 +711,7 @@ cartella `changes/*-use-case-YYYY-*` mergiata in `main` e ancora marcata ⬜ è 
 insieme al punto sulle guide di collaudo qui sotto: sono lo stesso problema visto da due lati — **artefatti di
 documentazione che nessun presidio sorveglia**.
 
-## Processo — le guide di collaudo manuale (`how-to-test.md`) invecchiano in silenzio (sollevato 2026-08-21)
+## Processo — le guide di collaudo manuale (`how-to-test.md`) invecchiano in silenzio (sollevato 2026-08-21 · DECISO e implementato dalla change `0093`)
 
 **Il fatto.** Durante il collaudo manuale del lotto `go-fast` 0088–0092 (epica 22), lo sviluppatore ha eseguito
 la guida della change **0088** su un `main` che conteneva già le change 0089–0092, e ha inciampato **tre volte
@@ -776,18 +776,35 @@ sottosistema — che è il caso d'uso per cui `go-fast` esiste — il fenomeno �
 questa ha funzionato: una guida scaduta si legge come «i test non ci sono». È accaduto, e ha richiesto
 un'indagine per dimostrare il contrario.
 
-**Vie possibili, da valutare (nessuna decisa).**
-1. *Guida di lotto consolidata*: `go-fast` scrive, alla fine del lotto, un'unica `how-to-test.md` complessiva
-   che rispecchia lo stato finale di `main`, e marca le guide delle singole change come «fotografia storica».
-   Costa poco e coglie il caso più frequente.
-2. *Passata di riallineamento a fine lotto*: l'ultima change del lotto rilegge le guide delle precedenti e
-   annota i punti superati. Più fedele, più costoso, e resta prosa non sorvegliata.
-3. *Marcatura esplicita*: ogni `how-to-test.md` nasce con in testa il commit su cui è stata scritta, così chi
-   la esegue sa che sta leggendo una fotografia e non un documento vivo. Non evita lo scostamento, lo rende
-   leggibile — è il rimedio minimo, e va fatto in ogni caso.
+**Vie valutate e decisione presa (change `0093`, 2026-08-22).** Delle tre vie annotate qui in origine — guida di
+lotto consolidata, passata di riallineamento, marcatura esplicita — nessuna sarebbe bastata da sola, perché tutte
+e tre trattano il sintomo «invecchiamento» e quattro categorie su sei valgono già al primo giorno. La causa vera
+è che **nessuno esegue la guida**. Deciso quindi:
 
-**Chi lo possiede.** La skill `go-fast` (contratto di fine lotto) e la skill `new-change` (intestazione della
-guida). Da decidere insieme alla prossima revisione delle due skill.
+1. **la guida si esegue prima di committarla**, ed è un artefatto della **modalità fast** di `new-change` (non
+   del chiamante): la costituzione le assegnava già a fast le contropartite, ma solo `go-fast` la implementava —
+   quindi `new-change fast` invocata da sola non produceva alcuna guida, e quel buco è chiuso;
+2. **la passata di fine lotto di `go-fast` è un'esecuzione, non una rilettura** (la via 2 diventa reale): le
+   guide di tutte le change del lotto si rieseguono contro lo stato finale di `main`, così l'invecchiamento si
+   manifesta come *fallimento*. Una guida corretta vede i suoi passi non visivi rieseguiti, se la correzione li
+   ha impattati: una correzione mai eseguita è una correzione non verificata;
+3. ogni fallimento si **discrimina** in tre categorie — superato da una storia successiva · sbagliato in origine
+   · difetto del prodotto — e nel terzo caso **la guida non si ammorbidisce**: si traccia il difetto;
+4. **forma obbligatoria**: intestazione col commit (la via 3, adottata perché «va fatta in ogni caso»), comandi
+   completi e incollabili con **forma canonica dichiarata** per la banca dati locale, etichette come si leggono
+   a schermo. Sono le tre categorie che si chiudono per costruzione;
+5. **scartata** la via 1 (guida di lotto consolidata): sostituirebbe le guide delle singole change con una sola,
+   perdendo la tracciabilità storia → verifica, che serve quando si torna su una change dopo mesi.
+
+**Cosa resta aperto.** Un **controllo meccanico** che imponga la forma canonica dei comandi — la categoria 5 lo
+suggerisce, perché è una stringa fissa e non un giudizio. Escluso di proposito dalla change `0093`: applicato a
+tutte le `how-to-test.md` del repository produrrebbe rumore permanente e renderebbe **rossa la suite per
+documenti d'archivio** che nessuno riscriverà. Diventa sensato quando (e se) le guide storiche verranno
+normalizzate, oppure limitandolo alle guide nate dopo la change `0093` — che è una discriminante da implementare
+e non un dato che il repository porta con sé. Owner: #07 (DevOps/CI) con #10 (testing).
+
+Le guide del lotto 0088–0092 sono già state corrette a mano durante il collaudo del 2026-08-21/22; le
+precedenti restano fotografie storiche, ed è l'intestazione nuova a dirlo per quelle che verranno.
 
 ## Tooling — unificare in `services/commons` i due renderer Java dei template email (sollevato 2026-07-25)
 

@@ -50,5 +50,33 @@
         "description": "La voce di processo si chiude con le decisioni prese, e resta aperto il solo punto del controllo meccanico, con il motivo per cui è stato escluso."
       }
     ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Aggiornata anche CLAUDE.md, non solo le due skill. La costituzione descriveva il ciclo `go-fast` come «tag di backup → new-change fast → how-to-test.md → commit+merge+push → story successiva», cioè con la guida come passo del chiamante e senza alcuna passata finale: lasciarla così avrebbe reso la costituzione la fonte di verità sbagliata, e le skill sarebbero risultate in violazione del documento che le governa. Aggiunto il paragrafo non negoziabile «La guida di collaudo si esegue, non si scrive soltanto», con la forma obbligatoria, la regola del triage e il divieto di ammorbidire una guida per farla combaciare con un difetto.",
+    "files": [
+      {
+        "file": "CLAUDE.md",
+        "description": "Paragrafo nuovo nella sezione della modalità fast; lo schema del ciclo go-fast ora termina con la passata di fine lotto."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Scartata la via 1 del backlog (guida di lotto consolidata: una sola how-to-test complessiva a fine lotto, con le guide delle singole change marcate «fotografia storica»). Sostituirebbe le guide per-change con una sola, perdendo la tracciabilità storia → verifica, che serve quando si torna su una change dopo mesi per capire cosa era stato collaudato. La passata di fine lotto ottiene lo stesso risultato — le guide dicono la verità dello stato finale — senza rinunciare a quella tracciabilità."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): NESSUN IMPATTO. La change tocca esclusivamente istruzioni di processo per le skill (Markdown) e la costituzione: nessuna superficie applicativa, nessun percorso utente, nessun contratto. Il registro docs/testing/copertura-e2e.yaml non va toccato. La domanda è stata posta e questa è la risposta, come richiede UC 0094."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Contratto del subagente di `go-fast` esteso con il campo `how_to_test_eseguita` (`si` | `no — <motivo>`): la passata di fine lotto deve sapere quali guide sono già state eseguite e quali no, altrimenti rieseguirebbe tutto alla cieca oppure — peggio — darebbe per eseguito ciò che non lo è. Contestualmente il punto 4 del ciclo non chiede più al subagente di scrivere la guida come passo aggiuntivo: la scrive `new-change` fast, e il subagente ne RIFERISCE l'esito. Era una duplicazione che avrebbe fatto divergere le due skill.",
+    "files": [
+      {
+        "file": ".claude/skills/go-fast/SKILL.md",
+        "description": "Punto 4 del ciclo riscritto (la guida è di new-change fast); `how_to_test_eseguita` nel contratto del report; nuovo Step 4 di fine lotto; Step 5 = resoconto finale."
+      }
+    ]
   }
 ]
