@@ -96,7 +96,23 @@ checklist di verifica manuale. Le **fermate di escalation restano attive anche i
 prezzi/quote, dati personali ambigui, effetti irreversibili o verso l'esterno): fast toglie l'attesa ai gate, mai i
 presidi di sicurezza né la visibilità (i riepiloghi dei gate vengono comunque stampati). La skill **`go-fast`**
 orchestra l'implementazione in sequenza di più story (o un'epica intera) con questo schema: tag di backup → `new-change`
-fast → `how-to-test.md` → commit+merge+push → story successiva; si ferma al primo guasto non recuperabile.
+fast → commit+merge+push → story successiva → **passata di fine lotto sulle guide**; si ferma al primo guasto non
+recuperabile.
+
+**La guida di collaudo si esegue, non si scrive soltanto (non negoziabile, change `0093`).** `how-to-test.md` è un
+artefatto della **modalità fast** — non del chiamante — e i suoi passi **non visivi** (comandi verso la banca dati,
+chiamate alle interfacce di programmazione, ispezioni di code, log e posta, e ogni attesa su una riga o un codice di
+stato) vanno **eseguiti prima di committarla**. Ogni fallimento si discrimina: *la guida è sbagliata* → si corregge la
+guida; *il prodotto è sbagliato* → è un difetto, si corregge o si traccia. **Mai ammorbidire una guida per farla
+combaciare con un difetto**: lo nasconde due volte. Una guida non eseguita si può committare solo **dichiarandolo**
+(nella guida e in `decisions.json`), col motivo. Forma obbligatoria: intestazione col commit su cui è scritta, comandi
+**completi e incollabili** (per la banca dati locale la forma canonica è
+`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "…"`, e i nomi vanno
+qualificati con lo schema), etichette **come si leggono a schermo** e non nomi tecnici. In un lotto `go-fast` la
+**passata di fine lotto** riesegue le guide di tutte le change del lotto contro lo stato finale di `main`: è l'unico
+presidio che intercetta l'invecchiamento, perché la prosa di una change chiusa è un file d'archivio e nessuna change
+successiva la può rendere rossa. Rieseguire, non rileggere: una rilettura produce un giudizio, un'esecuzione produce un
+fallimento — e solo un fallimento è una prova.
 
 L'autopilot inoltre **si ferma e chiede** quando la domanda non è sua:
 direzione di prodotto, prezzi e quote, classificazioni su dati personali materialmente ambigue (categorie particolari,

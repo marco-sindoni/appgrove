@@ -5,11 +5,14 @@ description: >
   sequence, hands-free: resolves the list from explicit story numbers or from a
   whole epic, then for each story creates a remote backup tag and delegates the
   whole implementation to a fresh-context subagent that runs new-change in FAST
-  mode (no workflow gates, full ./run-tests.sh green before commit), writes a
-  how-to-test.md manual-verification guide in the change folder and returns a
-  structured report; the orchestrator stays lean (work list, backup tag, merge,
-  push, final report), so its context grows by a few lines per story instead of
-  a whole implementation. Stops the loop on the first unrecoverable failure or
+  mode (no workflow gates, full ./run-tests.sh green before commit), writes AND
+  runs the how-to-test.md manual-verification guide in the change folder, and
+  returns a structured report; after the last story, one end-of-batch pass
+  re-runs the non-visual steps of every guide of the batch against the final
+  state of main, so that guides superseded by a later story fail instead of
+  surprising the developer. The orchestrator stays lean (work list, backup tag,
+  merge, push, end-of-batch pass, final report), so its context grows by a few
+  lines per story instead of a whole implementation. Stops the loop on the first unrecoverable failure or
   on any autopilot escalation case returned by the subagent (product direction,
   pricing, ambiguous personal data, irreversible external effects).
 triggers:
@@ -23,8 +26,9 @@ stack_aware: true
 You are the **batch implementation orchestrator** of the appgrove monorepo. Given a list of user stories
 (use cases from `docs/usecases/`) or a whole epic, you implement them **one after another** — but never in
 your own context: each story is delegated to a **fresh-context subagent** that invokes the `new-change`
-skill in **fast mode**, with a remote backup tag before every story and a manual-test guide after every
-implementation. All commands run at the monorepo root `/Users/msindoni/Projects/appgrove`.
+skill in **fast mode**, with a remote backup tag before every story, a manual-test guide produced *and run*
+by every implementation, and one end-of-batch pass that re-runs all the batch's guides against the final state
+of `main`. All commands run at the monorepo root `/Users/msindoni/Projects/appgrove`.
 
 Your context is a scarce resource: a batch survives N stories only if each story adds a **report** to the
 conversation, not an entire implementation (use-case reading, code, test runs). That is why the orchestrator
@@ -34,7 +38,9 @@ heavy lifting happens in a subagent whose context is born empty and dies with th
 Fast mode means the developer has waived the per-change workflow gates **for the whole batch** by invoking
 this skill. The counterweights are non-negotiable: full `./run-tests.sh` green before every commit, the
 complete `decisions.json` register per change, a remote restore point per story, and `how-to-test.md` so the
-developer can verify manually afterwards. The autopilot **escalation stops remain active** (see `new-change`
+developer can verify manually afterwards — a guide whose non-visual steps are **actually executed**, first by
+the change that wrote it and again by the end-of-batch pass (step 4), because a guide nobody ran is prose and
+not a checklist. The autopilot **escalation stops remain active** (see `new-change`
 SKILL.md): product/business direction, pricing/quotas, materially ambiguous personal-data classification,
 irreversible or outward-facing effects beyond the sanctioned commit/merge/push flow. Inside a subagent an
 escalation cannot become a dialogue — it becomes a **stop**: the subagent abstains from committing and
@@ -96,13 +102,12 @@ For story `YYYY` with slug from its use case file:
      writes `requirements.md`, implements within its scope, detects and implements Playwright end-to-end
      needs for frontend surface, runs the **full** `./run-tests.sh` and commits on the change branch only
      when green — no questions asked);
-   - **`how-to-test.md`**: after the implementation commit, write `changes/${CHANGE_ID}/how-to-test.md`
-     **in Italian** and commit it on the change branch. Content: the **manual verification checklist** for
-     this story — primarily **visual** walks (start the stack with `./app-start.sh`, navigate as the user:
-     which pages to open, what must be visible, which states to force and how), plus the necessary
-     **non-visual** checks (API calls to make, database rows to inspect, emails to find in Mailpit). Each
-     item: action → expected result. Write what a human needs to *see with their own eyes*, not a copy of
-     the automated tests;
+   - **`how-to-test.md` belongs to `new-change` fast, not to an extra instruction here**: fast mode writes
+     the guide **and runs its non-visual steps before committing it**, triaging every failure into "the guide
+     is wrong" or "the product is wrong" (see `new-change`, `step-04-close.md`). The subagent must not
+     re-invent it — it must **report** what fast mode did with it, including a guide committed unexecuted and
+     the reason (the stack is not always available inside a batch). An unexecuted guide is not a failure: the
+     end-of-batch pass below is exactly where it gets run;
    - **hard boundaries**: never merge, never push, never touch `main` — merge and push belong to the
      orchestrator;
    - **escalation behaviour**: on any escalation case (product/business direction, pricing/quotas,
@@ -112,9 +117,11 @@ For story `YYYY` with slug from its use case file:
    - **the report contract**: the final message must be **only** a structured report with these fields —
      `esito` (`successo` | `guasto` | `escalation`), `change_id`, `branch`, `esito_suite` (full
      `./run-tests.sh` outcome), `decisioni_registrate` (entry count of `decisions.json`),
-     `how_to_test` (path), `rimandi` (deferred cross-references written into use cases or
-     `docs/_BACKLOG.md`, or "nessuno"), `dettaglio` (failure detail or escalation question; empty on
-     success). No prose around it: the report is data for the orchestrator, not a message to a human.
+     `how_to_test` (path), `how_to_test_eseguita` (`si` | `no — <reason>`: whether the guide's non-visual
+     steps were actually run before the commit, and if not why — the end-of-batch pass needs to know),
+     `rimandi` (deferred cross-references written into use cases or `docs/_BACKLOG.md`, or "nessuno"),
+     `dettaglio` (failure detail or escalation question; empty on success). No prose around it: the report is
+     data for the orchestrator, not a message to a human.
 5. **Verify the report — lightweight, deterministic**: before merging, trust but verify:
    - the report says `esito: successo` (anything else → "Failure handling" below; a `null`/absent report —
      subagent died or was skipped — counts as `guasto`);
@@ -158,9 +165,65 @@ with `esito: escalation`. On stop:
   ones) is a fresh `/go-fast` invocation once the point is settled — the loop never answers an escalation
   in the developer's place.
 
-## Step 4 — Final report
+## Step 4 — End-of-batch pass: RUN the batch's guides against the final state
 
-When all stories are done (or the loop stopped), summarize in Italian from the collected subagent reports:
+**Runs once, after the last story is merged and pushed, before the final report.** Skip it only if the batch
+implemented a single story (there is nothing to age against) or if the loop stopped early — a halted batch has
+no "final state" to test against, and say so in the report.
+
+### Why this step exists
+
+The guides of a batch are the one artifact **nothing guards**. Automated tests protect the code: when a later
+story removes a behaviour, the journey covering it breaks and must be rewritten. The prose of an already-closed
+change is a file in an archive, so when a later story changes reality **nothing turns red** — and in a batch of
+consecutive changes over the same subsystem, which is exactly what `go-fast` exists for, the drift is nearly
+guaranteed. It happened over the epic-22 batch (`0088`–`0092`): the developer hit stale points three times, once
+per verification session, each time having to investigate whether the defect was in the code or in the guide.
+
+**The remedy is to run them, not to re-read them.** A re-reading pass produces a judgement; a run produces a
+failure. Only a failure is evidence — and only a run finds what nobody suspected, like the `500` hiding behind
+the last command of §9 of guide `0091`, unseen because no one had ever executed it.
+
+### How
+
+1. **Start the local stack once**: `./app-start.sh`. This is why the pass is at the end and not per story — the
+   stack goes up one time, and `main` is in the state the developer will actually meet.
+2. **For each `changes/<batch-change>/how-to-test.md` of this batch, in the batch's own order**, run every step
+   whose outcome is observable without looking at a screen: database commands, API calls, queue/log/mailbox
+   inspections, and every assertion about a row or a status code. Visual steps are not this pass's business —
+   they stay for the developer, and their prose is checked only for the things a run cannot check (labels that
+   no longer exist, screens that moved).
+3. **Triage every failure into one of three, and say which**:
+   - **superseded by a later story of this batch** — this is the ageing the pass exists for. Rewrite the point
+     to the final truth, and note in the guide that the earlier behaviour was intermediate. The nastiest
+     instance is a **perimeter guard** ("if you see it now, someone anticipated work"): after the batch it
+     fires on nothing, accusing the *correct* work of the next change. Convert it, do not delete it silently;
+   - **wrong from the start** — the categories that were never about ageing: a command that does not run, a
+     wrong table or expected value, an undeclared prerequisite. Fix it, and if the same mistake appears in more
+     than one guide of the batch, fix it in all of them: it is a habit, not an accident;
+   - **a product defect** — the run found something real. Track it (owning use case or `docs/_BACKLOG.md`) and,
+     if it is safe and in scope, fix it. **Never soften a guide to match a defect**: that hides it twice.
+4. **Re-run after every correction that touches a non-visual step.** A fix that was never executed is a fix
+   that was never verified — the very failure this whole step is about. Corrections to purely visual prose need
+   no re-run; say so rather than implying otherwise.
+5. **Commit the corrected guides on `main`**, one commit for the pass, listing per guide what was corrected and
+   in which of the three categories. The batch's `decisions.json` files are already closed and must not be
+   rewritten: the pass's findings live in its commit message and in the final report.
+6. **Restore what the run changed.** Executing guides mutates the local stack (rows created, roles revoked,
+   applications switched on). Bring it back — `./dev.sh seed` where that is enough — and **state in the report
+   what you left behind** (test rows, an application left on, an account created): the developer works on that
+   stack next.
+
+### What to report
+
+Per guide: run · not run (with the reason) · corrected in categories 1/2/3, with the count. Plus the product
+defects found and where they were tracked. A pass that corrected nothing is a good outcome and must be said
+plainly — not omitted, or the next reader will assume it never ran.
+
+## Step 5 — Final report
+
+When all stories are done (or the loop stopped), summarize in Italian from the collected subagent reports
+and from the end-of-batch pass:
 
 - stories implemented: story → change id → merge commit, link to each `how-to-test.md`;
 - backup tags created (they stay on the remote — cleanup is the developer's choice, suggest
@@ -168,7 +231,11 @@ When all stories are done (or the loop stopped), summarize in Italian from the c
 - stories skipped and why (✅ already done, 🟠 pending decision, missing prerequisite);
 - anything tracked as deferred during the changes (each report's `rimandi`; the per-change `decisions.json`
   files are the authority);
-- the reminder that the manual pass over the `how-to-test.md` checklists is the developer's remaining task.
+- **the end-of-batch pass** (step 4): which guides were run, what the triage found in each of the three
+  categories, which product defects surfaced and where they were tracked, and the state the local stack was
+  left in;
+- the reminder that the **visual** part of the `how-to-test.md` checklists is the developer's remaining task —
+  the non-visual part has already been run, twice: by each change and by the end-of-batch pass.
 
 ## Non-negotiables inherited from the constitution
 
@@ -177,3 +244,7 @@ project constitution and the `new-change` skill on its own: Italian artifacts, d
 change, deferred-decision tracking, privacy/RoPA gate, scaffold parity gate, `run-tests.sh` kept current.
 go-fast adds speed by removing *waiting*, never by removing *evidence* — and adds endurance by keeping the
 orchestrator's context lean, never by skipping a counterweight.
+
+One counterweight is go-fast's alone, because only the orchestrator sees the **batch**: the guides of the
+individual changes are the one artifact nothing guards, since a closed change's prose is an archive file and no
+later change can turn it red. Step 4 is where that gap is closed — by running them, not by re-reading them.

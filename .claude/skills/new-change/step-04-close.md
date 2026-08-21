@@ -234,6 +234,72 @@ note it in the implementation log's "Note per il revisore" and tell the develope
 A **draft** landing (`status: 'draft'`) is not stale — it is not online yet. Only `published` landings trigger the
 reminder. `finalize-landing` is re-runnable on a published landing exactly for this (UC 0057 DoD #4).
 
+## Write and RUN the manual-verification guide `how-to-test.md` (fast mode)
+
+**Applies when the change produces a manual-verification guide** — i.e. in **fast mode**, where `how-to-test.md`
+is one of the non-reducible counterweights CLAUDE.md requires (the developer waived the review gates, so the
+guide is what lets them verify afterwards). Classic and autopilot changes do not produce it; say so in one line
+and skip to the commit gate.
+
+Write `changes/$CHANGE_ID/how-to-test.md` **in Italian**: the checklist a human needs to verify this story with
+their own eyes. Action → expected result, primarily **visual** walks (start the stack, navigate as the user:
+which pages, what must be visible, which states to force and how), plus the **non-visual** checks that prove
+what the eye cannot see (calls to make, rows to inspect, emails to find in Mailpit).
+
+### Then execute the non-visual part — before committing it
+
+**A guide nobody has ever run is prose, not a checklist.** Five guides of the epic-22 batch needed ~40 fixes
+during manual verification, and only two of the six defect categories were ageing: the rest — commands that do
+not run, labels that do not exist on screen, four different command conventions in one guide, undeclared
+prerequisites — were **wrong the day they were written**, because writing is not running. The most eloquent
+proof: the last command of §9 of guide `0091` was hiding a real `500`, unseen because nobody had ever run it.
+
+So: **run every step whose outcome is observable without looking at a screen** — database commands, API calls,
+queue and log inspections, mailbox checks, and every assertion about a row or a status code. Visual steps stay
+for the developer: they are why the guide exists.
+
+Each failure must be **discriminated, never worked around** — this triage *is* the value of the whole step:
+
+- **the guide is wrong** (command that does not run, wrong table or field name, wrong expected value, missing
+  prerequisite) → fix the guide, re-run the step;
+- **the product is wrong** → it is a defect. Fix it if it is inside this change's scope; otherwise track it
+  (owning use case or `docs/_BACKLOG.md`) exactly as the deferred-decision gate requires. Do **not** soften the
+  guide to match a defect: that hides it twice.
+
+Record in `decisions.json`: which steps were run, what the triage found, and — if the stack was not available —
+that the guide was **committed unexecuted**, with the reason. A guide that was not run and pretends otherwise is
+worse than one that says so plainly: in a `go-fast` batch the end-of-batch pass (see the `go-fast` skill) will
+run it against the final state of `main`, and standalone it is the developer's to run.
+
+### Mandatory shape of the guide
+
+Three of the six defect categories are closed **by construction** if the guide has this shape:
+
+1. **Header with the commit it was written against**, so whoever runs it knows they are reading a snapshot and
+   not a living document:
+   ```markdown
+   > Guida scritta sul commit `<sha breve>` del <AAAA-MM-GG>. È una **fotografia**: se una change successiva
+   > cambia questi comportamenti, i punti superati si scoprono rieseguendola, non rileggendola.
+   ```
+2. **Complete, paste-ready commands.** No shortcut to define first — no shell functions, no aliases, no
+   variables left unset in the text. Whoever verifies must copy one line and have it work. For the local
+   database the **canonical form is declared**, and it is the only admitted one (it presumes nothing installed
+   on the machine beyond the local stack):
+   ```bash
+   docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "<query>"
+   ```
+   Every schema-qualified name is qualified (`platform.flyway_schema_history`, not `flyway_schema_history`):
+   each service has its own schema and its own history table. Prefer `curl -o file -w '%{http_code}'` over
+   pipelines that depend on the flavour of the host tools (`head -n -1` does not do on macOS what it does on
+   Linux).
+3. **Labels as they read on screen**, in the language of the interface the developer is using — not technical
+   names, not symbol names. «Membri», not *Members*; «Bersaglio → Utente», not `target=user`. And say **where**
+   the element is: whoever cannot find it suspects a product defect.
+
+One more, which no shape can enforce and which must therefore be thought about: **a guide run in sequence after
+another inherits the state the other left**. Declare the starting state as a prerequisite, and make the queries
+robust against it (`deleted_at is null` where a previous guide may have removed something logically).
+
 ## MANDATORY STOP — commit consent gate (classic and autopilot; waived in fast)
 
 Do **not** commit yet. Summarize what will be committed (the changed files, the `implementation-log.md` and the

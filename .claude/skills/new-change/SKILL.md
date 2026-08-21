@@ -5,7 +5,9 @@ description: >
   change number, creates a branch change/NNNN-brief-description, writes
   changes/NNNN-*/requirements.md, guides the implementation, runs the test suite of
   every area touched (infra/frontend/services), writes
-  changes/NNNN-*/implementation-log.md plus the machine-readable decision register
+  changes/NNNN-*/implementation-log.md plus (in fast mode) the how-to-test.md
+  manual-verification guide, whose non-visual steps are executed before it is
+  committed, plus the machine-readable decision register
   changes/NNNN-*/decisions.json, and proposes the merge. Runs in classic mode
   (the developer answers every question), in autopilot mode (the agent answers on
   the developer's behalf, following the recommended option), or in fast mode
@@ -64,8 +66,8 @@ then log — never the other way around.
    branch, seed `decisions.json`, note the areas in scope
 2. `step-02-requirements.md` — write requirements.md with the developer
 3. `step-03-implement.md` — guide implementation **and add/update tests**
-4. `step-04-close.md` — run the suite of every touched area, write implementation-log.md, close `decisions.json`,
-   ask for merge consent
+4. `step-04-close.md` — run the suite of every touched area, write implementation-log.md, **write and run
+   `how-to-test.md`** (fast mode), close `decisions.json`, ask for merge consent
 
 ## Decision register — `changes/NNNN-*/decisions.json` (non-negotiable)
 
@@ -173,6 +175,11 @@ invocation**: declaring fast *is* the approval act, given up front instead of at
   that replaces the human eye. **Never commit on a red suite**: fix, or stop and report;
 - **merge and push are NOT fast mode's job**: the branch is left committed for the caller — the `go-fast`
   skill inside its loop, or the developer when fast is used standalone;
+- **`how-to-test.md` is written AND run**: the manual-verification guide is the counterweight that lets the
+  developer check afterwards what they waived checking before, so it belongs to fast mode — not to whoever
+  called it. It is written in Italian in the change folder and its **non-visual steps are executed before it is
+  committed**: a guide nobody has ever run is prose, not a checklist. Shape, triage of failures and what to
+  record when the stack is unavailable: `step-04-close.md` ("Write and RUN the manual-verification guide");
 - the decision register is even more important, not less: **every** choice lands in `decisions.json`
   (prefix `(autopilot)`; the fast mode itself is recorded in decision 1) — it is the only trace the
   developer will review after the fact;
@@ -198,6 +205,10 @@ these safety stops**: a fast run that hits an escalation case stops exactly like
 - **At close (step-04): STOP for commit consent.** When implementation is done, do not commit
   until the developer explicitly consents. *(In **fast** mode: waived — commit happens only after the full
   `./run-tests.sh` suite is green.)*
+- **At close (step-04, fast mode only): guide-execution gate.** `how-to-test.md` is written **and its
+  non-visual steps are run** before it is committed; every failure is triaged into "the guide is wrong" or
+  "the product is wrong" and never worked around. An unexecuted guide may be committed only by **declaring
+  it** — in the guide and in `decisions.json` — with the reason.
 - **After committing (step-04): STOP for merge consent.** Leave the branch unmerged and never
   merge to the default branch without the developer's separate explicit go-ahead. *(In **fast** mode the
   merge is simply not this skill's job: the branch is handed to the caller — `go-fast` or the developer.)*
