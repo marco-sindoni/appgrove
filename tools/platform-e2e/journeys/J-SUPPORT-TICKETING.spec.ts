@@ -108,6 +108,12 @@ test('[J-SUPPORT-TICKETING] apertura + email di conferma → coda della piattafo
   // ── 7. la piattaforma chiude la prima richiesta, sotto conferma ─────────────
   await admin.getByLabel('Priority').selectOption('')
   await admin.getByRole('row').filter({ hasText: subject }).getByRole('link', { name: subject }).click()
+  // Il nome accessibile «Status» esiste su DUE pagine — il filtro della coda e il modulo del
+  // dettaglio — e il passaggio fra le due è asincrono (rotta dell'interfaccia + caricamento della
+  // richiesta). Senza attendere il dettaglio DAVVERO caricato, `selectOption` cade sul filtro della
+  // coda: il modulo resta sullo stato che aveva, «Update» non chiede conferma e il test fallisce
+  // dicendo «finestra di conferma assente» invece di «ho parlato con la pagina sbagliata».
+  await expect(admin.getByRole('heading', { name: `Request: ${subject}`, level: 1 })).toBeVisible()
   await admin.getByLabel('Status').selectOption('closed')
   await admin.getByRole('button', { name: 'Update' }).click()
   await expect(admin.getByRole('dialog')).toContainText('Close this request?')
