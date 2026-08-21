@@ -7,12 +7,7 @@ riservate all'owner.
 
 Ogni voce è **azione → risultato atteso**. Se un'attesa non si verifica, fermati e riportalo: non è una sfumatura.
 
-Per brevità, in tutto il documento:
-
-```bash
-# scorciatoia per le letture sulla banca dati locale
-alias pg='docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove'
-```
+Ogni comando della guida è **completo e pronto da incollare**: nessuna scorciatoia da definire prima.
 
 ## 0. Preparazione
 
@@ -39,7 +34,8 @@ alias pg='docker compose -f dev/docker-compose.yml exec -T postgres psql -U appg
 **Azione**
 
 ```bash
-pg -tAc "select version, description, success from flyway_schema_history where version = '20';"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc "select version, description, success from platform.flyway_schema_history where version = '20';"
 ```
 
 **Risultato atteso** — una riga `20|app access|t`. Se `success` non è `t`, **fermati qui**: il resto non ha senso.
@@ -49,7 +45,8 @@ pg -tAc "select version, description, success from flyway_schema_history where v
 **Azione**
 
 ```bash
-pg -c "\d platform.app_access"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "\d platform.app_access"
 ```
 
 **Risultato atteso** — le colonne `id, tenant_id, app_id, identity_id, role, granted_by` più quelle di audit
@@ -63,7 +60,8 @@ pg -c "\d platform.app_access"
 **Azione**
 
 ```bash
-pg -c "select conname, pg_get_constraintdef(oid) from pg_constraint
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select conname, pg_get_constraintdef(oid) from pg_constraint
         where conrelid = 'platform.app_access'::regclass order by conname;"
 ```
 
@@ -76,7 +74,8 @@ chiave logica governata dal token, non una chiave esterna.
 **Azione**
 
 ```bash
-pg -c "select i.email, m.role from platform.membership m
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select i.email, m.role from platform.membership m
          join platform.identity i on i.id = m.identity_id
         where m.tenant_id = 'a0000000-0000-4000-8000-000000000001' order by m.role, i.email;"
 ```
@@ -87,7 +86,8 @@ pg -c "select i.email, m.role from platform.membership m
 **Azione**
 
 ```bash
-pg -tAc "select count(*) from platform.membership where role = 'admin';"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc "select count(*) from platform.membership where role = 'admin';"
 ```
 
 **Risultato atteso** — **`0`**. Il valore `admin` non esiste più a livello di account: è il cuore della change.
@@ -95,7 +95,8 @@ pg -tAc "select count(*) from platform.membership where role = 'admin';"
 **Azione**
 
 ```bash
-pg -c "select i.email, app.slug, aa.role from platform.app_access aa
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select i.email, app.slug, aa.role from platform.app_access aa
          join platform.identity i on i.id = aa.identity_id
          join platform.app app on app.id = aa.app_id
         where aa.deleted_at is null order by aa.role;"
@@ -108,7 +109,8 @@ non si scrive. È la traduzione che UC 0113 farà sui conti reali, già applicat
 **Azione**
 
 ```bash
-pg -c "select email, role from platform.invitations where status = 'pending' order by email;"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select email, role from platform.invitations where status = 'pending' order by email;"
 ```
 
 **Risultato atteso** — due inviti in attesa, **entrambi** di ruolo `member`. L'indirizzo `invitee-admin@acme.test`
@@ -163,8 +165,10 @@ curl -sk -o /dev/null -w '%{http_code}\n' -X POST \
   https://app.local.appgrove.app/api/platform/v1/apps/$CRM/access \
   -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
   -d "{\"identityId\":\"$ADMIN\",\"role\":\"viewer\"}"
-pg -tAc "select role from platform.app_access where identity_id = '$ADMIN' and deleted_at is null;"
-pg -tAc "select count(*) from platform.app_access where identity_id = '$ADMIN' and deleted_at is null;"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc "select role from platform.app_access where identity_id = '$ADMIN' and deleted_at is null;"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc "select count(*) from platform.app_access where identity_id = '$ADMIN' and deleted_at is null;"
 ```
 
 **Risultato atteso** — **`200`** (non `201`), ruolo `viewer`, e **una sola** riga: non nasce un doppione. Riporta
@@ -261,7 +265,8 @@ curl -sk -o /dev/null -w '%{http_code}\n' \
 curl -sk -o /dev/null -w '%{http_code}\n' -X DELETE \
   https://app.local.appgrove.app/api/platform/v1/apps/$CRM/access/$MEMBRO \
   -H "Authorization: Bearer $TOKEN"
-pg -c "select role, deleted_at is not null as revocato from platform.app_access
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select role, deleted_at is not null as revocato from platform.app_access
         where identity_id = '$MEMBRO';"
 ```
 
@@ -274,7 +279,8 @@ non fosse parziale, questa riconcessione fallirebbe.
 **Azione** — dalla schermata **Members** rimuovi `member@acme.test` (bottone **Remove**, poi conferma), quindi:
 
 ```bash
-pg -c "select aa.role, aa.deleted_at is not null as revocato from platform.app_access aa
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select aa.role, aa.deleted_at is not null as revocato from platform.app_access aa
         where aa.identity_id = '$MEMBRO';"
 ```
 
@@ -298,7 +304,8 @@ curl -sk -o /dev/null -w 'retrocessione: %{http_code}\n' -X PATCH \
 curl -sk -o /dev/null -w 'sospensione: %{http_code}\n' -X PATCH \
   https://app.local.appgrove.app/api/platform/v1/users/$OWNER \
   -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"status":"suspended"}'
-pg -c "select role, status from platform.membership where identity_id = '$OWNER';"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select role, status from platform.membership where identity_id = '$OWNER';"
 ```
 
 **Risultato atteso** — **tre volte `409`**, e l'appartenenza dell'owner ancora `owner` / `active`. Prima di questa

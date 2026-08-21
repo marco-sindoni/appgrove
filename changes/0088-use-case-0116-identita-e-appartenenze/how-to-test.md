@@ -12,6 +12,23 @@ si porta via una persona che appartiene anche altrove.
 
 Tempo indicativo: **20 minuti** di controlli visivi, **20** di controlli non visivi (database, API, posta).
 
+> **Attenzione — questa guida è stata scritta il giorno della change 0088, ma il modello è andato avanti.**
+> Se la esegui su un `main` che contiene anche le change **0089–0092** (UC 0117, 0118, 0098, 0099), due cose
+> che questa guida dà per assenti oggi **ci sono**, e due che dà per presenti non ci sono più:
+>
+> | Cosa | Stato il giorno della 0088 | Stato dopo il lotto 0089–0092 | Punti riallineati |
+> |---|---|---|---|
+> | Scelta e cambio dell'account attivo | assenti (ripiego: appartenenza più antica) | **schermata di scelta** all'accesso (0090) e **selettore** nella barra laterale (0089) | 2.4 |
+> | Ruolo di piattaforma | tre valori (`owner`/`admin`/`member`), modificabile da Members | **due valori** (`owner`/`member`), cambio ruolo **rimosso**, invito senza ruolo (0091) | 1.2, 1.3, 1.6 |
+>
+> **Nomi delle schermate.** Questa guida usa i nomi inglesi; se hai l'interfaccia in italiano (selettore in
+> alto a destra) leggi così: *Members* → **Membri**, *My data* → **I miei dati**, *Billing* → **Fatturazione**,
+> *Sign up* → **Registrati**, *GDPR rights* → **Diritti GDPR**. Dove serve un campo preciso, il punto lo dice
+> con l'etichetta che vedi davvero.
+>
+> Nessuna delle due è una regressione della 0088: sono le storie successive dello stesso lotto che hanno
+> sciolto i ripieghi che questa change aveva dichiarato. I punti riallineati portano una nota «dopo la …».
+
 ---
 
 ## Parte 0 — Avvio, migrazione, utenti
@@ -44,7 +61,7 @@ Tempo indicativo: **20 minuti** di controlli visivi, **20** di controlli non vis
 ```bash
 docker compose -f dev/docker-compose.yml exec -T postgres \
   psql -U appgrove -d appgrove -tAc \
-  "select version, description, success from flyway_schema_history where version = '17';"
+  "select version, description, success from platform.flyway_schema_history where version = '17';"
 ```
 
 **Risultato atteso** — una riga `17|identity membership|t`. Se `success` non è `t`, **fermati qui**: la
@@ -67,7 +84,7 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
 `ux_membership_tenant_identity`. I due indici `ux_users_*` **non devono comparire**: erano loro a imporre
 «una persona, un solo account».
 
-### 0.3 Il seme ha cinque persone e cinque appartenenze, e `platform.users` è vuota
+### 0.3 Il travaso ha portato tutti, e `platform.users` è davvero fredda
 
 **Azione**
 
@@ -76,12 +93,37 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
   psql -U appgrove -d appgrove -c \
   "select (select count(*) from platform.identity)   as identita,
           (select count(*) from platform.membership) as appartenenze,
-          (select count(*) from platform.users)      as users_fredda;"
+          (select count(*) from platform.users)      as users_storica;"
 ```
 
-**Risultato atteso** — `identita >= 5`, `appartenenze >= 5`, e `users_fredda = 0`. La vecchia tabella esiste
-ancora (è la rete di ritorno) ma **nessuno la scrive più**: se contiene righe, qualcosa la sta ancora
-scrivendo, ed è un difetto.
+**Risultato atteso** — `identita >= 5` e `appartenenze >= 5`. `appartenenze` può superare `identita`: lo
+scarto sono le persone che appartengono a più di un account, cioè il vincolo caduto che si vede nei numeri.
+
+Su `users_storica` **non guardare il conteggio**: la migrazione V17 *copia* e non svuota, perché quella
+tabella è la rete di ritorno del travaso. Su una base che esisteva già contiene tutte le righe di prima, ed
+è giusto così; solo su una base creata da zero dopo V17 sarebbe 0. La domanda vera è un'altra — *qualcuno la
+scrive ancora?* — e si misura nel passo seguente.
+
+### 0.3-bis Nessuno scrive più su `platform.users` (è questo il controllo che conta)
+
+**Azione**
+
+```bash
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c \
+  "select (select installed_on from platform.flyway_schema_history where version='17') as migrazione_v17,
+          (select max(created_at) from platform.users) as ultima_riga_users,
+          (select max(updated_at) from platform.users) as ultimo_agg_users,
+          (select count(*) from platform.users
+            where created_at > (select installed_on from platform.flyway_schema_history where version='17')
+                  or updated_at > (select installed_on from platform.flyway_schema_history where version='17')
+          ) as toccate_dopo_v17;"
+```
+
+**Risultato atteso** — `toccate_dopo_v17 = 0`, e le due date di `platform.users` **anteriori** a
+`migrazione_v17`. Se `toccate_dopo_v17` è diverso da zero, qualcosa scrive ancora sulla tabella fredda ed è
+un difetto da segnalare. Per farne una prova viva: invita una persona nuova (parte 2), poi rilancia questa
+interrogazione — il conteggio deve restare `0` mentre `platform.identity` è cresciuta.
 
 ---
 
@@ -101,20 +143,29 @@ Acme, esattamente come prima.
 
 **Azione** — apri **Members** dal menu di sinistra.
 
-**Risultato atteso** — l'elenco mostra **tre** persone di Acme: `owner@acme.test` (owner),
-`admin@acme.test` (admin), `member@acme.test` (member), con indirizzo, nome e ruolo. Più i **due inviti in
-attesa** del seme (`invitee-admin@acme.test`, `invitee-member@acme.test`). Nessuna colonna nuova, nessun
-campo vuoto, nessun «—» al posto di un nome: se un nome o un indirizzo appare vuoto, la giunzione
-appartenenza→identità non sta funzionando.
+**Risultato atteso** — l'elenco mostra le persone di Acme con indirizzo, nome, ruolo e stato: almeno
+`owner@acme.test`, `admin@acme.test` e `member@acme.test`. Più i **due inviti in attesa** del seme
+(`invitee-admin@acme.test`, `invitee-member@acme.test`). Nessun campo vuoto, nessun «—» al posto di un nome:
+se un nome o un indirizzo appare vuoto, la giunzione appartenenza→identità non sta funzionando — ed è questo
+il vero oggetto del controllo.
 
-### 1.3 Cambio ruolo e rimozione
+**Dopo la 0091** — nella colonna del ruolo esistono solo **Owner** e **Membro**: `admin@acme.test` compare
+come *Membro*, perché il suo potere di amministrazione si è spostato sulla singola applicazione (è `admin`
+sul Mini-CRM). Le azioni per riga sono **Sospendi** e **Rimuovi**, senza selettore di ruolo.
 
-**Azione** — cambia il ruolo di `member@acme.test` in **admin**, poi riportalo a **member**. Poi apri
-**Account** e verifica che l'identificativo del workspace sia mostrato.
+### 1.3 Protezione dell'ultimo titolare (e assenza del cambio ruolo)
 
-**Risultato atteso** — il ruolo cambia e resta cambiato dopo un ricaricamento della pagina. Sulla riga
-dell'unico owner il selettore del ruolo **non c'è** e il pulsante di rimozione è **disabilitato** (protezione
-dell'ultimo titolare, invariata).
+**Azione** — sulla riga di `owner@acme.test` prova le azioni. Poi apri **Account** e verifica che
+l'identificativo del workspace sia mostrato.
+
+**Risultato atteso** — sulla riga dell'unico owner **Sospendi** e **Rimuovi** sono **disabilitati**
+(protezione dell'ultimo titolare, invariata dalla 0088). Sulle altre righe sono attivi.
+
+**Dopo la 0091** — **non cercare il cambio ruolo: è stato rimosso**, perché il ruolo di piattaforma ha due
+soli valori. Il controllo qui è che *non ci sia*: nella tabella non deve comparire alcun menu a tendina del
+ruolo. È esattamente ciò che il percorso automatico `J-MEMBERS` verifica
+(`expect(page.getByRole('combobox')).toHaveCount(0)`). Cambiare il ruolo di una persona **su una singola
+applicazione** è materia di UC 0111 e non ha ancora una schermata.
 
 ### 1.4 Il proprio profilo e la rettifica del nome
 
@@ -147,9 +198,11 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
 
 ### 1.6 Invito e accettazione di una persona nuova
 
-**Azione** — torna come `owner@acme.test`, **Members** → invita `nuovo-0088@example.test` con ruolo
-`member`. Apri Mailpit, prendi il collegamento d'invito, aprilo in una finestra in incognito e imposta una
-password.
+**Azione** — torna come `owner@acme.test`, **Members** → invita `nuovo-0088@example.test`. Apri Mailpit,
+prendi il collegamento d'invito, aprilo in una finestra in incognito e imposta una password.
+
+> **Dopo la 0091** il riquadro d'invito chiede **solo l'indirizzo**: nessun ruolo da scegliere, perché chi
+> entra è sempre `member`. Sotto al campo si legge che il posto è dell'account che invita.
 
 **Risultato atteso** — l'invitato entra come **member di Acme** (nessuna scelta di conto: ne ha uno solo) e
 compare nella schermata Members dell'owner. In Mailpit c'è l'email d'invito, nella lingua giusta.
@@ -162,8 +215,13 @@ Questo è il pezzo nuovo, e va **visto**, non dedotto.
 
 ### 2.1 Costruisci il caso
 
-Non esiste ancora un percorso di prodotto per farlo (i due percorsi d'ingresso sono di UC 0118), quindi la
-seconda appartenenza si crea a mano — è una leva d'ambiente, non una funzionalità.
+Il giorno della 0088 non esisteva un percorso di prodotto per farlo (i due percorsi d'ingresso erano di UC
+0118), quindi la seconda appartenenza si creava a mano — una leva d'ambiente, non una funzionalità.
+
+> **Dopo la change 0090 il percorso di prodotto esiste**: come `owner@acme.test`, in **Members**, invita
+> `bob@bob.test`; Bob accetta l'invito dalla posta e ottiene la seconda appartenenza **senza** che nessuno
+> tocchi la banca dati. È la via da preferire, perché collauda anche il codice. Il comando qui sotto resta
+> utile per costruire il caso in un colpo solo, o per ricostruirlo dopo il punto 2.8.
 
 **Azione** — dai a `bob@bob.test` (titolare del proprio conto) una **seconda appartenenza** come `member` di
 Acme:
@@ -209,13 +267,31 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
 `duplicate key value violates unique constraint "ux_membership_tenant_identity"`. Il vincolo che serve
 davvero vive nella banca dati, non solo nell'interfaccia: nessuna schermata può aggirarlo.
 
-### 2.4 Bob entra ancora, e nel conto giusto
+### 2.4 Bob entra ancora, e la piattaforma sa che appartiene a due conti
 
 **Azione** — accedi come `bob@bob.test` in una finestra in incognito.
 
-**Risultato atteso** — entra **senza selettore** e si trova nel **proprio** conto (`Bob Personal`, dove è
-owner): è l'appartenenza più antica, il ripiego dichiarato di questa change. Il selettore del conto attivo
-arriva con UC 0117 — se lo vedi adesso, qualcuno ha anticipato lavoro che non tocca a questa change.
+**Risultato atteso al giorno della 0088** — entrava **senza selettore**, direttamente nel **proprio** conto
+(`Bob Personal`, dove è owner): l'appartenenza più antica, il ripiego dichiarato da questa change in attesa di
+UC 0117.
+
+**Dopo le change 0089 e 0090 il ripiego non c'è più, ed è giusto che tu veda una schermata.** Il risultato
+atteso oggi:
+
+1. subito dopo l'accesso compare **«Choose an account»**, con l'elenco dei due conti — `Bob Personal` e
+   `Acme Corp`. È la schermata introdotta dalla change **0090** (UC 0118) per il caso «arrivo senza una
+   sessione che dica in quale conto lavorare»; la change 0089 l'aveva rimandata proprio a lei;
+2. scegli `Bob Personal` → entri nel tuo conto, come prima;
+3. a sessione avviata, nella **barra laterale** compare il **selettore del conto attivo** (change 0089, UC
+   0117), che permette di passare ad `Acme Corp` senza uscire.
+
+Se al posto della schermata entri diretto in un conto, controlla di avere davvero **due** appartenenze vive
+(punto 2.2): con una sola appartenenza la schermata non deve comparire, ed è il comportamento corretto.
+
+> Il resto della parte 2 (dal 2.5 in poi) **non è toccato** dalle change successive: la separazione fra i due
+> conti, l'esportazione, la sospensione e l'uscita si collaudano esattamente come scritto. Se durante quei
+> passi Bob si ritrova nel conto sbagliato, usa il selettore della barra laterale per tornare dove serve —
+> è la sola differenza operativa.
 
 ### 2.5 Acme lo vede come proprio membro, e non sa nient'altro di lui
 
@@ -297,8 +373,11 @@ ruoli diversi: è corretto — la console è l'unica vista che vede identità e 
 
 ### 3.2 Limitazione del trattamento su una persona (art. 18)
 
-**Azione** — in console apri **GDPR rights**, scegli bersaglio **user** e incolla l'identificativo della
-persona `member@acme.test`:
+**Azione** — in console apri **Diritti GDPR** dalla barra laterale, poi **scorri in fondo alla pagina**, oltre
+la tabella delle richieste, fino al riquadro **«Limitazione del trattamento (art. 18)»**. Lì trovi il menu a
+tendina **«Bersaglio»** (in inglese *Target*) con due sole opzioni, **Account** e **Utente**: scegli
+**Utente**. Nel campo accanto, **«ID bersaglio (UUID)»**, incolla l'identificativo della persona
+`member@acme.test`, che leggi così:
 
 ```bash
 docker compose -f dev/docker-compose.yml exec -T postgres \
@@ -306,14 +385,16 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
   "select id from platform.identity where email='member@acme.test';"
 ```
 
-Applica la limitazione, confermando la finestra di dialogo. Poi prova ad accedere come `member@acme.test`
-in una finestra in incognito.
+Premi **«Applica limitazione»** e conferma la finestra di dialogo. Poi prova ad accedere come
+`member@acme.test` in una finestra in incognito.
 
 **Risultato atteso** — l'accesso è **rifiutato** (messaggio di errore, nessuna navigazione del prodotto): la
 limitazione sospende la **persona**, non la sua appartenenza a un conto — quindi non è aggirabile aprendo un
-altro conto. Nella console la voce compare fra le limitazioni attive, con l'indirizzo e il conto di contesto.
+altro conto. Nello stesso riquadro della console la voce compare ora nell'elenco delle limitazioni attive,
+nella forma `<etichetta> (Utente · <identificativo>)`, con accanto il comando per rimuoverla.
 
-**Azione** — rimuovi la limitazione dalla console e riprova l'accesso.
+**Azione** — rimuovi la limitazione dall'elenco delle limitazioni attive (stesso riquadro) e riprova
+l'accesso.
 
 **Risultato atteso** — `member@acme.test` rientra. La limitazione è reversibile e lascia due righe nel
 registro delle prove (applicata, rimossa).
@@ -390,21 +471,30 @@ ricontrolla la tabella delle identità.
 
 Rilettura finale, con gli occhi:
 
-- [ ] **Nessun selettore del conto** da nessuna parte (è di UC 0117).
+- [ ] ~~**Nessun selettore del conto** da nessuna parte (è di UC 0117).~~ **Superata dalle change 0089 e
+      0090**: la scelta e il cambio del conto attivo ora esistono, ed è corretto vederli. Questa voce valeva
+      solo finché il ripiego «appartenenza più antica» era in piedi.
 - [ ] **Nessuna schermata o messaggio** che dica a un'azienda che una persona ha «già un account appgrove»,
-      né in modo diretto né per deduzione (contatori, etichette, errori più informativi del dovuto).
-- [ ] **Nessun cambiamento visibile** per chi ha un solo conto: stesso numero di clic dall'accesso al
-      cruscotto di prima della change.
+      né in modo diretto né per deduzione (contatori, etichette, errori più informativi del dovuto). *Resta
+      valida e importante*: invitando un indirizzo già registrato, chi invita non deve poterlo dedurre.
+- [ ] **Nessun cambiamento visibile** per chi ha **un solo** conto: stesso numero di clic dall'accesso al
+      cruscotto di prima della change. *Resta la regressione principale da escludere* — chi ha una sola
+      appartenenza non deve vedere né la schermata di scelta né il selettore.
 - [ ] **Nessun campo vuoto** dove prima c'era un indirizzo o un nome (sarebbe una giunzione che non lega).
-- [ ] `platform.users` **resta a zero righe** dopo tutte le prove sopra:
+- [ ] **Nessuno scrive più su `platform.users`** dopo tutte le prove sopra:
 
 ```bash
 docker compose -f dev/docker-compose.yml exec -T postgres \
-  psql -U appgrove -d appgrove -tAc "select count(*) from platform.users;"
+  psql -U appgrove -d appgrove -tAc \
+  "select count(*) from platform.users
+    where created_at > (select installed_on from platform.flyway_schema_history where version='17')
+       or updated_at > (select installed_on from platform.flyway_schema_history where version='17');"
 ```
 
-**Risultato atteso** — `0`. La vecchia tabella è la rete di ritorno del travaso: se qualcuno la scrive,
-esistono due verità sulla stessa persona e nessuna regola su quale vince.
+**Risultato atteso** — `0`. Attenzione: **non** è il conteggio delle righe della tabella (vedi 0.3 — la
+migrazione copia e non svuota, quindi su una base preesistente le righe storiche restano, ed è corretto). Qui
+si conta chi è stato **toccato dopo** la migrazione: la vecchia tabella è la rete di ritorno del travaso, e se
+qualcuno la scrive esistono due verità sulla stessa persona e nessuna regola su quale vince.
 
 ---
 

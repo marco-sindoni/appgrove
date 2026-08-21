@@ -40,7 +40,7 @@ passata:
 ```bash
 docker compose -f dev/docker-compose.yml exec -T postgres \
   psql -U appgrove -d appgrove -tAc \
-  "select version, description, success from flyway_schema_history where version = '16';"
+  "select version, description, success from platform.flyway_schema_history where version = '16';"
 ```
 
 **Risultato atteso** — una riga `16 | support ticket source review | t`. Se manca, il resto non ha senso.

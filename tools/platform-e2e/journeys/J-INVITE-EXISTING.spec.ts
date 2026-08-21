@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { authedFetch, tenant } from '../helpers/api'
-import { expectInsideAccount, loginIntoAccount, switchAccountTo } from '../helpers/browser'
+import {
+  expectInsideAccount,
+  loginIntoAccount,
+  switchAccountTo,
+  waitForLegalDecision,
+} from '../helpers/browser'
 import { dbRow } from '../helpers/db'
 
 const CORE_API = process.env.PLATFORM_CORE_API ?? 'http://localhost:20080'
@@ -71,17 +76,26 @@ test('[J-INVITE-EXISTING] invito a chi ha già un account → accettazione dal c
 
   // ── 4. accetta: nasce l'appartenenza e l'account nuovo diventa quello attivo ──
   const reloaded = page.waitForEvent('load')
+  // La decisione sul gate legale si attende registrandola PRIMA del clic. Senza questa attesa il
+  // journey guarda la shell nella finestra di fail-open, la trova, prosegue — e un istante dopo il
+  // gate prende il posto della shell, facendo cadere l'asserzione sul selettore su una pagina che
+  // mostra i documenti da accettare. È la stessa cura che `switchAccountTo` si fa in casa.
+  const legalSettled = waitForLegalDecision(page)
   await page.getByRole('button', { name: 'Accept' }).click()
   await reloaded
+  await legalSettled
   // Primo ingresso nell'account dell'azienda: il gate legale è pendente, perché l'accettazione dei
   // documenti è per ACCOUNT e non per persona (UC 0056). Non si usa `switchAccountTo`: non c'è nessun
   // selettore da aprire — il cambio di account l'ha fatto l'accettazione stessa.
   await expectInsideAccount(page, azienda.displayName)
 
+  // Il selettore c'è perché le appartenenze sono due (UC 0117). Va verificato PRIMA dell'assenza di
+  // «Members»: un'attesa su un elemento che deve ESSERCI dice anche che la barra laterale è popolata,
+  // mentre `toHaveCount(0)` è vero anche su una barra ancora vuota — passerebbe per il motivo
+  // sbagliato, e coprirebbe proprio il difetto che stiamo escludendo.
+  await expect(page.getByLabel('Switch account')).toBeVisible()
   // Collaboratrice, non owner: la gestione delle persone non le appartiene, e la voce non c'è.
   await expect(sidebar.getByRole('link', { name: 'Members' })).toHaveCount(0)
-  // Ora le appartenenze sono due, quindi il selettore esiste.
-  await expect(page.getByLabel('Switch account')).toBeVisible()
 
   // Una sola identità, due appartenenze: è il cuore della storia.
   const [identita] = dbRow(

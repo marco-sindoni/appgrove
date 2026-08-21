@@ -16,9 +16,38 @@ Il collaudo a mano ha tre obiettivi, in ordine di importanza:
 
 Tempo indicativo: **25 minuti** di controlli visivi, **20** di controlli non visivi (database, API, posta).
 
+> **Attenzione — guida scritta il giorno della 0089, il modello è andato avanti.** Se la esegui su un `main`
+> che contiene anche le change **0090–0092**, due affermazioni di questa guida sono superate, e i punti
+> relativi portano la nota «dopo la 0090»:
+> - la **schermata di scelta dell'account** all'accesso, qui data per inesistente, **esiste** (change 0090,
+>   UC 0118): compare quando si arriva senza una sessione che dica in quale account lavorare, e ha preso il
+>   posto del rifiuto con messaggio del punto 4.1;
+> - la seconda appartenenza si può ora creare **dal prodotto** (invito da «Membri» e accettazione), non solo
+>   con la leva d'ambiente del punto 2.1.
+>
+> Resta invece vera l'assenza di **etichette di ruolo** nel selettore: è UC 0107, non implementata.
+>
+> **Nomi delle schermate.** La guida usa i nomi inglesi; con l'interfaccia in italiano leggi *Members* →
+> **Membri**, *My data* → **I miei dati**, *Billing* → **Fatturazione**, *Account* → **Account**.
+
 ---
 
 ## Parte 0 — Avvio e attori
+
+> **Prerequisito: parti da una banca dati pulita.** Questa guida presuppone il seme appena creato — per
+> esempio «Acme Owner ha **una sola** appartenenza» al punto 1.3. Se hai appena collaudato un'altra change,
+> il tuo database porta i residui di quelle prove (appartenenze aggiunte a mano, righe cancellate
+> logicamente, colonne manomesse) e alcuni comandi qui falliscono con errori che **non** sono difetti del
+> prodotto — il caso tipico è `more than one row returned by a subquery used as an expression`.
+>
+> ```bash
+> ./app-stop.sh
+> docker compose -f dev/docker-compose.yml down -v   # azzera la banca dati locale
+> ./app-start.sh                                     # riparte da seme pulito
+> ```
+>
+> Se preferisci non azzerare, controlla prima lo stato con il comando del punto 0.3 e adatta i comandi
+> (tutte le letture di appartenenza qui filtrano `deleted_at is null`).
 
 **Azione** — dalla radice del repository:
 
@@ -45,10 +74,7 @@ Identificativi fissi del seme, utili nei comandi qui sotto:
 | identità di **Bob** | `b0000000-0000-4000-8000-000000000004` |
 | identità di **Acme Owner** | `b0000000-0000-4000-8000-000000000001` |
 
-> Scorciatoia usata in tutta la guida:
-> ```bash
-> psql() { docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove "$@"; }
-> ```
+> Ogni comando della guida è **completo e pronto da incollare**: nessuna scorciatoia da definire prima.
 > Se il browser protesta per il certificato, è il proxy locale: accetta l'eccezione. Tieni **due finestre
 > separate** (una in incognito): serviranno per l'avviso «account cambiato in un'altra scheda».
 
@@ -57,7 +83,8 @@ Identificativi fissi del seme, utili nei comandi qui sotto:
 **Azione**
 
 ```bash
-psql -tAc "select version, description, success from flyway_schema_history where version = '18';"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc "select version, description, success from platform.flyway_schema_history where version = '18';"
 ```
 
 **Risultato atteso** — `18|active account|t`. Se `success` non è `t`, fermati: il resto non ha senso.
@@ -67,17 +94,46 @@ psql -tAc "select version, description, success from flyway_schema_history where
 **Azione**
 
 ```bash
-psql -c "select col_description('platform.identity'::regclass,
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select col_description('platform.identity'::regclass,
                  (select attnum from pg_attribute
                    where attrelid = 'platform.identity'::regclass
                      and attname = 'active_membership_id')) as commento;"
-psql -c "\d platform.active_account_audit"
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "\d platform.active_account_audit"
 ```
 
 **Risultato atteso** — il commento della colonna spiega che il valore è un **suggerimento** e che non è un
 attributo del gruppo di utenti Cognito perché aggiungerne uno rischia di ricreare il gruppo. La tabella
 `platform.active_account_audit` esiste con `identity_id`, `from_tenant_id`, `to_tenant_id`, `executed_at` e
 **nessun** indirizzo o nome: soli identificativi opachi.
+
+### 0.3 Da quale stato parti (fotografia dei due attori)
+
+Serve a sapere se la banca dati è pulita **prima** di manomettere qualcosa, e a rileggerla se un comando dà un
+risultato inatteso.
+
+**Azione**
+
+```bash
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select i.email, a.name as conto, m.role, m.status,
+                m.deleted_at is null as viva, i.active_membership_id is not null as ha_attivo
+           from platform.identity i
+           join platform.membership m on m.identity_id = i.id
+           join platform.accounts a on a.id::text = m.tenant_id
+          where i.id in ('b0000000-0000-4000-8000-000000000001',
+                         'b0000000-0000-4000-8000-000000000004')
+          order by i.email, m.created_at;"
+```
+
+**Risultato atteso su seme pulito** — **due** righe, entrambe `viva = t` e `ha_attivo = f`:
+`owner@acme.test / Acme Corp / owner` e `bob@bob.test / Bob Personal / owner`.
+
+Se vedi **più** righe per una persona, o righe con `viva = f`, stai partendo dai residui di un collaudo
+precedente: non è un difetto del prodotto, ma alcune attese di questa guida (per esempio «Acme Owner ha una
+sola appartenenza» al punto 1.3) non valgono più. Azzera la banca dati come indicato all'inizio della Parte 0,
+oppure tienine conto leggendo i comandi.
 
 ---
 
@@ -113,9 +169,12 @@ manomissione che conta: la chiave esterna non la può impedire), poi ricarica la
 naviga.
 
 ```bash
-psql -c "update platform.identity
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.identity
             set active_membership_id = (select m.id from platform.membership m
-                                         where m.identity_id = 'b0000000-0000-4000-8000-000000000004')
+                                         where m.identity_id = 'b0000000-0000-4000-8000-000000000004'
+                                           and m.tenant_id   = 'a0000000-0000-4000-8000-000000000002'
+                                           and m.deleted_at is null)
           where id = 'b0000000-0000-4000-8000-000000000001';"
 ```
 
@@ -127,7 +186,8 @@ segnalalo.
 **Azione** — rimetti a posto:
 
 ```bash
-psql -c "update platform.identity set active_membership_id = null
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.identity set active_membership_id = null
           where id = 'b0000000-0000-4000-8000-000000000001';"
 ```
 
@@ -135,22 +195,30 @@ psql -c "update platform.identity set active_membership_id = null
 
 ## Parte 2 — Una persona, due account: il selettore
 
-Non esiste ancora un percorso di prodotto per creare la seconda appartenenza (i modi d'ingresso sono di
-UC 0118): si costruisce a mano, ed è una leva d'ambiente, non una funzionalità.
+Il giorno della 0089 non esisteva un percorso di prodotto per creare la seconda appartenenza (i modi
+d'ingresso erano di UC 0118): si costruiva a mano, con una leva d'ambiente.
+
+> **Dopo la change 0090 il percorso di prodotto esiste**: come `owner@acme.test`, in **Membri**, invita
+> l'indirizzo di una persona già registrata; lei accetta dalla posta e ottiene la seconda appartenenza senza
+> che nessuno tocchi la banca dati. È la via da preferire perché collauda anche il codice; il comando qui
+> sotto resta la scorciatoia per costruire il caso in un colpo solo.
 
 ### 2.1 Costruisci il caso
 
 **Azione**
 
 ```bash
-psql -c "insert into platform.membership
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "insert into platform.membership
            (id, tenant_id, identity_id, role, status, created_at, updated_at, created_by)
          values (gen_random_uuid(), 'a0000000-0000-4000-8000-000000000001',
                  'b0000000-0000-4000-8000-000000000004', 'member', 'active', now(), now(), 'collaudo');"
-psql -c "update platform.identity
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.identity
             set active_membership_id = (select m.id from platform.membership m
                                          where m.identity_id = 'b0000000-0000-4000-8000-000000000004'
-                                           and m.tenant_id = 'a0000000-0000-4000-8000-000000000002')
+                                           and m.tenant_id   = 'a0000000-0000-4000-8000-000000000002'
+                                           and m.deleted_at is null)
           where id = 'b0000000-0000-4000-8000-000000000004';"
 ```
 
@@ -200,7 +268,8 @@ Se invece del ricaricamento vedi la pagina aggiornarsi «a pezzi» (nome nuovo m
 **Azione**
 
 ```bash
-psql -c "select a.name as account_attivo
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select a.name as account_attivo
            from platform.identity i
            join platform.membership m on m.id = i.active_membership_id
            join platform.accounts a on a.id::text = m.tenant_id
@@ -215,7 +284,8 @@ la memoria del browser non riporta indietro la scelta.
 **Azione**
 
 ```bash
-psql -c "select from_tenant_id, to_tenant_id, executed_at
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "select from_tenant_id, to_tenant_id, executed_at
            from platform.active_account_audit
           where identity_id = 'b0000000-0000-4000-8000-000000000004'
           order by executed_at;"
@@ -285,22 +355,34 @@ schermata può produrre questo stato.
 prova ad accedere:
 
 ```bash
-psql -c "update platform.identity
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.identity
             set active_membership_id = (select m.id from platform.membership m
-                                         where m.identity_id = 'b0000000-0000-4000-8000-000000000001')
+                                         where m.identity_id = 'b0000000-0000-4000-8000-000000000001'
+                                           and m.deleted_at is null)
           where id = 'b0000000-0000-4000-8000-000000000004';"
 ```
 
 **Azione** — esci dalla sessione di Bob e rientra come `bob@bob.test`.
 
-**Risultato atteso** — l'accesso è **rifiutato** con un messaggio che dice cosa succede — *«Appartieni a più
-account e nessuno è impostato come attivo: scegli l'account su cui vuoi lavorare»* — e **non** «credenziali
-non valide», che sarebbe una bugia. In nessun caso Bob entra in `Acme Corp` come owner: l'appartenenza si
-riverifica al momento della creazione del token, e il valore conservato **non è creduto**.
+**Risultato atteso al giorno della 0089** — l'accesso era **rifiutato** con un messaggio che dice cosa
+succede — *«Appartieni a più account e nessuno è impostato come attivo: scegli l'account su cui vuoi
+lavorare»* — e **non** «credenziali non valide», che sarebbe una bugia.
 
-> La **schermata** per scegliere l'account senza avere una sessione appartiene a UC 0118: qui c'è il rifiuto
-> e il messaggio, non la superficie per rispondere. Il caso è raro per costruzione — servono almeno tre
-> appartenenze con la attiva revocata — e la via d'uscita è il punto 4.2.
+**Dopo la change 0090** al posto del rifiuto compare la **schermata «Choose an account»**: quel caso ora ha
+una superficie per rispondere, e il messaggio del 409 resta come rete di ritorno dei percorsi **non
+interattivi** (per esempio un rinnovo di sessione che fallisce riporta al modulo d'accesso con quella frase).
+Vedere la schermata qui è corretto, non una regressione.
+
+**L'invariante di sicurezza, che è il vero oggetto di questo punto, non cambia e va verificato in entrambi i
+casi:** Bob **non entra mai in `Acme Corp` come owner**. L'appartenenza si riverifica quando si crea il
+token, e il valore conservato **non è creduto**. Attenzione a leggere bene il caso: nella schermata `Acme
+Corp` **può** comparire, perché al punto 2.1 gli hai dato un'appartenenza vera lì — se la scegli entri come
+**member**, che è giusto. Il difetto da cercare è il ruolo: se Bob si ritrova owner di Acme, o vede in Acme
+qualcosa che solo un titolare vede, il valore manomesso è stato creduto ed è un difetto grave.
+
+> Il caso è raro per costruzione — serve un'appartenenza attiva puntata che non sia della persona — e la via
+> d'uscita automatica è il punto 4.2.
 
 ### 4.2 Con una sola appartenenza residua la regola sceglie da sé
 
@@ -308,7 +390,8 @@ riverifica al momento della creazione del token, e il valore conservato **non è
 l'accesso:
 
 ```bash
-psql -c "update platform.membership set status = 'revoked', updated_at = now()
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.membership set status = 'revoked', updated_at = now()
           where identity_id = 'b0000000-0000-4000-8000-000000000004'
             and tenant_id = 'a0000000-0000-4000-8000-000000000001';"
 ```
@@ -376,7 +459,8 @@ Non è un difetto e va visto una volta, per non scoprirlo un giorno e chiamarlo 
 **adesso** (nasce con `Bob Personal`), poi cambia account e **riusa il token vecchio**:
 
 ```bash
-psql -c "update platform.membership set status = 'active', updated_at = now()
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c "update platform.membership set status = 'active', updated_at = now()
           where identity_id = 'b0000000-0000-4000-8000-000000000004'
             and tenant_id = 'a0000000-0000-4000-8000-000000000001';"
 
@@ -413,8 +497,10 @@ Rilettura finale, con gli occhi:
       `./app-stop.sh` lasciando la pagina aperta, poi ricaricala), la barra laterale mostra **niente** al
       posto del nome — non un segnaposto, non un errore rosso dentro il menu;
 - [ ] **nessun mezzo cambio**: dopo ogni cambio la pagina si ricarica per intero, non si aggiorna a pezzi;
-- [ ] **nessuna schermata di scelta dell'account** all'accesso: non esiste ancora, è di UC 0118 (al suo
-      posto c'è il rifiuto con messaggio comprensibile del punto 4.1);
+- [ ] ~~**nessuna schermata di scelta dell'account** all'accesso: non esiste ancora, è di UC 0118 (al suo
+      posto c'è il rifiuto con messaggio comprensibile del punto 4.1);~~ **superata dalla change 0090**: la
+      schermata «Choose an account» ora esiste e ha preso il posto del rifiuto. Vederla con **due o più**
+      appartenenze è corretto; il controllo che resta è che con **una sola** appartenenza **non** compaia;
 - [ ] **nessun indirizzo o nome** nella tabella `platform.active_account_audit`.
 
 ---

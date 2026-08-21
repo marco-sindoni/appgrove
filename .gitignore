@@ -57,3 +57,6 @@ dev/.auth.log
 
 # --- app-start/app-stop: pid/log dei processi host ---
 dev/.run/
+
+# lucchetto di run-tests.sh: impedisce due corse contemporanee (rossi falsi)
+.run-tests.lock/

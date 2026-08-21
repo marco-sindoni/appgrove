@@ -2,7 +2,7 @@
 
 **Epica**: [22 — Rifacimento del modello di appartenenza](../epic/E22-00-rifacimento-modello-appartenenza.md)
 **A cosa servono**: mostrare la nuova navigazione vista dai quattro ruoli, e dare a chi implementa una
-specifica illustrata invece di una descrizione a parole. **Ultimo aggiornamento**: 2026-08-19
+specifica illustrata invece di una descrizione a parole. **Ultimo aggiornamento**: 2026-08-21
 
 > **Questi file sono specifica, non codice da riusare.** Nessun frammento va copiato nel prodotto: là
 > valgono i componenti di `@appgrove/design-system` con le loro regole di accessibilità. Qui si guarda
@@ -51,8 +51,8 @@ caratteri tipografici (che arrivano da rete; senza rete si vede lo stesso, con u
 |---|---|---|
 | [owner.html](owner.html) | **Owner** dell'account | menu completo, «Members» come elenco unico senza ruolo, riquadro dei posti col costo, riduzione in attesa, fatturazione con la scheda dei posti |
 | [admin.html](admin.html) | **`admin`** sul Mini-CRM | menu ridotto, una sola applicazione, abilitazione di persone **già esistenti**, il confine (le persone nuove le invita l'owner), il **selettore di account** e un **invito ricevuto** |
-| [editor.html](editor.html) | **`editor`** sul Mini-CRM | tutte le operazioni dell'applicazione, ma la schermata «Utenti» in sola lettura |
-| [viewer.html](viewer.html) | **`viewer`** sul Mini-CRM | sola lettura ovunque, con i comandi **disabilitati e spiegati** invece che nascosti; ha il **selettore di account** pur essendo il ruolo con meno poteri |
+| [editor.html](editor.html) | **`editor`** sul Mini-CRM | tutte le operazioni dell'applicazione, ma la schermata «Utenti» in sola lettura; **una sola appartenenza**, quindi nessun selettore, e l'**invito ad aprire un account proprio** |
+| [viewer.html](viewer.html) | **`viewer`** sul Mini-CRM | sola lettura ovunque, con i comandi **disabilitati e spiegati** invece che nascosti; ha il **selettore di account** pur essendo il ruolo con meno poteri, e l'**invito ad aprire un account proprio** pur appartenendo a due account (in nessuno dei due è titolare) |
 | [platform-admin.html](platform-admin.html) | **Amministratore di piattaforma appgrove** | tariffe delle fasce dei posti per tutti gli account, anteprima dell'effetto, decorrenza dal ciclo successivo, storico immutabile |
 
 I quattro prototipi per ruolo mostrano **lo stesso caso d'uso sulla stessa applicazione** (il Mini-CRM:
@@ -88,6 +88,7 @@ reali; la corrispondenza è nella tabella del §4.
 | I miei dati | `#privacy` | completa (owner) · ridotta (collaboratore) | esportazione in corso, errore |
 | Selettore dell'account | **barra laterale, sotto il marchio** — ogni schermata | nome fisso con una appartenenza (owner, editor) · menu apribile con due (admin, viewer) · account attivo evidenziato | caricamento dell'elenco, cambio in corso, appartenenza revocata mentre il menu è aperto |
 | Inviti ricevuti | **sezione del cruscotto**, in testa · più il contatore sulla voce «Dashboard» | **assente** senza inviti · un invito con accetta/rifiuta (admin) | caricamento, invito scaduto nel frattempo, errore di accettazione, più di un invito |
+| Invito ad aprire un account proprio | **sezione del cruscotto**, sotto gli inviti ricevuti | mostrato (editor, viewer) · **assente** per chi è titolare da qualche parte (owner, admin) · rinviato col comando «Non ora» | caricamento delle appartenenze (non mostrarlo), rinvio in corso (una settimana), finestra di vita scaduta (un anno dall'iscrizione: non compare più) |
 | Pagina di rifiuto | `#members` da un collaboratore | rifiuto con spiegazione | — |
 | Listino dei posti | `platform-admin.html` | vigente · nuova versione · anteprima · fasce non valide · versione programmata | caricamento, sincronizzazione col fornitore in attesa |
 
@@ -120,6 +121,7 @@ serve e quale storia la introduce.
 | **Selettore dell'account attivo** | `shell/Sidebar.tsx` (sotto il marchio) · `registry/ShellContext.tsx` | nome dell'account **sempre** visibile; elenco delle appartenenze; **non reso** con una sola appartenenza (non «disabilitato»); il cambio **ricarica** l'applicazione, non aggiorna lo stato in memoria | `GET /api/platform/v1/me/memberships` + `POST /me/active-account` + rinnovo del token | 0117 |
 | **Avviso «account cambiato in un'altra scheda»** | `shell/ShellLayout.tsx` | confronto fra l'account del token in uso e l'account attivo conservato; invito a ricaricare | nessuna nuova (dal token + `me/memberships`) | 0117 |
 | **Inviti ricevuti — sezione del cruscotto** | `pages/dashboard/DashboardPage.tsx` + **nuovo** `dashboard/PendingInvitesSection.tsx` | in testa al cruscotto, prima delle applicazioni; accettando nasce una nuova **appartenenza**, non una seconda identità | `GET /me/invitations` + `POST /me/invitations/{id}/accept\|reject` | 0118 · 0108 |
+| **Invito ad aprire un proprio account** | `pages/dashboard/DashboardPage.tsx` + **nuovo** `dashboard/OwnAccountInviteSection.tsx` | compare **solo** se nessuna appartenenza della persona porta il ruolo `owner` — non «se sono collaboratore qui»; chiudibile; porta al percorso di registrazione esistente | `GET /api/platform/v1/me/memberships` **estesa col ruolo dell'appartenenza**: oggi non lo porta (§4.5 e §7 di UC 0108) | 0108 |
 | **Contatore degli inviti sulla voce «Dashboard»** | `shell/Sidebar.tsx` | numero accanto alla voce quando ci sono inviti in attesa: da un'altra schermata resterebbero invisibili | `GET /me/invitations` (già caricata) | 0118 |
 | **Nessuna etichetta di ruolo nell'intestazione** | `shell/Topbar.tsx` (nulla da aggiungere) | il ruolo è **per applicazione**: una sola etichetta globale sarebbe falsa appena una persona è abilitata a più di una applicazione. Si legge sulla scheda dell'applicazione nel cruscotto e in testa alle sue schermate | — | 0101 · 0107 |
 | Listino dei posti (console) | **nuovo** `frontend/apps/admin/src/pages/SeatPricing.tsx` | vigente, nuova versione, anteprima, storico | `GET/POST /api/admin/v1/seat-pricing` | 0105 |
@@ -167,6 +169,7 @@ Tre valori, e sono **tre meccanismi diversi** da implementare:
 | Nome dell'account attivo | visibile | visibile | visibile | visibile |
 | Selettore dell'account | **assente** (1 appartenenza) | visibile (2) | **assente** (1) | visibile (2) |
 | Inviti ricevuti (nel cruscotto) | assente (nessuno) | visibile (1) | assente | assente |
+| Invito ad aprire un account proprio | **assente** (è titolare) | **assente** (titolare di «Rinaldi Design») | visibile | visibile |
 
 Nemmeno l'etichetta del ruolo è in queste tabelle, e non per dimenticanza: **non esiste**
 un'etichetta di ruolo globale. Il ruolo è per applicazione, quindi una sola etichetta nell'intestazione
@@ -178,6 +181,11 @@ Questa tabella si legge in modo diverso dalle altre due: **non è una matrice di
 non compare o non compare in base al *ruolo*, ma in base al **numero di appartenenze** della persona — per
 questo il `viewer`, che è il ruolo con meno poteri, ce l'ha, e l'`editor` no. Confondere le due cose in
 implementazione produrrebbe un selettore legato al ruolo, cioè sbagliato.
+
+L'ultima riga si legge nello stesso modo, e mostra la trappola meglio di una spiegazione: l'`admin` del
+prototipo **non** vede l'invito ad aprire un account, pur essendo un collaboratore in «Studio Marchetti», perché
+è titolare di «Rinaldi Design». Il `viewer` lo vede pur avendo **due** appartenenze, perché in nessuna delle due
+è titolare. La condizione è «nessuna appartenenza con ruolo `owner`» — non il ruolo, non il numero di account.
 
 L'ultima riga della tabella dei comandi non è una dimenticanza: i diritti della persona sui **propri** dati sono esenti da ogni
 ruolo e da ogni varco (artt. 15, 16 e 20 del Regolamento europeo). Vale anche per un `viewer`.
@@ -197,6 +205,10 @@ scrive i collaudi può prenderla da là.
 - **Interruttore didattico** nel prototipo owner: il comando «Riduci i posti» accende lo stato di
   riduzione in attesa per farlo vedere; nel prodotto quello stato nasce da una scelta di persone e ha
   una data di esecuzione vera.
+- **I due orologi dell'invito ad aprire un account non sono simulati**: nel prototipo «Non ora» lo nasconde
+  fino al ricaricamento della pagina. Nel prodotto il rinvio dura **una settimana** e l'invito vive **un anno**
+  dall'iscrizione della persona (UC 0108 §4.5). Simularli richiederebbe di far finta che il tempo passi, che non
+  insegna nulla su *dove* sta il comando e *che cosa* dice.
 - **Il cambio di account non è simulato**: scegliere l'altro account spiega cosa fa il prodotto (riscrive
   l'account attivo, rinnova il token, ricarica) e poi porta al prototipo che mostra quell'esperienza —
   `owner.html` per Marta, che nel suo studio è titolare. Simularlo davvero richiederebbe un secondo

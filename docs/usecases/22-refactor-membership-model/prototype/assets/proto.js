@@ -19,11 +19,20 @@ const stato = {
   richiesteInviate: {},               // «chiedi all'owner di installare»
   pannelloAperto: false,          // si apre col pulsante in basso a destra: non deve coprire il contenuto
   selettoreAperto: false,         // selettore dell'account attivo (UC 0117)
+  invitoAccountChiuso: false,     // «Non ora» sull'invito ad aprire un proprio account (UC 0108): nel prodotto
+                                  // vale una settimana, e l'invito stesso vive un anno dall'iscrizione
 };
 
 const MIE_APPARTENENZE = APPARTENENZE[RUOLO] || [];
 const MIEI_INVITI = INVITI_RICEVUTI[RUOLO] || [];
 const APPARTENENZA_ATTIVA = MIE_APPARTENENZE.find((a) => a.attiva) || { nome: ACCOUNT.nome };
+
+/* Chi collabora SOLO negli account di altri: nessuna sua appartenenza porta il ruolo `owner`.
+ * Non è una condizione di ruolo — un `admin` può benissimo avere un proprio account (è il caso di
+ * admin.html, owner di «Rinaldi Design») — ma una condizione sull'INSIEME delle appartenenze. Da qui
+ * discende l'invito ad aprirne uno proprio nel cruscotto (UC 0108 §4.5). */
+const SENZA_ACCOUNT_PROPRIO = MIE_APPARTENENZE.length > 0
+  && !MIE_APPARTENENZE.some((a) => a.ruolo === 'owner');
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -161,6 +170,7 @@ function schermataDashboard() {
     <div><h1 class="page-title">Buongiorno</h1>
       <p class="page-sub">${R.platformRole === 'owner' ? esc(ACCOUNT.nome) : 'Le applicazioni a cui sei abilitato.'}</p></div>
     ${sezioneInviti()}
+    ${sezioneAccountProprio()}
     ${bloccoEconomico}
     <div class="grid grid-3">${schede || '<div class="card"><div class="card-body"><p class="muted" style="margin:0">Il titolare dell\'account non ti ha ancora abilitato a nessuna applicazione. Puoi guardare il <a href="#catalog">catalogo</a> e chiedergli di installare quello che ti serve, oppure scrivere al <a href="#support">supporto</a>.</p></div></div>'}</div>`;
 }
@@ -560,6 +570,45 @@ function sezioneInviti() {
 }
 
 /*
+ * Invito ad aprire un proprio account, per chi collabora soltanto negli account di altri (UC 0108 §4.5).
+ *
+ * Due proprietà lo rendono corretto e non fastidioso, e vanno implementate entrambe:
+ *   - la condizione è «nessuna appartenenza con ruolo owner», non «sono un collaboratore qui»: chi ha
+ *     già un proprio account non deve vederlo mai, nemmeno mentre lavora nell'account di un altro;
+ *   - è **chiudibile**, con due orologi (UC 0108 §4.5): l'invito vive **un anno** dalla nascita dell'identità,
+ *     e ogni «Non ora» lo rinvia di **una settimana**. Un invito commerciale che torna a ogni accesso si
+ *     smette di leggere; uno che sparisce per sempre al primo rinvio spreca l'unica occasione di dirlo.
+ *     Nel prototipo il rinvio dura fino al ricaricamento della pagina: i due orologi non sono simulati.
+ *
+ * Non dice nulla a chi ospita: l'avviso è dentro la sessione della persona, e l'owner dell'account
+ * ospitante non ha modo di sapere che le è stato mostrato.
+ */
+function sezioneAccountProprio() {
+  if (!SENZA_ACCOUNT_PROPRIO || stato.invitoAccountChiuso) return '';
+  const ospitanti = MIE_APPARTENENZE.map((a) => a.nome);
+  const elenco = ospitanti.length === 1
+    ? `<strong>${esc(ospitanti[0])}</strong>`
+    : ospitanti.slice(0, -1).map((n) => `<strong>${esc(n)}</strong>`).join(', ')
+      + ` e <strong>${esc(ospitanti[ospitanti.length - 1])}</strong>`;
+  return `<div class="notice notice-accent" style="padding:17px 19px">
+    <span class="avatar" style="border-radius:10px;background:rgb(var(--ag-accent) / .16);color:rgb(var(--ag-accent))" aria-hidden="true"><span class="material-symbols-rounded" style="font-variation-settings:'FILL' 1">add_business</span></span>
+    <div style="flex:1">
+      <strong style="font-size:15px">Puoi avere anche il tuo account appgrove</strong>
+      <p style="margin:6px 0 0;font-size:13px">Oggi collabori in ${elenco}, dove le applicazioni le sceglie chi
+      ti ha invitato. Aprendo un account tuo decidi tu quali attivare — e <strong>non perdi nulla</strong>:
+      resti dove sei, e ${MIE_APPARTENENZE.length > 1
+        ? 'passi da un account all\'altro dal selettore qui a sinistra'
+        : 'appena avrai due account comparirà qui a sinistra il selettore per passare dall\'uno all\'altro'}.
+      I <strong>primi tre posti sono gratuiti</strong>, il tuo compreso.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn-primary btn-sm" data-azione="apri-account">Apri il mio account</button>
+        <button class="btn btn-ghost btn-sm" data-azione="chiudi-invito-account">Non ora</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/*
  * Percorso di navigazione: è ciò che l'intestazione VERA contiene già oggi
  * (frontend/apps/backoffice/src/shell/Breadcrumb.tsx). Mostrato qui perché l'intestazione non sembri
  * vuota dopo che il selettore è passato alla barra laterale e l'etichetta di ruolo è stata rimossa.
@@ -655,6 +704,12 @@ document.addEventListener('click', (e) => {
   }
   if (azione === 'accetta-invito') { alert('Prototipo: accettando, il sistema crea una NUOVA APPARTENENZA per la tua identità esistente — nessuna seconda registrazione (UC 0118). L\'account appare nel selettore e diventa quello attivo.'); }
   if (azione === 'rifiuta-invito') { alert('Prototipo: l\'invito si chiude come rifiutato e il posto pagato torna disponibile per l\'account che invitava (UC 0118, punto aperto sul rimborso).'); }
+  /* Invito ad aprire un proprio account (UC 0108 §4.5): il percorso di registrazione è quello che già
+     esiste, non ne nasce uno nuovo — l'identità è la stessa e si aggiunge un'appartenenza con ruolo owner. */
+  if (azione === 'apri-account') alert('Prototipo: porta al percorso di apertura di un account nuovo. La tua identità resta UNA (UC 0116): nasce una nuova appartenenza, con ruolo owner, e le appartenenze che hai negli account di altri non cambiano. I primi tre posti del tuo account sono gratuiti, il tuo compreso.');
+  if (azione === 'chiudi-invito-account') {
+    stato.invitoAccountChiuso = true;   // nel prodotto: rinvio di UNA SETTIMANA, dentro la finestra di UN ANNO
+  }
   if (azione === 'riduci') stato.riduzioneInAttesa = true;
   if (azione === 'annulla-riduzione') stato.riduzioneInAttesa = false;
   if (azione === 'invita') alert('Prototipo: qui si aprirebbe la finestra di invito, che mostra il costo del posto PRIMA della conferma (UC 0103).');

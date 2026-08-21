@@ -46,11 +46,11 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 3 | [0086](18-brand-e-design-system/0086-brand-kit-token-condiviso.md) | Brand kit / token condiviso (fonte unica) | 18 | — | 0019, 0036, 0046 | 🟢 | ✅ |
 | 4 | [0087](18-brand-e-design-system/0087-artwork-logo-e-illustrazioni.md) | Artwork logo finale + illustrazioni on-brand | 18 | 0086 | 0019, 0037 | 🟢 | ✅ |
 | **A2. Rifacimento del modello di appartenenza (epica 22)** |
-| 5 | [0116](22-refactor-membership-model/story/0116-identita-e-appartenenze.md) | Identità della persona e appartenenze agli account | 22 | — | 0013, 0010 | 🟢 | ⬜ |
-| 6 | [0117](22-refactor-membership-model/story/0117-account-attivo-e-selettore.md) | Account attivo nella sessione, selettore, parità dei fornitori di identità | 22 | 0116 | 0010, 0015, 0016, 0017 | 🟢 | ⬜ |
-| 7 | [0118](22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md) | Inviti e registrazione quando l'identità esiste già | 22 | 0116, 0117 | 0013, 0058, 0059 | 🟢 | ⬜ |
-| 8 | [0098](22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md) | Modello dati dell'accesso per applicazione + ruolo di piattaforma a due valori | 22 | 0116 | 0013, 0059 | 🟢 | ⬜ |
-| 9 | [0099](22-refactor-membership-model/story/0099-autorizzazione-per-applicazione.md) | Autorizzazione per applicazione: varco riusabile in `commons`, ruolo fuori dal token | 22 | 0098 | 0016, 0010, 0027 | 🟢 | ⬜ |
+| 5 | [0116](22-refactor-membership-model/story/0116-identita-e-appartenenze.md) | Identità della persona e appartenenze agli account | 22 | — | 0013, 0010 | 🟢 | ✅ |
+| 6 | [0117](22-refactor-membership-model/story/0117-account-attivo-e-selettore.md) | Account attivo nella sessione, selettore, parità dei fornitori di identità | 22 | 0116 | 0010, 0015, 0016, 0017 | 🟢 | ✅ |
+| 7 | [0118](22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md) | Inviti e registrazione quando l'identità esiste già | 22 | 0116, 0117 | 0013, 0058, 0059 | 🟢 | ✅ |
+| 8 | [0098](22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md) | Modello dati dell'accesso per applicazione + ruolo di piattaforma a due valori | 22 | 0116 | 0013, 0059 | 🟢 | ✅ |
+| 9 | [0099](22-refactor-membership-model/story/0099-autorizzazione-per-applicazione.md) | Autorizzazione per applicazione: varco riusabile in `commons`, ruolo fuori dal token | 22 | 0098 | 0016, 0010, 0027 | 🟢 | ✅ |
 | 10 | [0101](22-refactor-membership-model/story/0101-semantica-ruoli-viewer-editor-admin.md) | Semantica dei tre ruoli come contratto di piattaforma verificabile | 22 | 0098, 0099 | 0051 | 🟢 | ⬜ |
 | 11 | [0100](22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md) | «Members» come elenco unico di persone, senza ruolo | 22 | 0098, 0099 | 0059 | 🟢 | ⬜ |
 | 12 | [0102](22-refactor-membership-model/story/0102-listino-posti-a-fasce.md) | Listino dei posti a **scaglioni progressivi**: modello versionato e calcolo | 22 | 0098 | 0022 | 🟢 | ⬜ |

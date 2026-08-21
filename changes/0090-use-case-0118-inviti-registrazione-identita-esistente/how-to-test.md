@@ -39,7 +39,8 @@ Lo stato di partenza del seme è perfetto per questo: **`bob@bob.test`** ha già
 **[non visivo] La differenza esiste, ma solo lato server.** Con `psql`:
 
 ```bash
-psql postgres://appgrove:appgrove@localhost:5432/appgrove -c \
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c \
   "select email, identity_id is not null as identita_collegata
      from platform.invitations where status = 'pending' order by created_at desc limit 3;"
 ```
@@ -69,7 +70,8 @@ in nessuna risposta e in nessuna schermata dell'account che invita.
 **[non visivo] Una identità, due appartenenze:**
 
 ```bash
-psql postgres://appgrove:appgrove@localhost:5432/appgrove -c \
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c \
   "select (select count(*) from platform.identity where email='bob@bob.test' and deleted_at is null) as identita,
           (select count(*) from platform.membership m join platform.identity i on i.id=m.identity_id
              where i.email='bob@bob.test' and m.deleted_at is null) as appartenenze;"

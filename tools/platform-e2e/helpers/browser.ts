@@ -65,6 +65,23 @@ export async function adminSession(browser: Browser): Promise<{ context: Browser
 const LEGAL_SETTLED = (r: { url(): string }) => r.url().includes('/me/legal/status')
 
 /**
+ * Attesa della decisione sul gate legale, da registrare <b>prima</b> del gesto che cambia account.
+ *
+ * Serve a chi cambia account SENZA passare dal selettore — l'accettazione di un invito lo fa da sé
+ * (UC 0118) — e quindi non può usare {@link switchAccountTo}, che questa attesa se la fa in casa.
+ * Senza di essa il journey guarda la shell durante la finestra di fail-open, la trova, prosegue, e un
+ * istante dopo il gate prende il posto della shell: l'asserzione successiva cerca un elemento della
+ * barra laterale su una pagina che mostra i documenti da accettare. È il difetto che rendeva instabile
+ * `J-INVITE-EXISTING` (una esecuzione su alcune), e la stessa causa era già stata corretta in
+ * `switchAccountTo` dalla change 0089.
+ *
+ * Uso: `const settled = waitForLegalDecision(page)` → gesto → `await settled` → `expectInsideAccount`.
+ */
+export function waitForLegalDecision(page: Page) {
+  return page.waitForResponse(LEGAL_SETTLED)
+}
+
+/**
  * Attende di essere <b>davvero</b> dentro l'account atteso, attraversando il gate legale quando
  * compare, e insistendo sull'<b>esito</b> — il nome dell'account nella barra laterale.
  *

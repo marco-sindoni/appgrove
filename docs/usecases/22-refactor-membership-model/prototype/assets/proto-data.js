@@ -19,6 +19,14 @@ const ACCOUNT = { nome: 'Studio Marchetti' };
  *
  * `prototipo` indica il file che mostra l'esperienza in quell'altro account, quando esiste: serve a
  * rendere il cambio *navigabile* invece che soltanto descritto.
+ *
+ * Da QUESTO dato — e non dalla MATRICE dei ruoli — discendono due elementi del cruscotto, perché nessuno
+ * dei due dipende dal ruolo:
+ *   - il SELETTORE dell'account, che esiste solo con più di una appartenenza (UC 0117);
+ *   - l'INVITO ad aprire un account proprio, che compare quando NESSUNA appartenenza porta il ruolo
+ *     `owner` (UC 0108 §4.5). Si vede in editor e viewer, non in admin — che è collaboratore in «Studio
+ *     Marchetti» ma titolare di «Rinaldi Design». Chi cercasse la regola nella MATRICE non la troverebbe,
+ *     ed è voluto: legarla al ruolo sarebbe l'errore da evitare.
  */
 const APPARTENENZE = {
   owner:  [{ id: 'sm', nome: 'Studio Marchetti', ruolo: 'owner', attiva: true }],
@@ -194,6 +202,7 @@ const MATRICE = {
       'I comandi che non gli competono sono <strong>disabilitati con la spiegazione</strong>, non nascosti: la funzione esiste, gli manca il ruolo.',
       'Come ogni collaboratore, non vede Account, Billing e Members.',
       'Appartiene a <strong>un solo account</strong>: nessun selettore. Il confronto con Admin e Viewer mostra che il selettore dipende dalle <em>appartenenze</em>, non dal ruolo.',
+      'Non è titolare di nessun account, quindi il cruscotto gli propone di <strong>aprirne uno proprio</strong> — senza lasciare questo (UC 0108 §4.5).',
     ],
   },
 
@@ -220,6 +229,7 @@ const MATRICE = {
       'Può però <strong>scaricare i propri dati</strong> da «I miei dati»: è un diritto della persona, esente da ogni ruolo.',
       'Come ogni collaboratore, vede solo le applicazioni a cui è abilitato.',
       'Appartiene a <strong>due account</strong>, quindi ha il <strong>selettore</strong> pur essendo il ruolo con meno poteri: le due cose sono indipendenti (UC 0117).',
+      'In <strong>nessuno</strong> dei due account è titolare, quindi vede l\'invito ad <strong>aprirne uno proprio</strong>: due appartenenze non bastano, conta il ruolo che portano (UC 0108 §4.5).',
     ],
   },
 };

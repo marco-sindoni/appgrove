@@ -593,6 +593,171 @@ in ordine:
 Finché tutto ciò non avviene, UC 0005 è "implementato a codice" ma la sua Definition of Done operativa si chiude solo
 con la prima run live. Owner: fase di **messa in cloud** (righe 29–37 dell'ordine in `docs/usecases/_INDEX.md`).
 
+## Difetto — due corse di `run-tests.sh` insieme producono rossi falsi (trovato e CORRETTO 2026-08-21)
+
+**Il fatto.** Durante il collaudo manuale del lotto 0088–0092, sviluppatore e agente hanno lanciato
+`./run-tests.sh` **contemporaneamente** senza saperlo. Esito: `backend` e `platform` rossi su un albero sano,
+con `J-QUOTA` fallito e «3 did not run». Nessuno dei due rossi aveva a che vedere col codice.
+
+**Perché.** Due corse sulla stessa macchina condividono tutto ciò che conta: gli stessi `target/` Maven, la
+stessa porta di prova Quarkus (8081), le stesse porte 20080-20082 dello stack di piattaforma e — soprattutto —
+**lo stesso Postgres locale**. Non è una corsa più lenta: sono rossi sparsi e irriproducibili, in aree che non
+hanno nulla di rotto. È il modo più efficace di far perdere fiducia nel comando unico, e costa ore di indagine
+su difetti che non esistono.
+
+**Corretto.** `run-tests.sh` prende ora un **lucchetto** all'avvio (`.run-tests.lock`, creato con `mkdir` che è
+atomico su POSIX) e lo rilascia con `trap` anche su interruzione. Una seconda corsa si ferma con un messaggio
+che spiega il perché invece di produrre un rosso falso; un lucchetto rimasto orfano di una corsa interrotta male
+viene riconosciuto (il pid non è più attivo) e ripreso da sé, così non serve intervenire a mano. Provato in
+entrambi i casi. Il lucchetto è in `.gitignore`.
+
+**Resta da valutare** (non fatto): la stessa protezione servirebbe a `./app-start.sh`, e più in generale sarebbe
+utile che le due cose si conoscessero — lanciare i test con lo stack acceso è l'altro difetto di questa famiglia
+(voce qui sotto). Owner: #07 (DevOps/CI).
+
+## Difetto — `./run-tests.sh` è ROSSO se lo stack locale è acceso (porta 8081), con diagnosi fuorviante (trovato 2026-08-21)
+
+**Il fatto, verificato durante il collaudo manuale del lotto 0088–0092.** Con lo stack locale avviato
+(`./app-start.sh`), `./run-tests.sh tooling` fallisce e stampa:
+
+```
+✗ la suite dell'app generata è ROSSA: i modelli-sorgente sono invecchiati.
+✗ Correggi tools/new-application/templates/ — NON rattoppare l'output generato.
+```
+
+La diagnosi è **sbagliata**. La causa vera, in fondo a migliaia di righe di registro Maven, è
+`io.quarkus.runtime.QuarkusBindException: Port(s) already bound: 8081: Address already in use`.
+
+**La catena.** Nessun servizio dichiara `quarkus.http.test-port`, quindi vale il **predefinito di Quarkus:
+8081**. E `services/fatture` — l'app #1, che è anche la sorgente della parità di scaffolding — gira in locale
+proprio su `quarkus.http.port=8081`. Quindi ogni `@QuarkusTest` del monorepo trova la porta occupata quando lo
+stack è su. Verificato non solo sull'area `tooling`: anche `app.appgrove.core.MeMembershipsApiTest` (area
+**backend**) muore con lo stesso errore. Sono le due aree più grandi di `run-tests.sh`.
+
+**Perché è un difetto e non un dettaglio d'uso.** Lo stack acceso è la condizione **normale** di chi collauda a
+mano: le `how-to-test.md` cominciano tutte con `./app-start.sh`. Chi lancia i test in quel momento — cioè chi
+fa esattamente quello che il progetto gli chiede di fare — riceve un rosso che accusa i modelli di scaffolding
+di essere invecchiati. Il tempo si spende a cercare un problema che non esiste. E il caso opposto è peggio: un
+rosso vero, quel giorno, verrebbe scambiato per «ah, è la porta».
+
+**Rimedi possibili, dal più economico.**
+1. **Dichiarare la porta di prova effimera**: `quarkus.http.test-port=0` (o `%test.quarkus.http.port=0`) nei
+   `application.properties` dei servizi **e nel modello** `tools/new-application/templates/`, così ogni app
+   nuova nasce immune. Quarkus assegna una porta libera e inietta l'indirizzo giusto nei test: nessuna
+   collisione possibile, con nessuno stack e nessun altro processo. È la correzione alla radice.
+2. **Guardia in `run-tests.sh`**: se una porta di servizio è occupata, fermarsi *prima* di lanciare Maven con un
+   messaggio chiaro («lo stack locale è acceso: `./app-stop.sh`, oppure lancia i test in un'altra copia»).
+   Utile comunque, perché copre anche i casi non-Quarkus.
+3. **Correggere la diagnosi** di `tools/new-application/generate-smoke.sh`: distinguere «suite rossa» da «suite
+   non partita». Attribuire a un invecchiamento dei modelli un fallimento di avvio è la parte peggiore del
+   difetto, perché manda nella direzione sbagliata con autorevolezza.
+
+Le tre sono complementari; la prima è quella che chiude il problema.
+
+**Nota su come è passato inosservato.** I subagenti del lotto `go-fast` hanno visto la suite completa verde:
+girano con lo stack spento. Il difetto si manifesta solo nella condizione del collaudo manuale — che nessun
+collaudo automatico riproduce.
+
+## Processo — nessuna change aggiorna lo stato di implementazione in `EPICS-WAVE-2.md` (sollevato 2026-08-21)
+
+**Il fatto.** Dopo il lotto `go-fast` 0088–0092, le cinque storie implementate e mergiate (UC 0116, 0117, 0118,
+0098, 0099) erano ancora marcate ⬜ «da implementare» nell'ordine di esecuzione dell'onda 2. Le ha marcate ✅
+lo sviluppatore, accorgendosene a mano.
+
+**La causa, verificata.** Il Definition of Done di `new-change` impone di sincronizzare
+[docs/usecases/_INDEX.md](usecases/_INDEX.md), ma **non nomina** `EPICS-WAVE-2.md` — e le storie evolutive non
+stanno in `_INDEX.md`, stanno solo lì. La skill `go-fast` nomina `EPICS-WAVE-2.md` una volta sola, e in
+**lettura**: per ricavare l'ordine topologico e per filtrare le storie già fatte. Nessuno dei due lo scrive.
+Effetto collaterale sgradevole: `go-fast` usa quella colonna per **saltare le storie già implementate**, quindi
+un registro non aggiornato porterebbe un lotto futuro a reimplementare lavoro già in `main`.
+
+**Vie possibili.** Aggiungere `EPICS-WAVE-2.md` al Definition of Done di `new-change` accanto a `_INDEX.md`
+(minimo indispensabile), oppure farlo aggiornare da `go-fast` alla fine di ogni storia mergiata — che è il
+punto in cui l'informazione è certa. Un controllo meccanico è possibile e a buon mercato: una storia con una
+cartella `changes/*-use-case-YYYY-*` mergiata in `main` e ancora marcata ⬜ è un'incoerenza rilevabile.
+
+**Chi lo possiede.** Le skill `new-change` (Definition of Done) e `go-fast` (chiusura di storia). Da decidere
+insieme al punto sulle guide di collaudo qui sotto: sono lo stesso problema visto da due lati — **artefatti di
+documentazione che nessun presidio sorveglia**.
+
+## Processo — le guide di collaudo manuale (`how-to-test.md`) invecchiano in silenzio (sollevato 2026-08-21)
+
+**Il fatto.** Durante il collaudo manuale del lotto `go-fast` 0088–0092 (epica 22), lo sviluppatore ha eseguito
+la guida della change **0088** su un `main` che conteneva già le change 0089–0092, e ha inciampato **tre volte
+in punti scaduti** — una per sessione di collaudo, ogni volta con un'indagine per capire se il difetto fosse
+nel codice o nella guida. Estensione finale su quella sola guida: **sei punti riallineati a mano** (0.3, 1.2,
+1.3, 1.6, 2.1, 2.4) più due voci della checklist finale, in tre categorie:
+
+1. *ripieghi dichiarati e poi sciolti dalle storie successive* — «entra senza selettore, il selettore arriva
+   con UC 0117» (2.4, parte 5): la guida conteneva perfino una guardia di perimetro («se lo vedi adesso,
+   qualcuno ha anticipato lavoro») che dopo il lotto **scatta a vuoto**, accusando di un difetto il lavoro
+   corretto della change successiva;
+2. *comportamenti rimossi da una storia successiva* — il cambio ruolo da «Members», rimosso dalla 0091 (1.2,
+   1.3, 1.6);
+3. *misure sbagliate indipendenti dal lotto* — `platform.users` data per «vuota» quando la migrazione copia e
+   non svuota, sbagliata due volte nella stessa guida (0.3 e parte 5), più il nome della tabella di storico
+   Flyway senza schema, sbagliato in **cinque** guide diverse (0083, 0084, 0088, 0089, 0091).
+
+4. *nomi tecnici al posto delle etichette visibili* — «scegli bersaglio **user**» dove a schermo si legge il
+   menu **«Bersaglio»** con l'opzione **«Utente»**, in un riquadro in fondo alla pagina che la guida non
+   indicava (3.2); e più in generale i nomi delle schermate scritti in inglese (*Members*, *My data*) mentre
+   chi collauda ha l'interfaccia in italiano (**Membri**, **I miei dati**). Chi legge non trova l'elemento e
+   sospetta un difetto del prodotto.
+
+5. *comandi non incollabili, e quattro convenzioni diverse in quattro guide* — le guide del lotto usavano
+   `psql()` come funzione di shell da definire prima (0089), un `alias pg` (0091), un indirizzo di
+   connessione `postgres://…` (0090) e `PGPASSWORD=… psql -h localhost` (0092). Chi collauda deve risalire in
+   testa al documento, copiare la definizione e poi sostituire il comando: scomodo al punto che lo
+   sviluppatore ha chiesto di rifarli tutti. Peggio: **due delle quattro forme presuppongono `psql` installato
+   sulla macchina**, che non è un requisito dello stack locale, e una porta perfino una password diversa dalle
+   altre. Normalizzate tutte su `docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d
+   appgrove …` (29 comandi riscritti nelle quattro guide) e verificate eseguendole.
+
+6. *comandi fragili che presuppongono un seme intatto, e prerequisito non dichiarato* — il punto 1.3 della
+   guida 0089 assegna `active_membership_id` con una sottoquery su `platform.membership` **senza filtrare
+   `deleted_at is null`**. Chi arriva dal collaudo della guida precedente ha righe cancellate logicamente (la
+   0088 chiede proprio di rimuovere una persona da un account) e riceve `ERROR: more than one row returned by
+   a subquery used as an expression` — un errore che sembra un difetto del prodotto e non lo è. Peggio: la
+   guida 0089 dice di azzerare la banca dati **in fondo**, nella sezione «Ripulire», ma non dice di
+   **partire** da una pulita; e diverse sue attese («Acme Owner ha una sola appartenenza») valgono solo sul
+   seme intatto. Corretto irrobustendo le tre sottoquery, dichiarando il prerequisito in testa e aggiungendo
+   un punto 0.3 che fotografa lo stato di partenza. Vale in generale: **una guida che si esegue in sequenza
+   dopo un'altra eredita lo stato che l'altra ha lasciato**, e il lotto `go-fast` le produce proprio in
+   sequenza.
+
+Le categorie 3, 4, 5 e 6 dicono una cosa in più: **non è solo un problema di invecchiamento**. Nessuno *esegue* i
+comandi delle guide e nessuno *ripercorre* i passi con l'interfaccia davanti, quindi un comando che non gira o
+un'etichetta che non esiste sopravvive indefinitamente. Un rimedio che si limitasse a datare le guide (via 3)
+non toccherebbe queste tre categorie: valgono già al primo giorno. La quinta suggerisce anche il presidio più
+economico dell'insieme — **una forma canonica dichiarata** per i comandi verso la banca dati locale, che la
+skill `new-change` impone alla guida e che un controllo meccanico può far rispettare, perché è una stringa
+fissa e non un giudizio.
+
+**Perché è un difetto di processo e non un difetto di quella change.** La 0088 era corretta il giorno in cui è
+stata scritta, e i **test automatici hanno fatto il loro lavoro**: il percorso `J-MEMBERS` copriva il cambio
+ruolo, si è rotto quando la 0091 l'ha rimosso, e la 0091 ha dovuto sostituire il segmento con l'asserzione
+opposta (il comando non c'è più) motivandola nel codice. Ciò che **nessun presidio sorveglia** è la prosa delle
+guide delle change **già chiuse**: sono file di archivio, non codice eseguibile, quindi quando una change
+successiva cambia la realtà nulla diventa rosso. In un lotto `go-fast` di più change consecutive sullo stesso
+sottosistema — che è il caso d'uso per cui `go-fast` esiste — il fenomeno è quasi garantito.
+
+**Il rischio concreto.** Lo sviluppatore che collauda a mano perde fiducia nell'automazione proprio quando
+questa ha funzionato: una guida scaduta si legge come «i test non ci sono». È accaduto, e ha richiesto
+un'indagine per dimostrare il contrario.
+
+**Vie possibili, da valutare (nessuna decisa).**
+1. *Guida di lotto consolidata*: `go-fast` scrive, alla fine del lotto, un'unica `how-to-test.md` complessiva
+   che rispecchia lo stato finale di `main`, e marca le guide delle singole change come «fotografia storica».
+   Costa poco e coglie il caso più frequente.
+2. *Passata di riallineamento a fine lotto*: l'ultima change del lotto rilegge le guide delle precedenti e
+   annota i punti superati. Più fedele, più costoso, e resta prosa non sorvegliata.
+3. *Marcatura esplicita*: ogni `how-to-test.md` nasce con in testa il commit su cui è stata scritta, così chi
+   la esegue sa che sta leggendo una fotografia e non un documento vivo. Non evita lo scostamento, lo rende
+   leggibile — è il rimedio minimo, e va fatto in ogni caso.
+
+**Chi lo possiede.** La skill `go-fast` (contratto di fine lotto) e la skill `new-change` (intestazione della
+guida). Da decidere insieme alla prossima revisione delle due skill.
+
 ## Tooling — unificare in `services/commons` i due renderer Java dei template email (sollevato 2026-07-25)
 
 Sollevato dalla change `0052-use-case-0039-…` (newsletter). L'email di conferma della newsletter parte dal servizio
@@ -649,6 +814,19 @@ che dipende dall'ordine delle aree erode la fiducia nel comando unico.
   copiato in `target/classes`). Rimedio candidato: build dello smoke su target pulito o esclusione del file dalla
   copia. Owner: #07 (DevOps/CI) con #04.
 
+**Il fenomeno si è ripresentato il 2026-08-21**, su aree diverse: lo sviluppatore ha visto **`infra` e `platform`**
+rosse nella corsa completa, e rieseguite da sole sono risultate **entrambe verdi** — `infra` con tutti e sei i
+passi effettivamente eseguiti (formato, validazione di quattro radici, `terraform test` su quattro moduli, checkov,
+actionlint), non con un salto silenzioso. Di `platform` è stata trovata e corretta una causa reale e indipendente
+dall'ordine (l'instabilità di `J-INVITE-EXISTING`, voce qui sotto): plausibile che nella corsa completa la macchina
+sia più carica e la corsa sul gate legale si perda più spesso, quindi il difetto si manifestasse là e non nella
+corsa isolata. Per `infra` **non è stata trovata alcuna causa**: da sola è verde in modo autentico, e senza
+l'output del fallimento non è diagnosticabile.
+
+Il punto di questa voce si rafforza: **non basta sapere che una suite è rossa, serve sapere in che corsa**. Sarebbe
+utile che `run-tests.sh` conservasse l'output di ogni area in un file per corsa, così un rosso non riproducibile
+resti esaminabile invece di scorrere via dal terminale. Owner: #07 (DevOps/CI).
+
 ## Il gate legale è fail-open: il passo condiviso dei percorsi di piattaforma perde la corsa (change `0089`, 2026-08-21)
 
 `acceptLegalGateIfPresent` ([tools/platform-e2e/helpers/browser.ts](../tools/platform-e2e/helpers/browser.ts))
@@ -671,6 +849,20 @@ UC 0091/0092, proprietari dei passi condivisi della suite di piattaforma.
 secondo percorso (`J-INVITE-EXISTING`) e duplicarla era il momento sbagliato per farlo. `browserLogin` — il
 passo usato dagli altri percorsi — **non è stato toccato**: resta il lavoro di questa voce, ed è ora più
 semplice, perché la versione corretta esiste già accanto ad esso.
+
+**Aggiornamento (2026-08-21, correzione diretta su `main`)**: l'estrazione non era bastata, e il perché è
+istruttivo. `J-INVITE-EXISTING` chiamava `expectInsideAccount` ma **non** l'attesa sulla decisione del gate,
+perché il suo cambio di account non passa dal selettore — l'accettazione dell'invito lo cambia da sé — e quindi
+non passava da `switchAccountTo`, che l'attesa se la fa in casa. Risultato: il percorso era **instabile**
+(`1 flaky` nella corsa di piattaforma, fallito al primo tentativo e passato al secondo). La schermata salvata da
+Playwright mostra il gate legale al posto della shell: prova diretta della corsa descritta sopra. Corretto
+esportando l'attesa come `waitForLegalDecision(page)` e usandola nel percorso; nella stessa occasione l'ordine
+delle due asserzioni è stato invertito, perché `toHaveCount(0)` su «Members» è vero **anche su una barra laterale
+ancora vuota** e passava per il motivo sbagliato, coprendo proprio il difetto in esame.
+
+Lezione per il lavoro che resta su `browserLogin`: **estrarre l'helper non basta se il chiamante può raggiungere
+lo stesso stato per un'altra strada**. Qui la strada era «cambio di account senza selettore», che nessuno aveva
+in mente quando l'helper è stato scritto.
 
 ## Indice di esecuzione degli use case: nessuna riga per le storie evolutive (change `0073`, 2026-08-01)
 

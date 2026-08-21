@@ -69,6 +69,33 @@ warn() { printf '%s! %s%s\n' "$C_YEL" "$*" "$C_RESET"; }
 
 usage() { sed -n '2,49p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
+# ── Una corsa alla volta, e non è una precauzione teorica ──────────────────────
+# Due esecuzioni contemporanee sulla stessa macchina si distruggono a vicenda: compilano negli stessi
+# `target/`, avviano i test Quarkus sulla stessa porta di prova (8081), montano lo stack di piattaforma
+# sulle stesse porte 20080-20082 e — soprattutto — lavorano sullo STESSO Postgres locale. Il risultato
+# non è una corsa più lenta: sono rossi sparsi e irriproducibili in aree che non hanno nulla di rotto,
+# che è il modo più efficace di far perdere fiducia nel comando unico (osservato il 2026-08-21: due
+# corse sovrapposte hanno prodotto `backend` e `platform` rossi su un albero sano).
+#
+# Il lucchetto è il file, e la sua esistenza basta: `mkdir` è atomico su POSIX, quindi due processi non
+# possono crearlo entrambi. Si rilascia sempre, anche su interruzione, perché resta appeso a `trap`.
+LOCK_DIR="$ROOT/.run-tests.lock"
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  altro_pid="$(cat "$LOCK_DIR/pid" 2>/dev/null || echo '?')"
+  if [ "$altro_pid" != '?' ] && ! kill -0 "$altro_pid" 2>/dev/null; then
+    # Il proprietario non esiste più: lucchetto orfano di una corsa interrotta male. Lo si riprende.
+    warn "lucchetto orfano di un'esecuzione precedente (pid $altro_pid non attivo): lo riprendo."
+    rm -rf "$LOCK_DIR" && mkdir "$LOCK_DIR" 2>/dev/null || { fail "non riesco a riprendere il lucchetto $LOCK_DIR"; exit 3; }
+  else
+    fail "un'altra esecuzione di run-tests.sh è già in corso (pid $altro_pid)."
+    fail "Due corse insieme si pestano i piedi — stesse porte, stesso database — e producono rossi falsi."
+    fail "Attendi che finisca, oppure fermala; se sei certo che non esista più: rm -rf \"$LOCK_DIR\""
+    exit 3
+  fi
+fi
+echo "$$" > "$LOCK_DIR/pid"
+trap 'rm -rf "$LOCK_DIR"' EXIT INT TERM
+
 # aree richieste (default: tutte)
 AREAS=()
 for a in "$@"; do

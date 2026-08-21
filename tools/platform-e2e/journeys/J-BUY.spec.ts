@@ -46,7 +46,14 @@ test('[J-BUY] catalogo → tier → fake Paddle → webhook reale → card attiv
   await page.getByRole('button', { name: 'Subscribe', disabled: false }).click()
 
   // ── 2. overlay stub → webhook sulla pipeline reale → polling → attivata ─────────────────────
-  await expect(page.getByText('Activating your subscription…')).toBeVisible()
+  // Si accetta l'attesa OPPURE l'esito già raggiunto: «Activating your subscription…» è uno stato
+  // TRANSITORIO, e pretendere di coglierlo rende instabile il journey — quando la pipeline è veloce
+  // il messaggio è già stato sostituito quando l'asserzione guarda (osservato: `flaky` nella corsa
+  // completa di run-tests.sh, 2026-08-21). Quello che il journey deve provare è che l'interfaccia
+  // reagisca subito e che l'esito arrivi; non che l'attesa duri abbastanza da essere fotografata.
+  await expect(
+    page.getByText(/Activating your subscription…|All set! Your subscription is active\./),
+  ).toBeVisible()
   await expect(page.getByText('All set! Your subscription is active.')).toBeVisible({ timeout: 30_000 })
 
   // ── 3. la card della STESSA app non è più acquistabile: è in uso ────────────────────────────

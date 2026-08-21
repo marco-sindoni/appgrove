@@ -29,7 +29,7 @@ della verifica:
 
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 0.4 | Leggi l'identificativo dell'applicazione:<br>`PGPASSWORD=appgrove_local_dev psql -h localhost -U appgrove -d appgrove -c "select id, slug, status from platform.app where slug in ('crm','fatture');"` | Due righe. `crm` risulta `inactive`. Annota il suo `id` (serve al passo dopo e ai passi 2 e 4). |
+| 0.4 | Leggi l'identificativo dell'applicazione:<br>`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "select id, slug, status from platform.app where slug in ('crm','fatture');"` | Due righe. `crm` risulta `inactive`. Annota il suo `id` (serve al passo dopo e ai passi 2 e 4). |
 | 0.5 | Entra nella console admin `https://admin.local.appgrove.app` come **admin@appgrove.test** / `Password1!` e accendi il Mini-CRM dalla pagina delle applicazioni. In alternativa, via API:<br>`PATCH /api/platform/v1/admin/apps/<app-id>` con corpo `{"status":"active"}` e token di **admin@appgrove.test** | L'applicazione passa a `active`. Rieseguendo il passo 0.4 lo stato è `active`. |
 | 0.6 | Torna su `https://app.local.appgrove.app` come **owner@acme.test** e ricarica | Nella barra laterale compare il **Mini-CRM**. Se non compare, ricarica: il registry legge i diritti dell'account. |
 
@@ -61,7 +61,7 @@ piattaforma con ruolo `admin` **sul Mini-CRM**. È il caso interessante.
 | 1.2 | Stessa cosa con `$TOKEN_OWNER` | `roles` = `["owner"]`. |
 | 1.3 | Login di `admin@appgrove.test` e stessa decodifica | `roles` contiene `owner` **e** `platform-admin`: chi amministra la piattaforma resta fuori da questo meccanismo. |
 | 1.4 | Guarda l'elenco dei claim | **Non** c'è alcun claim con l'elenco delle applicazioni né con i ruoli su di esse. È la decisione centrale della storia: se un giorno comparissero, un cambio di ruolo avrebbe effetto solo al rinnovo del token. |
-| 1.5 | *(prova della tolleranza, opzionale)* Forza a mano il valore ritirato:<br>`PGPASSWORD=appgrove_local_dev psql -h localhost -U appgrove -d appgrove -c "update platform.membership set role='admin' where identity_id='b0000000-0000-4000-8000-000000000002';"`<br>poi rifai il login di `admin@acme.test` e decodifica | `roles` = `["member"]` **comunque**: il valore vecchio nei dati viene letto come `member` mentre si compone il claim. La persona entra col potere *minore*, non con *nessun* potere. **Rimetti il valore giusto** subito dopo (`set role='member'` sulla stessa riga) oppure riesegui `./dev.sh seed`. |
+| 1.5 | *(prova della tolleranza, opzionale)* Forza a mano il valore ritirato:<br>`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "update platform.membership set role='admin' where identity_id='b0000000-0000-4000-8000-000000000002';"`<br>poi rifai il login di `admin@acme.test` e decodifica | `roles` = `["member"]` **comunque**: il valore vecchio nei dati viene letto come `member` mentre si compone il claim. La persona entra col potere *minore*, non con *nessun* potere. **Rimetti il valore giusto** subito dopo (`set role='member'` sulla stessa riga) oppure riesegui `./dev.sh seed`. |
 
 ---
 
@@ -128,7 +128,8 @@ leggere una frase in italiano**, perché parla cinque lingue.
 servizio, **non** in quello di piattaforma.
 
 ```bash
-PGPASSWORD=appgrove_local_dev psql -h localhost -U appgrove -d appgrove -c \
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -c \
   "select tenant_id, subject, app_slug, role, stale, refreshed_at, invalidated_at
      from app_crm.app_role_projection order by refreshed_at desc;"
 ```

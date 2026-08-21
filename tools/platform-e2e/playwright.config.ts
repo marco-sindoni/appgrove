@@ -20,6 +20,24 @@ export default defineConfig({
   retries: 1,
   reporter: 'list',
   timeout: 180_000,
+  /*
+   * Parallelismo LIMITATO, e non è una preferenza: è la correzione di un difetto misurato.
+   *
+   * Senza questa riga Playwright usa metà dei core (sei processi Chromium su una macchina da dodici).
+   * Contro uno stack backend VERO che gira sulla stessa macchina — quattro servizi Quarkus, Postgres,
+   * ElasticMQ, Mailpit, due server statici — e subito dopo che `run-tests.sh` ha finito di compilare
+   * tutto, l'avvio simultaneo di sei browser non ce la fa: nella corsa completa del 2026-08-21 due
+   * journey (`A-ENTITLE`, `A-GDPR`) hanno superato il timeout di 180 s **senza eseguire una sola riga
+   * di test**. Le tracce lo dicono senza ambiguità: l'ultimo passo registrato è la fixture `browser`
+   * per uno e `BrowserContext.newPage` per l'altro, e la schermata salvata è una pagina bianca. Al
+   * ritentativo, con gli altri worker liberi, gli stessi journey girano in 8-9 secondi.
+   *
+   * Perché non alzare il timeout: non aiuterebbe. Non è un'attesa lenta, è una macchina satura — la
+   * prova è proprio che al secondo tentativo bastano nove secondi. Alzare il timeout allungherebbe
+   * l'agonia e lascerebbe la suite instabile, che è ciò che il commento sull'anti-fragilità qui sopra
+   * vieta esplicitamente.
+   */
+  workers: 4,
   outputDir: './test-results',
   globalSetup: './global-setup.ts',
   globalTeardown: './global-teardown.ts',

@@ -37,7 +37,7 @@ passata:
 ```bash
 docker compose -f dev/docker-compose.yml exec -T postgres \
   psql -U appgrove -d appgrove -tAc \
-  "select version, description, success from flyway_schema_history where version = '15';"
+  "select version, description, success from platform.flyway_schema_history where version = '15';"
 ```
 
 **Risultato atteso** — una riga `15 | payout reconciliation | t`. Se manca, il resto non ha senso.
