@@ -2,6 +2,7 @@ package app.appgrove.commons.entitlement.projection;
 
 import app.appgrove.commons.entitlement.EntitlementEvents;
 import app.appgrove.commons.messaging.MessageQueues;
+import app.appgrove.commons.projection.LocalProjection;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.scheduler.Scheduled;
@@ -9,6 +10,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -23,6 +26,13 @@ import org.jboss.logging.Logger;
  * verità nota invece di negare l'accesso. Cancellare la riga trasformerebbe ogni disdetta in una
  * finestra di potenziale blocco totale per quel tenant.
  *
+ * <p><b>Una coda, tutte le copie locali</b> (UC 0099). Il messaggio è sottile e dice soltanto «qualcosa è
+ * cambiato per l'account T»: chi lo consuma non può sapere quali copie il servizio tenga, quindi le
+ * interpella <b>tutte</b> attraverso {@link LocalProjection} — i diritti d'accesso e il ruolo per
+ * applicazione. Il tipo di evento resta nel campo {@code reason}, per la diagnostica: raddoppiare le code
+ * per la stessa notizia avrebbe raddoppiato le dichiarazioni in ElasticMQ, nel modulo Terraform e nei
+ * permessi, senza rendere nulla più chiaro.
+ *
  * <p><b>Idempotente</b>: marcare una riga già marcata non cambia nulla, quindi una doppia consegna
  * (semantica "almeno una volta" delle code) è innocua. Un messaggio malformato non viene confermato
  * e finisce negli scarti: non lo si scarta in silenzio, perché significherebbe perdere per sempre
@@ -34,8 +44,9 @@ public class EntitlementInvalidationConsumer {
     private static final Logger LOG = Logger.getLogger(EntitlementInvalidationConsumer.class);
     private static final int BATCH = 10;
 
+    // Tutte le copie locali del servizio: chi ne aggiunge una viene incluso da solo (UC 0099).
     @Inject
-    EntitlementProjectionStore store;
+    Instance<LocalProjection> projections;
 
     // Instance<> lazy: nei servizi senza proiezione (core, auth) e nei test senza code il consumer
     // è inerte e non deve richiedere bean che non esistono.
@@ -62,7 +73,7 @@ public class EntitlementInvalidationConsumer {
 
     /** Elabora i messaggi disponibili; ritorna quanti ne ha confermati. Pubblico per i test. */
     public int drain() {
-        if (!store.enabled() || appId.isEmpty() || queuesInstance.isUnsatisfied()) {
+        if (appId.isEmpty() || queuesInstance.isUnsatisfied() || active().isEmpty()) {
             return 0;
         }
         MessageQueues queues = queuesInstance.get();
@@ -81,10 +92,18 @@ public class EntitlementInvalidationConsumer {
                 continue;
             }
             try {
-                int marked = store.markStale(event.tenantId());
+                StringBuilder marked = new StringBuilder();
+                for (LocalProjection projection : active()) {
+                    // Se una copia fallisce, il messaggio NON viene confermato e si ritenta tutto:
+                    // marcare è idempotente, quindi rimarcare quelle già fatte non costa nulla.
+                    marked.append(marked.isEmpty() ? "" : " ")
+                            .append(projection.name())
+                            .append('=')
+                            .append(projection.markStale(event.tenantId()));
+                }
                 metrics.invalidationLag(parseInstant(event.occurredAt()));
                 LOG.infof(
-                        "entitlement.invalidation tenant_id=%s app_id=%s reason=%s righe_marcate=%d",
+                        "entitlement.invalidation tenant_id=%s app_id=%s reason=%s righe_marcate=[%s]",
                         event.tenantId(), appId.get(), event.reason(), marked);
                 queues.delete(queue, message);
                 processed++;
@@ -97,6 +116,17 @@ public class EntitlementInvalidationConsumer {
             }
         }
         return processed;
+    }
+
+    /** Le copie locali configurate in questo servizio. Vuoto = servizio senza copie: nulla da marcare. */
+    private List<LocalProjection> active() {
+        List<LocalProjection> out = new ArrayList<>();
+        for (LocalProjection projection : projections) {
+            if (projection.enabled()) {
+                out.add(projection);
+            }
+        }
+        return out;
     }
 
     private static Instant parseInstant(String value) {

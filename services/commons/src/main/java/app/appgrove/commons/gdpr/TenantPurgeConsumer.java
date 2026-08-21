@@ -1,7 +1,7 @@
 package app.appgrove.commons.gdpr;
 
-import app.appgrove.commons.entitlement.projection.EntitlementProjectionStore;
 import app.appgrove.commons.messaging.MessageQueues;
+import app.appgrove.commons.projection.LocalProjection;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.scheduler.Scheduled;
@@ -39,32 +39,41 @@ public class TenantPurgeConsumer {
     @Inject
     GdprPurgeAuditWriter audit;
 
+    // Tutte le copie locali del servizio (diritti d'accesso, ruolo per applicazione, …): la purga le
+    // interpella per interfaccia e non per nome, così chi ne aggiunge una non può dimenticarsene.
     @Inject
-    EntitlementProjectionStore projection;
+    Instance<LocalProjection> projections;
 
     @Inject
     ObjectMapper mapper;
 
     /**
-     * Aggiunge alla purge del dominio la cancellazione della <b>proiezione entitlement</b> (UC 0046),
-     * che è infrastruttura di {@code commons} e non appartiene al contratto dell'app.
+     * Aggiunge alla purge del dominio la cancellazione di <b>tutte le copie locali</b> del servizio —
+     * i diritti d'accesso (UC 0046) e il ruolo per applicazione (UC 0099) — che sono infrastruttura di
+     * {@code commons} e non appartengono al contratto dell'app.
      *
-     * <p>Va fatta <b>qui</b> e non in ogni {@code AppDataContract}: la proiezione contiene
-     * l'identificativo dell'account e il piano che aveva, e lasciarla in piedi dopo un'erasure
-     * significherebbe conservare la traccia di chi ha chiesto di sparire. Se dipendesse dalla
-     * diligenza di ogni app, prima o poi una se ne dimenticherebbe — in silenzio.
+     * <p>Va fatta <b>qui</b> e non in ogni {@code AppDataContract}: quelle copie contengono
+     * l'identificativo dell'account, il piano che aveva e l'identificativo di autenticazione delle sue
+     * persone, e lasciarle in piedi dopo un'erasure significherebbe conservare la traccia di chi ha
+     * chiesto di sparire. Se dipendesse dalla diligenza di ogni app, prima o poi una se ne dimenticherebbe
+     * — in silenzio. Per la stessa ragione le copie si interpellano <b>per interfaccia</b>
+     * ({@link LocalProjection}) e non una per nome: aggiungerne una domani non richiede di ricordarsi di
+     * questo file.
      *
-     * <p>Il conteggio entra nell'audit: l'audit è la <b>prova</b> dell'erasure, e una prova
+     * <p>Il conteggio di ognuna entra nell'audit: l'audit è la <b>prova</b> dell'erasure, e una prova
      * incompleta non è una prova.
      */
     private PurgeResult withProjection(PurgeResult result, String tenantId) {
-        if (!projection.enabled()) {
-            return result;
-        }
-        int purged = projection.purgeTenant(tenantId);
         Map<String, Integer> deleted = new LinkedHashMap<>(result.deletedByEntity());
-        deleted.put("entitlement_projection", purged);
-        return new PurgeResult(result.appId(), deleted);
+        boolean any = false;
+        for (LocalProjection projection : projections) {
+            if (!projection.enabled()) {
+                continue;
+            }
+            deleted.put(projection.name(), projection.purgeTenant(tenantId));
+            any = true;
+        }
+        return any ? new PurgeResult(result.appId(), deleted) : result;
     }
 
     @Scheduled(every = "2s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)

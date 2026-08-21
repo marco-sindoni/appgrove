@@ -113,10 +113,48 @@ class PreTokenGenTest(unittest.TestCase):
 
     def test_platform_admin_da_allow_list(self):
         handler.PLATFORM_ADMIN_SUBS = frozenset({"sub-admin"})
-        self._with_rows([_row(M1, "tenant-1", "admin", None)])
+        self._with_rows([_row(M1, "tenant-1", "member", None)])
         out = handler.handler(_event("sub-admin"), None)
         claims = _access_claims(out)
-        self.assertEqual(claims["roles"], ["admin", "platform-admin"])
+        self.assertEqual(claims["roles"], ["member", "platform-admin"])
+
+    def test_ruolo_admin_ritirato_diventa_member_nel_claim(self):
+        """UC 0099: il claim non porta più `admin` come ruolo di piattaforma.
+
+        Un ambiente i cui dati non sono ancora stati convertiti (conversione: UC 0113)
+        può avere righe che valgono ancora `admin`: quella persona deve accedere col
+        potere MINORE, non con nessun potere. La tolleranza la ritira UC 0113.
+        """
+        self._with_rows([_row(M1, "tenant-1", "admin", None)])
+        out = handler.handler(_event("sub-1"), None)
+        claims = _access_claims(out)
+        self.assertEqual(claims["tenant_id"], "tenant-1")
+        self.assertEqual(claims["roles"], ["member"])
+
+    def test_ruolo_admin_ritirato_convive_con_platform_admin(self):
+        handler.PLATFORM_ADMIN_SUBS = frozenset({"sub-1"})
+        self._with_rows([_row(M1, "tenant-1", "admin", None)])
+        out = handler.handler(_event("sub-1"), None)
+        self.assertEqual(_access_claims(out)["roles"], ["member", "platform-admin"])
+
+    def test_owner_e_member_passano_inalterati(self):
+        for role in ("owner", "member"):
+            with self.subTest(role=role):
+                self._with_rows([_row(M1, "tenant-1", role, None)])
+                out = handler.handler(_event("sub-1"), None)
+                self.assertEqual(_access_claims(out)["roles"], [role])
+
+    def test_il_claim_non_porta_ruoli_per_applicazione(self):
+        """Decisione centrale di UC 0099: i ruoli per applicazione NON stanno nel token.
+
+        Se un giorno qualcuno li aggiungesse «per risparmiare una chiamata», questo
+        collaudo diventa rosso: un cambio di ruolo avrebbe effetto solo al rinnovo del
+        token, e le conseguenze si vedrebbero solo dopo un incidente.
+        """
+        self._with_rows([_row(M1, "tenant-1", "owner", None)])
+        claims = _access_claims(handler.handler(_event("sub-1"), None))
+        self.assertEqual(sorted(claims.keys()), ["roles", "tenant_id"])
+        self.assertEqual(claims["roles"], ["owner"])
 
     def test_sub_non_in_allow_list_niente_platform_admin(self):
         handler.PLATFORM_ADMIN_SUBS = frozenset({"altro"})

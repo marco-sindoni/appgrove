@@ -1,5 +1,7 @@
 package app.appgrove.crm;
 
+import app.appgrove.commons.access.AppRole;
+import app.appgrove.commons.access.RequiresAppRole;
 import app.appgrove.commons.entitlement.RequiresEntitlement;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
@@ -31,18 +33,30 @@ import java.util.UUID;
  * API dei contatti del mini-CRM (UC 0054). Tenant-scoped automatico (discriminator): ogni query filtra
  * {@code WHERE tenant_id = ?} senza codice manuale.
  *
- * <p>Due gate concentrici, in ordine:
+ * <p>Tre varchi concentrici, in ordine:
  * <ol>
- *   <li>{@code @RequiresEntitlement} (UC 0027): accesso dell'account all'app (402 se scaduto/disabilitato);</li>
- *   <li>{@link SeatAccess}: possesso di un <b>posto</b> da parte dell'utente (403 se non ne ha uno).</li>
+ *   <li>{@code @RequiresEntitlement} (UC 0027): diritto dell'<b>account</b> all'applicazione (402 se
+ *       scaduto o disabilitato);</li>
+ *   <li>{@link RequiresAppRole} (UC 0099): <b>ruolo della persona su questa applicazione</b> — letture
+ *       {@code viewer}, scritture {@code editor}. È il varco <b>condiviso</b> di {@code commons}: questa
+ *       classe non contiene alcun confronto fra ruoli, dice solo quanto potere serve;</li>
+ *   <li>{@link SeatAccess} (UC 0054): possesso di un <b>posto</b> (403 se non ne ha uno).</li>
  * </ol>
- * Tutti e tre i ruoli ({@code owner/admin/member}) possono gestire i contatti: la differenza fra ruoli
- * riguarda la gestione dei posti ({@link SeatResource}), non l'uso del CRM. I contatti <b>non</b> consumano
- * quota: la metrica {@code seats} conta le persone abilitate, non i dati che immettono.
+ *
+ * <p><b>Due varchi delle persone contemporaneamente, e per poco.</b> Il posto e il ruolo per applicazione
+ * rispondono alla stessa domanda in due modi diversi: il primo è il meccanismo che questa applicazione si
+ * era costruita da sé, il secondo è quello di piattaforma. I posti si ritirano in <b>UC 0111</b>, quando la
+ * schermata che li governa viene rifatta; fino a quel momento convivono, e il varco nuovo è quello che
+ * conta perché è più stretto (un posto senza ruolo non apre nulla).
+ *
+ * <p>I contatti <b>non</b> consumano quota: la metrica {@code seats} conta le persone abilitate, non i dati
+ * che immettono. Il claim {@code roles} del token non entra più in queste decisioni: porta solo il ruolo di
+ * <i>piattaforma</i> (UC 0099), che non dice cosa una persona possa fare dentro una applicazione.
  */
 @Path("/api/crm/v1/contacts")
 @Authenticated
 @RequiresEntitlement
+@RequiresAppRole(AppRole.viewer)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ContactResource {
@@ -81,6 +95,7 @@ public class ContactResource {
     }
 
     @POST
+    @RequiresAppRole(AppRole.editor)
     @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional
     public Response create(@Valid CreateContact body) {
@@ -92,6 +107,7 @@ public class ContactResource {
     }
 
     @PATCH
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
     @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional
@@ -120,6 +136,7 @@ public class ContactResource {
     }
 
     @DELETE
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
     @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional

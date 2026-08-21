@@ -32,6 +32,14 @@ import org.jboss.logging.Logger;
  * con {@code tenant_id} esplicito preso dallo stato di core, mai da input client (stessa postura di
  * {@link SubscriptionWriter}).
  *
+ * <p><b>Una coda per servizio, non una per notizia</b> (UC 0099). Sulla stessa coda viaggia anche
+ * l'invalidazione della copia locale del <b>ruolo</b> delle persone su quella applicazione: il messaggio
+ * dice «qualcosa è cambiato per l'account T» e il tipo di evento sta nel campo {@code reason}, che serve
+ * alla diagnostica. Chi consuma marca da rinfrescare <b>tutte</b> le copie locali del servizio. Una seconda
+ * coda per la stessa notizia avrebbe richiesto una seconda dichiarazione in ElasticMQ, nel modulo Terraform
+ * e nei permessi, senza rendere nulla più chiaro. Il nome della classe resta quello storico perché il nome
+ * della coda è quello: rinominarla senza rinominare la coda sarebbe peggio.
+ *
  * <p><b>La pubblicazione non è mai bloccante.</b> Un errore sul bus viene loggato e ingoiato: la
  * mutazione di billing è già stata applicata e non va annullata perché una notifica non è partita.
  * La conseguenza — proiezioni che restano vecchie — è coperta dalle misure di scostamento lato app,

@@ -3,6 +3,7 @@ package app.appgrove.core.platform;
 import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
+import app.appgrove.core.billing.EntitlementInvalidationPublisher;
 import app.appgrove.core.platform.UserDtos.UpdateMe;
 import app.appgrove.core.platform.UserDtos.UpdateUser;
 import app.appgrove.core.platform.UserDtos.UserView;
@@ -63,6 +64,9 @@ public class UserResource {
 
     @Inject
     AppAccessRepository accesses;
+
+    @Inject
+    EntitlementInvalidationPublisher invalidation;
 
     @Inject
     AuditLogger audit;
@@ -177,6 +181,12 @@ public class UserResource {
         for (AppAccess access : accesses.findByIdentity(membership.getIdentityId())) {
             access.markDeleted();
             revoked++;
+        }
+        if (revoked > 0) {
+            // I servizi delle applicazioni tengono una copia locale del ruolo (UC 0099): senza questo
+            // evento la persona appena uscita continuerebbe a lavorare per la durata della copia. Si
+            // invalida su TUTTE le applicazioni, perché i suoi accessi potevano essere su più di una.
+            invalidation.invalidateAllApps(membership.getTenantId(), "member.removed");
         }
         audit.success("member.removed", Map.of(
                 "user_id", membership.getIdentityId().toString(),

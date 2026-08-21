@@ -1,0 +1,178 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow; le contropartite obbligatorie restano: suite completa ./run-tests.sh verde prima del commit, registro delle decisioni integrale, how-to-test.md nella cartella della change. Merge e push sono dell'orchestratore, non di questa change."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0099 «Autorizzazione per applicazione: token, propagazione del ruolo, varco riusabile» (area 22-refactor-membership-model, sotto-epica E22.1, quinta storia dell'epica in ordine di esecuzione, subito dopo UC 0098). Da qui il nome del branch 0092-use-case-0099-autorizzazione-per-applicazione; il numero 0092 è il progressivo di changes/ (ultima esistente: 0091) e coincide con quello atteso dall'orchestratore. Lo stato di implementazione delle storie evo NON vive in docs/usecases/_INDEX.md (che copre le 60 storie base): si registra nell'intestazione della storia e nell'epica, come stabilito dalla decisione 13 della change 0088 e confermato dalla 0091."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) L'enumerazione del ruolo di applicazione viene SPOSTATA da services/core a services/commons (app.appgrove.commons.access.AppRole) invece di essere duplicata. È la conseguenza obbligata della storia: il varco riusabile vive in commons e deve nominare il ruolo minimo richiesto, ma commons non può dipendere da core (la dipendenza è nell'altro verso). Duplicare l'enumerazione significherebbe duplicare l'ORDINAMENTO viewer < editor < admin, che è esattamente ciò che il commento di AppRole vieta («una seconda copia dell'ordinamento è una seconda occasione di sbagliarlo»). Core continua a usare la stessa classe, importandola.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/access/AppRole.java",
+        "description": "Enumerazione con il confronto atLeast(): unica sede dell'ordinamento dei ruoli di applicazione."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AppRole.java",
+        "description": "Rimosso: sostituito dall'importazione della classe di commons."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La copia locale del ruolo ha una DURATA MASSIMA (sessanta secondi, chiave appgrove.app-role.projection.max-age), a differenza della copia locale dei diritti d'accesso che non scade mai. Non è un secondo meccanismo ma lo stesso con un parametro in più, e la differenza è voluta: un abbonamento cambia di rado e il suo evento è affidabile, un ruolo su una applicazione cambia spesso e una revoca che non arriva è un permesso che sopravvive. La scadenza è la rete che tiene anche quando il canale degli eventi è rotto — il caso in cui l'invalidazione, da sola, non protegge nulla. Sessanta secondi è il valore proposto dal punto aperto della storia; resta configurabile per ambiente."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'invalidazione della copia locale del ruolo usa UNA SOLA coda, quella già esistente per i diritti d'accesso (entitlement-<slug>), con il tipo di evento nel campo `reason` del messaggio: è la raccomandazione del piano di lavoro. Il messaggio resta sottile e identifica il solo account: tutte le copie di quell'account si marcano da rinfrescare, comprese quelle delle altre persone. È volutamente grossolano — invalidare più del necessario è innocuo (il rinfresco è pigro e per persona), invalidare meno del necessario è un permesso che sopravvive. Due code separate avrebbero richiesto una seconda dichiarazione in ElasticMQ, nel modulo Terraform e nei permessi, per la stessa notizia.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/AppAccessResource.java",
+        "description": "I tre punti di scrittura pubblicano l'invalidazione riusando EntitlementInvalidationPublisher, con reason app_access.granted / app_access.role_changed / app_access.revoked."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Perché una coda sola possa marcare DUE copie locali senza che il consumatore dei diritti d'accesso conosca il varco dei ruoli, in commons nasce l'astrazione LocalProjection (è abilitata? marcala da rinfrescare; cancellala per l'account; come si chiama nella traccia di controllo). Il consumatore dell'invalidazione e il consumatore della purga per account iterano su TUTTE le copie locali del servizio invece di nominarne una. È il modo di non avere due meccanismi: chi aggiungerà una terza copia locale non deve ricordarsi di due file, ne implementa l'interfaccia e viene incluso da solo — comprese la cancellazione per esercizio del diritto di cancellazione e la traccia di controllo che la prova.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/projection/LocalProjection.java",
+        "description": "Interfaccia comune delle copie locali: enabled(), markStale(tenant), purgeTenant(tenant), name()."
+      },
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/gdpr/TenantPurgeConsumer.java",
+        "description": "La purga itera su tutte le copie locali; il conteggio di ognuna entra nella traccia di controllo."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) I rifiuti del varco sono TRE e non due, con identificativo stabile in problem+json: urn:appgrove:app-role:no-access (403, «non entri»), urn:appgrove:app-role:insufficient (403, «non puoi fare questo, serve almeno X») e urn:appgrove:app-role:unavailable (503, «servizio momentaneamente non disponibile»). Il piano di lavoro ne prevedeva due; il terzo è preteso dalla storia §5, che chiede di distinguere il guasto nostro dal permesso mancante per «non accusare l'utente di un guasto nostro». 503 e non 403 perché è la verità del codice di stato: la richiesta non è vietata, non si è potuta decidere.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/access/AppRoleRequiredException.java",
+        "description": "Tre casi tipizzati con il ruolo richiesto e quello posseduto."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La rilettura dal core per le operazioni irreversibili è un attributo dell'annotazione (@RequiresAppRole(value = editor, fresh = true)) e non un metodo che l'operazione chiama a mano: se fosse una chiamata, l'operazione dovrebbe scrivere logica di autorizzazione — cioè esattamente ciò che la storia vieta. Il metodo roleFresh esiste comunque nel servizio, documentato come «solo dove la storia lo prescrive», perché il filtro lo usa e perché un servizio potrebbe averne bisogno fuori da una rotta. Nel Mini-CRM NON viene usato: le sue operazioni non sono nell'elenco della storia (cancellazioni di massa, cambio di ruoli, revoche) e la storia avverte esplicitamente di non usarlo «per sicurezza» ovunque, altrimenti la copia locale diventa inutile. Le operazioni irreversibili che ci sono oggi — concessione, cambio di ruolo, revoca — vivono in core e leggono il ruolo dalla banca dati dentro la propria transazione: sono fresche per costruzione, senza il varco."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La tolleranza del valore ritirato `admin` nel ruolo di piattaforma viene attuata DUE volte, come la scelta dell'account attivo: in Python nella funzione che compone il token in cloud e in Java in commons (PlatformRoles.claimRole), usata dal fornitore di identità locale. La parità fra locale e cloud è un invariante dichiarato e il piano di lavoro la chiama «il difetto più costoso di questo passo». Il valore si converte a `member` nel momento in cui si scrive il claim, non nel modello: convertire i dati è di UC 0113, e i dati di un ambiente non ancora convertito devono continuare ad accedere con il potere minore, non con nessun potere. Il ritiro della tolleranza, con la sua data, resta di UC 0113.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/membership/PlatformRoles.java",
+        "description": "Normalizzazione del ruolo di piattaforma per il claim; gemella di _roles_for in Python."
+      },
+      {
+        "file": "infra/modules/platform_shared/lambda/pre_token_gen/handler.py",
+        "description": "_roles_for converte admin → member, con il commento che dice chi ritira la tolleranza."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) La lettura «dove posso entrare e con che ruolo» è GET /api/platform/v1/me/app-access e restituisce { appId, appSlug, appName, role } per le applicazioni che hanno INSIEME il diritto dell'account e l'accesso della persona. Il nome dell'applicazione è incluso oltre allo slug perché il consumatore dichiarato è il menu laterale (UC 0107), che deve scrivere un'etichetta e altrimenti dovrebbe fare una seconda chiamata al catalogo. Per l'owner: tutte le applicazioni con diritto, ruolo `admin` — il massimo, per costruzione e senza righe. Il diritto si verifica consumando il read-model degli entitlement, mai riscrivendo la condizione (stessa regola della change 0091, decisione 15).",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/MeAppAccessResource.java",
+        "description": "Lettura del solo chiamante: nessun parametro identifica la persona, che arriva dal token."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) L'esclusione della voce di catalogo di piattaforma dei posti (chiesta dal piano di lavoro) NON è implementabile oggi: quella voce non esiste ancora nel catalogo e non esiste alcun attributo che distingua una applicazione di marketplace da una voce di piattaforma — li introduce UC 0103. Implementare oggi un elenco di slug da escludere sarebbe una regola che invecchia in silenzio. Il punto è quindi scritto due volte: come commento nel luogo esatto in cui l'esclusione andrà messa, e come rimando nei punti aperti di UC 0103, che possiede la voce di catalogo e deve escluderla nello stesso momento in cui la crea."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il Mini-CRM riceve il varco condiviso ACCANTO al varco dei posti, non al suo posto: letture con ruolo minimo `viewer`, scritture con `editor` su contatti e interazioni. Il ritiro dei posti è di UC 0111 e togliere qui la tabella dei posti significherebbe rifare la schermata dei posti in una storia che non la possiede. Due varchi contemporanei sono accettabili per una change, non per due: il rimando è tracciato in UC 0111. La gestione dei posti (SeatResource) resta fuori dal varco nuovo come è fuori da quello vecchio, e per la stessa ragione già scritta là: un account a posti esauriti deve poterne liberare uno."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) La tabella della copia locale del ruolo nasce in TRE posti nello stesso commit — services/crm, services/fatture e i modelli-sorgente di tools/new-application — anche se la storia chiede la prima applicazione sola. Ragione: services/commons e services/fatture sono percorsi-sorgente dichiarati della parità di scaffolding, e un varco di piattaforma che ogni applicazione nuova NON eredita è il difetto che l'epica 22 esiste per chiudere (il Mini-CRM si era fatto il proprio varco). Il costo è tre file di migrazione identici e due chiavi di configurazione; il beneficio è che l'applicazione successiva nasce col varco già collegato. Su `fatture` la tabella c'è e il varco è disponibile, ma nessuna operazione lo dichiara: annotare le rotte di fatture non appartiene a questa storia."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Copertura end-to-end: la voce 0099 del registro passa da esenzione `non-implementato` a `senza-superficie`, come la storia stessa prevede al §9 («nessun percorso proprio; esente come senza superficie»). Nessun percorso Playwright nuovo e nessuno esistente da estendere: la storia non aggiunge né toglie alcun comando visibile. Il comportamento è provato dai collaudi di unità e di integrazione dei tre servizi.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0099: non-implementato → senza-superficie."
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Si RIUSA il qualificatore @SafetyNet già esistente (pacchetto entitlement) per marcare la lettura di rete anche del ruolo, invece di crearne un gemello nel pacchetto access. Un secondo qualificatore identico suggerirebbe che le due posture siano diverse, mentre sono la stessa: «questa attuazione parla col core, e chi la inietta lo sta dichiarando». Il javadoc del qualificatore è stato generalizzato di conseguenza — lasciarlo parlare solo di diritti d'accesso lo avrebbe reso una descrizione falsa.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/SafetyNet.java",
+        "description": "Javadoc generalizzato: qualifica la rete di sicurezza di entrambe le letture."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Postura del fallimento, in tre righe non riducibili a una: copia ASSENTE e core irraggiungibile → si NEGA con «non decidibile» (503), come prescrive la storia §5; copia PRESENTE ma da rinfrescare e core irraggiungibile → si serve l'ULTIMA VERITÀ NOTA, come già per i diritti d'accesso, perché un guasto del core non deve bloccare tutte le persone di tutti gli account (rischio accettato: una revoca decisa durante il guasto arriva in ritardo, e dura quanto il guasto); rilettura obbligatoria (fresh = true) → la copia non si usa MAI, nemmeno come ripiego, altrimenti la rilettura non chiuderebbe la finestra che esiste per chiudere. La storia prescrive espressamente solo il primo caso: gli altri due sono la conseguenza coerente, e sono scritti accanto al codice."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Deviazione dall'elenco di file del piano di lavoro, per una ragione di correttezza CDI: due attuazioni di AppRoleService (rete e copia) sono ambigue in iniezione se nessuna è qualificata, quindi RestAppRoleService è la rete di sicurezza (@SafetyNet) e il bean predefinito è ProjectedAppRoleService — nome che dice da dove legge. Il piano nominava solo RestAppRoleService come «lettura del ruolo dal core», che è esattamente quello che fa. Inoltre l'esito è un tipo sigillato a TRE casi (AppRoleOutcome: Granted/NoAccess/Unavailable) invece di un Optional: con un Optional vuoto per due ragioni diverse, chi legge il codice può dimenticare il terzo caso — ed è il caso che riguarda la sicurezza."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Su `fatture` la tabella della copia locale e le chiavi di configurazione ci sono, ma NESSUNA rotta dichiara un ruolo minimo. Non è una dimenticanza: `fatture` è un'applicazione a utente singolo (userModel: single_user nel suo listino), dove il ruolo per applicazione non ha significato — la persona è l'owner. Annotare le rotte di un'applicazione a utente singolo aggiungerebbe un varco che non discrimina nulla e una chiamata di rete al primo accesso. La parità dei modelli di scaffolding resta vera perché nemmeno il modello annota (deriva da `fatture`); quando nascerà un'applicazione multi-utente, il varco sarà già collegato e basterà dichiararlo."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Classificazione privacy della change: MINORE. Il solo dato nuovo è la copia locale del ruolo (tabella `<schema>.app_role_projection`): natura = identificativo interno di autenticazione della persona associato al ruolo su una applicazione (nessun nome, nessun indirizzo), finalità = identica a quella della fonte (consentire alle persone dell'account di usare le applicazioni acquistate col ruolo assegnato) SENZA finalità nuove, base giuridica = contratto con l'account titolare (art. 6.1.b), conservazione = è una cache, riscritta a ogni rinfresco e cancellata FISICAMENTE con l'account all'esercizio del diritto di cancellazione (il conteggio entra nella traccia di controllo della purga), categoria ordinaria. Nessuna categoria particolare, nessuna base nuova, nessun responsabile esterno nuovo, nessun aumento di versione di privacy policy o termini. La copia è dichiarata nella PROSA dei manifesti delle due applicazioni e non come voce con entità e campo: è il precedente già adottato per la tabella dei posti e per la copia dei diritti d'accesso, e una voce con entità pretenderebbe un'annotazione @PersonalData su un'entità che non esiste (la copia è scritta via JDBC diretto). Il rilevatore di segnali è stato eseguito: ha segnalato le tre migrazioni attese e alcuni campi di classi di errore, nessun altro segnale reale.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/crm.yaml",
+        "description": "Descrizione estesa alle due copie locali, nelle due lingue."
+      },
+      {
+        "file": "docs/compliance/manifests/fatture.yaml",
+        "description": "Idem."
+      },
+      {
+        "file": "docs/compliance/ropa.it.md",
+        "description": "Registro dei trattamenti rigenerato (non si edita a mano)."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Copertura end-to-end e frontend: NESSUN impatto. La change non aggiunge né toglie un solo comando visibile — il claim del token perde un valore, nasce una lettura di servizio e un varco dichiarativo. Non c'è alcuna riga di frontend: il client tipizzato del backoffice per le API di piattaforma è scritto a mano (solo i moduli `fatture` e `crm` sono generati dallo schema OpenAPI, e i loro schemi non cambiano), quindi non c'è nemmeno un client da rigenerare. Lo schema OpenAPI del core, che è generato e committato, cambia da solo con la nuova rotta. Nessun percorso Playwright nuovo, nessuno esistente da estendere."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Il varco del ruolo gira DOPO quello dei diritti d'accesso (priorità Priorities.USER + 10 contro il valore predefinito del filtro esistente): a un account senza abbonamento si risponde «serve l'abbonamento» (402) e non «il tuo ruolo non basta» (403). L'ordine delle due risposte è l'ordine in cui una persona può rimediare, e lasciarlo al caso avrebbe prodotto messaggi diversi a seconda dell'ordine di registrazione dei filtri."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) L'infrastruttura di collaudo del Mini-CRM riceve MockAppRoleService qualificato @SafetyNet, non predefinito: sostituendo il bean predefinito la suite scavalcherebbe la copia locale, cioè proprio il percorso che gira in produzione. Così l'intera suite attraversa copia locale → (all'occorrenza) finta sorgente, e il contatore delle chiamate permette di DIMOSTRARE che una copia fresca non genera traffico. È la stessa scelta, e la stessa ragione, di MockEntitlementService. Il ripristino del finto servizio entra nel callback che già azzera le copie su tabella: due stati diversi, la stessa trappola (un test che lascia un ruolo abbassato fa fallire il successivo per il motivo sbagliato).",
+    "files": [
+      {
+        "file": "services/crm/src/test/java/app/appgrove/crm/ProjectionResetCallback.java",
+        "description": "Azzera entrambe le copie e ripristina il finto servizio del ruolo."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Il rilevatore dei percorsi-sorgente della parità di scaffolding ha segnalato `services/commons` e `services/fatture`: si è scelta la prima delle due vie ammesse — AGGIORNARE I MODELLI nello stesso commit (migrazione V5 e chiavi di configurazione in tools/new-application/templates) — e non la registrazione di una deroga. Motivo: un varco di piattaforma che le applicazioni nuove NON eredit­ano è precisamente il difetto che l'epica 22 esiste per chiudere. Il collaudo di parità resta verde e docs/_PARITA-SCAFFOLD.md non cambia, perché non c'è alcuna divergenza voluta da legittimare."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Documenti allineati dove dicevano il falso o l'incompleto: docs/02 §7 e §10 dichiarano che il claim `roles` non porta più `admin` (conversione al momento del claim, in cloud e in locale) e che il ruolo sull'applicazione si fa rispettare col varco condiviso e non con @RolesAllowed; docs/04 §7 descrive il varco nuovo accanto a quello dei diritti d'accesso, con i tre rifiuti e la postura del fallimento. I punti aperti di UC 0099 sono stati riscritti dividendo ciò che questa change ha CHIUSO (durata massima, nome dell'annotazione, tre rifiuti, una coda sola) da ciò che resta aperto (misure e allarmi della copia del ruolo, rilettura obbligatoria non ancora usata da nessuna rotta, ruolo nel contratto fra shell e moduli — di UC 0107, annotazioni di `fatture`). I rimandi sono tracciati anche nelle storie che li possiedono: UC 0103 (esclusione della voce di catalogo dei posti dalla lettura «dove posso entrare») e UC 0111 (ritiro del varco dei posti del Mini-CRM, che oggi convive col varco nuovo)."
+  }
+]

@@ -7,15 +7,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Qualifica l'implementazione di {@link EntitlementService} usata come <b>rete di sicurezza</b>:
- * la lettura sincrona da core ({@link RestEntitlementService}), invocata solo quando la proiezione
- * locale non basta a decidere (riga assente, o riga da rinfrescare — UC 0046).
+ * Qualifica l'attuazione che legge da core <b>sincrono</b>, usata come <b>rete di sicurezza</b> quando la
+ * copia locale del servizio non basta a decidere (riga assente, scaduta o da rinfrescare). Vale per i
+ * diritti d'accesso ({@link RestEntitlementService}, UC 0046) e per il ruolo sull'applicazione
+ * ({@code RestAppRoleService}, UC 0099): due domande diverse, la stessa postura, quindi un solo
+ * qualificatore — moltiplicarlo per pacchetto significherebbe suggerire che le due posture siano diverse.
  *
- * <p>Il bean {@code @Default} è invece la lettura dalla <b>proiezione locale</b>
- * ({@code ProjectedEntitlementService}): il codice di dominio delle app inietta
- * {@code EntitlementService} senza qualificatori e ottiene il percorso disaccoppiato, senza
- * modifiche. Questo qualificatore esiste per rendere la rete di sicurezza <b>esplicita</b>: chi la
- * inietta sta dichiarando di volere una chiamata di rete sul percorso caldo.
+ * <p>Il bean {@code @Default} è invece la lettura dalla <b>copia locale</b>
+ * ({@code ProjectedEntitlementService}, {@code ProjectedAppRoleService}): il codice di dominio delle app
+ * inietta l'interfaccia senza qualificatori e ottiene il percorso disaccoppiato, senza modifiche. Questo
+ * qualificatore esiste per rendere la rete di sicurezza <b>esplicita</b>: chi la inietta sta dichiarando
+ * di volere una chiamata di rete sul percorso caldo.
  */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)

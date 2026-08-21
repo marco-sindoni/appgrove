@@ -745,6 +745,23 @@
           }
         }
       },
+      "MyAppAccessView" : {
+        "type" : "object",
+        "properties" : {
+          "appId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "appSlug" : {
+            "type" : "string"
+          },
+          "appName" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          }
+        }
+      },
       "MyInvitationView" : {
         "type" : "object",
         "properties" : {
@@ -3117,6 +3134,36 @@
         },
         "summary" : "Set Active Account",
         "tags" : [ "Me Memberships Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
+      }
+    },
+    "/api/platform/v1/me/app-access" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/MyAppAccessView"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "My App Access",
+        "tags" : [ "Me App Access Resource" ],
         "security" : [ {
           "SecurityScheme" : [ ]
         } ]

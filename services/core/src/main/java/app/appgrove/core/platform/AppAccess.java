@@ -1,5 +1,6 @@
 package app.appgrove.core.platform;
 
+import app.appgrove.commons.access.AppRole;
 import app.appgrove.commons.persistence.BaseTenantEntity;
 import app.appgrove.commons.privacy.PersonalData;
 import jakarta.persistence.Column;

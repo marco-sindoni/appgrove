@@ -52,7 +52,7 @@ Incident Response process prepared in advance (the 72 hours run from awareness):
 
 ## Mini-CRM app (multi-user B2B contact management)
 
-Contact data (people at the tenant's client organizations) entered by the tenant into their CRM (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13). The `seat` table holds only the internal identifier of the tenant's members granted access to the app — processed by core as controller — and is therefore not third-party data.
+Contact data (people at the tenant's client organizations) entered by the tenant into their CRM (schema `app_crm`). The tenant is the data controller; appgrove acts as processor (#13 A2/C13). The `seat` table holds only the internal identifier of the tenant's members granted access to the app — processed by core as controller — and is therefore not third-party data. The same holds for the two **local copies** in the schema (`entitlement_projection`, `app_role_projection`): they hold the account identifier, the person's internal authentication identifier and their role on the app — no name, no address. They are copies of data controlled by core (`platform.app_access`, UC 0098/0099), exist only to avoid calling core on every request, and are physically deleted with the account upon erasure (the count is recorded in the purge audit trail).
 
 ### Processing activities
 
@@ -66,7 +66,7 @@ Contact data (people at the tenant's client organizations) entered by the tenant
 
 ## Fatture app (single-user B2C invoicing)
 
-End-customer data entered by the tenant in their invoices (schema `app_fatture`). The tenant is the data controller; appgrove acts as processor (#13 C13).
+End-customer data entered by the tenant in their invoices (schema `app_fatture`). The tenant is the data controller; appgrove acts as processor (#13 C13). The two **local copies** in the schema (`entitlement_projection`, `app_role_projection`) hold the account identifier, the person's internal authentication identifier and their role on the app — no name, no address: they are copies of data controlled by core (`platform.app_access`, UC 0098/0099), exist only to avoid calling core on every request, and are physically deleted with the account upon erasure.
 
 ### Processing activities
 

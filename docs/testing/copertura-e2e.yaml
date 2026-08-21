@@ -703,8 +703,15 @@ esenzioni:
       effetto visibile qui è una SPARIZIONE — il selettore del ruolo nella schermata dei membri — e J-MEMBERS
       ne pretende l'assenza invece di esercitarlo.
   - usecase: "0099"
-    categoria: non-implementato
-    motivo: Autorizzazione per applicazione (token, propagazione, varco) — nessuna superficie propria (diventerà senza-superficie).
+    categoria: senza-superficie
+    motivo: >-
+      Autorizzazione per applicazione: varco riusabile in commons, ruolo fuori dal token (change 0092) —
+      storia di piattaforma senza superficie propria. Non aggiunge né toglie alcun comando visibile: il
+      claim del token perde un valore, nasce una lettura di servizio («dove posso entrare e con che ruolo»)
+      e un varco dichiarativo che le applicazioni usano. Provata dai collaudi di unità e di integrazione dei
+      tre servizi (varco a tre esiti, invalidazione della copia locale, fallimento chiuso, parità del claim
+      fra locale e cloud). Le superfici che consumeranno la lettura arrivano con 0107 (menu e rotte per
+      ruolo) e 0111 (gestione utenti dentro l'applicazione).
   - usecase: "0100"
     categoria: non-implementato
     motivo: «Members» come elenco unico senza ruolo — avrà superficie, coperta dal percorso di livello 2 dei membri e da J-ROLES.

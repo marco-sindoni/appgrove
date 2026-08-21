@@ -71,6 +71,17 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
      (abolita, #09 dec.12) → **402**; poi **ruolo** (`@RolesAllowed`) → 403 e **quota** (SPI flow/stock) → 429.
      La derivazione è **economica** (tabelle piccole) → **nessuna cache**; memoizzazione **per-richiesta** in
      `RestEntitlementService`. I **diritti GDPR** restano **esenti** dai gate di enforcement (#09 F31), non dall'authN.
+   - **Ruolo sull'applicazione** — varco aggiunto dalla change 0092 (UC 0099), fra l'entitlement e la quota:
+     `@RequiresAppRole(AppRole.editor)` su un'operazione (o su un'intera risorsa) e il filtro condiviso di
+     `services/commons/.../access/` decide. Il ruolo **non è nel claim**: si legge dalla **copia locale** del
+     servizio (tabella `<schema>.app_role_projection`, durata massima 60s), alimentata da
+     `GET /api/platform/v1/me/app-access` del core e invalidata dagli **stessi** eventi dei diritti d'accesso
+     (una coda per servizio, tipo di evento nel messaggio; il consumatore marca **tutte** le copie locali
+     attraverso l'interfaccia `LocalProjection`). Tre rifiuti tipizzati: nessun accesso **403**, ruolo
+     insufficiente **403** (nomina il ruolo richiesto), non decidibile **503**. In assenza di informazione si
+     **nega**; con una copia vecchia e il core giù si usa l'ultima verità nota, tranne per le operazioni
+     irreversibili (`fresh = true`), che non si fidano mai della copia. Nessuna applicazione scrive confronti
+     fra ruoli: il varco esiste per **non** avere dieci varchi diversi.
 
 ### Orchestrazione purge (topic H — aggiorna #05)
 8. **Eventi async (EventBridge)**: il core emette `tenant.offboarded`; ogni servizio **consuma e purga** i dati del

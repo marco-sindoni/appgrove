@@ -11,9 +11,19 @@ description:
   it: >-
     Dati dei clienti finali inseriti dal tenant nelle proprie fatture (schema `app_fatture`).
     Il tenant è titolare del trattamento; appgrove agisce come responsabile (#13 C13).
+    Le due **copie locali** dello schema (`entitlement_projection`, `app_role_projection`) contengono
+    l'identificativo dell'account, l'identificativo interno di autenticazione della persona e il suo ruolo
+    sull'app — nessun nome, nessun indirizzo: sono la copia di dati di cui core è titolare
+    (`platform.app_access`, UC 0098/0099), servono solo a non interrogare core a ogni richiesta e vengono
+    cancellate fisicamente con l'account quando si esercita il diritto di cancellazione.
   en: >-
     End-customer data entered by the tenant in their invoices (schema `app_fatture`).
     The tenant is the data controller; appgrove acts as processor (#13 C13).
+    The two **local copies** in the schema (`entitlement_projection`, `app_role_projection`) hold the
+    account identifier, the person's internal authentication identifier and their role on the app — no
+    name, no address: they are copies of data controlled by core (`platform.app_access`, UC 0098/0099),
+    exist only to avoid calling core on every request, and are physically deleted with the account upon
+    erasure.
 
 entries:
   - key: invoice.customer_name

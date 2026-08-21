@@ -57,6 +57,22 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
     il claim `roles` continua a portare il ruolo di account, `@RolesAllowed` continua a governare le
     operazioni di piattaforma, e le annotazioni che nominano ancora `admin` restano come **tolleranza dei
     token già emessi** finché UC 0113 non la ritira con la sua data.
+
+    **Dalla change 0092 (UC 0099) il claim non porta più `admin`**, nemmeno dove i dati non sono ancora
+    convertiti: chi compone il token converte quel valore in `member` — in cloud e in locale, con la stessa
+    regola scritta due volte e collaudata da entrambe le parti (`PlatformRoles.claimRole` in `commons`,
+    `_claim_role` nella funzione Lambda). Chi ha un'appartenenza ancora scritta `admin` entra quindi col
+    potere **minore**, non con nessun potere. La conversione dei dati e il ritiro della tolleranza sono di
+    UC 0113.
+
+    **Come si fa rispettare il ruolo sull'applicazione**: non con `@RolesAllowed` (che conosce solo il
+    claim) ma con il **varco condiviso** di `services/commons` — `@RequiresAppRole(AppRole.editor)` su
+    un'operazione, e un filtro che legge il ruolo dalla **copia locale** del servizio, alimentata dalla
+    lettura `GET /api/platform/v1/me/app-access` del core e invalidata dagli eventi già usati per i diritti
+    d'accesso. Tre rifiuti distinti, con identificativo stabile: nessun accesso (403), ruolo insufficiente
+    (403, e dice quale serve), non decidibile (503 — un guasto nostro non si racconta come permesso
+    mancante). Nessuna applicazione scrive confronti fra ruoli: è il difetto che l'epica 22 esiste per
+    chiudere.
 8. **Divisione delle responsabilità** *(rivista dalla change 0039, UC 0014)*: l'**API Gateway** usa l'**authorizer JWT
    nativo** — verifica firma/emittente/destinatario/**scadenza** e respinge con **401**; il **servizio** ri-valida il JWT
    (smallrye-jwt: `token_use`/`client_id`) e applica **authz sui ruoli** (`@RolesAllowed`) **e** l'**entitlement** (402,
@@ -69,6 +85,10 @@ enforcement dell'isolamento tenant, signup/inviti, secrets, CORS. Non copre la f
    ruoli; credenziali in Secrets Manager. Meno hop nel path critico del login. (Accoppiamento accettato per il PoC.)
 10. **Claim iniettati**: `tenant_id` (string) e `roles` (array). Quarkus mappa l'authz con
     `quarkus.oidc.roles.role-claim-path=roles`. **Fail-closed**: utente senza tenant/membership valida → niente claim → accesso negato.
+    Il claim `roles` porta **solo** il ruolo di piattaforma (`owner`/`member`, più `platform-admin` da
+    allow-list): **niente ruoli per applicazione**, per scelta esplicita di UC 0099 — quelli si leggono dal
+    core e si fanno rispettare col varco condiviso, così una revoca vale in pochi secondi invece che al
+    rinnovo del token.
 
     **Quale account, quando le appartenenze sono più di una** *(UC 0117, change 0089)*. Con più
     appartenenze il token non può dedurre l'account dalla persona: lo legge dall'**account attivo**
