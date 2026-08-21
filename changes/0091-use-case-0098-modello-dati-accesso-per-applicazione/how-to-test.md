@@ -135,12 +135,12 @@ TOKEN=$(curl -sk https://app.local.appgrove.app/api/auth/login \
   -d '{"email":"owner@acme.test","password":"Password1!"}' \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
 
-CRM=$(pg -tAc "select id from platform.app where slug = 'crm';")
-FATT=$(pg -tAc "select id from platform.app where slug = 'fatture';")
-OWNER=$(pg -tAc "select id from platform.identity where email = 'owner@acme.test';")
-ADMIN=$(pg -tAc "select id from platform.identity where email = 'admin@acme.test';")
-MEMBRO=$(pg -tAc "select id from platform.identity where email = 'member@acme.test';")
-BOB=$(pg -tAc "select id from platform.identity where email = 'bob@bob.test';")
+CRM=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.app where slug = 'crm';")
+FATT=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.app where slug = 'fatture';")
+OWNER=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.identity where email = 'owner@acme.test';")
+ADMIN=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.identity where email = 'admin@acme.test';")
+MEMBRO=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.identity where email = 'member@acme.test';")
+BOB=$(docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -tAc "select id from platform.identity where email = 'bob@bob.test';")
 ```
 
 ### 4.1 Chi ha accesso: l'owner è in testa, senza avere una riga

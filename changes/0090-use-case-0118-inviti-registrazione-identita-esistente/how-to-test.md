@@ -11,6 +11,30 @@ chiamata alle API, una riga di banca dati o una casella di posta.
 
 ## 0. Avvio dello stack
 
+> **Prerequisito: parti da una banca dati pulita.** Questa guida presuppone il **seme intatto** — al punto 1
+> dà per assodato che `bob@bob.test` abbia un solo account, il proprio. Se hai appena collaudato le change 0088
+> o 0089, il tuo database porta i loro residui: quelle guide fanno **entrare Bob in Acme** e poi ne revocano
+> l'appartenenza, lasciando una riga **viva** con stato `revoked`. Poiché l'indice unico
+> `ux_membership_tenant_identity` copre le righe vive, un invito nuovo di Bob da Acme ci sbatte contro e il
+> cuore di questa guida non è collaudabile.
+>
+> ```bash
+> ./app-stop.sh
+> docker compose -f dev/docker-compose.yml down -v   # azzera la banca dati locale
+> ./app-start.sh                                     # riparte da seme pulito
+> ```
+>
+> Controllo che il punto di partenza sia quello giusto — deve dare **una** riga, `Bob Personal / owner`:
+>
+> ```bash
+> docker compose -f dev/docker-compose.yml exec -T postgres \
+>   psql -U appgrove -d appgrove -c "select a.name as conto, m.role, m.status
+>            from platform.membership m
+>            join platform.identity i on i.id = m.identity_id
+>            join platform.accounts a on a.id::text = m.tenant_id
+>           where i.email = 'bob@bob.test' and m.deleted_at is null;"
+> ```
+
 | Azione | Risultato atteso |
 |---|---|
 | `./app-start.sh` dalla radice del monorepo | Riepilogo finale **«Tutto su e sano.»**. Backoffice su `https://app.local.appgrove.app`, Mailpit su `http://localhost:8025`, Postgres su `localhost:5432`. |
@@ -86,9 +110,17 @@ Atteso: `identita = 1`, `appartenenze = 2`. **Nessuna seconda identità**, nessu
 | Come `owner@acme.test`, invita `member@example.test`… oppure ripeti il giro con un'altra persona del seme, per esempio invita **`admin@appgrove.test`** da Acme | Invito creato. |
 | Accedi come quella persona e premi **Decline** nella sezione del cruscotto | La voce **sparisce** e il numero sul menu si azzera. **Nessuna** appartenenza nuova: il selettore non compare. |
 
-**[non visivo]** `select status from platform.invitations where email = '…';` → **`rejected`** (non
-`revoked`: revocare è l'atto di chi invita, rifiutare è l'atto della persona invitata — la storia
-dell'invito deve poter dire chi l'ha chiuso).
+**[non visivo]** Lo stato dell'invito dice **chi** l'ha chiuso (sostituisci l'indirizzo con quello che hai
+usato nel passo sopra):
+
+```bash
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc \
+  "select status from platform.invitations where email = 'member@example.test' order by created_at desc limit 1;"
+```
+
+→ **`rejected`**, non `revoked`: revocare è l'atto di chi invita, rifiutare è l'atto della persona invitata —
+la storia dell'invito deve poter dire chi l'ha chiuso.
 
 ---
 
@@ -112,13 +144,20 @@ per vederlo va **forzato**.
 
 | Azione | Risultato atteso |
 |---|---|
-| **[non visivo]** Con Bob che ha due appartenenze (fine del §1.3), azzerare la scelta: `psql … -c "update platform.identity set active_membership_id = null where email='bob@bob.test';"` | Nessun output particolare. |
+| **[non visivo]** Con Bob che ha due appartenenze (fine del §1.3), azzerare la scelta:<br>`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "update platform.identity set active_membership_id = null where email='bob@bob.test';"` | `UPDATE 1`. |
 | Esci dal backoffice (o finestra anonima) e accedi come **`bob@bob.test`** | **Non** si entra e **non** compare un errore: compare la schermata **«Choose an account»**, con la spiegazione «*You belong to more than one account…*» e **due pulsanti**, uno per ciascun account. Prima di questa change qui c'era un messaggio d'errore e la persona restava fuori. |
 | Premere uno dei due | Si entra **in quell'account**: il nome nella barra laterale è quello scelto. |
 | Uscire e riaccedere | **Non** viene chiesto di nuovo: la scelta è stata **conservata**. |
 
-**[non visivo]** `select active_membership_id is not null from platform.identity where email='bob@bob.test';`
-→ `t` (la scelta è sul server, dove il token la rileggerà e la riverificherà).
+**[non visivo]** La scelta è stata conservata sul server:
+
+```bash
+docker compose -f dev/docker-compose.yml exec -T postgres \
+  psql -U appgrove -d appgrove -tAc \
+  "select active_membership_id is not null from platform.identity where email='bob@bob.test';"
+```
+
+→ **`t`**: la scelta sta sul server, dove il token la rileggerà e la riverificherà — non nel browser.
 
 ---
 
@@ -126,7 +165,7 @@ per vederlo va **forzato**.
 
 | Azione | Risultato atteso |
 |---|---|
-| **[non visivo]** Creare un'identità cancellata: `psql … -c "insert into platform.identity(id,cognito_sub,email,locale,status,created_at,updated_at,deleted_at) values (gen_random_uuid(),'sub-manuale-0118','riuso-manuale@example.test','en','active',now(),now(),now());"` | Riga inserita. |
+| **[non visivo]** Creare un'identità cancellata:<br>`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "insert into platform.identity(id,cognito_sub,email,locale,status,created_at,updated_at,deleted_at) values (gen_random_uuid(),'sub-manuale-0118','riuso-manuale@example.test','en','active',now(),now(),now());"` | `INSERT 0 1`. |
 | Andare su `/signup` e registrarsi con **`riuso-manuale@example.test`** | Rifiuto con lo **stesso** messaggio di un indirizzo vivo («already registered…»). Prima di questa change qui usciva un **errore del servizio** (500), perché il controllo di esistenza ignorava le righe cancellate mentre l'indice unico no. |
 
 ---

@@ -136,7 +136,7 @@ docker compose -f dev/docker-compose.yml exec -T postgres \
 
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 5.1 | Svuota la tabella (`delete from app_crm.app_role_projection;`), poi apri l'elenco dei contatti come `member@acme.test` e riesegui la query | Compare **una** riga: `subject` = identificativo di autenticazione della persona (`seed-acme-member`), `app_slug` = `crm`, `role` = `editor`, `stale` = `false`, `refreshed_at` = adesso. **Nessuna email, nessun nome**: la copia non contiene dati personali oltre all'identificativo. |
+| 5.1 | Svuota la tabella (`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "delete from app_crm.app_role_projection;"`), poi apri l'elenco dei contatti come `member@acme.test` e riesegui la query | Compare **una** riga: `subject` = identificativo di autenticazione della persona (`seed-acme-member`), `app_slug` = `crm`, `role` = `editor`, `stale` = `false`, `refreshed_at` = adesso. **Nessuna email, nessun nome**: la copia non contiene dati personali oltre all'identificativo. |
 | 5.2 | Ricarica l'elenco più volte di seguito e riesegui la query | `refreshed_at` **non** cambia: con la copia fresca il servizio dell'applicazione **non** interpella il core. È il senso del disaccoppiamento. |
 | 5.3 | Cambia il ruolo (passo 3.7) e **subito** riesegui la query, prima di fare altre richieste | La riga ha `stale = true` e `invalidated_at` valorizzato: l'evento di invalidazione è arrivato dalla coda ed è stato consumato. Il ruolo scritto è ancora quello *vecchio* — la copia non viene cancellata, viene **marcata**. |
 | 5.4 | Ora fai una richiesta al Mini-CRM e riesegui la query | `stale = false`, `role` = `viewer`, `refreshed_at` = adesso. Il rinfresco è **pigro**: avviene alla prima richiesta utile, non all'arrivo dell'evento. |
@@ -154,8 +154,8 @@ l'utente di non avere permessi.
 
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 6.1 | Ferma il solo servizio `core` (per esempio `kill` del processo elencato da `./dev.sh services`, oppure `./app-stop.sh` e riavvio del solo `crm`), **svuota** la copia (`delete from app_crm.app_role_projection;`) e chiama l'elenco dei contatti | **`503`** con `"type": "urn:appgrove:app-role:unavailable"` e un messaggio che parla di un problema momentaneo e dice esplicitamente che **non** riguarda i permessi. Non è un `403`: la richiesta non è vietata, non si è potuta decidere. |
-| 6.2 | Con il core ancora fermo, ripopola la copia? Non si può — quindi fai il contrario: riavvia il core, fai una richiesta (la copia si popola), **ferma di nuovo** il core, marca la riga come da rinfrescare (`update app_crm.app_role_projection set stale = true;`) e richiama l'elenco | Funziona: `200`. Con una copia vecchia e il core giù si usa l'**ultima verità nota**, perché un guasto del core non deve bloccare tutte le persone di tutti gli account. Nel log del `crm` compare un avviso `app_role.projection servita copia vecchia`. Il rischio accettato — una revoca decisa *durante* il guasto arriva in ritardo — dura quanto il guasto. |
+| 6.1 | Ferma il solo servizio `core` (per esempio `kill` del processo elencato da `./dev.sh services`, oppure `./app-stop.sh` e riavvio del solo `crm`), **svuota** la copia (`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "delete from app_crm.app_role_projection;"`) e chiama l'elenco dei contatti | **`503`** con `"type": "urn:appgrove:app-role:unavailable"` e un messaggio che parla di un problema momentaneo e dice esplicitamente che **non** riguarda i permessi. Non è un `403`: la richiesta non è vietata, non si è potuta decidere. |
+| 6.2 | Con il core ancora fermo, ripopola la copia? Non si può — quindi fai il contrario: riavvia il core, fai una richiesta (la copia si popola), **ferma di nuovo** il core, marca la riga come da rinfrescare (`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "update app_crm.app_role_projection set stale = true;"`) e richiama l'elenco | Funziona: `200`. Con una copia vecchia e il core giù si usa l'**ultima verità nota**, perché un guasto del core non deve bloccare tutte le persone di tutti gli account. Nel log del `crm` compare un avviso `app_role.projection servita copia vecchia`. Il rischio accettato — una revoca decisa *durante* il guasto arriva in ritardo — dura quanto il guasto. |
 | 6.3 | Riavvia tutto (`./app-start.sh`) | Tutto verde. |
 
 ---
@@ -166,7 +166,7 @@ l'utente di non avere permessi.
 |---|---|---|
 | 7.1 | Verifica che esista almeno una riga in `app_crm.app_role_projection` per l'account Acme | Almeno una. |
 | 7.2 | Esercita la cancellazione dell'account dalla schermata «I miei dati» di un account **di prova** (non Acme, se vuoi conservarlo) e attendi il completamento della purga | Le righe della copia di quell'account **spariscono fisicamente** dalla tabella. |
-| 7.3 | Guarda la traccia di controllo della purga:<br>`select * from app_crm.gdpr_purge_audit order by executed_at desc limit 1;` | Fra le entità cancellate compare **`app_role_projection`** con il suo conteggio, accanto a `entitlement_projection`. Una prova di cancellazione incompleta non è una prova. |
+| 7.3 | Guarda la traccia di controllo della purga:<br>`docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "select * from app_crm.gdpr_purge_audit order by executed_at desc limit 1;"` | Fra le entità cancellate compare **`app_role_projection`** con il suo conteggio, accanto a `entitlement_projection`. Una prova di cancellazione incompleta non è una prova. |
 
 ---
 
