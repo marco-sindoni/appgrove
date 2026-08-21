@@ -1,0 +1,46 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione: autopilot, scelta dallo sviluppatore. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; restano allo sviluppatore la rilettura e approvazione dei requisiti, il consenso al commit e quello al merge."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Una change sola per i tre difetti, non tre change. Sono indipendenti per area e per rischio, ma condividono un tema esatto — un presidio che non protegge: uno lascia entrare in un'applicazione spenta, uno rende rossa la suite per un motivo falso, uno la rende verde per un motivo falso. Sono tutti chirurgici. Tre change separate triplicherebbero l'attrito di processo (requisiti, log, registro, gate) per un beneficio nullo. Impegno dichiarato: se il primo si rivelasse più profondo del previsto, si scorpora."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Copia locale dei diritti d'accesso: si aggiunge la DURATA MASSIMA, in simmetria esatta con la copia del ruolo (UC 0099). La causa del difetto è duplice — nessuna scadenza, e l'invalidazione che non nasce dal cambio di stato dell'applicazione nel listino — ma si corregge la prima. Ragione: la scadenza chiude la falla entro un tempo noto e limitato, riusa un modello già in casa (`ProjectedAppRole.usable(maxAge, now)`, su una riga di forma identica: valore, `stale`, `refreshedAt`) e accetta lo stesso rischio residuo che la piattaforma ha già accettato per il ruolo. L'evento dal listino dovrebbe invece pubblicare invalidazioni per TUTTI i tenant di un'applicazione: ampiezza diversa, va deciso a sé. Tracciato.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/projection/ProjectedEntitlementService.java",
+        "description": "La condizione `row.isPresent() && !row.get().stale()` diventa un controllo di usabilità che include l'età."
+      },
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/projection/EntitlementProjectionStore.java",
+        "description": "`ProjectedEntitlement` acquisisce `usable(maxAge, now)`, gemello di quello di `ProjectedAppRole`."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Durata massima della copia dei diritti: 60 secondi, identica a quella del ruolo. Un solo numero da ricordare in tutta la piattaforma, e la simmetria rende evidente al lettore che le due copie hanno la stessa postura. Configurabile per ambiente (`appgrove.entitlement.projection.max-age`), come l'altra: si cambia nella configurazione, non nel codice."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La porta di test dei servizi diventa libera: `quarkus.http.test-port=0` in `services/*/src/test/resources/application.properties` (quattro servizi) e nel modello di `tools/new-application`. Il difetto: Quarkus usa 8081 per default e `fatture` gira su 8081, quindi con lo stack locale acceso i test backend fallivano con una diagnosi fuorviante. Verificato che NESSUN test presuppone la porta 8081, quindi la porta effimera non rompe nulla — e chiude anche un caso che nessuno aveva notato: due esecuzioni Maven in parallelo si contendevano la stessa porta. Scelto il file di test e non quello principale perché `quarkus.http.test-port` vale solo in test: metterlo altrove sarebbe rumore."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Journey instabili: si RITENTA ma non si PERDONA. Scartato `retries: 0`, che avrebbe azzerato il problema alla radice ma con due costi: si perde la traccia diagnostica del secondo tentativo (utile a distinguere un difetto vero da un guasto d'ambiente) e la suite diventa fragile ai guasti d'ambiente reali, che in una suite con browser, stack e posta non sono ipotetici. Si tiene `retries: 1` e si legge il resoconto in formato dati: se un percorso è passato solo al secondo tentativo la suite è ROSSA e i percorsi vengono NOMINATI. Verificato che la suite di livello 2 del frontend non ha questo difetto (nessun `retries`, quindi zero tentativi ripetuti): il perimetro è la sola suite di piattaforma.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/playwright.config.ts",
+        "description": "Aggiunto il resoconto in formato dati accanto a quello a righe."
+      },
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "L'esito non è più il solo codice di uscita di Playwright: si legge il conteggio degli instabili e si nominano."
+      }
+    ]
+  }
+]
