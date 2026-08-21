@@ -163,6 +163,16 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
   persone dentro l'applicazione, il posto va **ritirato** — varco, tabella, API e schermata — e non
   affiancato una terza volta. Conseguenza pratica da non dimenticare: oggi, per usare il Mini-CRM, servono
   *entrambi* (un posto **e** un ruolo).
+- **Il campo «Identificativo utente» della schermata dei posti è inusabile, e va via col posto.** Trovato
+  il 2026-08-21 durante il collaudo manuale della change 0092: la schermata «Membri» del Mini-CRM chiede a
+  mano un identificativo che è il `sub` del token (`seed-acme-owner`, …), mentre chi guarda ha davanti un
+  elenco di persone con nome e indirizzo. Chi ha provato ha scritto l'indirizzo email — la sola cosa che
+  conosceva — il posto è stato creato, **e non serviva a nulla**: il server confronta quel valore col `sub`
+  di chi chiede, quindi ogni operazione rispondeva `403` «nessun posto assegnato», per un posto che
+  nell'elenco risultava assegnato. Un campo che accetta in silenzio un valore che non potrà mai combaciare
+  è peggio di un campo che rifiuta. Non lo si corregge dov'è, perché la schermata e il posto sono ciò che
+  questa storia **ritira**: la sostituta deve far **scegliere** la persona da un elenco (nome + indirizzo)
+  e mandare al server l'identificativo dell'identità, mai farlo digitare.
 - **Il ruolo della persona è già disponibile all'interfaccia**: la lettura
   `GET /api/platform/v1/me/app-access` restituisce `appId`, `appSlug`, `appName` e `role`, e i rifiuti del
   varco portano identificativi stabili (`urn:appgrove:app-role:no-access`, `:insufficient`, `:unavailable`)

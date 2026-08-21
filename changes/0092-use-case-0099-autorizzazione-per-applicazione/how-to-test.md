@@ -33,8 +33,23 @@ della verifica:
 | 0.5 | Entra nella console admin `https://admin.local.appgrove.app` come **admin@appgrove.test** / `Password1!` e accendi il Mini-CRM dalla pagina delle applicazioni. In alternativa, via API:<br>`PATCH /api/platform/v1/admin/apps/<app-id>` con corpo `{"status":"active"}` e token di **admin@appgrove.test** | L'applicazione passa a `active`. Rieseguendo il passo 0.4 lo stato è `active`. |
 | 0.6 | Torna su `https://app.local.appgrove.app` come **owner@acme.test** e ricarica | Nella barra laterale compare il **Mini-CRM**. Se non compare, ricarica: il registry legge i diritti dell'account. |
 
+> ⚠️ **L'accensione via API è temporanea: ogni riavvio del `core` la annulla.** `PricingSyncStartup`
+> risemina il listino dal file `pricing/crm.yaml` a ogni avvio, e là `status` è `inactive` — è scritto nel
+> file stesso. Quindi dopo il passo 6.2 (riavvio del `core`) e dopo il 6.3 (`./app-start.sh`) il Mini-CRM
+> **torna spento**, e i passi successivi risponderebbero `402` senza spiegazione. **Riesegui il passo 0.5
+> dopo ogni riavvio.** Nota collegata: per un difetto della copia locale dei diritti (tracciato in
+> [docs/_BACKLOG.md](../../docs/_BACKLOG.md), proprietario UC 0046) riaccendere l'applicazione **non basta**
+> — l'account che ha ricevuto un rifiuto mentre era spenta resta bloccato con `402` a tempo indeterminato.
+> Per sbloccarlo:
+>
+> ```bash
+> docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c \
+>   "update app_crm.entitlement_projection set stale = true where tenant_id = 'a0000000-0000-4000-8000-000000000001';"
+> ```
+
 > Alla fine della verifica puoi rimettere `crm` a `inactive` (stesso comando del passo 0.5 con
-> `{"status":"inactive"}`): non è obbligatorio, ma riporta lo stack allo stato di partenza.
+> `{"status":"inactive"}`): non è obbligatorio, ma riporta lo stack allo stato di partenza — e in ogni caso
+> il primo riavvio del `core` lo farà per te.
 
 **Come ottenere un token per le chiamate a mano** (serve dai passi 2 in poi):
 
@@ -44,9 +59,37 @@ curl -s https://api.local.appgrove.app/api/auth/login \
   -d '{"email":"owner@acme.test","password":"Password1!"}'
 ```
 
-La risposta contiene l'access token. Nei comandi seguenti lo chiamo `$TOKEN_OWNER`,
+La risposta contiene l'access token nel campo **`access_token`** (non `accessToken`). Nei comandi seguenti lo chiamo `$TOKEN_OWNER`,
 `$TOKEN_MEMBER` (per `member@acme.test`) e `$TOKEN_ADMIN` (per `admin@acme.test`) — stessa chiamata,
-cambiando indirizzo. La password è la stessa per tutte le persone del seme.
+cambiando indirizzo. La password è la stessa per tutte le persone del seme. Comodo da incollare:
+
+```bash
+TOKEN_OWNER=$(curl -sk https://api.local.appgrove.app/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"owner@acme.test","password":"Password1!"}' \
+  | python3 -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
+```
+
+**`member@acme.test` può chiedere di scegliere l'account** (ha due appartenenze dopo la change 0090: Acme
+Corp e un account proprio). In quel caso il login **non** risponde con `access_token` ma con
+`account_selection_required` e un `choice_token`, e serve un secondo passo. Il comando qui sotto copre
+**entrambi** i casi, perché la scelta viene chiesta o no a seconda che ci sia una preferenza già registrata
+— e una guida non può indovinare quale dei due incontrerai:
+
+```bash
+RISPOSTA=$(curl -sk https://api.local.appgrove.app/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"member@acme.test","password":"Password1!"}')
+TOKEN_MEMBER=$(printf '%s' "$RISPOSTA" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("access_token",""))')
+if [ -z "$TOKEN_MEMBER" ]; then
+  CHOICE=$(printf '%s' "$RISPOSTA" | python3 -c 'import sys,json;print(json.load(sys.stdin)["choice_token"])')
+  TOKEN_MEMBER=$(curl -sk https://api.local.appgrove.app/api/auth/login/account \
+    -H 'content-type: application/json' \
+    -d "{\"choice_token\":\"$CHOICE\",\"account_id\":\"a0000000-0000-4000-8000-000000000001\"}" \
+    | python3 -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
+fi
+echo "${#TOKEN_MEMBER} caratteri"   # > 0 = pronto
+```
 
 ---
 
@@ -85,12 +128,36 @@ voluta e temporanea: il posto verrà ritirato da UC 0111.
 
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 3.1 | Come **owner@acme.test**, apri il Mini-CRM dalla barra laterale e assegna un posto a te stesso e a `member@acme.test` dalla schermata dei posti («Membri» del modulo) | I posti risultano assegnati; il contatore dei posti occupati cresce (il tetto del piano gratuito è 2). |
+| 3.1 | Come **owner@acme.test**, apri il Mini-CRM dalla barra laterale e vai a «Membri» del modulo. Nel campo «Identificativo utente» scrivi **`seed-acme-owner`**, assegna il posto, poi ripeti con **`seed-acme-member`**. **Non è l'indirizzo email**: leggi la nota qui sotto prima di provare. | I posti risultano assegnati; il contatore dei posti occupati cresce (il tetto del piano gratuito è 2). |
 | 3.2 | Sempre come owner, crea un contatto | Il contatto viene creato: l'owner ha il ruolo massimo per costruzione. |
 | 3.3 | Esci ed entra come **member@acme.test**, apri il Mini-CRM | Vedi l'elenco dei contatti (ruolo `editor` dal seme: legge e scrive). |
 | 3.4 | Crea un contatto come `member@acme.test` | Il contatto viene creato. |
 | 3.5 | Esci ed entra come **admin@acme.test** | Nella barra laterale **non** ci sono Account, Billing e Members, e il Mini-CRM **c'è**. **Questo è il modello nuovo, non una regressione**: quella persona è `member` di piattaforma con ruolo `admin` sul Mini-CRM (change 0091). Se le assegni un posto, legge e scrive i contatti normalmente. |
 | 3.6 | Entra come una persona **senza** posto e **senza** accesso — per esempio invita un indirizzo nuovo e completa la registrazione dalla posta locale (`http://localhost:8025`) — e prova ad aprire il Mini-CRM | Rifiuto. Il messaggio dice che serve l'abilitazione del titolare dell'account o di un amministratore dell'applicazione: **non** «ruolo insufficiente». Sono due frasi diverse per due situazioni diverse. |
+
+> ⚠️ **Il posto si assegna al `subject` del token, non all'indirizzo email.** Il campo «Identificativo
+> utente» della schermata «Membri» del Mini-CRM vuole l'identificativo con cui la persona compare nel
+> token — nel seme locale `seed-acme-owner`, `seed-acme-member`, `seed-acme-admin` — mentre il server
+> confronta quel valore col `sub` del token di chi chiede. Se scrivi `owner@acme.test` il posto viene
+> creato **e non serve a nulla**: ogni operazione sul Mini-CRM risponde `403` «nessun posto assegnato».
+> È un difetto d'usabilità reale del meccanismo dei posti (UC 0054), tracciato là e destinato a sparire
+> col ritiro dei posti (UC 0111): qui va solo evitato. Per verificare gli identificativi:
+>
+> ```bash
+> curl -sk https://api.local.appgrove.app/api/auth/login -H 'content-type: application/json' \
+>   -d '{"email":"owner@acme.test","password":"Password1!"}' \
+>   | python3 -c 'import sys,json,base64;t=json.load(sys.stdin)["access_token"].split(".")[1];print(json.loads(base64.urlsafe_b64decode(t+"="*(-len(t)%4)))["sub"])'
+> ```
+>
+> Se hai già assegnato i posti con gli indirizzi email, liberali prima di riprovare (il tetto del piano
+> gratuito è 2 e li avresti già occupati entrambi):
+>
+> ```bash
+> TOKEN_OWNER=$(curl -sk https://api.local.appgrove.app/api/auth/login -H 'content-type: application/json' \
+>   -d '{"email":"owner@acme.test","password":"Password1!"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["access_token"])')
+> curl -sk -X DELETE "https://app.local.appgrove.app/api/crm/v1/seats/owner@acme.test"  -H "authorization: Bearer $TOKEN_OWNER" -w ' %{http_code}\n'
+> curl -sk -X DELETE "https://app.local.appgrove.app/api/crm/v1/seats/member@acme.test" -H "authorization: Bearer $TOKEN_OWNER" -w ' %{http_code}\n'
+> ```
 
 ### 3bis. Forzare gli stati cambiando gli accessi (il cuore della storia)
 

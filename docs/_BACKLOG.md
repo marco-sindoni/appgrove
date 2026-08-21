@@ -858,6 +858,67 @@ Il punto di questa voce si rafforza: **non basta sapere che una suite è rossa, 
 utile che `run-tests.sh` conservasse l'output di ogni area in un file per corsa, così un rosso non riproducibile
 resti esaminabile invece di scorrere via dal terminale. Owner: #07 (DevOps/CI).
 
+## Difetto — la copia locale dei DIRITTI d'accesso non scade mai: un'applicazione riaccesa non si sente (trovato 2026-08-22)
+
+Trovato eseguendo il passo 4.4 della guida di collaudo della change `0092`. La copia locale del **ruolo**
+(`app_role_projection`, UC 0099) ha una **durata massima** — `appgrove.app-role.projection.max-age=60s` — e il
+commento in `services/crm/src/main/resources/application.properties` spiega perché è indispensabile: «è la rete
+che tiene quando il canale degli eventi è rotto, l'unico caso in cui l'invalidazione, da sola, non protegge
+nulla». La copia locale dei **diritti d'accesso** (`entitlement_projection`, UC 0046) **non ha nulla di
+simile**: se la riga è presente e non marcata, non viene mai riletta.
+
+Conseguenza misurata, in entrambe le direzioni:
+
+- **applicazione spenta e poi riaccesa** → l'account che ha fatto una richiesta durante lo spegnimento si
+  ritrova una copia «nessun diritto» e resta bloccato con `402` **a tempo indeterminato**. Verificato con
+  otto letture in due minuti: sempre `402`, `refreshed_at` immobile. Si sblocca solo con un
+  `update … set stale = true` a mano, o con un evento che nasce da un cambio di abbonamento — non dalla
+  riaccensione, che non genera alcun evento per quell'account;
+- **direzione opposta, più grave** → un'applicazione **spenta** resta **accessibile** a chi ha in casa una
+  copia «attiva» non invalidata. Osservato dopo il riavvio del `core`, che rimette `crm` a `inactive`
+  riseminando il listino: il varco dei diritti concedeva ancora, e a fermare la richiesta è stato solo il
+  varco del ruolo (che invece ha la durata massima e si era rinfrescato).
+
+Il difetto è di **UC 0046** (proiezione locale dei diritti), non della change `0092`, che ha fatto la cosa
+giusta sulla propria copia. Rimedio candidato: la stessa durata massima, `appgrove.entitlement.projection.max-age`,
+con lo stesso comportamento — oltre la scadenza si rilegge anche senza evento, e se la fonte non risponde si
+continua a usare l'ultima verità nota. Da valutare insieme: far nascere un evento di invalidazione anche dal
+cambio di **stato dell'applicazione nel listino** (oggi lo generano solo i cambi di abbonamento del conto),
+che è la causa prima. Owner: #01 (architettura) con #04 (backend).
+
+## Processo — la guida di collaudo non dice che riavviare il `core` rimette il Mini-CRM su «spento» (trovato 2026-08-22)
+
+Il Mini-CRM è `inactive` di proposito nel listino (`services/core/src/main/resources/pricing/crm.yaml`,
+change `0042`), e il passo 0.5 della guida della change `0092` insegna ad accenderlo via API. Ma quel file
+dice, in un commento, che la scelta è **temporanea**: `PricingSyncStartup` risemina il listino dal file a ogni
+avvio del `core`, quindi **qualunque** riavvio rimette l'applicazione su «spento». La guida non lo dice — e i
+suoi passi 6.2 e 6.3 (riavvio del `core`, poi `./app-start.sh`) lo attivano due volte, lasciando chi collauda
+davanti a rifiuti inspiegabili nei passi successivi. Verificato: dopo `./app-start.sh`, `crm` risulta
+`inactive`. È la categoria «prerequisito non dichiarato» del difetto di processo delle guide, e qui ha una
+forma particolarmente insidiosa: il prerequisito è vero all'inizio e **diventa falso a metà**, per opera della
+guida stessa. Rimedio nella guida: dirlo al passo 0.5 e ripetere l'accensione dopo ogni riavvio.
+
+## Difetto — un journey di piattaforma che passa al secondo tentativo è perdonato in silenzio (trovato 2026-08-21)
+
+`tools/platform-e2e/playwright.config.ts` prevede `retries: 1`, e `tools/platform-e2e/run.sh` propaga tale e quale il
+codice di uscita di Playwright. Playwright esce **0** quando un test fallisce al primo tentativo e passa al secondo:
+lo segnala come **instabile** («flaky») nel resoconto, ma non nel codice di uscita. Di conseguenza `run-tests.sh`
+stampa `✓ platform` e la corsa completa risulta verde anche quando un percorso ha *effettivamente* fallito.
+
+Perché è un difetto e non un accorgimento: un test instabile è un test che ha fallito, e la sola cosa che serve
+sapere — che c'è qualcosa che non tiene — è proprio quella che va perduta. È il motivo per cui i tre difetti di
+instabilità corretti il 2026-08-21 (`J-INVITE-EXISTING` senza attesa della decisione del gate legale,
+`A-ENTITLE`/`A-GDPR` in fame di browser, `J-BUY` in attesa su un messaggio di passaggio) sono vissuti a lungo senza
+essere visti: la suite li perdonava a ogni corsa. Ci si accorge di loro solo quando il secondo tentativo fallisce
+anch'esso, cioè quando il difetto è già peggiorato.
+
+Rimedio candidato: far produrre a Playwright il resoconto in formato dati (`--reporter=list,json` con
+`PLAYWRIGHT_JSON_OUTPUT_NAME`), leggere il conteggio degli instabili e far scattare il **rosso** se `flaky > 0`, con
+in chiaro quali percorsi lo sono stati. Così l'unica corsa accettabile diventa quella verde **al primo tentativo**,
+e i tentativi ripetuti restano utili come informazione diagnostica invece di essere un condono. Da valutare insieme
+alla richiesta della voce qui sopra (conservare l'output di ogni area in un file per corsa): sono la stessa esigenza
+— **un rosso deve restare esaminabile**. Owner: #07 (DevOps/CI) con #10 (testing).
+
 ## Il gate legale è fail-open: il passo condiviso dei percorsi di piattaforma perde la corsa (change `0089`, 2026-08-21)
 
 `acceptLegalGateIfPresent` ([tools/platform-e2e/helpers/browser.ts](../tools/platform-e2e/helpers/browser.ts))

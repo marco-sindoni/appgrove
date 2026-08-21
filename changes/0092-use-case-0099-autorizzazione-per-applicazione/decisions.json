@@ -174,5 +174,86 @@
   {
     "id": 24,
     "decision": "(autopilot) Documenti allineati dove dicevano il falso o l'incompleto: docs/02 §7 e §10 dichiarano che il claim `roles` non porta più `admin` (conversione al momento del claim, in cloud e in locale) e che il ruolo sull'applicazione si fa rispettare col varco condiviso e non con @RolesAllowed; docs/04 §7 descrive il varco nuovo accanto a quello dei diritti d'accesso, con i tre rifiuti e la postura del fallimento. I punti aperti di UC 0099 sono stati riscritti dividendo ciò che questa change ha CHIUSO (durata massima, nome dell'annotazione, tre rifiuti, una coda sola) da ciò che resta aperto (misure e allarmi della copia del ruolo, rilettura obbligatoria non ancora usata da nessuna rotta, ruolo nel contratto fra shell e moduli — di UC 0107, annotazioni di `fatture`). I rimandi sono tracciati anche nelle storie che li possiedono: UC 0103 (esclusione della voce di catalogo dei posti dalla lettura «dove posso entrare») e UC 0111 (ritiro del varco dei posti del Mini-CRM, che oggi convive col varco nuovo)."
+  },
+  {
+    "id": 25,
+    "decision": "Difetto trovato nel collaudo manuale del 2026-08-21 e corretto: le schermate del Mini-CRM buttavano via la frase del server sui rifiuti. La storia poggia interamente su rifiuti che si DISTINGUONO A PAROLE — «non hai accesso a questa applicazione, chiedi l'abilitazione» (urn:appgrove:app-role:no-access) e «serve almeno editor, il tuo ruolo è viewer» (urn:appgrove:app-role:insufficient) sono due 403 con lo stesso codice e due significati opposti — ma la schermata di creazione contatto aveva un `catch` cieco che scriveva sempre «si è verificato un errore», e l'elenco mostrava «non hai un posto assegnato» per QUALSIASI 403, cioè la frase sbagliata in due casi su tre. I passi 3.6, 3.8 e 3.10 della guida di collaudo manuale erano quindi infalsificabili. Rimedio: un aiutante `refusalMessage(err, fallback)` che mostra il `detail` del problem+json per i soli codici con cui il server parla alla persona (400, 402, 403, 409, 422, 429) e tiene il messaggio generico per tutto il resto — in particolare i 5xx, dove il `detail` descrive un guasto interno e non serve a chi guarda. Vive nel modulo perché il Mini-CRM è oggi la sola applicazione con il varco del ruolo; si promuove a `@appgrove/api-client` quando lo adotterà anche `fatture`.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/api/errors.ts",
+        "description": "Nuovo: `refusalMessage` con l'elenco dei codici di stato «parlanti». La prudenza sui 5xx è deliberata: mostrare sempre il detail farebbe uscire messaggi tecnici."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/screens/ContactCreateScreen.tsx",
+        "description": "Il `catch` cieco della creazione ora legge l'errore: è la schermata in cui il difetto è stato visto."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/screens/ContactDetailScreen.tsx",
+        "description": "Stessa correzione sui tre `catch` (cambio stato, eliminazione, nuova interazione)."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/screens/ContactListScreen.tsx",
+        "description": "Il 403 in lettura non è più tradotto d'ufficio in «non hai un posto»: si mostra la frase del server, col testo sul posto come ripiego. `noSeat` diventa `refused`, perché i varchi che possono aver risposto sono tre."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/crm/crm.test.tsx",
+        "description": "Tre collaudi nuovi: il rifiuto parlante vince sul testo del posto; in creazione si legge QUALE ruolo serve; un 500 non espone il suo dettaglio."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "Copertura end-to-end: l'esenzione «senza-superficie» di UC 0099 era SBAGLIATA e viene rimossa. Il motivo registrato diceva «non aggiunge né toglie alcun comando visibile», ma l'esito visibile della storia sono proprio i due messaggi di rifiuto che una persona legge e distingue — ed è per questo che nessun collaudo li proteggeva e il `catch` cieco è sopravvissuto. UC 0099 entra in `usecases_con_superficie` e nasce una voce `da-coprire` (J-APP-ROLE-REFUSALS) con l'impedimento vero: il Mini-CRM è `inactive` nel listino e accenderlo è un cambiamento GLOBALE di piattaforma, non per-conto, quindi un percorso che lo accende disturberebbe quelli in esecuzione in parallelo. Si copre quando l'accensione sarà isolabile per conto, o quando `fatture` (già attiva) adotterà il varco del ruolo. Oggi i due messaggi sono coperti al livello di modulo.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0099 fra gli use case con superficie; esenzione rimossa; voce J-APP-ROLE-REFUSALS in stato `da-coprire`."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "Guida di collaudo manuale corretta su tre punti trovati usandola. (a) Il passo 3.1 diceva di assegnare i posti a `owner@acme.test` e `member@acme.test`: è SBAGLIATO, il campo «Identificativo utente» vuole il `sub` del token (`seed-acme-owner`, `seed-acme-member`), e con l'indirizzo email il posto viene creato ma non combacerà mai — ogni operazione risponde 403 «nessun posto assegnato» per un posto che nell'elenco risulta assegnato. Aggiunta la nota con gli identificativi, il comando per leggerli dal token e i comandi per liberare i posti occupati per sbaglio. Nota: il passo 5.1 della stessa guida citava già `seed-acme-member` come valore giusto — la guida sapeva, e si contraddiceva. (b) Il campo dell'access token si chiama `access_token`, non `accessToken`. (c) `member@acme.test` ha due appartenenze dopo la change 0090, quindi il suo login può rispondere `account_selection_required` con un `choice_token` invece dell'access token, e serve il secondo passo `POST /api/auth/login/account`: aggiunto un frammento che copre entrambi i casi, perché la scelta viene chiesta o no a seconda che ci sia una preferenza già registrata.",
+    "files": [
+      {
+        "file": "changes/0092-use-case-0099-autorizzazione-per-applicazione/how-to-test.md",
+        "description": "Passo 3.1 riscritto + nota sull'identificativo del posto; frammenti pronti per i token; sequenza a due passi per member@acme.test."
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "decision": "Difetto d'usabilità NON corretto e tracciato dove appartiene: il campo «Identificativo utente» della schermata dei posti chiede a mano un identificativo interno a chi ha davanti un elenco di persone con nome e indirizzo, e accetta in silenzio un valore che non potrà mai combaciare. Non si corregge dov'è perché quella schermata e il posto sono ciò che UC 0111 ritira: la sostituta deve far SCEGLIERE la persona da un elenco e mandare al server l'identificativo dell'identità, mai farlo digitare. Annotato nella sezione «Lasciato da UC 0099» della storia 0111.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0111-schermata-gestione-utenti-app.md",
+        "description": "Nuovo rimando: il campo dell'identificativo del posto è inusabile e va via col posto."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "Collaudo manuale eseguito per conto dello sviluppatore dal passo 3bis alla fine (2026-08-22): 3.7-3.11 con un browser vero sullo stack locale, §4 §5 §6 §7 in via programmatica. Tutti gli esiti attesi confermati, compresi i due rifiuti distinti a schermo (che è la prova del correttivo della decisione 25), il ciclo invalidazione → rinfresco pigro → diniego noto della copia del ruolo, la durata massima di 60 secondi, il 503 «non è un problema dei tuoi permessi» a core fermo, l'uso dell'ultima verità nota con copia vecchia e core giù, e la purga con `app_role_projection` nell'audit accanto a `entitlement_projection`. Due scostamenti dalla guida, per necessità e dichiarati: il passo 7.2 è stato esercitato mandando il messaggio di purga sulla coda `tenant-purge-crm` per un account di prova creato per l'occasione, invece che dalla schermata «I miei dati», per non attendere il periodo di grazia e non toccare Acme — è lo stesso percorso di codice (`TenantPurgeConsumer.withProjection`); i passi 3.8 e 3.10 sono stati letti dal testo reso a schermo invece che a occhio.",
+    "files": []
+  },
+  {
+    "id": 30,
+    "decision": "Difetto trovato durante quel collaudo e NON corretto qui, perché appartiene a UC 0046: la copia locale dei DIRITTI d'accesso (`entitlement_projection`) non ha durata massima, a differenza di quella del RUOLO introdotta da questa storia (60 secondi). Conseguenze misurate nelle due direzioni: un'applicazione spenta e poi riaccesa lascia l'account bloccato con 402 a tempo indeterminato (otto letture in due minuti, `refreshed_at` immobile, si sblocca solo marcando la riga a mano); e — più grave — un'applicazione SPENTA resta accessibile a chi ha in casa una copia «attiva» non invalidata, come osservato dopo il riavvio del core, dove a fermare la richiesta è stato solo il varco del ruolo. La causa prima è che l'evento di invalidazione nasce dai cambi di abbonamento del conto e non dal cambio di stato dell'applicazione nel listino. Tracciato in docs/_BACKLOG.md con il rimedio candidato.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Nuova voce: la copia locale dei diritti non scade mai — un'applicazione riaccesa non si sente, e una spenta resta accessibile."
+      }
+    ]
+  },
+  {
+    "id": 31,
+    "decision": "Difetto della guida trovato usandola e corretto: il passo 0.5 insegna ad accendere il Mini-CRM via API senza dire che è temporaneo. `PricingSyncStartup` risemina il listino dal file `pricing/crm.yaml` (dove `status: inactive`) a OGNI avvio del core, quindi i passi 6.2 e 6.3 della guida stessa — riavvio del core, poi `./app-start.sh` — rimettono l'applicazione su «spento» e i passi successivi rispondono 402 senza spiegazione. Verificato: dopo `./app-start.sh` il crm risulta `inactive`. È la forma più insidiosa del prerequisito non dichiarato, perché il prerequisito è vero all'inizio e diventa falso a metà per opera della guida. Aggiunto l'avviso al passo 0.5, con il comando per sbloccare l'account bloccato dal difetto della decisione 30.",
+    "files": [
+      {
+        "file": "changes/0092-use-case-0099-autorizzazione-per-applicazione/how-to-test.md",
+        "description": "Avviso al passo 0.5: l'accensione non sopravvive al riavvio del core; va rifatta dopo 6.2 e 6.3."
+      }
+    ]
   }
 ]
