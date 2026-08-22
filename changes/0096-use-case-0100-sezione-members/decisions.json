@@ -1,0 +1,114 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow (rilettura dei requisiti, consenso al commit, consenso al merge); restano obbligatori la suite completa verde prima del commit (./run-tests.sh senza parametri), il registro integrale delle decisioni e la guida how-to-test.md scritta ED eseguita nei passi non visivi. Il merge e la spinta al remoto NON sono di questa change: restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0100 «\"Members\" come elenco unico di persone, senza ruolo» (docs/usecases/22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md), con il piano di lavoro task/0100. Da qui la forma del branch 0096-use-case-0100-sezione-members. Il numero 0096 è il progressivo della cartella changes/ (l'ultima è 0095) e coincide con quello atteso dall'orchestratore.",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "Nessuna modifica: l'indice di esecuzione elenca gli use case base 0001–0060 e i residui, non le storie evolutive dell'epica 22 (0098–0118), che stanno fuori dall'ordine topologico. Stessa scelta della change 0095."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La stretta all'owner si applica ORA sulle operazioni di persone e inviti, nonostante la tolleranza per i token già emessi che porta `admin` (documentata in Roles.java e posseduta da UC 0113). Motivo: è esattamente ciò che la storia 0100 §8 chiede — «le operazioni su utenti e inviti passano da owner o admin a solo owner, la difesa vera è là» — e la tolleranza resta dove il suo proprietario la governa, cioè sulle altre operazioni che nominano ancora admin (diritti dell'interessato, pagamenti, ticket, applicazioni). Conseguenza accettata e dichiarata: chi ha in mano un token vecchio con `admin` e non `owner` perde la gestione dei membri fino al rinnovo. Alternativa scartata: rimandare la stretta a UC 0113, che avrebbe lasciato la schermata nuova protetta da un ruolo che il modello non ammette più.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "elenco, lettura per identificativo, modifica e uscita passano a @RolesAllowed(Roles.OWNER); le operazioni su /me restano aperte a chi appartiene a un account."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationResource.java",
+        "description": "invio, elenco e revoca passano a @RolesAllowed(Roles.OWNER)."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/Roles.java",
+        "description": "La costante ADMIN NON viene rimossa: è ancora usata da otto operazioni di altre storie e il suo ritiro è di UC 0113."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il ruolo esce dal contratto dell'invito in ENTRAMBE le direzioni: dal corpo della creazione (CreateInvitation) e dalla vista che l'account rilegge (InvitationView). Motivo: la storia §7 dice che «il ruolo dell'invito scompare», e l'elenco unico non ha una colonna dove metterlo. Un ruolo eventualmente inviato da un chiamante vecchio è IGNORATO (Jackson scarta le proprietà sconosciute) e l'invito nasce sempre `member`: il rifiuto con 400 sarebbe stato più rumoroso ma avrebbe rotto senza motivo i chiamanti in volo, e la garanzia che conta — «non si può entrare con poteri» — è data dal valore fisso, non dal codice di stato.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationDtos.java",
+        "description": "CreateInvitation ha il solo campo email; InvitationView non espone più il ruolo."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La colonna `role` della tabella platform.invitations RESTA in banca dati e continua a essere scritta con il valore `member`. Il piano di lavoro diceva «il codice smette di scriverla», ma la colonna è NOT NULL senza valore predefinito (V2__core_domain.sql) e il valore è letto all'accettazione per creare l'appartenenza (MeInvitationsResource, e il servizio di autenticazione in PlatformWriter): smettere di scriverla renderebbe impossibile creare un invito. Il ritiro della colonna appartiene alla conversione di UC 0113. Il costruttore dell'entità non chiede più il ruolo: lo fissa a `member`, così che non esista un modo di scrivere un valore diverso.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/Invitation.java",
+        "description": "Il costruttore non prende più il ruolo e lo fissa a MembershipRole.member; il campo e la colonna sopravvivono fino a UC 0113."
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Il conteggio delle applicazioni per persona viaggia come ELENCO e non come numero: la vista della persona porta le applicazioni su cui è abilitata con il ruolo che vi ha, e il numero in colonna è la lunghezza dell'elenco. Motivo: la storia chiede sia il numero sia il dettaglio «quali e con che ruolo» al clic; due campi (un numero e un elenco) sarebbero due rappresentazioni della stessa verità, e la prima volta che divergono nessuno sa quale credere. Per l'owner l'elenco sono tutte le applicazioni a cui l'account ha diritto, marcate come accesso implicito — l'owner non ha righe di permesso (UC 0098 §5).",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserDtos.java",
+        "description": "UserView porta `apps` (elenco di {appId, app, role, implicit}) e `joinedAt`."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il campo `apps` è riempito SOLO nelle letture di governo dell'account (elenco delle persone e lettura per identificativo) e resta assente su /users/me. Motivo: /users/me è la lettura più calda dell'applicazione — parte a ogni caricamento di pagina, per ogni ruolo — e caricarvi i diritti dell'account e gli accessi per applicazione ne farebbe pagare il costo a chi non li usa. La forma è già quella del resto del DTO (i campi nulli non compaiono nella risposta).",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "list() e get() riempiono apps; me() e updateMe() no."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) L'elenco degli accessi si costruisce con UNA sola lettura di tutte le righe di accesso dell'account, raggruppate in memoria per persona, più UNA lettura del catalogo per tradurre l'identificativo dell'applicazione nel suo nome breve, più — solo se nell'elenco c'è un owner — UNA lettura dei diritti dell'account. Il numero di interrogazioni non cresce con il numero di persone, che è il vincolo esplicito del piano di lavoro. Le righe di accesso di un account sono al più persone×applicazioni: raggrupparle in memoria costa meno di una interrogazione aggregata scritta a mano."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La colonna delle applicazioni apre il dettaglio SUL POSTO (una riga che si espande sotto la persona) e non porta a nessun collegamento. Motivo: la storia prevede il collegamento alla gestione utenti dell'applicazione, ma quella schermata è di UC 0111 e non esiste: un collegamento verso il nulla è peggio della sua assenza. Il dettaglio dichiara a parole dove si cambia il ruolo. Rimando scritto nella storia 0111.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0111-schermata-gestione-utenti-app.md",
+        "description": "Annotato il rimando: quando la schermata esisterà, il dettaglio delle applicazioni nell'elenco delle persone diventa un collegamento verso di essa."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Gli stati mostrati sono TRE — attiva, invito in attesa, sospesa — e non quattro. Lo stato «in cessazione» della storia §4 non è rappresentabile: l'appartenenza ha due soli stati nel modello (attiva, sospesa) e la cessazione arriva con la logica dei posti di UC 0104. Non si aggiunge a schermo una etichetta che nessun dato può produrre, e non si aggiungono chiavi di traduzione che nessuno usa. Rimando scritto nella storia 0104.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md",
+        "description": "Annotato il rimando: lo stato «in cessazione» dell'elenco unico e la sua azione nascono con questa storia."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) La data di ingresso è la data di nascita dell'appartenenza (non dell'identità: la persona può esistere da prima, in un altro account). Per un invito in attesa non c'è ingresso: la colonna resta vuota e la scadenza dell'invito si legge accanto allo stato, perché un invito ha una vita finita e quella è l'informazione utile su quella riga."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Ordinamento dell'elenco unico: l'owner in testa (come chiede la storia), poi le persone per indirizzo, poi gli inviti in attesa per indirizzo. Motivo: un ordinamento per stato metterebbe le sospensioni prima delle persone attive, e un ordinamento unico per indirizzo mescolerebbe chi c'è con chi sta arrivando — l'elenco è uno, ma il fatto che una riga sia un invito è la prima cosa che si vuole vedere insieme."
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Il testo dell'email di invito NON cambia: continua a dire «come member», e il parametro `role` dell'invio resta accettato dal servizio di autenticazione col suo valore predefinito. Motivo: `member` è ancora uno dei due valori vivi del ruolo di piattaforma, quindi la frase è vera; toccare i testi condivisi (shared/email-templates) e il loro collaudo di escape per un residuo che non è un residuo sarebbe lavoro fuori dalla storia. Il frontend smette comunque di mandare il ruolo, perché non ne ha più uno."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Le letture di persone e inviti si abilitano solo per l'owner anche nel cruscotto (UC 0097), che mostra gli stessi due numeri: la condizione era «owner oppure admin». Motivo: se la lettura è dell'owner, chiederla a un collaboratore produce un rifiuto e una riga rotta a schermo. La riga si omette, come già faceva per chi non poteva leggerla. Non si tocca invece la condizione che governa il comando «gestisci abbonamento» del cruscotto: quella superficie è dei pagamenti, che questa storia non stringe."
+  }
+]
