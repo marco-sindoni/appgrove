@@ -646,7 +646,7 @@ entrambi i casi. Il lucchetto è in `.gitignore`.
 utile che le due cose si conoscessero — lanciare i test con lo stack acceso è l'altro difetto di questa famiglia
 (voce qui sotto). Owner: #07 (DevOps/CI).
 
-## Difetto — `./run-tests.sh` è ROSSO se lo stack locale è acceso (porta 8081), con diagnosi fuorviante (trovato 2026-08-21)
+## Difetto — `./run-tests.sh` è ROSSO se lo stack locale è acceso (porta 8081) (trovato 2026-08-21 · CORRETTO dalla change `0094`)
 
 **Il fatto, verificato durante il collaudo manuale del lotto 0088–0092.** Con lo stack locale avviato
 (`./app-start.sh`), `./run-tests.sh tooling` fallisce e stampa:
@@ -875,7 +875,7 @@ Il punto di questa voce si rafforza: **non basta sapere che una suite è rossa, 
 utile che `run-tests.sh` conservasse l'output di ogni area in un file per corsa, così un rosso non riproducibile
 resti esaminabile invece di scorrere via dal terminale. Owner: #07 (DevOps/CI).
 
-## Difetto — la copia locale dei DIRITTI d'accesso non scade mai: un'applicazione riaccesa non si sente (trovato 2026-08-22)
+## Difetto — la copia locale dei DIRITTI d'accesso non scade mai (trovato 2026-08-22 · CORRETTO a metà dalla change `0094`)
 
 Trovato eseguendo il passo 4.4 della guida di collaudo della change `0092`. La copia locale del **ruolo**
 (`app_role_projection`, UC 0099) ha una **durata massima** — `appgrove.app-role.projection.max-age=60s` — e il
@@ -897,11 +897,23 @@ Conseguenza misurata, in entrambe le direzioni:
   varco del ruolo (che invece ha la durata massima e si era rinfrescato).
 
 Il difetto è di **UC 0046** (proiezione locale dei diritti), non della change `0092`, che ha fatto la cosa
-giusta sulla propria copia. Rimedio candidato: la stessa durata massima, `appgrove.entitlement.projection.max-age`,
-con lo stesso comportamento — oltre la scadenza si rilegge anche senza evento, e se la fonte non risponde si
-continua a usare l'ultima verità nota. Da valutare insieme: far nascere un evento di invalidazione anche dal
-cambio di **stato dell'applicazione nel listino** (oggi lo generano solo i cambi di abbonamento del conto),
-che è la causa prima. Owner: #01 (architettura) con #04 (backend).
+giusta sulla propria copia.
+
+**Corretta la prima causa (change `0094`, 2026-08-22).** Introdotta `appgrove.entitlement.projection.max-age`
+(60 secondi per default, come la copia del ruolo): oltre la scadenza si rilegge anche senza evento, e se la
+fonte non risponde si continua con l'ultima verità nota. Scoperto correggendo: l'assenza di scadenza **non era
+una dimenticanza** ma una scelta argomentata nel codice — «è l'evento, non il tempo, a dire che qualcosa è
+cambiato» — corretta per i cambiamenti che *generano* un evento e falsa per tutti gli altri. Il timore che
+motivava quella scelta (un «blocco a orologeria») non si materializza, perché scadere significa **rileggere**,
+non **negare**.
+
+**Resta aperta la seconda causa**: nessun evento di invalidazione nasce dal cambio di **stato
+dell'applicazione nel listino** — oggi lo generano solo i cambi di abbonamento del singolo conto. Con la
+scadenza il disallineamento dura al massimo un minuto invece che per sempre, quindi non è più una falla ma una
+**latenza**; chiuderla del tutto richiede di pubblicare invalidazioni per **tutti** i conti di
+un'applicazione quando il suo stato cambia, che è un'ampiezza diversa e va decisa a sé (chi pubblica? il
+servizio che sincronizza il listino, e per quanti conti alla volta?). Owner: #01 (architettura) con #04
+(backend).
 
 ## Processo — la guida di collaudo non dice che riavviare il `core` rimette il Mini-CRM su «spento» (trovato 2026-08-22)
 
@@ -915,7 +927,7 @@ davanti a rifiuti inspiegabili nei passi successivi. Verificato: dopo `./app-sta
 forma particolarmente insidiosa: il prerequisito è vero all'inizio e **diventa falso a metà**, per opera della
 guida stessa. Rimedio nella guida: dirlo al passo 0.5 e ripetere l'accensione dopo ogni riavvio.
 
-## Difetto — un journey di piattaforma che passa al secondo tentativo è perdonato in silenzio (trovato 2026-08-21)
+## Difetto — un journey di piattaforma che passa al secondo tentativo è perdonato in silenzio (trovato 2026-08-21 · CORRETTO dalla change `0094`)
 
 `tools/platform-e2e/playwright.config.ts` prevede `retries: 1`, e `tools/platform-e2e/run.sh` propaga tale e quale il
 codice di uscita di Playwright. Playwright esce **0** quando un test fallisce al primo tentativo e passa al secondo:
@@ -929,12 +941,17 @@ instabilità corretti il 2026-08-21 (`J-INVITE-EXISTING` senza attesa della deci
 essere visti: la suite li perdonava a ogni corsa. Ci si accorge di loro solo quando il secondo tentativo fallisce
 anch'esso, cioè quando il difetto è già peggiorato.
 
-Rimedio candidato: far produrre a Playwright il resoconto in formato dati (`--reporter=list,json` con
-`PLAYWRIGHT_JSON_OUTPUT_NAME`), leggere il conteggio degli instabili e far scattare il **rosso** se `flaky > 0`, con
-in chiaro quali percorsi lo sono stati. Così l'unica corsa accettabile diventa quella verde **al primo tentativo**,
-e i tentativi ripetuti restano utili come informazione diagnostica invece di essere un condono. Da valutare insieme
-alla richiesta della voce qui sopra (conservare l'output di ogni area in un file per corsa): sono la stessa esigenza
-— **un rosso deve restare esaminabile**. Owner: #07 (DevOps/CI) con #10 (testing).
+**Corretto (change `0094`, 2026-08-22).** Playwright produce ora anche il resoconto in formato dati accanto a
+quello leggibile; `tools/platform-e2e/run.sh` ne legge il conteggio degli instabili e, se ce n'è almeno uno,
+rende la suite **rossa nominando i percorsi**. Il ritentativo **resta**: serve a distinguere un difetto vero da
+un guasto d'ambiente, che in una suite con browser, stack reale e posta non è un'ipotesi — ciò che si è tolto è
+il **condono**. Verificato con una sonda temporanea (un percorso che falla al primo tentativo e passa al
+secondo): suite rossa, percorso nominato, codice di uscita 1. Resoconto assente = avviso e non rosso, perché un
+file mancante è un guasto dello strumento e non deve fermare una corsa sana.
+
+**Resta aperta** la richiesta della voce qui sopra, che è la stessa esigenza da un altro lato: conservare
+l'output di ogni area in un file per corsa, così che **un rosso resti esaminabile** anche quando non è
+riproducibile. Owner: #07 (DevOps/CI).
 
 ## Il gate legale è fail-open: il passo condiviso dei percorsi di piattaforma perde la corsa (change `0089`, 2026-08-21)
 

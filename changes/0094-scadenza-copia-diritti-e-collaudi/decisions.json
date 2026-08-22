@@ -1,0 +1,106 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione: autopilot, scelta dallo sviluppatore. Le domande di approfondimento hanno risposta dall'agente secondo l'opzione raccomandata; restano allo sviluppatore la rilettura e approvazione dei requisiti, il consenso al commit e quello al merge."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) Una change sola per i tre difetti, non tre change. Sono indipendenti per area e per rischio, ma condividono un tema esatto — un presidio che non protegge: uno lascia entrare in un'applicazione spenta, uno rende rossa la suite per un motivo falso, uno la rende verde per un motivo falso. Sono tutti chirurgici. Tre change separate triplicherebbero l'attrito di processo (requisiti, log, registro, gate) per un beneficio nullo. Impegno dichiarato: se il primo si rivelasse più profondo del previsto, si scorpora."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) Copia locale dei diritti d'accesso: si aggiunge la DURATA MASSIMA, in simmetria esatta con la copia del ruolo (UC 0099). La causa del difetto è duplice — nessuna scadenza, e l'invalidazione che non nasce dal cambio di stato dell'applicazione nel listino — ma si corregge la prima. Ragione: la scadenza chiude la falla entro un tempo noto e limitato, riusa un modello già in casa (`ProjectedAppRole.usable(maxAge, now)`, su una riga di forma identica: valore, `stale`, `refreshedAt`) e accetta lo stesso rischio residuo che la piattaforma ha già accettato per il ruolo. L'evento dal listino dovrebbe invece pubblicare invalidazioni per TUTTI i tenant di un'applicazione: ampiezza diversa, va deciso a sé. Tracciato.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/projection/ProjectedEntitlementService.java",
+        "description": "La condizione `row.isPresent() && !row.get().stale()` diventa un controllo di usabilità che include l'età."
+      },
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/projection/EntitlementProjectionStore.java",
+        "description": "`ProjectedEntitlement` acquisisce `usable(maxAge, now)`, gemello di quello di `ProjectedAppRole`."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Durata massima della copia dei diritti: 60 secondi, identica a quella del ruolo. Un solo numero da ricordare in tutta la piattaforma, e la simmetria rende evidente al lettore che le due copie hanno la stessa postura. Configurabile per ambiente (`appgrove.entitlement.projection.max-age`), come l'altra: si cambia nella configurazione, non nel codice."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La porta di test dei servizi diventa libera: `quarkus.http.test-port=0` in `services/*/src/test/resources/application.properties` (quattro servizi) e nel modello di `tools/new-application`. Il difetto: Quarkus usa 8081 per default e `fatture` gira su 8081, quindi con lo stack locale acceso i test backend fallivano con una diagnosi fuorviante. Verificato che NESSUN test presuppone la porta 8081, quindi la porta effimera non rompe nulla — e chiude anche un caso che nessuno aveva notato: due esecuzioni Maven in parallelo si contendevano la stessa porta. Scelto il file di test e non quello principale perché `quarkus.http.test-port` vale solo in test: metterlo altrove sarebbe rumore."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) Journey instabili: si RITENTA ma non si PERDONA. Scartato `retries: 0`, che avrebbe azzerato il problema alla radice ma con due costi: si perde la traccia diagnostica del secondo tentativo (utile a distinguere un difetto vero da un guasto d'ambiente) e la suite diventa fragile ai guasti d'ambiente reali, che in una suite con browser, stack e posta non sono ipotetici. Si tiene `retries: 1` e si legge il resoconto in formato dati: se un percorso è passato solo al secondo tentativo la suite è ROSSA e i percorsi vengono NOMINATI. Verificato che la suite di livello 2 del frontend non ha questo difetto (nessun `retries`, quindi zero tentativi ripetuti): il perimetro è la sola suite di piattaforma.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/playwright.config.ts",
+        "description": "Aggiunto il resoconto in formato dati accanto a quello a righe."
+      },
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "L'esito non è più il solo codice di uscita di Playwright: si legge il conteggio degli instabili e si nominano."
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Scoperta in implementazione: l'assenza di scadenza NON era una dimenticanza, era una scelta DELIBERATA e argomentata nel codice («è l'evento — non il tempo — a dire che qualcosa è cambiato», e una scadenza sarebbe stata «un blocco a orologeria senza aggiungere sicurezza reale»). L'argomento è corretto per i cambiamenti che GENERANO un evento (disdetta, passaggio di fascia) e falso per tutti gli altri — lo stato dell'applicazione nel listino non ne genera. Il commento non è stato cancellato ma RISCRITTO per dire che la scelta è stata rovesciata e perché: chi legge deve sapere che qui c'era una tesi opposta e cosa l'ha smentita. Aggiunta anche la ragione per cui il timore originario non si materializza: la scadenza significa RILEGGERE, non NEGARE — se la fonte non risponde si continua con l'ultima verità nota, quindi il blocco a orologeria non esiste.",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/entitlement/projection/ProjectedEntitlementService.java",
+        "description": "La documentazione della postura ora spiega il rovesciamento e la prova che l'ha imposto."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il motivo della rilettura distingue TRE casi e non due: «assente», «da_rinfrescare» (evento) e «scaduta» (tempo). Separarli è ciò che permette di accorgersi che il canale degli eventi non funziona: se le riletture sono quasi tutte per scadenza, gli eventi non arrivano e la scadenza sta coprendo un guasto. Con due soli motivi quel guasto resterebbe invisibile proprio grazie al rimedio introdotto qui."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La prova che i test nuovi verificano davvero qualcosa è stata ottenuta ESEGUENDOLI CONTRO IL CODICE VECCHIO: ripristinata temporaneamente la condizione originale, i due test della scadenza falliscono; ripristinata la correzione, passano. Un test che non è mai stato visto fallire non dimostra nulla — è la stessa regola che la change 0093 ha imposto alle guide di collaudo, applicata ai test."
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Difetto LATENTE trovato per caso e corretto: la classe di collaudo della copia dei diritti (`EntitlementProjectionTest`) creava fatture sullo stesso conto senza azzerarle mai, e viveva a DUE fatture dal tetto gratuito di dieci al mese. Aggiungendo tre test l'ha superato, e i test cadevano con «429 quota esaurita» — un rosso che non parla di ciò che il test verifica. Corretto alzando il tetto nella preparazione della classe, perché quella classe collauda la copia locale e NON la quota (per la quale esiste QuotaTest): il tetto era rumore accidentale. Chi aggiungerà un test domani non deve più contare le fatture.",
+    "files": [
+      {
+        "file": "services/fatture/src/test/java/app/appgrove/fatture/EntitlementProjectionTest.java",
+        "description": "Tetto alzato nella preparazione, con la spiegazione del perché il tetto qui è rumore."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Per far scadere una riga nei test si INVECCHIA la riga (si sposta indietro la data di rinfresco), non si abbassa la durata massima nella configurazione di test. Abbassarla farebbe scadere anche le righe dei test che dimostrano il disaccoppiamento — che passerebbero, o falliranno, per la ragione sbagliata. L'aiutante non tocca il contrassegno di invalidazione: una riga invecchiata è diversa da una invalidata, e i test devono poter esercitare le due cose separatamente.",
+    "files": [
+      {
+        "file": "services/fatture/src/test/java/app/appgrove/fatture/TestProjection.java",
+        "description": "Nuovo `ageBySeconds`, che invecchia la riga senza marcarla."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il presidio sui percorsi instabili è stato verificato con una SONDA temporanea: un percorso che falla al primo tentativo e passa al secondo. Esito: la suite risulta rossa, il percorso viene nominato, il codice di uscita è 1 (verificato senza pipe, perché con `| tail` si legge il codice di `tail` e non quello dello script). Sonda rimossa subito dopo. Scelta deliberata di NON automatizzare questa verifica: servirebbe una suite che esegue una suite, sproporzionato al presidio.",
+    "files": [
+      {
+        "file": "tools/platform-e2e/run.sh",
+        "description": "Passo 5bis: legge il resoconto in formato dati, conta gli instabili, li nomina e rende rossa la suite. Resoconto assente = avviso, non rosso: un file mancante è un guasto dello strumento e non deve fermare una corsa sana."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Copertura end-to-end (UC 0093/0094): NESSUN IMPATTO sul registro. La change non aggiunge né modifica superficie applicativa: il difetto 1 cambia il momento in cui una decisione di autorizzazione viene riletta (comportamento coperto dai collaudi di integrazione del servizio, dove i tre versanti sono ora esercitati), i difetti 2 e 3 riguardano gli strumenti di collaudo. Il registro `docs/testing/copertura-e2e.yaml` non va toccato. La domanda è stata posta e questa è la risposta."
+  },
+  {
+    "id": 14,
+    "decision": "Suite completa `./run-tests.sh` verde su tutte e otto le aree, eseguita a stack locale SPENTO dopo aver verificato separatamente che l'area backend è verde a stack ACCESO (che era il criterio del difetto 2). L'area `platform` è risultata verde con 16 percorsi su 16 e zero instabili: da questa change quel dato è una garanzia e non una speranza, perché un solo percorso instabile avrebbe reso la suite rossa."
+  },
+  {
+    "id": 15,
+    "decision": "Latenza di un minuto ACCETTATA dallo sviluppatore, subordinata alla verifica che non produca pressione eccessiva sul servizio di piattaforma. Verifica fatta e riportata: il tetto è UNA chiamata al minuto per coppia (account, applicazione) ATTIVA — la rilettura è pigra, avviene alla prima richiesta utile dopo la scadenza e non allo scadere. Il fatto decisivo è la granularità: la copia del ruolo ha chiave (account, persona, applicazione) e la stessa scadenza di 60 secondi già in produzione, mentre quella dei diritti ha chiave (account, applicazione) — quindi un account con cinque collaboratori attivi genera già cinque riletture di ruolo al minuto e ne aggiunge UNA di diritti. La scadenza introdotta qui produce una frazione del traffico che la stessa scelta già genera dall'altro lato, dove non ha mai dato problemi. Rispetto al comportamento sincrono di partenza (una chiamata per OGNI richiesta) la riduzione di due ordini di grandezza resta intatta: la scadenza non riporta indietro il disaccoppiamento, gli mette un tetto temporale. Nessun rischio di scadenze allineate: dipendono da quando ciascuno ha fatto la propria richiesta e la copia sta su database, quindi sopravvive ai riavvii. Caso peggiore da nominare: la chiamata è sincrona nel percorso della richiesta, quindi una richiesta su N paga la latenza — ma è già così per il ruolo e per la riga assente, non è una classe di rischio nuova. Saturazione stimata oltre le 6.000 coppie attive nello stesso minuto, fuori dall'orizzonte. Decisione reversibile senza rilascio (la durata è per ambiente) e osservabile (la metrica distingue i tre motivi)."
+  }
+]
