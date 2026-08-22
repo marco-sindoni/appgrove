@@ -8,24 +8,47 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Utilità di test sulla proiezione entitlement (UC 0046): azzeramento e ispezione diretta.
+ * Utilità di test sulle <b>copie locali</b> del servizio — diritti d'accesso (UC 0046) e ruolo per
+ * applicazione (UC 0099, applicato a questa app da UC 0101): azzeramento e ispezione diretta.
  *
- * <p>Serve perché la proiezione <b>sopravvive fra i test</b>: è una cache su tabella, non uno stato
- * in memoria. Un test che cambia l'esito della rete di sicurezza senza azzerare la proiezione
- * continuerebbe a leggere il valore memorizzato dal test precedente — e passerebbe o fallirebbe per
- * la ragione sbagliata.
+ * <p>Serve perché quelle copie <b>sopravvivono fra i test</b>: sono cache su tabella, non stato in
+ * memoria. Un test che cambia l'esito della rete di sicurezza senza azzerarle continuerebbe a leggere il
+ * valore memorizzato dal test precedente — e passerebbe o fallirebbe per la ragione sbagliata.
  */
 @ApplicationScoped
 public class TestProjection {
 
     private static final String TABLE = "app_fatture.entitlement_projection";
+    private static final String ROLE_TABLE = "app_fatture.app_role_projection";
 
     @Inject
     AgroalDataSource ds;
 
-    /** Svuota la proiezione: il prossimo accesso ricadrà sulla rete di sicurezza. */
+    /** Svuota <b>entrambe</b> le copie: il prossimo accesso ricadrà sulla rete di sicurezza. */
     public void clear() {
         execute("delete from " + TABLE);
+        execute("delete from " + ROLE_TABLE);
+    }
+
+    /** Righe della copia del ruolo per il tenant (per distinguere «assente» da «diniego noto»). */
+    public int roleRowsFor(String tenantId) {
+        return count(ROLE_TABLE, tenantId);
+    }
+
+    /** Ruolo copiato per quella persona su questa applicazione, o {@code null} se assente/diniego. */
+    public String roleOf(String tenantId, String subject) {
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(
+                        "select role from " + ROLE_TABLE + " where tenant_id = ? and subject = ? and app_slug = ?")) {
+            ps.setString(1, tenantId);
+            ps.setString(2, subject);
+            ps.setString(3, "fatture");
+            try (var rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("lettura copia del ruolo di test fallita", e);
+        }
     }
 
     /** Marca da rinfrescare le righe del tenant, come farebbe il consumer di invalidazione. */
@@ -64,14 +87,18 @@ public class TestProjection {
 
     /** Righe presenti per il tenant (per distinguere "assente" da "presente ma senza accesso"). */
     public int rowsFor(String tenantId) {
+        return count(TABLE, tenantId);
+    }
+
+    private int count(String table, String tenantId) {
         try (Connection c = ds.getConnection();
-                PreparedStatement ps = c.prepareStatement("select count(*) from " + TABLE + " where tenant_id = ?")) {
+                PreparedStatement ps = c.prepareStatement("select count(*) from " + table + " where tenant_id = ?")) {
             ps.setString(1, tenantId);
             try (var rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : 0;
             }
         } catch (SQLException e) {
-            throw new IllegalStateException("conteggio proiezione di test fallito", e);
+            throw new IllegalStateException("conteggio copia locale di test fallito", e);
         }
     }
 

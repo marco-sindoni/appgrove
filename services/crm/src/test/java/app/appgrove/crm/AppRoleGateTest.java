@@ -101,6 +101,114 @@ class AppRoleGateTest {
         write("Scritto da un admin").then().statusCode(201);
     }
 
+    // ── governo degli accessi: serve `admin` ─────────────────────────────────
+
+    /**
+     * La terza riga della cascata (UC 0101 §4.2): le operazioni che governano <b>chi</b> usa
+     * l'applicazione chiedono {@code admin}. Un {@code editor} scrive quanto vuole nel dominio e non
+     * decide chi entra — è la differenza fra i due ruoli, e senza questo collaudo sarebbe una frase in un
+     * documento.
+     */
+    @Test
+    void onlyAnAdminGovernsWhoUsesTheApplication() {
+        String other = "sub-altra-persona-" + tenant;
+        // Le rotte dei posti portano ANCORA il varco vecchio sui ruoli di PIATTAFORMA
+        // (@RolesAllowed owner/admin), che Quarkus applica prima dei filtri JAX-RS: con un token `member`
+        // la risposta sarebbe un 403 senza corpo e il varco del ruolo non arriverebbe nemmeno a parlare.
+        // Si usa quindi un token owner e si prova ciò che questa storia ha aggiunto: il ruolo
+        // sull'APPLICAZIONE. Il varco vecchio si ritira in UC 0111, insieme ai posti.
+        String platformOwner = TestTokens.withTenant(tenant, "owner");
+
+        for (AppRole insufficient : new AppRole[] {AppRole.viewer, AppRole.editor}) {
+            MockAppRoleService.role = insufficient;
+            projection.clear();
+
+            // Le sezioni di governo restano VISIBILI in sola lettura (storia §6): il riepilogo passa.
+            given().header("Authorization", "Bearer " + platformOwner).when().get(CrmApi.SEATS)
+                    .then().statusCode(200);
+
+            given().header("Authorization", "Bearer " + platformOwner)
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("userId", other))
+                    .when().post(CrmApi.SEATS)
+                    .then().statusCode(403)
+                    .body("type", is(AppRoleRequiredException.TYPE_INSUFFICIENT))
+                    .body("requiredRole", is("admin"))
+                    .body("role", is(insufficient.name()));
+
+            given().header("Authorization", "Bearer " + platformOwner)
+                    .when().delete(CrmApi.SEATS + "/" + other)
+                    .then().statusCode(403)
+                    .body("requiredRole", is("admin"));
+        }
+
+        MockAppRoleService.role = AppRole.admin;
+        projection.clear();
+        given().header("Authorization", "Bearer " + platformOwner)
+                .contentType(ContentType.JSON)
+                .body(Map.of("userId", other))
+                .when().post(CrmApi.SEATS)
+                .then().statusCode(201);
+        given().header("Authorization", "Bearer " + platformOwner)
+                .when().delete(CrmApi.SEATS + "/" + other)
+                .then().statusCode(204);
+    }
+
+    /**
+     * La revoca dichiara {@code fresh = true} perché è irreversibile: rilegge il ruolo dal core anche con
+     * la copia locale fresca. Il conteggio delle chiamate alla rete di sicurezza è la prova che quella
+     * rilettura avviene davvero — se qualcuno togliesse l'attributo, questo collaudo diventerebbe rosso.
+     */
+    @Test
+    void anIrreversibleGovernanceOperationRereadsTheRoleFromTheSourceOfTruth() {
+        MockAppRoleService.role = AppRole.admin;
+        String other = "sub-da-revocare-" + tenant;
+        String platformOwner = TestTokens.withTenant(tenant, "owner"); // vedi nota sul varco vecchio, sopra
+
+        given().header("Authorization", "Bearer " + platformOwner)
+                .contentType(ContentType.JSON)
+                .body(Map.of("userId", other))
+                .when().post(CrmApi.SEATS)
+                .then().statusCode(201);
+        int afterAssign = MockAppRoleService.calls.get();
+        assertTrue(afterAssign > 0, "la prima richiesta popola la copia interpellando il core");
+
+        // Copia locale fresca: l'assegnazione non richiederebbe nulla. La revoca sì.
+        given().header("Authorization", "Bearer " + platformOwner)
+                .when().delete(CrmApi.SEATS + "/" + other)
+                .then().statusCode(204);
+        assertTrue(
+                MockAppRoleService.calls.get() > afterAssign,
+                "la revoca deve rileggere il ruolo dal core (fresh = true): con la copia locale fresca non"
+                        + " ci sarebbe alcuna chiamata");
+    }
+
+    // ── le operazioni esenti: passano per tutti ──────────────────────────────
+
+    /**
+     * Lo stato di quota è dichiarato <b>esente dai ruoli</b> nel documento delle operazioni. Se qualcuno
+     * mettesse il varco «per coerenza», il banner del consumo diventerebbe un rifiuto per chi non è ancora
+     * stato abilitato — ed è il difetto che la trappola 3 del piano di lavoro nomina.
+     */
+    @Test
+    void theExemptQuotaReadIsReachableByEveryone() {
+        MockAppRoleService.reset();
+        MockAppRoleService.calls.set(0);
+        for (AppRole role : AppRole.values()) {
+            MockAppRoleService.role = role;
+            given().header("Authorization", "Bearer " + token).when().get(CrmApi.QUOTA)
+                    .then().statusCode(200);
+        }
+        MockAppRoleService.role = null; // nessun accesso all'applicazione: passa comunque
+        given().header("Authorization", "Bearer " + token).when().get(CrmApi.QUOTA)
+                .then().statusCode(200);
+        assertEquals(
+                0,
+                MockAppRoleService.calls.get(),
+                "un'operazione esente non deve nemmeno CHIEDERE il ruolo: se lo chiedesse, con il core giù"
+                        + " si spegnerebbe");
+    }
+
     // ── nessun accesso: un rifiuto DIVERSO ───────────────────────────────────
 
     /**

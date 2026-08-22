@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { refusalMessage } from '@appgrove/api-client'
 import { Button, Card, CardContent, CardHeader, Icon } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { QueryState } from '../../../shell/QueryState'
@@ -30,8 +31,10 @@ export function ItemDetailScreen() {
     setError(null)
     try {
       await update.mutateAsync({ id, body: { status } })
-    } catch {
-      setError(m.errorGeneric)
+    } catch (err) {
+      // Il cambio di stato è un'operazione dispositiva: serve almeno `editor` (UC 0101). Il rifiuto del
+      // server nomina il ruolo che serve, e quella frase va mostrata tale e quale.
+      setError(refusalMessage(err, m.errorGeneric))
     }
   }
 
@@ -41,8 +44,8 @@ export function ItemDetailScreen() {
     try {
       await remove.mutateAsync(id)
       navigate('..', { relative: 'path' })
-    } catch {
-      setError(m.errorGeneric)
+    } catch (err) {
+      setError(refusalMessage(err, m.errorGeneric))
       setConfirmDelete(false)
     }
   }

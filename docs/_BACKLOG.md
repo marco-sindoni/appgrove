@@ -1219,3 +1219,26 @@ motivo per dare al problema un nome.
 Cosa manca: un modo **dichiarativo** di dire «questa voce è nel registro, e nell'esportazione è ristretta
 così», invece di una restrizione scritta a mano nella query e spiegata in un commento. Senza di esso, la
 terza volta qualcuno la dimenticherà. Owner: **#13 (compliance/privacy)** con UC 0030/0032.
+
+## Parità di scaffolding: il contenuto dei file di test non è confrontato (trovato dalla change `0095`, 2026-08-22)
+
+Il collaudo di parità (`tools/scaffold-parity`) confronta i modelli-sorgente con `fatture` su quattro
+controlli — **presenza dei file**, dipendenze del `pom`, chiavi di `application.properties` e annotazioni
+portanti. Il **corpo** dei file di test non entra in nessuno dei quattro, e per una ragione buona: due
+domini diversi devono divergere nel testo delle asserzioni, e pretendere il contrario produrrebbe
+divergenze inventate.
+
+La conseguenza però è che un aiutante di test **nuovo** in `fatture` non viene richiesto al modello. Caso
+concreto trovato: la change `0094` ha aggiunto a `fatture` `TestProjection.ageBySeconds(...)` e i tre
+collaudi della **scadenza** della copia locale dei diritti; i modelli non li hanno, e nessuna divergenza è
+segnalata perché i file esistono già con quel nome. Un'applicazione generata oggi nasce quindi **senza il
+collaudo che dimostra che la sua copia locale scade** — proprio la classe di difetto che la change 0094
+esisteva per chiudere.
+
+Non è un caso isolato per costruzione: si ripresenterà ogni volta che un aiutante di test cresce. Vie
+possibili, da valutare: (a) confrontare l'insieme dei **metodi pubblici** degli aiutanti di test condivisi
+(`TestProjection`, `TestTokens`, `Test*`), che sono contratto e non prosa — l'analogo del controllo
+`importazioni` già usato per il journey di piattaforma; (b) confrontare l'insieme dei **nomi dei metodi di
+prova** (`@Test`) per classe, che direbbe «l'app #1 ha un collaudo che il modello non ha» senza guardare il
+corpo. Proprietario: UC 0046 (skill `new-application` e suo presidio anti-invecchiamento).
+

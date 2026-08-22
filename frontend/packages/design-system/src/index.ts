@@ -29,6 +29,10 @@ export {
   type TableRowProps,
 } from './components/Table'
 export { PageHeader, type PageHeaderProps } from './components/PageHeader'
+// Come l'interfaccia dice «non puoi» quando manca il ruolo (UC 0101): presente ma disabilitato, con la
+// spiegazione al puntatore e per gli strumenti di assistenza. Il confronto fra ruoli sta in
+// `@appgrove/api-client` (appRoleAtLeast): qui arriva già il suo esito.
+export { DisabledForRole, type DisabledForRoleProps } from './components/DisabledForRole'
 
 // Illustrazioni on-brand (UC 0087): figure decorative che seguono i token, quindi tema
 // chiaro/scuro e accento, senza essere ridisegnate. Regole in ILLUSTRAZIONI.md.

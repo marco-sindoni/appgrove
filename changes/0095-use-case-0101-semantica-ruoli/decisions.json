@@ -10,5 +10,249 @@
   {
     "id": 3,
     "decision": "(autopilot) L'indice di esecuzione docs/usecases/_INDEX.md NON viene toccato: le storie evolutive dell'epica 22 non compaiono in quella tabella (è l'ordine topologico dei 60 use case base) — verificato con una ricerca su 0098/0099/0101, nessuna riga. Lo stato della storia si aggiorna invece nel file dell'epica E22-01-fondamenta-modello-centralizzato.md, come hanno fatto le change 0091 e 0092. Non è una deroga al Definition of Done: è dove l'informazione vive davvero."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Il documento delle operazioni è un CONTRATTO JAVA (interfaccia AppOperationsContract + record AppOperation) e non un file YAML accanto al codice. Motivo: il collaudo deve poter legare la riga dichiarata al codice REALE — leggere l'annotazione effettiva del varco, accorgersi che un metodo è stato rinominato — e con classe+metodo Java questo è un controllo di riflessione esatto, mentre con stringhe di percorso HTTP sarebbe un confronto fragile che dimostra poco. Il precedente identico nella forma è AppDataContract per il manifesto dati (UC 0030). La leggibilità «da un programma» chiesta dalla storia §7 resta: un agente o la skill di UC 0112 istanziano il contratto e leggono operations().",
+    "files": [
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/access/AppOperationsContract.java",
+        "description": "Interfaccia del contratto + la cascata di classificazione scritta per esteso nel javadoc, dove chi implementa un servizio la trova."
+      },
+      {
+        "file": "services/commons/src/main/java/app/appgrove/commons/access/AppOperation.java",
+        "description": "Record della singola operazione: id stabile, descrizione it/en, classe+metodo, ruolo minimo OPPURE motivo dell'esenzione."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) Ruolo minimo ed esenzione sono ALTERNATIVI e il record lo impone nel costruttore (due fabbriche: requiring / exempt). La storia §7 chiedeva «ruolo minimo, e un contrassegno esente dai ruoli», cioè due campi indipendenti: si è preferita l'alternativa esclusiva perché rende non rappresentabili due stati illegali — «esente ma con ruolo minimo admin» (contraddizione) e «né ruolo né esenzione» (dimenticanza travestita da dichiarazione). Il verificatore non deve inseguire stati che non possono esistere."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) L'esenzione porta un MOTIVO obbligatorio, non un booleano. Un contrassegno vero/falso non distingue «esente di proposito» da «esente perché era comodo»: il motivo è ciò che una revisione legge e ciò che permette di rivedere la classificazione fra un anno. È anche il solo modo di sottrarsi al controllo del ruolo minimo sulle scritture, quindi deve costare una frase scritta."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il verificatore controlla TRE direzioni, non due come chiedeva il piano di lavoro: (1) dichiarato → reale, (2) reale → dichiarato per OGNI operazione esposta, letture comprese — non solo per le scritture — e (3) coerenza col varco (ruolo dichiarato = ruolo effettivo dell'annotazione; scritture non esenti almeno editor; esenzioni senza annotazione). La direzione (2) estesa alle letture deriva dalla storia §7, che chiede un documento delle «operazioni dell'applicazione», non delle sole scritture: se le letture restassero fuori, il documento potrebbe essere incompleto restando verde.",
+    "files": [
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/access/AppOperationsContractVerifier.java",
+        "description": "Nel test-jar di commons, come PersonalDataManifestVerifier: ogni servizio lo invoca con un test di una riga. Scopre le risorse con ClassFileImporter + DoNotIncludeTests (le risorse-sonda dei test non sono operazioni dell'applicazione) e legge il verbo HTTP dalla meta-annotazione @HttpMethod invece che da un elenco di verbi."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il limite del controllo è DICHIARATO nel codice invece di essere nascosto: una scrittura può sottrarsi al ruolo minimo dichiarandosi esente, ed è inevitabile perché esistono scritture legittimamente esenti (la cancellazione dei propri dati personali). Quello che il collaudo garantisce è che sottrarsi sia un atto deliberato e scritto — una riga col motivo, visibile in revisione — invece di un'annotazione dimenticata, che è il difetto reale e frequente."
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Esiste un AUTO-COLLAUDO del verificatore su risorse-campione (classi annidate del file di prova): dimostra che una scrittura non protetta, una scrittura con solo viewer, un'operazione non dichiarata e un'esenzione protetta diventano rosse davvero. È il punto 3 del Definition of Done della storia («esiste il collaudo che coglie una operazione di scrittura non protetta»): un verificatore mai visto fallire non è una prova, è una speranza. Le risorse-campione stanno nel file di prova e non in un pacchetto di fixture perché in commons non gira alcuna augmentation Quarkus — nessuna diventa una rotta — e restare accanto alle asserzioni rende ogni caso leggibile in dieci righe.",
+    "files": [
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/access/AppOperationsContractVerifierTest.java",
+        "description": "Nove casi: uno verde e otto difetti che devono diventare rossi."
+      },
+      {
+        "file": "services/commons/src/test/java/app/appgrove/commons/access/AppOperationTest.java",
+        "description": "Validazione del record: stato illegale non rappresentabile."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) `fatture` adotta il varco del ruolo su TUTTE le sue operazioni di dominio: letture viewer (dalla classe), scritture editor (dal metodo). Fino a UC 0099 non ne dichiarava nessuna perché era classificata «a utente singolo» (decisione 18 della change 0092); la categoria B2C/B2B si ritira (UC 0114) e il Definition of Done della storia chiede la regola «applicata alle DUE applicazioni esistenti». Nessun cambiamento di comportamento per l'owner, che la fonte di verità considera admin su tutte le applicazioni dell'account (UC 0098 §5).",
+    "files": [
+      {
+        "file": "services/fatture/src/main/java/app/appgrove/fatture/InvoiceResource.java",
+        "description": "@RequiresAppRole(viewer) sulla classe, @RequiresAppRole(editor) su create/update/delete."
+      },
+      {
+        "file": "services/fatture/src/main/java/app/appgrove/fatture/FattureOperationsContract.java",
+        "description": "Sei operazioni dichiarate: due letture viewer, tre dispositive editor, lo stato di quota esente."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Lo STATO DI QUOTA delle due applicazioni è dichiarato ESENTE dai ruoli, non protetto con viewer. Non è una scorciatoia: è la scelta già assunta in UC 0099, scritta nel javadoc di RequiresAppRole («lo stato di quota informativo resta raggiungibile per costruzione, senza liste di esclusione da tenere aggiornate»). Un banner del consumo che diventa un rifiuto non informa nessuno. Il verificatore pretende che un'operazione esente NON porti l'annotazione del varco: chi la aggiungesse «per coerenza» renderebbe rossa la suite.",
+    "files": [
+      {
+        "file": "services/fatture/src/main/java/app/appgrove/fatture/QuotaResource.java",
+        "description": "Javadoc che dichiara l'esenzione e avverte che aggiungere il varco rende rossa la suite."
+      },
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/QuotaResource.java",
+        "description": "Idem per il Mini-CRM."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) Il Mini-CRM riceve la classificazione delle operazioni di GOVERNO (il riquadro dei posti), che è la terza riga della cascata: riepilogo viewer — la storia §6 vuole le sezioni di governo «visibili in sola lettura» — assegnazione admin, revoca admin con fresh = true perché togliere un accesso è irreversibile (UC 0099 §5). È l'unica applicazione che esercita tutte e tre le righe della cascata.",
+    "files": [
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/SeatResource.java",
+        "description": "@RequiresAppRole(viewer) sulla classe, admin su assign, admin+fresh su revoke."
+      },
+      {
+        "file": "services/crm/src/main/java/app/appgrove/crm/CrmOperationsContract.java",
+        "description": "Undici operazioni: tre letture di dominio, quattro dispositive, tre di governo, una esente."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "DIFETTO DI PIATTAFORMA TROVATO E TRACCIATO (non corretto qui): Quarkus applica @RolesAllowed PRIMA dei filtri JAX-RS (sicurezza «eager», a livello di rotta), quindi sulle rotte dei posti il varco vecchio sui ruoli di PIATTAFORMA copre quello nuovo sul ruolo di applicazione. Una persona che è `member` di piattaforma ma `admin` sull'applicazione — la popolazione per cui quel ruolo esiste — riceve un 403 senza corpo e non arriva al varco del ruolo. Scoperto facendo fallire i collaudi nuovi con un token member. Non è una regressione (prima di questa change quelle rotte erano governate SOLO dai ruoli di piattaforma) ma è un potere dichiarato e non erogabile. Non corretto qui perché togliere @RolesAllowed è cambiare una superficie di autorizzazione, cioè il ritiro dei posti: appartiene a UC 0111, dove è scritto per esteso con l'indicazione di riportare i due collaudi a un token member come prova che il potere è diventato erogabile.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0111-schermata-gestione-utenti-app.md",
+        "description": "Punto aperto aggiunto, con la meccanica del difetto e il criterio di chiusura."
+      },
+      {
+        "file": "services/crm/src/test/java/app/appgrove/crm/AppRoleGateTest.java",
+        "description": "I due collaudi di governo usano un token owner di piattaforma, con la ragione scritta accanto."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) `Roles.java` dei due servizi NON viene riscritto, benché i Riferimenti della storia lo indichino («va riscritto sui ruoli di applicazione»). Riscriverlo significa togliere @RolesAllowed dalle risorse, cioè ritirare il varco di piattaforma prima che esista la schermata che lo sostituisce (UC 0111): allargherebbe un accesso in una change di semantica. Tracciato in UC 0114 per la parte di linguaggio (il commento «in B2C single-user l'utente è owner») e in UC 0111 per le annotazioni."
+  },
+  {
+    "id": 15,
+    "decision": "DIFETTO DI PRODOTTO TROVATO E CORRETTO qui: le schermate di `fatture` buttavano via la frase del server su ogni rifiuto che non fosse un 429, mostrando «Si è verificato un errore. Riprova» — lo stesso difetto che il collaudo manuale del 2026-08-21 trovò nel Mini-CRM (decisione 25 della change 0092). Finché `fatture` non aveva il varco del ruolo era latente; questa change lo rende vivo su un'applicazione ATTIVA e in mano a persone vere, e la storia §5 pretende un «rifiuto tipizzato che nomina il ruolo richiesto». Correggerlo è quindi parte di questa change, non di un'altra. L'elenco mostra ora la frase del server in un riquadro senza «riprova» (un rifiuto non è un guasto: invitare a ripetere una richiesta che fallirà sempre manda una persona a sbattere contro lo stesso muro).",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/modules/fatture/screens/InvoiceListScreen.tsx",
+        "description": "Ramo dedicato al 403: frase del server, nessun invito a riprovare."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/fatture/screens/InvoiceCreateScreen.tsx",
+        "description": "refusalMessage al posto del generico, mantenendo il ramo speciale del 429 con il pulsante di passaggio di fascia."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/modules/fatture/screens/InvoiceDetailScreen.tsx",
+        "description": "Idem su cambio di stato ed eliminazione, che sono operazioni dispositive."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) L'aiutante refusalMessage viene PROMOSSO da frontend/apps/backoffice/src/modules/crm/api/errors.ts a @appgrove/api-client, accanto ad ApiError, invece di essere duplicato nel modulo di `fatture`. Non è una scelta libera: era scritta nel commento dell'aiutante stesso («quando lo adotterà anche fatture, questo aiutante si promuove a @appgrove/api-client — non si duplica»), e questa change è l'evento che la innesca. Il file locale del Mini-CRM sparisce e le sue tre schermate importano dal pacchetto.",
+    "files": [
+      {
+        "file": "frontend/packages/api-client/src/problem.ts",
+        "description": "refusalMessage + l'elenco dei codici di stato «con cui il server parla alla persona»."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) La regola «disabilitato con spiegazione ≠ assente» diventa un involucro condiviso nel design system (DisabledForRole) e non tre righe per schermata: l'accessibilità di «questo comando è disabilitato, e per questo motivo» richiede aria-disabled, un testo collegato con aria-describedby e il comando fuori dal percorso di tabulazione — ripetuta in ogni modulo si perderebbe in tre punti su quattro, e chi usa un lettore di schermo sentirebbe solo «bottone, disabilitato». Quando il ruolo basta, l'involucro non aggiunge alcun contenitore.",
+    "files": [
+      {
+        "file": "frontend/packages/design-system/src/components/DisabledForRole.tsx",
+        "description": "Riceve `allowed` (booleano) e `reason` (già tradotta): il design system resta ignaro sia del contratto di piattaforma sia delle traduzioni."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Il confronto fra ruoli lato browser (appRoleAtLeast) vive in @appgrove/api-client e NON nel design system: è parte del contratto di piattaforma, non della presentazione. Ne segue la firma dell'involucro, che prende un booleano invece di un ruolo. Il gemello Java è AppRole.atLeast: due copie dell'ordinamento, una per lato, mai una terza — il browser non può leggere l'enumerazione Java. Un ruolo assente, vuoto o ignoto (compreso `owner`, che è un ruolo di PIATTAFORMA) non è mai un permesso: in assenza di informazione non si concede.",
+    "files": [
+      {
+        "file": "frontend/packages/api-client/src/app-role.ts",
+        "description": "APP_ROLES ordinati + appRoleAtLeast, con l'owner rappresentato come admin e nessun quarto valore."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Il CABLAGGIO dell'involucro nelle schermate NON è in questa change: nessuna schermata sa oggi che ruolo abbia chi guarda, perché GET /api/platform/v1/me/app-access non è ancora letta nella shell — ed è la fondazione di UC 0107. Portarla qui sarebbe anticipare la storia successiva. Tracciato in UC 0107 con la forma d'uso già scritta (allowed={appRoleAtLeast(role,'editor')}, reason={t('roles.needsRole', …)}, allowed={false} finché il ruolo non è noto: mai abilitato «in attesa»).",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md",
+        "description": "Punto aperto col cablaggio e il rimando a J-ROLES."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Le chiavi di traduzione nascono nella sezione `roles` delle CINQUE lingue e comprendono i tre stati che la storia §6 pretende su ogni schermata: la spiegazione del ruolo mancante (needsRole, con il ruolo interpolato), la sezione di governo in sola lettura, «sto leggendo il ruolo» (loading) e «non riesco a leggerlo» (unreadable). Gli ultimi due esistono già ora anche se nessuna schermata li usa: sono gli stati di caricamento ed errore del ruolo, e scriverli quando si scriverà la schermata significherebbe scoprirli allora.",
+    "files": [
+      {
+        "file": "frontend/packages/i18n/src/resources/en.ts",
+        "description": "Sezione roles; la parità delle cinque lingue è imposta dal tipo Resources e dal collaudo i18n."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "COPERTURA END-TO-END — risposta «coprire ora», e non era la risposta prevista dalla storia. La storia §9 diceva «in registro come da coprire, con proprietario UC 0113». Rileggendo il registro si è visto che la voce esistente J-APP-ROLE-REFUSALS (posseduta da UC 0099, stato da-coprire) dichiarava per iscritto il proprio grilletto: «si copre quando l'accensione di un'applicazione sarà isolabile per conto, O QUANDO `fatture` (già attiva) adotterà il varco del ruolo». Questa change fa esattamente la seconda cosa. Lasciarla da-coprire con un motivo diventato falso sarebbe l'invecchiamento che il registro esiste per impedire. Coperta quindi ORA con un collaudo di livello 2 sull'app #1 — provato rosso prima della correzione delle schermate e verde dopo — e la voce passa a `coperto`. In parallelo nasce J-ROLES (da-coprire, proprietario UC 0113) per il percorso dei quattro ruoli, che è ciò che la storia intendeva e che ha bisogno di 0107/0111.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/e2e/roles.spec.ts",
+        "description": "Due prove: senza accesso (la schermata dice CHI abilita e non offre di riprovare) e ruolo insufficiente (si legge quale ruolo serve, non «si è verificato un errore»)."
+      },
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0101 fra gli use case con superficie; J-APP-ROLE-REFUSALS coperto; J-ROLES nuovo, da-coprire, posseduto da 0113; via l'esenzione non-implementato di 0101."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) MODELLI-SORGENTE della skill new-application allineati nello stesso commit (via 1 delle due ammesse dal presidio di parità, non una deroga registrata): l'app numero tre nasce col suo documento delle operazioni, il collaudo strutturale, il collaudo per ruolo e la finta sorgente del ruolo. `RequiresAppRole` entra fra le annotazioni portanti del collaudo di parità: senza quella riga, un modello che perdesse il varco resterebbe verde. Il COPILOTA che intervista chi crea l'applicazione sulla classificazione resta UC 0112: qui c'è il modello già classificato, non la domanda.",
+    "files": [
+      {
+        "file": "tools/new-application/templates/service/src/main/java/app/appgrove/@@APP_ID@@/@@APP_CLASS@@OperationsContract.java",
+        "description": "Documento delle operazioni del dominio segnaposto, con la cascata scritta nel javadoc e l'avvertenza di non aggiungere esenzioni per comodità."
+      },
+      {
+        "file": "tools/scaffold-parity/parity.config.json",
+        "description": "RequiresAppRole fra le annotazioni portanti."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "DIVERGENZA PREESISTENTE OSSERVATA E TRACCIATA (non corretta qui): il collaudo di parità non confronta il CORPO dei file di test, quindi un aiutante di test nuovo in `fatture` non viene richiesto al modello. Caso concreto: TestProjection.ageBySeconds e i tre collaudi della scadenza della copia locale, aggiunti dalla change 0094 a `fatture` e assenti dai modelli — un'applicazione generata oggi nasce senza il collaudo che dimostra che la sua copia locale scade. Scritto in docs/_BACKLOG.md con due vie possibili (confrontare i metodi pubblici degli aiutanti condivisi, oppure i nomi dei metodi di prova per classe), proprietario UC 0046. Non corretto qui perché è il presidio di parità a dover cambiare, non questa change."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Classificazione privacy: NESSUN dato personale nuovo, nessuna tabella nuova, nessuna finalità nuova. Il documento delle operazioni è codice che descrive codice. Lo scanner deterministico dei segnali privacy (tools/compliance, npm run privacy-scan, gate UC 0031) è stato eseguito sul diff e non ha trovato segnali. Nessun aggiornamento a manifesti, registro dei trattamenti o versione dei documenti legali."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) L'indice di esecuzione docs/usecases/_INDEX.md resta invariato (le storie evolutive non vi compaiono, vedi decisione 3) e run-tests.sh resta invariato: la change non aggiunge né toglie moduli e non cambia il comando di test di alcuna area."
+  },
+  {
+    "id": 26,
+    "decision": "GUIDA DI COLLAUDO ESEGUITA (modalità fast, non solo scritta). Eseguiti sullo stack locale, il 2026-08-22, tutti i passi non visivi: §1 nella sua interezza — comprese le TRE manomissioni deliberate che devono far diventare rosso il collaudo (varco rimosso da una scrittura, rotta esposta non dichiarata, esenzione «protetta per coerenza») — poi §2 (owner scrive, viewer legge e non scrive, copia locale del ruolo popolata), §3 (promozione, propagazione, revoca), §5 (esenzione dello stato di quota), §6.1 e §6.2, §7 (parità scaffolding, registro di copertura, prove di livello 2, suite frontend, sezione di documentazione). Restano allo sviluppatore i soli passi VISIVI di §4, che sono la ragione per cui la guida esiste.",
+    "files": [
+      {
+        "file": "changes/0095-use-case-0101-semantica-ruoli/how-to-test.md",
+        "description": "Intestazione con la base su cui è scritta, l'elenco dei passi eseguiti e il resoconto di ciò che l'esecuzione ha trovato."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "L'esecuzione della guida ha prodotto QUATTRO correzioni alla guida stessa — «la guida è sbagliata», non «il prodotto è sbagliato». (1) Passo 1.3: il messaggio atteso era «manca @RequiresAppRole», ma togliendo l'annotazione dal METODO resta quella di CLASSE (viewer) e il verificatore dice «il documento dichiara editor, il varco applica viewer. Due verità sullo stesso potere» — messaggio corretto e più informativo del previsto; la guida ora riporta quello vero e spiega la meccanica. (2) Passo 1.5: la rotta finta va incollata su più righe, non in una; e il messaggio è riportato per esteso. (3) Passo 5.2: il `grep -A6` tagliava a metà la frase del motivo dell'esenzione, ora `-A9`. (4) Passo 5.3: il messaggio cita il motivo dell'esenzione per esteso dentro il rifiuto, e la guida lo dice. Nessuna guida è stata ammorbidita per combaciare con un difetto."
+  },
+  {
+    "id": 28,
+    "decision": "L'esecuzione della guida ha inoltre corretto due comandi che NON funzionavano come scritti: il cambio di ruolo per applicazione usa il verbo PUT e non PATCH (con PATCH la risposta è 405), e le URL con parametri di ricerca vanno fra virgolette perché la shell interpreta il `?`. Sono esattamente le due categorie di difetto che la change 0093 attribuiva allo «scrivere invece di eseguire»."
+  },
+  {
+    "id": 29,
+    "decision": "Misura presa durante l'esecuzione e scritta nella guida: la propagazione di un cambio di ruolo dal core alla copia locale del servizio è di circa CINQUE secondi in locale (evento di invalidazione sulla coda). Provando subito dopo il cambio si vede ancora il ruolo vecchio: è la finestra dichiarata da UC 0099, non un difetto, e la guida lo dice per non far diagnosticare un guasto inesistente."
+  },
+  {
+    "id": 30,
+    "decision": "Limite dichiarato nella guida invece di essere nascosto: sul Mini-CRM la riga `admin` della cascata NON è verificabile dal vivo, perché la sola persona che passa il varco vecchio sui ruoli di piattaforma è l'owner, che ha il ruolo massimo per costruzione. Dimostrato nel passo 6.2 con un 403 dal corpo di ZERO byte per `admin@acme.test` (app-role admin, ruolo di piattaforma member). Là la classificazione è provata dai collaudi automatici; dal vivo lo diventerà quando UC 0111 ritirerà i posti."
   }
 ]

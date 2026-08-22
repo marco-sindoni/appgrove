@@ -178,3 +178,21 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
   varco portano identificativi stabili (`urn:appgrove:app-role:no-access`, `:insufficient`, `:unavailable`)
   più i campi `requiredRole` e `role`. La schermata può quindi disabilitare i comandi invece di far
   scoprire il rifiuto premendo un pulsante.
+- **Il varco vecchio sui ruoli di PIATTAFORMA sta ancora davanti a quello del ruolo, e su
+  `SeatResource` lo copre** (trovato dalla change `0095`, UC 0101). Le rotte dei posti portano oggi
+  entrambi i varchi: `@RolesAllowed({owner, admin})` — nomi di ruolo di piattaforma — e, da UC 0101,
+  `@RequiresAppRole(admin)` sull'assegnazione e sulla revoca. Quarkus applica il **primo** prima dei filtri
+  JAX-RS (sicurezza «eager», a livello di rotta), quindi una persona che è `member` di piattaforma ma
+  `admin` **sull'applicazione** — cioè esattamente la popolazione per cui quel ruolo esiste — riceve un
+  `403` **senza corpo** e non arriva nemmeno al varco del ruolo. Oggi non è una regressione: prima di
+  UC 0101 quelle rotte erano governate **solo** dai ruoli di piattaforma, e per l'owner (che la fonte di
+  verità considera `admin` su tutte le applicazioni dell'account) il comportamento è identico. Ma è un
+  potere dichiarato e non erogabile, e va chiuso **qui**, quando questa storia ritira i posti: la
+  classificazione per applicazione è già scritta e corretta, basta togliere `@RolesAllowed` (e con esso
+  `Roles.java` del Mini-CRM, che la storia 0101 indicava da riscrivere e che non è stato toccato per non
+  allargare una superficie di autorizzazione fuori dal suo contesto). I collaudi
+  `AppRoleGateTest.onlyAnAdminGovernsWhoUsesTheApplication` e
+  `anIrreversibleGovernanceOperationRereadsTheRoleFromTheSourceOfTruth` usano perciò un token owner di
+  piattaforma, con la ragione scritta accanto: quando il varco vecchio sparirà, andranno riportati a un
+  token `member`, ed è la prova che il potere è diventato erogabile. Proprietario: questa storia.
+

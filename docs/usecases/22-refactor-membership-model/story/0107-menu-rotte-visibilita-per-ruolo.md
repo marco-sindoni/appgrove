@@ -149,3 +149,15 @@ piattaforma. È una modifica che tocca ogni modulo esistente e va fatta in una v
   richiesta di assistenza non riveli dati di fatturazione al collaboratore. Proprietario: UC 0075.
 - **Ricerca globale** (UC 0088, non implementata): quando nascerà, dovrà rispettare gli accessi per
   applicazione. Annotato là.
+- **Il cablaggio di `DisabledForRole` nelle schermate** (da [UC 0101](0101-semantica-ruoli-viewer-editor-admin.md),
+  change `0095`): l'involucro condiviso esiste nel design system ed è collaudato al livello di componente —
+  comando **presente ma disabilitato**, spiegazione al passaggio del puntatore e collegata con
+  `aria-describedby`. Quello che **manca** è la sorgente del ruolo nel browser: nessuna schermata sa oggi
+  che ruolo abbia chi guarda, perché `GET /api/platform/v1/me/app-access` non è ancora letta nella shell —
+  ed è questa storia a portarla. Quando ci sarà, i comandi dispositivi dei moduli si avvolgono
+  nell'involucro (`allowed={appRoleAtLeast(role, 'editor')}`, `reason={t('roles.needsRole', { role: t('roles.editor') })}`)
+  e finché il ruolo non è noto si passa `allowed={false}`: mai abilitato «in attesa». Le chiavi di
+  traduzione della sezione `roles` esistono già nelle cinque lingue, compresi gli stati «sto leggendo il
+  ruolo» e «non riesco a leggerlo». Proprietario: questa storia. Il percorso end-to-end che ne pretende
+  l'esito è `J-ROLES` nel registro di copertura, `da-coprire`, posseduto da UC 0113.
+

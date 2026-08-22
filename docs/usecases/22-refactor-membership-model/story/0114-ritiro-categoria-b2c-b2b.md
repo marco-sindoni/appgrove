@@ -142,3 +142,12 @@ lo impedisce, e va **verde prima** di questa storia.
   è un lavoro di conformità, non di prodotto: annotato in [docs/_REVISIONE-LEGALE.md](../../../_REVISIONE-LEGALE.md).
 - **Descrizione commerciale «pensata per il lavoro di squadra»**: se serva davvero nel catalogo lo dirà
   l'uso. Nessun campo, eventualmente una frase nella descrizione. Proprietario: UC 0095.
+- **`Roles.java` dei due servizi di applicazione** (da [UC 0101](0101-semantica-ruoli-viewer-editor-admin.md),
+  change `0095`): dichiarano ancora i nomi di ruolo di **piattaforma** (`owner`, `admin`, `member`) usati
+  da `@RolesAllowed`, e quello di `fatture` porta perfino nel commento «in B2C single-user l'utente è
+  owner» — una frase che questa storia rende falsa. La riscrittura sui ruoli di applicazione non è stata
+  fatta dalla change 0095 perché toglierli significa togliere `@RolesAllowed` dalle risorse, cioè
+  cambiare una superficie di autorizzazione: è il ritiro dei posti, che appartiene a UC 0111. Qui resta la
+  parte di **linguaggio** (il commento che nomina B2C). Proprietario: questa storia per il commento,
+  UC 0111 per le annotazioni.
+

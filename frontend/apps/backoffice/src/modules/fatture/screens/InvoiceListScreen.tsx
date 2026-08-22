@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { ApiError, refusalMessage } from '@appgrove/api-client'
 import {
   Button,
   Icon,
@@ -25,6 +26,13 @@ export function InvoiceListScreen() {
   const rows = invoices.data?.content ?? []
   const m = useFattureMessages()
   const { i18n } = useTranslation()
+  // Un 403 qui non è un guasto e non si ritenta: è un varco che ha detto no. I varchi parlano di cose
+  // diverse — il diritto dell'account all'applicazione e il RUOLO della persona su di essa
+  // (UC 0099/0101) — e solo il server sa quale ha risposto. Si mostra quindi la SUA frase, che nomina
+  // il varco e la via d'uscita; un riquadro «riprova» inviterebbe a ripetere una richiesta che
+  // fallirà sempre.
+  const refused = (invoices.error as ApiError | null)?.status === 403
+  const refusalText = refused ? refusalMessage(invoices.error, m.errorGeneric) : null
 
   return (
     <div className="space-y-[22px]">
@@ -46,6 +54,15 @@ export function InvoiceListScreen() {
 
       <QuotaBanner />
 
+      {refused ? (
+        <div
+          role="status"
+          className="rounded-lg border border-line bg-surface px-6 py-12 text-center shadow-sm"
+        >
+          <Icon name="lock" size={42} className="text-fg-faint" />
+          <p className="mx-auto mt-3 max-w-md text-[15px] font-bold text-fg">{refusalText}</p>
+        </div>
+      ) : (
       <QueryState
         isLoading={invoices.isLoading}
         isError={invoices.isError}
@@ -107,6 +124,7 @@ export function InvoiceListScreen() {
           </Table>
         )}
       </QueryState>
+      )}
     </div>
   )
 }

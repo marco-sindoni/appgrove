@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ApiError } from '@appgrove/api-client'
+import { ApiError, refusalMessage } from '@appgrove/api-client'
 import { Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
 import { useShellContext } from '../../../registry/ShellContext'
 import { Field } from '../../../pages/auth/Field'
@@ -64,7 +64,11 @@ export function InvoiceCreateScreen() {
         setQuotaReached(true)
         setError(m.errorQuota)
       } else {
-        setError(m.errorGeneric)
+        // Un 403 qui non è un guasto: è un varco che ha detto no, e i varchi parlano di cose diverse —
+        // il diritto dell'account all'applicazione e il RUOLO della persona su di essa (UC 0099/0101).
+        // Solo il server sa quale ha risposto, e la sua frase nomina il ruolo che serve e a chi
+        // chiederlo. Scrivere «si è verificato un errore» butterebbe via l'unica informazione utile.
+        setError(refusalMessage(err, m.errorGeneric))
       }
     }
   })

@@ -80,6 +80,7 @@
 
   "annotazioniPortanti": [
     "RequiresEntitlement",
+    "RequiresAppRole",
     "PersonalData",
     "Authenticated",
     "RolesAllowed",

@@ -1,5 +1,7 @@
 package app.appgrove.@@APP_ID@@;
 
+import app.appgrove.commons.access.AppRole;
+import app.appgrove.commons.access.RequiresAppRole;
 import app.appgrove.commons.entitlement.RequiresEntitlement;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
@@ -35,15 +37,28 @@ import java.util.UUID;
  * query filtra {@code WHERE tenant_id = ?} senza codice manuale. La creazione consuma quota
  * (metrica {@code @@METRIC@@}).
  *
- * <p>{@code @RequiresEntitlement} (UC 0027): la risorsa passa dal gate entitlement (402) — accesso
- * negato (subscription canceled/paused, app disabilitata) → 402 prima ancora del gate quota.
- * L'endpoint di stato quota ({@code QuotaResource}) resta volutamente <b>fuori</b> dal gate
- * (informativo): togliergli l'esenzione renderebbe illeggibile il consumo proprio a chi ha perso
- * l'accesso e deve capire perché.
+ * <p>Due varchi, nell'ordine in cui una persona può rimediare:
+ * <ul>
+ *   <li>{@code @RequiresEntitlement} (UC 0027): diritto dell'<b>account</b> all'applicazione (402 se
+ *       l'abbonamento è disdetto o sospeso, o se l'app è disabilitata) — prima ancora del gate quota;</li>
+ *   <li>{@link RequiresAppRole} (UC 0099, classificato da UC 0101): <b>ruolo della persona su questa
+ *       applicazione</b> — letture {@code viewer} dalla classe, operazioni dispositive {@code editor} dal
+ *       metodo. La creazione consuma quota, quindi sarebbe dispositiva anche se non scrivesse nulla.</li>
+ * </ul>
+ *
+ * <p><b>La classificazione non si improvvisa</b>: ogni operazione riceve un'etichetta secondo la cascata
+ * del contratto di piattaforma ({@code AppOperationsContract}, UC 0101 §4) e la dichiara nel documento
+ * delle operazioni dell'app ({@code @@APP_CLASS@@OperationsContract}). Chi aggiungerà una rotta a questa
+ * applicazione e si dimenticherà il varco troverà rosso {@code AppOperationsContractTest}.
+ *
+ * <p>L'endpoint di stato quota ({@code QuotaResource}) resta volutamente <b>fuori</b> da entrambi i varchi
+ * (informativo, dichiarato esente nel documento delle operazioni): togliergli l'esenzione renderebbe
+ * illeggibile il consumo proprio a chi ha perso l'accesso e deve capire perché.
  */
 @Path("/api/@@APP_ID@@/v1/items")
 @Authenticated
 @RequiresEntitlement
+@RequiresAppRole(AppRole.viewer)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ItemResource {
@@ -78,6 +93,7 @@ public class ItemResource {
     }
 
     @POST
+    @RequiresAppRole(AppRole.editor)
     @RolesAllowed({@@ROLES_ALLOWED@@})
     @Transactional
     public Response create(@Valid CreateItem body) {
@@ -98,6 +114,7 @@ public class ItemResource {
     }
 
     @PATCH
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
     @RolesAllowed({@@ROLES_ALLOWED@@})
     @Transactional
@@ -116,6 +133,7 @@ public class ItemResource {
     }
 
     @DELETE
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
     @RolesAllowed({@@ROLES_ALLOWED@@})
     @Transactional

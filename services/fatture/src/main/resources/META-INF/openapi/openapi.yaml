@@ -165,6 +165,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
     post:
       requestBody:
         content:
@@ -188,6 +189,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
   /api/fatture/v1/invoices/{id}:
     patch:
       parameters:
@@ -220,6 +222,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
     get:
       parameters:
       - name: id
@@ -245,6 +248,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
     delete:
       parameters:
       - name: id
@@ -266,6 +270,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
   /api/fatture/v1/quota:
     get:
       responses:
@@ -286,6 +291,7 @@ paths:
       - SecurityScheme:
         - owner
         - admin
+        - member
 info:
   title: appgrove fatture API
   version: v1
