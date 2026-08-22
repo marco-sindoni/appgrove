@@ -842,6 +842,106 @@ components:
         payoutMaxAgeDays:
           type: integer
           format: int64
+    ReductionBandView:
+      type: object
+      properties:
+        fromSeat:
+          type: integer
+          format: int32
+        toSeat:
+          type: integer
+          format: int32
+        unitPriceCents:
+          type: integer
+          format: int32
+        seats:
+          type: integer
+          format: int32
+        subtotalCents:
+          type: integer
+          format: int64
+    ReductionPersonView:
+      type: object
+      properties:
+        userId:
+          $ref: "#/components/schemas/UUID"
+        email:
+          type: string
+        displayName:
+          type: string
+    ReductionPreview:
+      type: object
+      properties:
+        executeAt:
+          $ref: "#/components/schemas/Instant"
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReductionPersonView"
+        seatsNow:
+          type: integer
+          format: int32
+        seatsAfter:
+          type: integer
+          format: int32
+        dueCentsNow:
+          type: integer
+          format: int64
+        dueCentsAfter:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        bandsNow:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReductionBandView"
+        bandsAfter:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReductionBandView"
+    ReductionView:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        executeAt:
+          $ref: "#/components/schemas/Instant"
+        requestedAt:
+          $ref: "#/components/schemas/Instant"
+        overdue:
+          type: boolean
+        people:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReductionPersonView"
+        seatsAfter:
+          type: integer
+          format: int32
+        dueCentsNow:
+          type: integer
+          format: int64
+        dueCentsAfter:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        bandsAfter:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReductionBandView"
+    RequestReduction:
+      type: object
+      required:
+      - userIds
+      properties:
+        userIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+          minItems: 1
     RequestView:
       type: object
       properties:
@@ -980,6 +1080,8 @@ components:
           $ref: "#/components/schemas/NextSeatView"
         pendingReduction:
           type: boolean
+        reduction:
+          $ref: "#/components/schemas/ReductionView"
         hasSubscription:
           type: boolean
     SetActiveAccount:
@@ -1274,6 +1376,8 @@ components:
         tenantId:
           type: string
         joinedAt:
+          $ref: "#/components/schemas/Instant"
+        endingAt:
           $ref: "#/components/schemas/Instant"
         apps:
           type: array
@@ -2536,6 +2640,106 @@ paths:
       summary: Summary
       tags:
       - Seat Quote Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/seats/reduction:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestReduction"
+        required: true
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      summary: Request
+      tags:
+      - Seat Downgrade Resource
+      security:
+      - SecurityScheme:
+        - owner
+    get:
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Current
+      tags:
+      - Seat Downgrade Resource
+      security:
+      - SecurityScheme:
+        - owner
+    delete:
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Cancel
+      tags:
+      - Seat Downgrade Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/seats/reduction/people/{userId}:
+    delete:
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Remove Person
+      tags:
+      - Seat Downgrade Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/seats/reduction/preview:
+    get:
+      parameters:
+      - name: userId
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReductionPreview"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Preview
+      tags:
+      - Seat Downgrade Resource
       security:
       - SecurityScheme:
         - owner

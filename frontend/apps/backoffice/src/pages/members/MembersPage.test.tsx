@@ -42,6 +42,59 @@ const franchigia = () => ({
   hasSubscription: false,
 })
 
+/**
+ * Il riquadro con una **riduzione in attesa** (UC 0104): una persona indicata, esecuzione il 14 settembre,
+ * dovuto che dai 2,99 € di oggi torna a zero (tre posti, tutti dentro la franchigia).
+ */
+const riduzioneInAttesa = () => ({
+  ...franchigia(),
+  usedSeats: 4,
+  composition: { active: 4, suspended: 0, pendingInvitations: 0 },
+  paidSeats: 1,
+  dueCents: 299,
+  paidQuantity: 1,
+  currentBand: { fromSeat: 4, toSeat: 10, unitPriceCents: 299 },
+  hasSubscription: true,
+  pendingReduction: true,
+  reduction: {
+    id: 'red-1',
+    executeAt: '2026-09-14T00:00:00Z',
+    requestedAt: '2026-08-20T00:00:00Z',
+    overdue: false,
+    people: [{ userId: 'u-member', email: 'member@test', displayName: 'Member' }],
+    seatsAfter: 3,
+    dueCentsNow: 299,
+    dueCentsAfter: 0,
+    currency: 'EUR',
+    bandsAfter: [
+      { fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 },
+    ],
+  },
+})
+
+/**
+ * Marca `member@test` come **indicata per la cessazione**: è il campo che il servizio mette sulla riga
+ * della persona (UC 0104) e da cui nasce il quarto stato dell'elenco.
+ */
+const indicata = (rows: Array<Record<string, unknown>>) =>
+  rows.map((m) => (m.id === 'u-member' ? { ...m, endingAt: '2026-09-14T00:00:00Z' } : m))
+
+/** L'effetto prima della conferma, come lo calcolerebbe il servizio. */
+const anteprima = () => ({
+  executeAt: '2026-09-14T00:00:00Z',
+  people: [{ userId: 'u-member', email: 'member@test', displayName: 'Member' }],
+  seatsNow: 4,
+  seatsAfter: 3,
+  dueCentsNow: 299,
+  dueCentsAfter: 0,
+  currency: 'EUR',
+  bandsNow: [
+    { fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 },
+    { fromSeat: 4, toSeat: 10, unitPriceCents: 299, seats: 1, subtotalCents: 299 },
+  ],
+  bandsAfter: [{ fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 }],
+})
+
 const server = setupServer(
   http.get('http://localhost/api/platform/v1/users/me', () => HttpResponse.json(ME)),
   http.get('http://localhost/api/platform/v1/users', () =>
@@ -183,7 +236,17 @@ describe('MembersPage — elenco unico di persone (UC 0100)', () => {
     await screen.findByText('owner@test')
 
     const headers = screen.getAllByRole('columnheader').map((h) => h.textContent)
-    expect(headers).toEqual(['Email', 'Name', 'Status', 'Apps', 'Joined', 'Actions'])
+    // La prima colonna è quella di SELEZIONE (UC 0104): intestazione non visibile ma con un nome per
+    // chi naviga con lettore di schermo — un'intestazione vuota sarebbe un'omissione.
+    expect(headers).toEqual([
+      'Schedule termination',
+      'Email',
+      'Name',
+      'Status',
+      'Apps',
+      'Joined',
+      'Actions',
+    ])
     expect(screen.queryByRole('columnheader', { name: 'Role' })).not.toBeInTheDocument()
     // Le due etichette del ruolo di piattaforma non compaiono da nessuna parte della pagina.
     const ownerRow = screen.getByText('owner@test').closest('tr') as HTMLElement
@@ -226,8 +289,9 @@ describe('MembersPage — elenco unico di persone (UC 0100)', () => {
   it('l’owner è in testa all’elenco', async () => {
     renderWithProviders(<MembersPage />)
     await screen.findByText('owner@test')
-    const firstCell = screen.getAllByRole('row')[1].querySelector('td')
-    expect(firstCell).toHaveTextContent('owner@test')
+    // La prima cella è quella di selezione (UC 0104): l'indirizzo sta nella seconda.
+    const cells = screen.getAllByRole('row')[1].querySelectorAll('td')
+    expect(cells[1]).toHaveTextContent('owner@test')
   })
 
   it('l’invito chiede solo l’indirizzo, e spiega perché non chiede il ruolo', async () => {
@@ -488,15 +552,142 @@ describe('MembersPage — riquadro dei posti (UC 0103)', () => {
     expect(screen.queryByText('quattro@acme.test')).not.toBeInTheDocument()
   })
 
+  /**
+   * **La riduzione in attesa vista dallo schermo** (UC 0104 §6): l'avviso dice quante persone e quando,
+   * quanto si pagherà da allora, chi è indicato — e offre le due vie d'uscita. Il comando di invito è
+   * spento, non nascosto: la funzione esiste, è temporaneamente non disponibile.
+   */
   it('avverte quando c’è una riduzione in attesa, e impedisce l’invito (UC 0104)', async () => {
-    seats = { ...franchigia(), pendingReduction: true }
+    seats = riduzioneInAttesa()
+    members = indicata(members)
     renderWithProviders(<MembersPage />)
 
+    expect(await screen.findByText('Scheduled reduction')).toBeInTheDocument()
+    expect(
+      screen.getByText('1 person will leave on 9/14/2026. Until then you cannot add people.'),
+    ).toBeInTheDocument()
+    // L'importo che si pagherà da allora, con il conto che lo giustifica.
+    expect(
+      screen.getByText('From 9/14/2026 you will pay €0.00 instead of €2.99, for 3 seats.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('3 seats included')).toBeInTheDocument()
+    // Chi è indicato, con il comando che lo MANTIENE (non che lo rimuove: l'atto salva qualcuno).
+    // L'indirizzo compare due volte — nell'avviso e nella riga della tabella — ed è giusto così: chi
+    // legge l'avviso non deve andare a cercare nella tabella di chi si sta parlando.
+    expect(screen.getAllByText('member@test')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Keep member@test in the account' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Cancel the reduction' })).toBeEnabled()
+    // Il comando di invito è SPENTO con spiegazione, non nascosto.
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled()
+    // E lo stato «in cessazione dal …» compare nell'elenco, con la data: senza il quando non dice nulla.
+    const row = within(screen.getByRole('table')).getByText('member@test').closest('tr') as HTMLElement
+    expect(within(row).getByText('Ending 9/14/2026')).toBeInTheDocument()
+  })
+
+  /**
+   * **Annullare l'attesa** riapre gli inviti. Il collaudo pretende la conseguenza osservabile — il
+   * pulsante che si riaccende — e non la sola chiamata: una chiamata riuscita che non cambia lo schermo
+   * è indistinguibile da nulla, per chi guarda.
+   */
+  it('annullando la riduzione l’invito torna possibile (UC 0104)', async () => {
+    const user = userEvent.setup()
+    seats = riduzioneInAttesa()
+    members = indicata(members)
+    server.use(
+      http.delete('http://localhost/api/platform/v1/me/seats/reduction', () => {
+        seats = franchigia()
+        members = members.map((m) => ({ ...m, endingAt: undefined }))
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderWithProviders(<MembersPage />)
+
+    await user.click(await screen.findByRole('button', { name: 'Cancel the reduction' }))
+    // Conferma esplicita, come chiede la storia: non si annulla per errore.
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Cancel the reduction',
+      }),
+    )
+
+    await attendiIlCostoDelPosto()
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeEnabled()
+    expect(screen.queryByText('Scheduled reduction')).not.toBeInTheDocument()
+  })
+
+  /**
+   * **Indicare una persona**: si selezionano le caselle, si vede l'effetto PRIMA di confermare, e solo
+   * dopo si conferma. Le righe non indicabili — l'owner e gli inviti in attesa — non hanno casella.
+   */
+  it('indica una persona per la cessazione mostrando l’effetto prima della conferma (UC 0104)', async () => {
+    const user = userEvent.setup()
+    const richieste: unknown[] = []
+    server.use(
+      http.get('http://localhost/api/platform/v1/me/seats/reduction/preview', () =>
+        HttpResponse.json(anteprima()),
+      ),
+      http.post('http://localhost/api/platform/v1/me/seats/reduction', async ({ request }) => {
+        richieste.push(await request.json())
+        seats = riduzioneInAttesa()
+        return HttpResponse.json({}, { status: 201 })
+      }),
+    )
+    renderWithProviders(<MembersPage />)
+    await attendiIlCostoDelPosto()
+
+    // L'owner non è indicabile e un invito in attesa non si «cessa»: nessuna casella su quelle righe.
+    expect(screen.queryByRole('checkbox', { name: 'Select owner@test' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('checkbox', { name: 'Select pending@test' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select member@test' }))
+    expect(screen.getByText('1 person selected')).toBeInTheDocument()
+    // L'effetto, PRIMA di aprire la conferma.
     expect(
       await screen.findByText(
-        'A seat reduction is pending: until it takes effect you cannot add people.',
+        'They will leave on 9/14/2026 and keep working normally until then. From 9/14/2026 you will pay €0.00 instead of €2.99.',
       ),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled()
+    // E il suggerimento per chi deve escludere qualcuno SUBITO, che è la domanda vera dell'owner.
+    expect(screen.getByText(/Revoke their app access/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Schedule termination' }))
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Schedule termination',
+      }),
+    )
+
+    expect(richieste).toEqual([{ userIds: ['u-member'] }])
+  })
+
+  /**
+   * Il rifiuto «non stai pagando alcun posto» non è un vicolo cieco: dice che cosa fare invece, cioè
+   * rimuovere la persona subito — immediato e gratuito.
+   */
+  it('spiega il rifiuto quando non c’è nulla da ridurre (UC 0104)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get('http://localhost/api/platform/v1/me/seats/reduction/preview', () =>
+        HttpResponse.json(anteprima()),
+      ),
+      http.post('http://localhost/api/platform/v1/me/seats/reduction', () =>
+        HttpResponse.json(
+          { type: 'urn:appgrove:seats:reduction-not-needed', title: 'Conflict', status: 409 },
+          { status: 409 },
+        ),
+      ),
+    )
+    renderWithProviders(<MembersPage />)
+    await attendiIlCostoDelPosto()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select member@test' }))
+    await user.click(await screen.findByRole('button', { name: 'Schedule termination' }))
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: 'Schedule termination',
+      }),
+    )
+
+    expect(await screen.findByText(/there is nothing to reduce/)).toBeInTheDocument()
   })
 })

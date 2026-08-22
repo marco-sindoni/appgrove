@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readSeats } from './seats'
+import { readReduction, readSeats } from './seats'
 
 /**
  * La conversione della risposta dei posti nella forma stretta (UC 0103).
@@ -79,5 +79,82 @@ describe('readSeats', () => {
     expect(seats?.dueCents).toBe(0)
     expect(seats?.paidSeats).toBe(0)
     expect(seats?.currentBand?.unitPriceCents).toBe(0)
+  })
+
+  /**
+   * **La riduzione in attesa** (UC 0104): il dettaglio si legge intero, oppure non si legge.
+   *
+   * La scelta qui è diversa da quella del riquadro, e va detta: una riduzione incompleta si legge come
+   * **assente** invece di far andare in errore tutta la sezione. Il fatto che governa il divieto di
+   * invitare resta `pendingReduction`, quindi il presidio non si perde; quello che si perde è il
+   * dettaglio, e la reazione giusta è non mostrare un avviso a metà — non spegnere il riquadro.
+   */
+  it('legge la riduzione in attesa con il suo dettaglio', () => {
+    const seats = readSeats({
+      ...completa,
+      pendingReduction: true,
+      reduction: {
+        id: 'red-1',
+        executeAt: '2026-09-14T00:00:00Z',
+        overdue: false,
+        people: [{ userId: 'u-1', email: 'uno@acme.test', displayName: 'Uno' }],
+        seatsAfter: 3,
+        dueCentsNow: 299,
+        dueCentsAfter: 0,
+        currency: 'EUR',
+        bandsAfter: [{ fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 }],
+      },
+    })
+    expect(seats?.pendingReduction).toBe(true)
+    expect(seats?.reduction?.people).toHaveLength(1)
+    expect(seats?.reduction?.seatsAfter).toBe(3)
+    // Zero legittimo: dopo la riduzione non si paga nulla, e zero è il valore giusto.
+    expect(seats?.reduction?.dueCentsAfter).toBe(0)
+    expect(seats?.reduction?.bandsAfter[0].seats).toBe(3)
+  })
+
+  it('senza riduzione il dettaglio è assente, non un oggetto vuoto', () => {
+    expect(readSeats(completa)?.reduction).toBeNull()
+    expect(readReduction(undefined)).toBeNull()
+  })
+
+  it('scarta una riduzione senza data o senza importo: mai un avviso a metà', () => {
+    const base = {
+      id: 'red-1',
+      executeAt: '2026-09-14T00:00:00Z',
+      overdue: false,
+      people: [],
+      seatsAfter: 3,
+      dueCentsNow: 299,
+      dueCentsAfter: 0,
+      currency: 'EUR',
+      bandsAfter: [],
+    }
+    expect(readReduction({ ...base, executeAt: undefined })).toBeNull()
+    expect(readReduction({ ...base, dueCentsAfter: undefined })).toBeNull()
+    expect(readReduction({ ...base, currency: undefined })).toBeNull()
+    // Il riquadro invece resta leggibile: il divieto di invitare vive su `pendingReduction`.
+    const seats = readSeats({ ...completa, pendingReduction: true, reduction: { ...base, executeAt: undefined } })
+    expect(seats).not.toBeNull()
+    expect(seats?.pendingReduction).toBe(true)
+    expect(seats?.reduction).toBeNull()
+  })
+
+  it('scarta le righe incomplete della composizione invece di mostrarle a zero', () => {
+    const reduction = readReduction({
+      id: 'red-1',
+      executeAt: '2026-09-14T00:00:00Z',
+      overdue: false,
+      people: [],
+      seatsAfter: 3,
+      dueCentsNow: 299,
+      dueCentsAfter: 0,
+      currency: 'EUR',
+      bandsAfter: [
+        { fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 },
+        { fromSeat: 4, toSeat: 10, unitPriceCents: undefined, seats: 1, subtotalCents: 299 },
+      ],
+    })
+    expect(reduction?.bandsAfter).toHaveLength(1)
   })
 })

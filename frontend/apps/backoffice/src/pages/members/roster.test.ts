@@ -92,4 +92,43 @@ describe('buildRoster (UC 0100)', () => {
   it('non esplode senza dati (primo caricamento)', () => {
     expect(buildRoster({})).toEqual([])
   })
+
+  /**
+   * **Il quarto stato** (UC 0104): «in cessazione», con la data. La storia 0100 lo elencava e la change
+   * 0096 lo aveva lasciato fuori perché nessun dato poteva produrlo — ora quel dato esiste.
+   */
+  it('marca come «in cessazione» chi ha una data di cessazione, e non la si può reindicare', () => {
+    const inCessazione = { ...zoe, endingAt: '2026-09-14T00:00:00Z' }
+    const rows = buildRoster({ members: [owner, inCessazione] })
+    const riga = rows.find((r) => r.email === 'zoe@acme.test')
+
+    expect(riga?.status).toBe('ending')
+    expect(riga?.endingAt).toBe('2026-09-14T00:00:00Z')
+    // Già indicata: non si indica una seconda volta.
+    expect(riga?.selectable).toBe(false)
+  })
+
+  /**
+   * Cessazione programmata e sospensione **convivono**: sono cose ortogonali (una riguarda il posto,
+   * l'altra l'accesso). Il collaudo pretende che nessuna delle due informazioni si perda.
+   */
+  it('una persona sospesa e in cessazione resta segnata come sospesa', () => {
+    const rows = buildRoster({ members: [owner, { ...ada, endingAt: '2026-09-14T00:00:00Z' }] })
+    const riga = rows.find((r) => r.email === 'ada@acme.test')
+
+    expect(riga?.status).toBe('ending')
+    expect(riga?.suspended).toBe(true)
+  })
+
+  /**
+   * **Chi si può indicare**: le persone, non l'owner (non è indicabile) e non gli inviti in attesa, che
+   * si revocano — operazione immediata e gratuita, non una cessazione programmata.
+   */
+  it('l’owner e gli inviti in attesa non sono indicabili per la cessazione', () => {
+    const rows = buildRoster({ members: [owner, zoe], invitations: [invito] })
+
+    expect(rows.find((r) => r.isOwner)?.selectable).toBe(false)
+    expect(rows.find((r) => r.kind === 'invitation')?.selectable).toBe(false)
+    expect(rows.find((r) => r.email === 'zoe@acme.test')?.selectable).toBe(true)
+  })
 })

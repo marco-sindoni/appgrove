@@ -565,6 +565,89 @@ public class TestData {
                 "select seat_charge_ref from platform.invitations where id = ?", invitationId);
     }
 
+    // ── Riduzione dei posti (UC 0104) ─────────────────────────────────────────
+
+    /**
+     * Inserisce una riduzione dei posti in attesa con una persona indicata, senza passare dal servizio:
+     * serve ai collaudi che devono <b>trovare la riga</b> (esportazione, purga) e non provarne la creazione.
+     * Ritorna l'identificativo della riduzione.
+     */
+    public UUID seatDowngrade(String tenantId, UUID identityId, UUID requestedBy, OffsetDateTime executeAt) {
+        UUID id = UUID.randomUUID();
+        exec("insert into platform.seat_downgrade"
+                        + "(id,tenant_id,execute_at,status,requested_by,created_at,updated_at,created_by)"
+                        + " values (?,?,?,?,?,?,?,?)",
+                id, tenantId, executeAt, "pending", requestedBy,
+                OffsetDateTime.now(), OffsetDateTime.now(), "test");
+        exec("insert into platform.seat_downgrade_item"
+                        + "(id,tenant_id,downgrade_id,identity_id,created_at,updated_at,created_by)"
+                        + " values (?,?,?,?,?,?,?)",
+                UUID.randomUUID(), tenantId, id, identityId,
+                OffsetDateTime.now(), OffsetDateTime.now(), "test");
+        return id;
+    }
+
+    /**
+     * Stato dell'ultima riduzione dei posti dell'account, o {@code null} se non ne ha mai avuta una.
+     * «L'ultima» e non «quella in attesa»: dopo un annullamento o un'esecuzione la riga resta, e il
+     * collaudo deve poter constatare in che stato è finita.
+     */
+    public String seatDowngradeStatus(String tenantId) {
+        return queryString("select status from platform.seat_downgrade where tenant_id = ?"
+                + " order by created_at desc, id desc limit 1", tenantId);
+    }
+
+    /** Data di esecuzione dell'ultima riduzione dell'account, o {@code null}. */
+    public java.time.Instant seatDowngradeExecuteAt(String tenantId) {
+        return queryInstant("select execute_at from platform.seat_downgrade where tenant_id = ?"
+                + " order by created_at desc, id desc limit 1", tenantId);
+    }
+
+    /** Istante di esecuzione registrato sull'ultima riduzione, o {@code null} se non è stata eseguita. */
+    public java.time.Instant seatDowngradeExecutedAt(String tenantId) {
+        return queryInstant("select executed_at from platform.seat_downgrade where tenant_id = ?"
+                + " order by created_at desc, id desc limit 1", tenantId);
+    }
+
+    /** Quante persone sono indicate (righe vive) nelle riduzioni dell'account. */
+    public int seatDowngradeItemCount(String tenantId) {
+        return queryInt("select count(*) from platform.seat_downgrade_item"
+                + " where tenant_id = ? and deleted_at is null", tenantId);
+    }
+
+    /** Quante riduzioni (in qualunque stato) ha l'account: prova che un annullamento non cancella la storia. */
+    public int seatDowngradeCount(String tenantId) {
+        return queryInt("select count(*) from platform.seat_downgrade where tenant_id = ?", tenantId);
+    }
+
+    /**
+     * Retrodata la data di esecuzione dell'ultima riduzione, così che risulti <b>scaduta</b> senza
+     * aspettare un mese vero: è la leva con cui si prova l'esecuzione, la ripetizione e la misura.
+     */
+    public void backdateSeatDowngrade(String tenantId, OffsetDateTime executeAt) {
+        exec("update platform.seat_downgrade set execute_at = ? where tenant_id = ? and status = 'pending'",
+                executeAt, tenantId);
+    }
+
+    /** Fine del periodo in corso dell'abbonamento dei posti, o {@code null} se l'abbonamento non c'è. */
+    public java.time.Instant seatSubscriptionPeriodEnd(String tenantId, UUID appId) {
+        return queryInstant("select current_period_end from platform.subscription"
+                + " where tenant_id = ? and app_id = ? and deleted_at is null", tenantId, appId);
+    }
+
+    /** L'appartenenza della persona è ancora viva in quell'account? */
+    public boolean membershipAlive(String tenantId, UUID identityId) {
+        return queryInt("select count(*) from platform.membership"
+                + " where tenant_id = ? and identity_id = ? and deleted_at is null",
+                tenantId, identityId) == 1;
+    }
+
+    /** Quante appartenenze vive ha l'account: il numero da cui dipende il conto dei posti. */
+    public int membershipCount(String tenantId) {
+        return queryInt("select count(*) from platform.membership"
+                + " where tenant_id = ? and deleted_at is null", tenantId);
+    }
+
     /** Quanti inviti (in qualunque stato, non cancellati) ha l'account. */
     public int invitationCount(String tenantId) {
         return queryInt(

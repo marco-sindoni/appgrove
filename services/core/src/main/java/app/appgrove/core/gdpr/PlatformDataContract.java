@@ -7,6 +7,8 @@ import app.appgrove.commons.gdpr.ExportResult;
 import app.appgrove.commons.gdpr.GdprScope;
 import app.appgrove.commons.gdpr.PurgeResult;
 import app.appgrove.core.billing.BillingTransaction;
+import app.appgrove.core.billing.seats.SeatDowngrade;
+import app.appgrove.core.billing.seats.SeatDowngradeItem;
 import app.appgrove.core.legal.LegalAcceptance;
 import app.appgrove.core.newsletter.NewsletterSubscriber;
 import app.appgrove.core.platform.Account;
@@ -67,8 +69,9 @@ public class PlatformDataContract implements AppDataContract {
         Map<String, List<Map<String, Object>>> entities = new LinkedHashMap<>();
         List<String> steps = List.of(
                 "Raccolta account", "Raccolta persone e appartenenze", "Raccolta inviti",
-                "Raccolta ticket di supporto", "Raccolta iscrizioni newsletter",
-                "Raccolta accettazioni legali", "Raccolta storico pagamenti");
+                "Raccolta riduzioni dei posti", "Raccolta ticket di supporto",
+                "Raccolta iscrizioni newsletter", "Raccolta accettazioni legali",
+                "Raccolta storico pagamenti");
 
         entities.put("accounts", query(
                 "select id, name, status, paddle_customer_id, created_at"
@@ -134,6 +137,21 @@ public class PlatformDataContract implements AppDataContract {
                 scope.tenantId(),
                 "id", "email", "role", "status", "expires_at", "created_at", "seat_charge_ref",
                 "identity_id"));
+
+        // Riduzione dei posti (UC 0104): la traccia che una persona è stata indicata per la cessazione, e
+        // da chi. È un dato dell'account e va esportato senza restrizioni particolari — l'account che
+        // esporta è lo stesso che ha deciso la cessazione, quindi non c'è nulla che non sappia già.
+        entities.put("seat_reductions", query(
+                "select id, execute_at, status, requested_by, executed_at, created_at, deleted_at"
+                        + " from platform.seat_downgrade where tenant_id = ? order by created_at",
+                scope.tenantId(),
+                "id", "execute_at", "status", "requested_by", "executed_at", "created_at", "deleted_at"));
+
+        entities.put("seat_reduction_people", query(
+                "select id, downgrade_id, identity_id, created_at, deleted_at"
+                        + " from platform.seat_downgrade_item where tenant_id = ? order by created_at",
+                scope.tenantId(),
+                "id", "downgrade_id", "identity_id", "created_at", "deleted_at"));
 
         entities.put("support_tickets", query(
                 "select id, type, subject, priority, status, due_at, created_at, closed_at"
@@ -239,6 +257,12 @@ public class PlatformDataContract implements AppDataContract {
                     delete(c, "delete from platform.legal_acceptance where tenant_id = ?", scope.tenantId()));
             deleted.put("invitations",
                     delete(c, "delete from platform.invitations where tenant_id = ?", scope.tenantId()));
+            // Riduzione dei posti (UC 0104): le persone indicate prima dell'atto (chiave esterna), e
+            // entrambe prima delle identità, che referenziano.
+            deleted.put("seat_downgrade_item",
+                    delete(c, "delete from platform.seat_downgrade_item where tenant_id = ?", scope.tenantId()));
+            deleted.put("seat_downgrade",
+                    delete(c, "delete from platform.seat_downgrade where tenant_id = ?", scope.tenantId()));
             // Storico pagamenti (UC 0096): tabella tenant-scoped, quindi rientra nella cancellazione
             // fisica come le altre — una riga che sopravvive alla purga è un difetto, non una cautela.
             deleted.put("billing_transaction",
@@ -273,6 +297,8 @@ public class PlatformDataContract implements AppDataContract {
         DataManifests.collectPersonalData(Membership.class, "memberships", entries);
         DataManifests.collectPersonalData(AppAccess.class, "app_access", entries);
         DataManifests.collectPersonalData(Invitation.class, "invitations", entries);
+        DataManifests.collectPersonalData(SeatDowngrade.class, "seat_reductions", entries);
+        DataManifests.collectPersonalData(SeatDowngradeItem.class, "seat_reduction_people", entries);
         DataManifests.collectPersonalData(SupportTicket.class, "support_tickets", entries);
         DataManifests.collectPersonalData(SupportTicketMessage.class, "support_ticket_messages", entries);
         DataManifests.collectPersonalData(NewsletterSubscriber.class, "newsletter_subscribers", entries);

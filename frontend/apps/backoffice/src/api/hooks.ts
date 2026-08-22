@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { unwrap, type InvitationView, type SeatSummaryView } from '@appgrove/api-client'
+import {
+  unwrap,
+  type InvitationView,
+  type SeatReductionPreview,
+  type SeatSummaryView,
+} from '@appgrove/api-client'
 import { useAuthStore } from '../auth/authStore'
 import { useApiClient } from './apiClient'
 
@@ -182,6 +187,89 @@ export function useRevokeInvitation() {
       // La revoca libera il posto (senza rimborso, UC 0103): il numero usato scende, l'importo pagato no.
       void queryClient.invalidateQueries({ queryKey: SEATS_KEY })
     },
+  })
+}
+
+// ── Riduzione dei posti in attesa (UC 0104) — atti dell'owner sulla cessazione programmata ───────
+
+/**
+ * Le tre operazioni che cambiano la riduzione invalidano **entrambe** le letture che ne dipendono: il
+ * riquadro dei posti (che porta l'avviso e il divieto di invitare) e l'elenco delle persone (che mostra
+ * «in cessazione dal …»). Sono due chiavi diverse per la stessa notizia, e dimenticarne una farebbe
+ * convivere a schermo un avviso nuovo con una tabella vecchia.
+ */
+function invalidateReduction(queryClient: ReturnType<typeof useQueryClient>) {
+  void queryClient.invalidateQueries({ queryKey: SEATS_KEY })
+  void queryClient.invalidateQueries({ queryKey: ['users', 'list'] })
+}
+
+/**
+ * L'**effetto prima della conferma** (`GET /me/seats/reduction/preview`, UC 0104 §4.2): che cosa
+ * cambierebbe indicando quelle persone.
+ *
+ * È una **lettura** e non un atto: si ripete a ogni casella spuntata e non programma nulla. Per questo è
+ * una query e non una mutazione — la selezione fa parte della chiave, quindi tornare su una selezione già
+ * vista non richiede una seconda chiamata.
+ *
+ * Disabilitata con selezione vuota: non c'è nessun effetto da stimare, e chiederlo produrrebbe una
+ * risposta che dice «non cambia niente» — vera e inutile.
+ */
+export function useSeatReductionPreview(userIds: string[]) {
+  const client = useApiClient()
+  const canRead = useCanReadMembers()
+  // Ordinata: la stessa selezione fatta in due ordini diversi è la stessa domanda, e deve avere la
+  // stessa chiave — altrimenti si paga una chiamata per ogni ordine in cui le caselle sono state
+  // spuntate.
+  const key = [...userIds].sort()
+  return useQuery({
+    queryKey: ['seats', 'reduction', 'preview', key.join(',')],
+    enabled: canRead && key.length > 0,
+    queryFn: () =>
+      unwrap<SeatReductionPreview>(
+        client.GET('/api/platform/v1/me/seats/reduction/preview', {
+          params: { query: { userId: key } },
+        }),
+      ),
+  })
+}
+
+/** Programma la riduzione (`POST /me/seats/reduction`): un atto unico su più persone. */
+export function useRequestSeatReduction() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userIds: string[]) =>
+      unwrap(client.POST('/api/platform/v1/me/seats/reduction', { body: { userIds } })),
+    onSuccess: () => invalidateReduction(queryClient),
+  })
+}
+
+/** Annulla la riduzione (`DELETE /me/seats/reduction`): nessun effetto contabile. */
+export function useCancelSeatReduction() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => unwrap(client.DELETE('/api/platform/v1/me/seats/reduction')),
+    onSuccess: () => invalidateReduction(queryClient),
+  })
+}
+
+/**
+ * Toglie una persona dall'elenco degli indicati
+ * (`DELETE /me/seats/reduction/people/{userId}`). Se era l'ultima, il servizio chiude l'attesa da sé — e
+ * qui non c'è nulla da distinguere: si rilegge lo stato in entrambi i casi.
+ */
+export function useRemoveFromSeatReduction() {
+  const client = useApiClient()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (userId: string) =>
+      unwrap(
+        client.DELETE('/api/platform/v1/me/seats/reduction/people/{userId}', {
+          params: { path: { userId } },
+        }),
+      ),
+    onSuccess: () => invalidateReduction(queryClient),
   })
 }
 

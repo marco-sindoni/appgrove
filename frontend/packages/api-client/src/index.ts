@@ -23,6 +23,8 @@ export type {
   InvitationView,
   MyMembershipsView,
   SeatSummaryView,
+  SeatReductionView,
+  SeatReductionPreview,
 } from './contract'
 export type { paths, components } from './schema'
 

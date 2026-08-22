@@ -40,6 +40,7 @@ usecases_con_superficie:
   - "0100" # Sezione «Members» come elenco unico di persone, senza ruolo (applicazioni per persona)
   - "0101" # Semantica dei tre ruoli: i due rifiuti letti a schermo nell'app #1, che il ruolo ora governa
   - "0103" # Acquisto anticipato del posto all'invito (riquadro dei posti, stima prima della conferma)
+  - "0104" # Riduzione dei posti in attesa (selezione, effetto prima della conferma, avviso, invito bloccato)
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
   - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
 
@@ -277,9 +278,10 @@ percorsi:
   - id: J-SEATS
     titolo: >-
       Posti a pagamento — riquadro dei posti (usati, composizione, importo, fascia), stima del posto
-      successivo prima della conferma, primo posto oltre la franchigia che crea l'abbonamento, e addebito
-      rifiutato che NON crea l'invito
-    usecases: ["0103"]
+      successivo prima della conferma, primo posto oltre la franchigia che crea l'abbonamento, addebito
+      rifiutato che NON crea l'invito, e riduzione in attesa (indicazione con effetto prima della conferma,
+      stato «in cessazione dal …», invito bloccato con la via d'uscita, annullamento che riapre l'invito)
+    usecases: ["0103", "0104"]
     stato: coperto
     test:
       - livello: l2
@@ -754,11 +756,6 @@ esenzioni:
       dai collaudi di integrazione, il conteggio dei posti dalla prova stato per stato con separazione fra
       account. Le superfici che consumeranno questo listino arrivano con 0103 (riquadro dei posti), 0105
       (governo delle tariffe in console) e 0106 (i posti nella sezione «Billing»).
-  - usecase: "0104"
-    categoria: non-implementato
-    motivo: >-
-      Riduzione dei posti in attesa — avrà superficie (scelta delle persone, avviso di attesa, invito
-      bloccato), da coprire estendendo J-SEATS, che la change 0098 ha creato per l'acquisto.
   - usecase: "0105"
     categoria: non-implementato
     motivo: Governo del listino dalla console di piattaforma — avrà superficie nella console admin.

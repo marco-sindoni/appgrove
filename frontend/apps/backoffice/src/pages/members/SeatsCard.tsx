@@ -3,7 +3,7 @@ import { Badge, Button, Card, CardContent, CardHeader } from '@appgrove/design-s
 import { useTranslation } from '@appgrove/i18n'
 import { formatPrice } from '../../billing/checkoutMachine'
 import type { TFn } from '../../auth/schemas'
-import type { Seats, SeatBand } from './seats'
+import type { Seats, SeatBand, SeatBandUsage, SeatReduction } from './seats'
 
 /**
  * Il **riquadro dei posti** in testa alla sezione «Members» (UC 0103 §6).
@@ -41,16 +41,127 @@ function bandLabel(t: TFn, band: SeatBand | null): string | null {
     : t('seats.bandRange', { from: band.fromSeat, to: band.toSeat })
 }
 
+/**
+ * Il **riquadro di avviso della riduzione in attesa** (UC 0104 §6).
+ *
+ * Tre cose, in quest'ordine, perché è l'ordine delle domande di chi lo legge: *quante persone e quando*,
+ * *quanto pagherò da allora* (con la composizione, perché un importo senza il suo conto non si verifica),
+ * e *come torno indietro*.
+ *
+ * Il comando di annullamento e quello per mantenere una singola persona stanno **dentro** l'avviso e non
+ * altrove: chi legge «non puoi aggiungere persone» deve avere la via d'uscita sotto gli occhi, non in
+ * un'altra schermata.
+ */
+function ReductionNotice({
+  reduction,
+  onCancel,
+  onKeep,
+  busy,
+}: {
+  reduction: SeatReduction
+  onCancel: () => void
+  onKeep: (userId: string) => void
+  busy: boolean
+}) {
+  const { t, i18n } = useTranslation()
+  const lang = i18n.language
+  const date = new Date(reduction.executeAt).toLocaleDateString(lang)
+
+  return (
+    <div role="alert" className="space-y-3 rounded-md border border-warning bg-surface-2 p-3">
+      <p className="text-sm font-semibold text-warning">{t('seats.reductionTitle')}</p>
+      <p className="text-[12.5px] text-fg">
+        {t('seats.reductionSummary', { count: reduction.people.length, date })}
+      </p>
+
+      {/* La data è passata e l'esecuzione non è ancora avvenuta: si dice, con onestà. Un cliente che
+          vede una data passata e nessun cambiamento pensa che il sistema si sia dimenticato di lui. */}
+      {reduction.overdue && (
+        <p className="text-[12.5px] font-semibold text-warning">{t('seats.reductionOverdue')}</p>
+      )}
+
+      <p className="text-[12.5px] text-fg-muted">
+        {t('seats.reductionAfter', {
+          date,
+          from: money(reduction.dueCentsNow, reduction.currency, lang),
+          to: money(reduction.dueCentsAfter, reduction.currency, lang),
+          count: reduction.seatsAfter,
+        })}
+      </p>
+
+      {reduction.bandsAfter.length > 0 && (
+        <div className="text-[12px] text-fg-muted">
+          <p>{t('seats.reductionCompositionAfter')}</p>
+          <ul>
+            {reduction.bandsAfter.map((b) => (
+              <li key={b.fromSeat}>{bandUsageLabel(t, b, reduction.currency, lang)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Le persone indicate, ognuna con il comando per TOGLIERLA dall'elenco. L'etichetta è
+          «Mantieni» e non «Rimuovi»: il comando aggiunge una persona all'account, non la toglie, e
+          un'etichetta distruttiva su un'azione che salva qualcuno è la peggiore delle ambiguità. */}
+      <ul className="space-y-1.5">
+        {reduction.people.map((person) => (
+          <li key={person.userId} className="flex flex-wrap items-center gap-2 text-[12.5px]">
+            <span className="font-semibold text-fg">{person.email}</span>
+            {person.displayName && <span className="text-fg-muted">{person.displayName}</span>}
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={busy}
+              aria-label={t('seats.reductionKeepLabel', { email: person.email })}
+              onClick={() => onKeep(person.userId)}
+            >
+              {t('seats.reductionKeep')}
+            </Button>
+          </li>
+        ))}
+      </ul>
+
+      <Button type="button" variant="secondary" size="sm" disabled={busy} onClick={onCancel}>
+        {t('seats.reductionCancel')}
+      </Button>
+    </div>
+  )
+}
+
+/**
+ * Una riga della composizione: «6 × 2,99 € = 17,94 €», oppure «3 posti compresi» quando la fascia è a
+ * tariffa zero. Le due frasi sono diverse perché dicono due cose diverse: «3 × 0,00 € = 0,00 €» è
+ * aritmeticamente giusto e commercialmente sbagliato — «compresi» e «zero euro» non sono la stessa
+ * promessa, ed è la stessa distinzione che la vetrina fa fra «gratis» e «€0».
+ */
+function bandUsageLabel(t: TFn, band: SeatBandUsage, currency: string, language: string): string {
+  if (band.unitPriceCents === 0) {
+    return t('seats.reductionBandFree', { seats: band.seats })
+  }
+  return t('seats.reductionBandLine', {
+    seats: band.seats,
+    price: money(band.unitPriceCents, currency, language),
+    subtotal: money(band.subtotalCents, currency, language),
+  })
+}
+
 export function SeatsCard({
   seats,
   isLoading,
   isError,
   onRetry,
+  onCancelReduction,
+  onKeepPerson,
+  busy = false,
 }: {
   seats: Seats | null
   isLoading: boolean
   isError: boolean
   onRetry: () => void
+  onCancelReduction?: () => void
+  onKeepPerson?: (userId: string) => void
+  busy?: boolean
 }) {
   const { t, i18n } = useTranslation()
   const lang = i18n.language
@@ -142,13 +253,16 @@ export function SeatsCard({
                     })}
             </p>
 
-            {/* Riduzione in attesa: nessun posto nuovo durante l'attesa (UC 0104). Oggi il servizio
-                risponde sempre «no» perché lo stato non esiste ancora; il riquadro sa già dirlo, così
-                quando arriverà non ci sarà una schermata da inventare. */}
-            {seats.pendingReduction && (
-              <p role="alert" className="text-sm text-warning">
-                {t('seats.pendingReduction')}
-              </p>
+            {/* Riduzione in attesa (UC 0104): nessun posto nuovo finché non si chiude. L'avviso porta
+                l'elenco delle persone e le due vie d'uscita, perché chi legge un divieto deve avere il
+                modo di uscirne sotto gli occhi. */}
+            {seats.reduction && onCancelReduction && onKeepPerson && (
+              <ReductionNotice
+                reduction={seats.reduction}
+                onCancel={onCancelReduction}
+                onKeep={onKeepPerson}
+                busy={busy}
+              />
             )}
 
             <p className="text-[12px] text-fg-faint">

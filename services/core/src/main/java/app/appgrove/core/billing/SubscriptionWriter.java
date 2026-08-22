@@ -1,6 +1,7 @@
 package app.appgrove.core.billing;
 
 import app.appgrove.commons.logging.MdcRequestFilter;
+import app.appgrove.core.catalog.PlatformCatalog;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -168,6 +169,14 @@ public class SubscriptionWriter {
     @Inject
     PaymentFees fees;
 
+    /**
+     * L'esecuzione della riduzione dei posti (UC 0104), invocata <b>prima</b> di riscrivere il periodo
+     * dell'abbonamento dei posti. Interfaccia verso la banca dati diretta come questa classe, e sulla
+     * <b>stessa connessione</b>: se l'evento non si applica, la riduzione non è avvenuta.
+     */
+    @Inject
+    app.appgrove.core.billing.seats.SeatDowngradeExecutor seatDowngrades;
+
     /** Applica un evento in modo transazionale e ritorna l'esito (mai null). */
     public Outcome apply(PaddleWebhookEvent event) {
         // logging strutturato (invariante #4): tenant_id/app_id/user_id sul processing del webhook.
@@ -244,6 +253,20 @@ public class SubscriptionWriter {
         if (target == null) {
             // evento non sottoscritto/senza effetto su subscription → no-op registrato (meno rumore, #09 D21)
             return Outcome.PROCESSED;
+        }
+        // ── L'ORDINE CONTA (UC 0104 §5) ─────────────────────────────────────────────────────────────
+        // Se questo evento riguarda l'abbonamento dei POSTI e c'è una riduzione la cui data è già passata,
+        // la riduzione si esegue ADESSO, prima che l'evento riscriva il periodo: così il periodo nuovo
+        // nasce già con la quantità ridotta. Nella stessa transazione, quindi l'ordine non è una speranza
+        // sulla temporizzazione di due processi ma una proprietà della scrittura.
+        //
+        // Perché non lasciarlo al solo lavoro periodico: quello gira ogni ora e l'evento arriva quando
+        // arriva — l'ordine fra i due NON è garantito, e nell'ordine sbagliato il cliente pagherebbe un
+        // mese intero alla quantità vecchia. Oggi l'abbonamento dei posti non riceve alcun evento dal
+        // fornitore (il prodotto presso il fornitore non esiste ancora, prerequisito #14): il presidio va
+        // messo ora perché il giorno in cui quegli eventi arriveranno nessuno si ricorderà di aggiungerlo.
+        if (PlatformCatalog.seatsAppId().equals(event.appId())) {
+            seatDowngrades.execute(c, str(event.tenantId()), Instant.now());
         }
         return upsertSubscription(c, event, target) ? Outcome.PROCESSED : Outcome.SKIPPED_STALE;
     }

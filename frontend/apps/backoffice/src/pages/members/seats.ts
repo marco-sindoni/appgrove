@@ -32,6 +32,46 @@ export interface NextSeat {
   cheaperThanPrevious: boolean
 }
 
+/**
+ * Una riga della composizione degli scaglioni: «6 posti a 2,99 € = 17,94 €» (UC 0104).
+ *
+ * `toSeat` nullo = ultima fascia, aperta verso l'alto.
+ */
+export interface SeatBandUsage {
+  fromSeat: number
+  toSeat: number | null
+  unitPriceCents: number
+  seats: number
+  subtotalCents: number
+}
+
+/** Una persona indicata per la cessazione (UC 0104). */
+export interface ReductionPerson {
+  userId: string
+  email: string
+  displayName?: string
+}
+
+/**
+ * La **riduzione in attesa**, in forma stretta (UC 0104).
+ *
+ * Stessa ragione della conversione del riquadro: se `dueCentsAfter` fosse incerto, un `?? 0` scriverebbe
+ * «dal 15 pagherai 0,00 €» accanto a una data vera — e su quella frase qualcuno programma una cessazione.
+ * Se manca un campo, la riduzione si legge come **assente** e il riquadro va in errore col resto: non si
+ * mostra un avviso a metà.
+ */
+export interface SeatReduction {
+  id: string
+  executeAt: string
+  overdue: boolean
+  people: ReductionPerson[]
+  seatsAfter: number
+  dueCentsNow: number
+  dueCentsAfter: number
+  currency: string
+  bandsAfter: SeatBandUsage[]
+}
+
 /** Il riquadro dei posti con tutti i campi presenti. */
 export interface Seats {
   usedSeats: number
@@ -45,6 +85,8 @@ export interface Seats {
   currentBand: SeatBand | null
   next: NextSeat
   pendingReduction: boolean
+  /** Il dettaglio della riduzione in attesa; `null` quando non ce n'è (il caso normale). */
+  reduction: SeatReduction | null
   hasSubscription: boolean
 }
 
@@ -113,6 +155,77 @@ export function readSeats(view: SeatSummaryView | undefined): Seats | null {
       cheaperThanPrevious: view.next?.cheaperThanPrevious === true,
     },
     pendingReduction: view.pendingReduction === true,
+    reduction: readReduction(view.reduction),
     hasSubscription: view.hasSubscription === true,
   }
+}
+
+/**
+ * Converte la riduzione in attesa nella forma stretta, o `null` se è assente o incompleta.
+ *
+ * **Incompleta = assente, e il riquadro non va in errore per questo.** È una scelta diversa da quella del
+ * riquadro, e vale la pena dire perché: `pendingReduction` resta il fatto che governa il divieto di
+ * invitare, quindi il presidio non si perde. Quello che si perde è il *dettaglio* — le persone, la data —
+ * e la reazione giusta è non mostrare un avviso a metà («2 persone cesseranno il undefined»), non spegnere
+ * tutta la sezione.
+ */
+export function readReduction(
+  view: SeatSummaryView['reduction'] | undefined,
+): SeatReduction | null {
+  if (!view) return null
+  const seatsAfter = num(view.seatsAfter)
+  const dueCentsNow = num(view.dueCentsNow)
+  const dueCentsAfter = num(view.dueCentsAfter)
+  if (
+    !view.id ||
+    !view.executeAt ||
+    !view.currency ||
+    seatsAfter == null ||
+    dueCentsNow == null ||
+    dueCentsAfter == null
+  ) {
+    return null
+  }
+  return {
+    id: view.id,
+    executeAt: view.executeAt,
+    overdue: view.overdue === true,
+    people: (view.people ?? [])
+      .filter((p) => !!p.userId)
+      .map((p) => ({
+        userId: p.userId as string,
+        email: p.email ?? '',
+        displayName: p.displayName,
+      })),
+    seatsAfter,
+    dueCentsNow,
+    dueCentsAfter,
+    currency: view.currency,
+    bandsAfter: readBands(view.bandsAfter),
+  }
+}
+
+/**
+ * Converte la composizione degli scaglioni. Le righe incomplete si **scartano** invece di comparire con
+ * uno zero: una riga «0 posti a 0,00 €» in mezzo a un conto lo rende illeggibile, e la composizione è un
+ * aiuto alla verifica — se non si può mostrare intera, meglio non mostrarne una parte falsa.
+ */
+export function readBands(
+  bands: NonNullable<SeatSummaryView['reduction']>['bandsAfter'] | undefined,
+): SeatBandUsage[] {
+  return (bands ?? [])
+    .map((b) => ({
+      fromSeat: num(b.fromSeat),
+      toSeat: num(b.toSeat),
+      unitPriceCents: num(b.unitPriceCents),
+      seats: num(b.seats),
+      subtotalCents: num(b.subtotalCents),
+    }))
+    .filter(
+      (b): b is SeatBandUsage =>
+        b.fromSeat != null &&
+        b.unitPriceCents != null &&
+        b.seats != null &&
+        b.subtotalCents != null,
+    )
 }

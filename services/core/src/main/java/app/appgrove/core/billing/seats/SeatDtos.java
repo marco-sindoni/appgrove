@@ -27,11 +27,16 @@ public final class SeatDtos {
      * @param paidQuantity posti a pagamento <b>già pagati</b> per il periodo in corso (0 senza abbonamento)
      * @param currentBand la fascia in cui cade l'<b>ultimo</b> posto occupato; assente con zero posti
      * @param next il posto successivo: quanto costa, e che effetto ha sul totale
-     * @param pendingReduction c'è una riduzione in attesa? Oggi sempre falso (lo stato è di UC 0104), e il
-     *     campo esiste perché il riquadro e il rifiuto dell'invito abbiano <b>un solo</b> posto da cui
-     *     leggerlo quando arriverà — non per anticipare quella storia
+     * @param pendingReduction c'è una riduzione in attesa? Da UC 0104 è un fatto vero: quando è {@code true}
+     *     il riquadro mostra l'avviso e il comando di invito si spegne. Resta un campo a sé <b>accanto</b>
+     *     al dettaglio, e non un semplice «{@code reduction != null}», perché è la domanda che il rifiuto
+     *     dell'invito fa e che l'interfaccia fa: una condizione booleana esplicita non si sbaglia a leggere
+     * @param reduction il <b>dettaglio</b> della riduzione in attesa (data di esecuzione, persone indicate,
+     *     posti e dovuto dopo), assente quando non ce n'è. Sta qui e non in una lettura a parte perché la
+     *     schermata deve poter disegnare l'avviso senza una seconda chiamata (UC 0104, passo 4 del piano)
      * @param hasSubscription esiste già l'abbonamento di piattaforma dei posti
      */
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     public record SeatSummaryView(
             int usedSeats,
             SeatCompositionView composition,
@@ -43,6 +48,7 @@ public final class SeatDtos {
             SeatPricingDtos.SeatBandView currentBand,
             NextSeatView next,
             boolean pendingReduction,
+            SeatDowngradeDtos.ReductionView reduction,
             boolean hasSubscription) {}
 
     /** La composizione dei posti occupati. La somma delle tre voci è {@code usedSeats}. */

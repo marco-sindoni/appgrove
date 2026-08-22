@@ -92,6 +92,9 @@ public class SeatSubscriptionService {
     @Inject
     CallerContext caller;
 
+    @Inject
+    SeatDowngradeService downgrades;
+
     /**
      * L'addebito eseguito (o non necessario) per un posto in più: quanto basta a chi crea l'invito per
      * collegarlo al suo addebito e, se qualcosa va storto, per annullarlo.
@@ -143,6 +146,8 @@ public class SeatSubscriptionService {
         Optional<Subscription> seatSubscription = seatSubscription();
         int paidQuantity = seatSubscription.map(Subscription::getQuantity).orElse(0);
 
+        Optional<SeatDowngradeDtos.ReductionView> reduction = downgrades.pending();
+
         SeatPricingBand currentBand = used >= 1 ? SeatPricing.bandFor(used, version) : null;
         int nextUnitPrice = SeatPricing.nextSeatCents(used, version);
         long dueAfter = SeatPricing.dueCents(used + 1, version);
@@ -168,9 +173,10 @@ public class SeatSubscriptionService {
                         dueAfter,
                         chargeForTarget(used + 1, paidQuantity, free, version),
                         currentBand != null && nextUnitPrice < currentBand.getUnitPriceCents()),
-                // Riduzione in attesa: lo stato non esiste ancora (UC 0104). Il campo è qui perché il
-                // riquadro e il rifiuto dell'invito leggano da UN SOLO posto quando arriverà.
-                false,
+                // Riduzione in attesa (UC 0104): il campo booleano E il dettaglio, letti da UN SOLO posto —
+                // il riquadro, l'avviso e il rifiuto dell'invito non devono poter dissentire fra loro.
+                reduction.isPresent(),
+                reduction.orElse(null),
                 seatSubscription.isPresent());
     }
 

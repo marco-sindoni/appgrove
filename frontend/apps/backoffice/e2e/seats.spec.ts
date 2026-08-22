@@ -43,6 +43,8 @@ interface SeatsState {
   paidQuantity: number
   hasSubscription: boolean
   invited: number
+  /** Le persone indicate per la cessazione (UC 0104): vuoto = nessuna riduzione in attesa. */
+  reduction: string[]
 }
 
 const franchigia: SeatsState = {
@@ -52,7 +54,14 @@ const franchigia: SeatsState = {
   paidQuantity: 0,
   hasSubscription: false,
   invited: 0,
+  reduction: [],
 }
+
+/**
+ * La data di esecuzione della riduzione: fissa, perché il testo che il cliente legge la contiene e un
+ * collaudo che dipendesse dalla data di oggi cambierebbe frase ogni giorno.
+ */
+const ESECUZIONE = '2026-09-14T00:00:00Z'
 
 /** Il corpo del riquadro, derivato dallo stato — come lo calcolerebbe il servizio col listino iniziale. */
 function seatsBody(s: SeatsState) {
@@ -78,7 +87,26 @@ function seatsBody(s: SeatsState) {
       chargeCents: Math.max(0, dueAfter - s.paidQuantity * 299),
       cheaperThanPrevious: false,
     },
-    pendingReduction: false,
+    pendingReduction: s.reduction.length > 0,
+    reduction:
+      s.reduction.length > 0
+        ? {
+            id: 'red-1',
+            executeAt: ESECUZIONE,
+            requestedAt: '2026-08-20T00:00:00Z',
+            overdue: false,
+            people: s.reduction.map((id) => ({
+              userId: id,
+              email: `${id}@acme.test`,
+              displayName: id,
+            })),
+            seatsAfter: s.usedSeats - s.reduction.length,
+            dueCentsNow: s.dueCents,
+            dueCentsAfter: Math.max(0, (s.usedSeats - s.reduction.length - 3) * 299),
+            currency: 'EUR',
+            bandsAfter: [{ fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 }],
+          }
+        : undefined,
     hasSubscription: s.hasSubscription,
   }
 }
@@ -90,13 +118,16 @@ function seatsBody(s: SeatsState) {
  *     l'invito **non** nasce: è il percorso della carta scaduta.
  */
 async function mockAuthed(page: Page, declineReason?: string) {
-  const state: SeatsState = { ...franchigia }
+  const state: SeatsState = { ...franchigia, reduction: [] }
   const invites: Array<Record<string, unknown>> = []
   const people = [
     { id: 'u1', email: 'owner@acme.test', displayName: 'Owner', role: 'owner', status: 'active', tenantId: 'tenant-1', joinedAt: '2024-01-01T00:00:00Z', apps: [] },
     { id: 'u2', email: 'due@acme.test', displayName: 'Due', role: 'member', status: 'active', tenantId: 'tenant-1', joinedAt: '2025-01-01T00:00:00Z', apps: [] },
     { id: 'u3', email: 'tre@acme.test', displayName: 'Tre', role: 'member', status: 'active', tenantId: 'tenant-1', joinedAt: '2025-06-01T00:00:00Z', apps: [] },
   ]
+  /** L'elenco delle persone come lo servirebbe il servizio: chi è indicato porta la sua data (UC 0104). */
+  const roster = () =>
+    people.map((p) => (state.reduction.includes(p.id) ? { ...p, endingAt: ESECUZIONE } : p))
 
   await page.route('**/config.json', (route) =>
     route.fulfill({
@@ -114,7 +145,7 @@ async function mockAuthed(page: Page, declineReason?: string) {
     route.fulfill({ json: { entitlements: [] } }),
   )
   await page.route('**/api/platform/v1/users?*', (route) =>
-    route.fulfill({ json: { content: people, page: 0, size: 100, totalElements: people.length } }),
+    route.fulfill({ json: { content: roster(), page: 0, size: 100, totalElements: people.length } }),
   )
   await page.route('**/api/platform/v1/invitations?*', (route) =>
     route.fulfill({ json: { content: invites, page: 0, size: 100, totalElements: invites.length } }),
@@ -153,6 +184,39 @@ async function mockAuthed(page: Page, declineReason?: string) {
     })
   })
   await page.route('**/api/auth/invitations/send', (route) => route.fulfill({ status: 202, body: '' }))
+
+  // ── Riduzione dei posti in attesa (UC 0104) ────────────────────────────────
+  // La stima: dipende da chi è selezionato, e il servizio la calcola tutta — l'interfaccia non fa
+  // aritmetica, quindi qui si restituiscono i numeri già fatti.
+  await page.route('**/api/platform/v1/me/seats/reduction/preview*', (route) => {
+    const ids = new URL(route.request().url()).searchParams.getAll('userId')
+    const dopo = state.usedSeats - ids.length
+    route.fulfill({
+      json: {
+        executeAt: ESECUZIONE,
+        people: ids.map((id) => ({ userId: id, email: `${id}@acme.test`, displayName: id })),
+        seatsNow: state.usedSeats,
+        seatsAfter: dopo,
+        dueCentsNow: state.dueCents,
+        dueCentsAfter: Math.max(0, (dopo - 3) * 299),
+        currency: 'EUR',
+        bandsNow: [{ fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 }],
+        bandsAfter: [{ fromSeat: 1, toSeat: 3, unitPriceCents: 0, seats: 3, subtotalCents: 0 }],
+      },
+    })
+  })
+  await page.route('**/api/platform/v1/me/seats/reduction', async (route, request) => {
+    if (request.method() === 'POST') {
+      const body = request.postDataJSON() as { userIds: string[] }
+      state.reduction = body.userIds
+      await route.fulfill({ status: 201, json: {} })
+      return
+    }
+    // DELETE: annullamento. La quantità dell'abbonamento non era mai stata cambiata, quindi non c'è
+    // nulla da rimettere a posto: è la proprietà della storia, e qui si vede come assenza di codice.
+    state.reduction = []
+    await route.fulfill({ status: 204, body: '' })
+  })
 }
 
 test('[J-SEATS] posti: riquadro, stima prima della conferma, primo posto a pagamento e addebito rifiutato', async ({
@@ -209,4 +273,68 @@ test('[J-SEATS] senza addebito riuscito l’invito non nasce, e il motivo del fo
   // Nessuna riga nuova: l'invito non è nato. È la regola d'oro della storia, letta a schermo.
   await expect(page.getByRole('row').filter({ hasText: 'quattro@acme.test' })).toHaveCount(0)
   await expect(page.getByText('3 seats in use')).toBeVisible()
+})
+
+/**
+ * **La riduzione dei posti in attesa, dal principio alla fine** (UC 0104).
+ *
+ * Questo percorso prova la cosa che nessuna prova di servizio può provare: che il divieto e la via
+ * d'uscita si leggono insieme, sulla stessa schermata. Quattro momenti, nell'ordine che la storia chiede:
+ *
+ * 1. l'owner **indica** una persona e vede l'effetto **prima** di confermare;
+ * 2. l'avviso compare, la persona è marcata «in cessazione dal …» e il comando di invito **si spegne**;
+ * 3. l'owner prova a invitare comunque: il comando è spento e la spiegazione è a schermo — il divieto
+ *    non è un vicolo cieco, il testo dice come uscirne;
+ * 4. l'owner **annulla**: tutto torna come prima e l'invito riesce.
+ *
+ * Il quarto momento è il più importante e il più facile da dimenticare: un annullamento che «riesce» ma
+ * lascia il pulsante spento è indistinguibile, per chi guarda, da un annullamento che non è avvenuto.
+ */
+test('[J-SEATS] riduzione in attesa: indica, invito bloccato, annulla, invita di nuovo', async ({
+  page,
+}) => {
+  await mockAuthed(page)
+  await page.goto('/members')
+  await expect(page.getByRole('heading', { name: 'Members', level: 1 })).toBeVisible()
+  await expect(page.getByText('3 seats in use')).toBeVisible()
+
+  // ── 1. Si indica una persona, e l'effetto si vede PRIMA della conferma ─────
+  // L'owner non è indicabile: la sua riga non ha nessuna casella.
+  await expect(page.getByRole('checkbox', { name: 'Select owner@acme.test' })).toHaveCount(0)
+  await page.getByRole('checkbox', { name: 'Select due@acme.test' }).check()
+  await expect(page.getByText('1 person selected')).toBeVisible()
+  await expect(
+    page.getByText(
+      'They will leave on 9/14/2026 and keep working normally until then. From 9/14/2026 you will pay €0.00 instead of €0.00.',
+    ),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Schedule termination' }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Schedule termination' })
+    .click()
+
+  // ── 2. L'avviso, lo stato nella riga, e il comando di invito spento ────────
+  await expect(page.getByText('Scheduled reduction')).toBeVisible()
+  await expect(
+    page.getByText('1 person will leave on 9/14/2026. Until then you cannot add people.'),
+  ).toBeVisible()
+  const riga = page.getByRole('row').filter({ hasText: 'due@acme.test' })
+  await expect(riga.getByText('Ending 9/14/2026')).toBeVisible()
+
+  // ── 3. Il divieto, con la sua via d'uscita sotto gli occhi ────────────────
+  await expect(page.getByRole('button', { name: 'Send invitation' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Cancel the reduction' })).toBeEnabled()
+
+  // ── 4. L'annullamento rimette tutto a posto, e l'invito riesce ────────────
+  await page.getByRole('button', { name: 'Cancel the reduction' }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel the reduction' }).click()
+
+  await expect(page.getByText('Scheduled reduction')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Send invitation' })).toBeEnabled()
+
+  await page.getByLabel('Email').fill('quattro@acme.test')
+  await page.getByRole('button', { name: 'Send invitation' }).click()
+  await expect(page.getByText('Invitation sent to quattro@acme.test.')).toBeVisible()
 })
