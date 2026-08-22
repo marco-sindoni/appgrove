@@ -68,7 +68,7 @@ class MultiTenancyTest {
         // il body prova a forzare il tenant B: deve essere ignorato (tenant solo dal JWT)
         given().header("Authorization", "Bearer " + tokenA)
                 .contentType(ContentType.JSON)
-                .body(Map.of("email", "mt-override@example.test", "role", "member", "tenant_id", TENANT_B))
+                .body(Map.of("email", "mt-override@example.test", "tenant_id", TENANT_B))
                 .when().post(PATH)
                 .then().statusCode(201);
 
@@ -180,7 +180,7 @@ class MultiTenancyTest {
     private static void invite(String token, String email) {
         given().header("Authorization", "Bearer " + token)
                 .contentType(ContentType.JSON)
-                .body(Map.of("email", email, "role", "member"))
+                .body(Map.of("email", email))
                 .when().post(PATH)
                 .then().statusCode(201);
     }

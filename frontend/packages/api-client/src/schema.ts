@@ -2100,6 +2100,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/app-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My App Access */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MyAppAccessView"][];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/catalog": {
         parameters: {
             query?: never;
@@ -3757,7 +3807,6 @@ export interface components {
         };
         CreateInvitation: {
             email: string;
-            role: string;
         };
         CreateOwnAccount: {
             name: string;
@@ -3812,7 +3861,6 @@ export interface components {
         InvitationView: {
             id?: components["schemas"]["UUID"];
             email?: string;
-            role?: string;
             status?: string;
             expiresAt?: components["schemas"]["Instant"];
             token?: string;
@@ -3863,6 +3911,12 @@ export interface components {
             cap?: number;
             nature?: string;
             window?: string;
+        };
+        MyAppAccessView: {
+            appId?: components["schemas"]["UUID"];
+            appSlug?: string;
+            appName?: string;
+            role?: string;
         };
         MyInvitationView: {
             id?: string;
@@ -4189,6 +4243,12 @@ export interface components {
             status?: string;
             displayName?: string;
         };
+        UserAppView: {
+            appId?: components["schemas"]["UUID"];
+            app?: string;
+            role?: string;
+            implicit?: boolean;
+        };
         UserView: {
             id?: components["schemas"]["UUID"];
             email?: string;
@@ -4196,6 +4256,8 @@ export interface components {
             role?: string;
             status?: string;
             tenantId?: string;
+            joinedAt?: components["schemas"]["Instant"];
+            apps?: components["schemas"]["UserAppView"][];
         };
         WithdrawalView: {
             appId?: string;

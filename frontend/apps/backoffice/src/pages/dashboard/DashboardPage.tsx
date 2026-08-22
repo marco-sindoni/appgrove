@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button, Card, Icon, cn } from '@appgrove/design-system'
 import { useTranslation, type Language } from '@appgrove/i18n'
-import { useCurrentAccount, useInvitations, useMembers } from '../../api/hooks'
+import { useCanReadMembers, useCurrentAccount, useInvitations, useMembers } from '../../api/hooks'
 import { useAuthStore } from '../../auth/authStore'
 import { useTwoFaStatus } from '../../auth/twoFaApi'
 import { useMySubscriptions } from '../../billing/subscriptionsApi'
@@ -58,6 +58,10 @@ export function DashboardPage() {
   const { t, i18n } = useTranslation()
   const claims = useAuthStore((s) => s.claims)
   const canManage = useAuthStore((s) => !!s.claims?.roles?.some((r) => r === 'owner' || r === 'admin'))
+  // Le persone dell'account e i suoi inviti sono letture del SOLO owner (UC 0100): distinta da
+  // `canManage`, che governa il comando «gestisci abbonamento» — superficie dei pagamenti, che quella
+  // storia non stringe.
+  const canReadMembers = useCanReadMembers()
 
   const account = useCurrentAccount()
   const catalog = useAppCatalog()
@@ -112,9 +116,9 @@ export function DashboardPage() {
             <h2 className="pb-1.5 text-[13px] font-bold uppercase tracking-[0.06em] text-fg-muted">
               {t('dashboard.glance')}
             </h2>
-            {/* Membri e inviti sono letture riservate a owner/admin: a un member non si mostra una
-                riga rotta, si omette la riga. */}
-            {canManage && (
+            {/* Persone e inviti sono letture riservate all'owner (UC 0100): a chi non le può leggere
+                non si mostra una riga rotta, si omette la riga. */}
+            {canReadMembers && (
               <>
                 <GlanceRow
                   label={t('dashboard.glanceMembers')}

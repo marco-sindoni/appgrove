@@ -196,3 +196,15 @@ esplicita per gli strumenti di assistenza, come già si fa nella schermata dei m
   piattaforma, con la ragione scritta accanto: quando il varco vecchio sparirà, andranno riportati a un
   token `member`, ed è la prova che il potere è diventato erogabile. Proprietario: questa storia.
 
+### Lasciato da UC 0100 (change 0096)
+
+- **Il dettaglio delle applicazioni nell'elenco delle persone non è un collegamento**, e dovrà
+  diventarlo qui. La schermata «Members» mostra per ciascuna persona quante e quali applicazioni usa,
+  con il ruolo che vi ha, e apre il dettaglio **sul posto**: la storia 0100 prevedeva che il numero
+  portasse alla gestione utenti dell'applicazione, ma quella schermata è di questa storia e non
+  esisteva. Un collegamento verso il nulla è peggio della sua assenza, quindi il dettaglio dichiara a
+  parole dove si cambia il ruolo (chiave di traduzione `members.appsManagedInApp`). Quando la schermata
+  esisterà, ogni voce del dettaglio diventa un collegamento verso la gestione utenti di *quella*
+  applicazione, e la frase di consolazione può sparire. Il percorso rapido «abilita su …» direttamente
+  dall'elenco delle persone resta invece un punto aperto già annotato nella storia 0100.
+  Proprietario: questa storia.

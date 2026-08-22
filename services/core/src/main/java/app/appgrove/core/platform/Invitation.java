@@ -29,9 +29,17 @@ public class Invitation extends BaseTenantEntity {
     @Column(nullable = false)
     private String email;
 
+    /**
+     * <b>Residuo, non scelta</b> (UC 0100). Il ruolo dell'invito è uscito dal contratto — non si chiede
+     * più a chi invita e non si restituisce a chi rilegge — ma la colonna resta, perché è
+     * {@code NOT NULL} senza valore predefinito (V2) e perché il suo valore è quello con cui nasce
+     * l'appartenenza all'accettazione ({@link MeInvitationsResource}, e il servizio di autenticazione
+     * per chi si registra dall'invito). Vale quindi <b>sempre</b> {@code member}: non esiste più un modo
+     * di scriverlo diverso. Il ritiro della colonna è della conversione di UC 0113.
+     */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MembershipRole role;
+    private MembershipRole role = MembershipRole.member;
 
     @Column(name = "token_hash", nullable = false)
     private String tokenHash;
@@ -77,9 +85,8 @@ public class Invitation extends BaseTenantEntity {
         // richiesto da JPA
     }
 
-    public Invitation(String email, MembershipRole role, String tokenHash, Instant expiresAt, UUID invitedBy) {
+    public Invitation(String email, String tokenHash, Instant expiresAt, UUID invitedBy) {
         this.email = email;
-        this.role = role;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
         this.invitedBy = invitedBy;

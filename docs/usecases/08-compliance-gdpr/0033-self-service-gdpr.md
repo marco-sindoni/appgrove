@@ -144,3 +144,14 @@ _Aggiunto dalla change `0070-use-case-0091-…` (batteria journey e2e utente), o
   sarebbe un allentamento dell'unicità, e va deciso insieme a *che cosa significa* cancellare
   un'identità: se l'indirizzo torna libero, la persona che si ricancella e si riscrive è una persona
   nuova o la stessa? La domanda appartiene alla cancellazione, non ai percorsi d'ingresso.
+
+- **Come si mostra a schermo una persona sospesa per limitazione del trattamento** (art. 18) senza dire più
+  del dovuto — *portato qui dalla change `0096`* (UC 0100). L'elenco unico delle persone dell'account mostra
+  un solo stato «sospesa» per due cose diverse: la sospensione **amministrativa** decisa dall'owner e la
+  limitazione del trattamento decisa dal titolare, che l'owner non può togliere. Oggi non sono nemmeno
+  distinguibili nel contratto — la vista della persona collassa le due nello stesso valore, di proposito
+  (UC 0116) — quindi l'interfaccia non ha nulla da cui dedurre la differenza. Le due domande da chiudere
+  insieme sono: *quanto* si può dire all'owner (che la sospensione non è sua e non si tocca, senza spiegare
+  perché) e *come* farlo senza rivelare che quella persona ha esercitato un diritto. Finché non è deciso,
+  il rischio concreto è che un owner tolga per errore una sospensione che non è sua — e la sospensione
+  torna, perché la fonte di verità è l'identità, ma il tentativo non gli dice nulla.

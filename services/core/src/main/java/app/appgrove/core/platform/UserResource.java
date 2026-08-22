@@ -4,8 +4,12 @@ import app.appgrove.commons.audit.AuditLogger;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.core.billing.EntitlementInvalidationPublisher;
+import app.appgrove.core.billing.EntitlementReadModel;
+import app.appgrove.core.catalog.App;
+import app.appgrove.core.catalog.AppRepository;
 import app.appgrove.core.platform.UserDtos.UpdateMe;
 import app.appgrove.core.platform.UserDtos.UpdateUser;
+import app.appgrove.core.platform.UserDtos.UserAppView;
 import app.appgrove.core.platform.UserDtos.UserView;
 import io.quarkus.security.Authenticated;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,6 +29,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +47,11 @@ import org.jboss.logging.Logger;
  * <p>Il contratto esposto non cambia (stessi percorsi, stessi campi, stesso {@code id} della
  * persona): cambia solo da dove vengono i campi.
  *
- * <p>Gestione riservata all'<b>owner</b>. Le annotazioni nominano ancora {@code admin} perché quel
- * valore può comparire in un token già emesso (UC 0098: non è più un ruolo di appartenenza, e il ritiro
- * della tolleranza è di UC 0113); nessun token nuovo lo porta.
+ * <p>Gestione riservata all'<b>owner</b>, e da UC 0100 <b>soltanto</b> a lui: la tolleranza per i token
+ * già emessi che portano {@code admin} (UC 0098) è ritirata <b>qui</b>, in anticipo su UC 0113, perché
+ * governare le persone dell'account è esattamente il potere che questa storia riserva all'owner. La
+ * difesa vera è questa annotazione, non la guardia della rotta nel backoffice. Le operazioni su
+ * {@code /me} restano invece aperte a chiunque appartenga a un account: sono i propri dati.
  */
 @Path("/api/platform/v1/users")
 @Authenticated
@@ -66,20 +74,31 @@ public class UserResource {
     AppAccessRepository accesses;
 
     @Inject
+    AppRepository apps;
+
+    @Inject
+    EntitlementReadModel entitlements;
+
+    @Inject
     EntitlementInvalidationPublisher invalidation;
 
     @Inject
     AuditLogger audit;
 
+    /**
+     * Le persone dell'account, ciascuna con le applicazioni su cui è abilitata (UC 0100): è la lettura
+     * che alimenta l'elenco unico della schermata «Members».
+     */
     @GET
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     public Page<UserView> list(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         PageRequest pr = PageRequest.of(page, size);
+        AccountApps accountApps = new AccountApps();
         List<UserView> content = memberships.findAll()
                 .page(io.quarkus.panache.common.Page.of(pr.page(), pr.size()))
                 .list()
                 .stream()
-                .map(this::view)
+                .map(m -> view(m, accountApps))
                 .filter(java.util.Objects::nonNull)
                 .toList();
         return Page.of(content, pr, memberships.count());
@@ -111,15 +130,17 @@ public class UserResource {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     public UserView get(@PathParam("id") UUID id) {
         Membership membership = requireMembership(id);
-        return UserView.from(membership, requireIdentity(membership));
+        // Stessa forma della riga dell'elenco, applicazioni comprese: una lettura di dettaglio che
+        // mostrasse meno della riga da cui si arriva sarebbe una trappola per chi la consuma.
+        return UserView.from(membership, requireIdentity(membership), new AccountApps().of(membership));
     }
 
     @PATCH
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     @Transactional
     public UserView update(@PathParam("id") UUID id, UpdateUser body) {
         Membership membership = requireMembership(id);
@@ -167,7 +188,7 @@ public class UserResource {
      */
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     @Transactional
     public Response delete(@PathParam("id") UUID id) {
         Membership membership = requireMembership(id);
@@ -225,9 +246,68 @@ public class UserResource {
     }
 
     /** Vista di un'appartenenza; {@code null} se l'identità collegata non è più viva (riga orfana). */
-    private UserView view(Membership membership) {
+    private UserView view(Membership membership, AccountApps accountApps) {
         Identity identity = identities.findById(membership.getIdentityId());
-        return identity == null ? null : UserView.from(membership, identity);
+        return identity == null ? null : UserView.from(membership, identity, accountApps.of(membership));
+    }
+
+    /**
+     * Indice «persona → applicazioni su cui è abilitata», costruito <b>una volta per richiesta</b>.
+     *
+     * <p>Il vincolo che ne dettava la forma: il costo della lettura <b>non deve crescere con il numero
+     * di persone</b>. Con trenta persone in elenco, una interrogazione per riga sono trenta
+     * interrogazioni — e l'elenco delle persone è la schermata che si apre per prima quando qualcosa
+     * non va. Qui si leggono <b>tutte</b> le righe di accesso dell'account in una volta (sono al più
+     * persone × applicazioni, e la lettura è già filtrata per account dal discriminatore) e si
+     * raggruppano in memoria.
+     *
+     * <p>I diritti dell'account si leggono <b>solo se</b> nell'elenco compare un owner, perché servono
+     * soltanto a lui: il suo accesso è implicito su tutte le applicazioni a cui l'account ha diritto e
+     * non ha righe di permesso da leggere (UC 0098 §5).
+     */
+    private final class AccountApps {
+
+        private final Map<UUID, String> nameByApp = new HashMap<>();
+        private final Map<UUID, List<UserAppView>> byIdentity = new HashMap<>();
+        private List<UserAppView> ownerApps;
+
+        private AccountApps() {
+            for (App app : apps.listAll()) {
+                nameByApp.put(app.getId(), app.getSlug());
+            }
+            for (AppAccess access : accesses.listAll()) {
+                String name = nameByApp.get(access.getAppId());
+                if (name == null) {
+                    // Applicazione uscita dal catalogo: la riga di permesso non nomina più nulla, e
+                    // mostrare un identificativo nudo non aiuterebbe nessuno.
+                    continue;
+                }
+                byIdentity
+                        .computeIfAbsent(access.getIdentityId(), k -> new ArrayList<>())
+                        .add(new UserAppView(access.getAppId(), name, access.getRole().name(), false));
+            }
+            byIdentity.values().forEach(list -> list.sort(Comparator.comparing(UserAppView::app)));
+        }
+
+        /** Le applicazioni di quella persona, mai {@code null} (l'elenco vuoto è uno stato legittimo). */
+        List<UserAppView> of(Membership membership) {
+            if (membership.getRole() == MembershipRole.owner) {
+                return ownerApps();
+            }
+            return byIdentity.getOrDefault(membership.getIdentityId(), List.of());
+        }
+
+        private List<UserAppView> ownerApps() {
+            if (ownerApps == null) {
+                Map<String, UUID> idByName = new HashMap<>();
+                nameByApp.forEach((id, name) -> idByName.put(name, id));
+                ownerApps = entitlements.forCurrentTenant().entitlements().stream()
+                        .map(e -> new UserAppView(idByName.get(e.appSlug()), e.appSlug(), null, true))
+                        .sorted(Comparator.comparing(UserAppView::app))
+                        .toList();
+            }
+            return ownerApps;
+        }
     }
 
     /**

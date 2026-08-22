@@ -11,7 +11,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -25,16 +24,18 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /**
- * API inviti del tenant. Tenant-scoped automatico (discriminator). Gestione riservata all'<b>owner</b>
- * (le annotazioni nominano ancora {@code admin} solo come tolleranza dei token già emessi, UC 0098).
- * Il token grezzo è restituito SOLO alla creazione; su DB resta solo il suo hash (single-use).
+ * API inviti del tenant. Tenant-scoped automatico (discriminator). Gestione riservata all'<b>owner</b>,
+ * e da UC 0100 <b>soltanto</b> a lui: la tolleranza per i token già emessi che portano {@code admin}
+ * (UC 0098) è ritirata <b>qui</b>, in anticipo su UC 0113, perché invitare una persona nell'account è
+ * esattamente il potere che questa storia riserva all'owner. La difesa vera è questa annotazione, non la
+ * guardia della rotta nel backoffice.
+ *
+ * <p>Il token grezzo è restituito SOLO alla creazione; su DB resta solo il suo hash (single-use).
  *
  * <p><b>Tre esiti all'invio, di cui due leciti</b> (UC 0118 §5). «Questa persona è già membro di
  * questo account» e «c'è già un invito in attesa per questo indirizzo» sono informazioni
@@ -49,13 +50,6 @@ import java.util.UUID;
 @Consumes(MediaType.APPLICATION_JSON)
 public class InvitationResource {
 
-    /**
-     * Si invita <b>solo</b> come {@code member}: l'owner nasce con l'account (iscrizione) e il valore
-     * {@code admin} non è più un ruolo di piattaforma (UC 0098). Chi entra non porta con sé alcun
-     * potere: i poteri si concedono dopo, una applicazione alla volta ({@code platform.app_access}).
-     * Il campo {@code role} del corpo resta nel contratto e sparirà con la schermata di UC 0100.
-     */
-    private static final Set<MembershipRole> INVITABLE = EnumSet.of(MembershipRole.member);
     private static final Duration TTL = Duration.ofDays(7);
 
     /**
@@ -83,11 +77,14 @@ public class InvitationResource {
     @Inject
     AuditLogger audit;
 
+    /**
+     * Invio di un invito. Non c'è alcun ruolo da scegliere (UC 0100): si entra sempre come
+     * {@code member}, e i poteri si concedono dopo, una applicazione alla volta.
+     */
     @POST
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     @Transactional
     public Response create(@Valid CreateInvitation body) {
-        MembershipRole role = parseInvitableRole(body.role());
         String email = body.email().trim();
 
         // La lettura dell'identità si esegue SEMPRE, prima di ogni ramo, e il suo risultato cambia solo
@@ -109,17 +106,17 @@ public class InvitationResource {
         // "chi ha invitato" è l'identità della persona (UC 0116): l'appartenenza cambia nel tempo,
         // l'identità no — ed è l'identificativo che le altre tabelle già conservano.
         UUID invitedBy = identities.findByCognitoSub(caller.subject()).map(Identity::getId).orElse(null);
-        Invitation invitation = new Invitation(
-                email, role, InvitationTokens.hash(token), Instant.now().plus(TTL), invitedBy);
+        Invitation invitation =
+                new Invitation(email, InvitationTokens.hash(token), Instant.now().plus(TTL), invitedBy);
         // Il collegamento all'identità che esiste già (UC 0118): serve all'accettazione, e NON esce mai
         // verso chi ha invitato — InvitationView non lo porta, e nessuna interfaccia di account lo vede.
         invitation.setIdentityId(identity == null ? null : identity.getId());
         repository.persist(invitation);
         repository.flush(); // forza INSERT: id e tenant_id valorizzati prima della response
-        // evento audit (UC 0006): id invito e ruolo, MAI l'email dell'invitato (nessun dato personale, #08/5)
+        // evento audit (UC 0006): id invito, MAI l'email dell'invitato (nessun dato personale, #08/5).
+        // Il ruolo non si registra più perché non è più una scelta di chi invita (UC 0100).
         audit.success("member.invited", Map.of(
                 "invitation_id", invitation.getId().toString(),
-                "role", role.name(),
                 "actor", caller.subject()));
         return Response.status(Response.Status.CREATED)
                 .entity(InvitationView.created(invitation, token))
@@ -127,7 +124,7 @@ public class InvitationResource {
     }
 
     @GET
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     public Page<InvitationView> listPending(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         PageRequest pr = PageRequest.of(page, size);
         List<InvitationView> content = repository.find("status", InvitationStatus.pending)
@@ -141,7 +138,7 @@ public class InvitationResource {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed(Roles.OWNER)
     @Transactional
     public Response revoke(@PathParam("id") UUID id) {
         Invitation invitation = repository.findById(id);
@@ -166,18 +163,5 @@ public class InvitationResource {
                 .type(ProblemDetail.MEDIA_TYPE)
                 .entity(new ProblemDetail(type, "Conflict", status, detail, null, null))
                 .build();
-    }
-
-    private static MembershipRole parseInvitableRole(String value) {
-        MembershipRole role;
-        try {
-            role = MembershipRole.valueOf(value);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Ruolo non valido: " + value);
-        }
-        if (!INVITABLE.contains(role)) {
-            throw new BadRequestException("Ruolo non invitabile: " + value);
-        }
-        return role;
     }
 }

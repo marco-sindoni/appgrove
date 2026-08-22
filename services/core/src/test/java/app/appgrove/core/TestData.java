@@ -241,6 +241,15 @@ public class TestData {
         return queryUuid("select identity_id from platform.invitations where id = ?", invitationId);
     }
 
+    /**
+     * Il ruolo memorizzato sull'invito. Da UC 0100 il ruolo non è più nel contratto e vale sempre
+     * {@code member}: questo lettore serve a <b>provarlo</b>, perché la colonna esiste ancora ed è
+     * l'unico posto dove un valore diverso potrebbe insinuarsi.
+     */
+    public String invitationRole(UUID invitationId) {
+        return queryString("select role from platform.invitations where id = ?", invitationId);
+    }
+
     /** Porta l'invito a scadenza, per i collaudi che devono vederlo rifiutato. */
     public void expireInvitation(UUID invitationId) {
         exec("update platform.invitations set expires_at = ? where id = ?",

@@ -1,12 +1,12 @@
 # UC 0100 — Sezione «Members» come elenco unico di utenti, senza ruolo
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change 0096)
 **Epica**: [E22.1 Fondamenta](../epic/E22-01-fondamenta-modello-centralizzato.md)
 **Dipendenze**: UC 0098 (modello dati), UC 0099 (autorizzazione), UC 0059 (schermata membri attuale, che questa storia evolve)
 **Sostituisce**: UC 0074 dell'epica 14 (elenco fra applicazioni e schermata membri per applicazione)
 **Piano di lavoro**: [task/0100](../task/0100-sezione-members-elenco-unico.md)
 **Prototipo**: [owner.html](../prototype/owner.html), schermata «Members»
-**Ultimo aggiornamento**: 2026-08-19
+**Ultimo aggiornamento**: 2026-08-22
 
 ## 1. Obiettivo / Scope
 
@@ -148,3 +148,13 @@ e descritto per gli strumenti di assistenza.
   più; `members.roleOwner` e `members.roleMember` restano finché la colonna esiste.
 - **Il campo `role` del corpo dell'invito** è ancora nel contratto e accetta il solo valore `member`.
   Toglierlo è un cambio di contratto e appartiene a questa storia, che rifà quella schermata.
+
+### Lasciato aperto dalla change 0096
+
+- **L'offerta di rimandare un invito già in attesa** (§5) non è stata implementata: il secondo invito non
+  si crea e il rifiuto è riconoscibile e tradotto, ma non c'è un comando per **rispedire** il collegamento.
+  Motivo: il token grezzo esce dal servizio una sola volta e su banca dati resta solo la sua impronta,
+  quindi rimandare richiede un'operazione **nuova** del servizio (token nuovo, impronta e scadenza
+  aggiornate, traccia di controllo) — contratto nuovo, non un pulsante, e fuori dai requisiti scritti della
+  change. Tracciato con il dettaglio di *dove* metterlo — la riga dell'invito nell'elenco unico, accanto a
+  «Revoca» — in [docs/_BACKLOG.md](../../../_BACKLOG.md).

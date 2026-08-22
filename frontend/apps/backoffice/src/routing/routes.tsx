@@ -1,6 +1,6 @@
 import type { RouteObject } from 'react-router-dom'
 import { ShellLayout } from '../shell/ShellLayout'
-import { ProtectedRoute, AppModuleHost, requireAuth, requireAnyRole } from './guards'
+import { ProtectedRoute, AppModuleHost, requireAuth, requireRole } from './guards'
 import { DashboardPage } from '../pages/dashboard/DashboardPage'
 import { Account } from '../pages/Account'
 import { Billing } from '../pages/Billing'
@@ -48,7 +48,10 @@ export const routes: RouteObject[] = [
           { path: 'privacy', element: <PrivacyPage /> },
           { path: 'support', element: <SupportPage /> },
           {
-            element: <ProtectedRoute guard={requireAnyRole(['owner', 'admin'])} />,
+            // Le persone dell'account sono materia del SOLO owner (UC 0100): `admin` non è più un
+            // ruolo di piattaforma. La difesa vera è nel core; questa è la cortesia che evita di
+            // aprire una schermata che risponderebbe soltanto rifiuti.
+            element: <ProtectedRoute guard={requireRole('owner')} />,
             children: [{ path: 'members', element: <MembersPage /> }],
           },
           { path: 'app/:appId/*', element: <AppModuleHost /> },

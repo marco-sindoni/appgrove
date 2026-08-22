@@ -1242,3 +1242,29 @@ possibili, da valutare: (a) confrontare l'insieme dei **metodi pubblici** degli 
 prova** (`@Test`) per classe, che direbbe «l'app #1 ha un collaudo che il modello non ha» senza guardare il
 corpo. Proprietario: UC 0046 (skill `new-application` e suo presidio anti-invecchiamento).
 
+
+## L'invito già in attesa dice «esiste già» ma non offre di rimandarlo (lasciato dalla change `0096`, 2026-08-22)
+
+La storia [UC 0100](usecases/22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md) §5
+descrive fra i suoi casi d'errore: «**invito a un indirizzo già invitato**: si offre di **rimandare**
+l'invito, non si crea un secondo invito». La change `0096` ha implementato **metà** di quella frase — il
+secondo invito non si crea, e il rifiuto ha un identificativo suo (`urn:appgrove:invitation:already-invited`)
+che l'interfaccia distingue e traduce nelle cinque lingue — ma **non l'offerta di rimandare**, che non era
+nei requisiti scritti della change e non è stata aggiunta strada facendo.
+
+Non è una dimenticanza dell'interfaccia: **non esiste il modo di rimandare**. Il token grezzo dell'invito
+esce dal servizio *una sola volta*, alla creazione, e su banca dati resta solo la sua impronta: chi ha in
+mano la schermata non possiede più il collegamento da rispedire. Rimandare richiede quindi un'operazione
+nuova del servizio — coniare un token nuovo per l'invito esistente, aggiornarne impronta e scadenza, e
+restituire il collegamento — con la sua traccia di controllo. È lavoro contenuto ma è **contratto nuovo**,
+non un pulsante.
+
+Dove metterlo, quando si farà: il posto naturale non è più il messaggio d'errore, ma la **riga dell'invito
+in attesa** dentro l'elenco unico, accanto a «Revoca»: dopo la change `0096` gli inviti stanno nella stessa
+tabella delle persone, quindi «rimanda» è un'azione di riga come le altre, e la si trova anche quando non si
+è appena provato a invitare due volte. Attenzione a due punti: la scadenza va **ricalcolata** (un token
+nuovo con la scadenza vecchia sarebbe già morto) e l'operazione va limitata in frequenza, perché è un modo
+di far arrivare email a un indirizzo che non ha acconsentito a nulla.
+
+Proprietario: UC 0100 (la sezione «Members»), che però è chiusa — per questo la voce sta qui, dove il lavoro
+aperto è visibile.

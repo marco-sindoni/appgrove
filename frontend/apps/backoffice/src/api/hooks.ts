@@ -4,12 +4,15 @@ import { useAuthStore } from '../auth/authStore'
 import { useApiClient } from './apiClient'
 
 /**
- * Vero se il ruolo in sessione può leggere membri e inviti (owner/admin, come il core).
- * Serve a **non chiedere** ciò che sappiamo verrebbe rifiutato: la pagina Membri è già riservata a
- * quei ruoli, ma la Dashboard (UC 0097) mostra gli stessi numeri a chiunque apra il backoffice.
+ * Vero se chi è in sessione può leggere le persone dell'account e i suoi inviti — da UC 0100 il
+ * **solo owner**, come il core.
+ *
+ * Serve a **non chiedere** ciò che sappiamo verrebbe rifiutato: la sezione «Members» è già riservata
+ * all'owner, ma il cruscotto (UC 0097) mostra gli stessi due numeri a chiunque apra il backoffice, e
+ * mostrare una riga rotta a un collaboratore è peggio che non mostrarla.
  */
-function useCanReadMembers(): boolean {
-  return useAuthStore((s) => !!s.claims?.roles?.some((r) => r === 'owner' || r === 'admin'))
+export function useCanReadMembers(): boolean {
+  return useAuthStore((s) => !!s.claims?.roles?.includes('owner'))
 }
 
 /** Profilo dell'utente corrente (`GET /users/me`). Dati personali già dichiarati in UC 0013. */
@@ -63,9 +66,13 @@ export function useSetNewsletterPreference() {
   })
 }
 
-// ── Membri & inviti (UC 0059) — tutti gli endpoint sono owner/admin lato core ────────────────
+// ── Persone & inviti dell'account (UC 0059, elenco unico UC 0100) — endpoint del SOLO owner ──
 
-/** Lista membri del tenant (`GET /users`). Una pagina ampia: la UI non pagina (fuori scope). */
+/**
+ * Le persone dell'account (`GET /users`), ciascuna con le applicazioni su cui è abilitata e la data di
+ * ingresso (UC 0100). Una pagina ampia: la schermata non pagina (la paginazione dell'elenco è rimandata
+ * alla ricerca globale del backoffice, UC 0088).
+ */
 export function useMembers() {
   const client = useApiClient()
   const canRead = useCanReadMembers()
@@ -103,7 +110,7 @@ export function useRemoveMember() {
   })
 }
 
-/** Inviti in sospeso del tenant (`GET /invitations`). */
+/** Inviti in attesa dell'account (`GET /invitations`): righe dello stesso elenco delle persone (UC 0100). */
 export function useInvitations() {
   const client = useApiClient()
   const canRead = useCanReadMembers()
@@ -115,12 +122,17 @@ export function useInvitations() {
   })
 }
 
-/** Crea un invito (`POST /invitations`) → `InvitationView` col **token grezzo** (solo qui). */
+/**
+ * Crea un invito (`POST /invitations`) → `InvitationView` col **token grezzo** (solo qui).
+ *
+ * Il corpo è **solo l'indirizzo** (UC 0100): il ruolo non si sceglie più, perché non era una scelta —
+ * chi entra entra come persona dell'account, e i poteri si concedono dopo, una applicazione alla volta.
+ */
 export function useCreateInvitation() {
   const client = useApiClient()
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (vars: { email: string; role: string }) =>
+    mutationFn: (vars: { email: string }) =>
       unwrap<InvitationView>(client.POST('/api/platform/v1/invitations', { body: vars })),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] }),
   })
@@ -230,7 +242,7 @@ export const MY_INVITATIONS_KEY = ['me', 'invitations'] as const
  * Gli inviti in attesa indirizzati alla persona in sessione (`GET /me/invitations`).
  *
  * <p>Diversa da {@link useInvitations}, che è la lettura dell'**account** («chi ho invitato io», solo
- * owner/admin): questa ha per soggetto la **persona** e attraversa gli account per costruzione. Non è
+ * owner): questa ha per soggetto la **persona** e attraversa gli account per costruzione. Non è
  * riservata a nessun ruolo — un invito lo può ricevere chiunque.
  *
  * <p>Si rinfresca al ritorno sulla scheda, come le appartenenze: un invito che arriva mentre la

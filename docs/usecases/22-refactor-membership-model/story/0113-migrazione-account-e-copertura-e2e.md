@@ -152,3 +152,18 @@ implementano: è il dovere di ogni change, non una pulizia finale.
   conversione, ed è quello che la sigilla.
 - **Il ritiro della tolleranza `Roles.ADMIN`** (la costante e le annotazioni `@RolesAllowed` che la
   nominano) va fatto qui, con la data dichiarata nel piano di rilascio: senza una data, resta per sempre.
+
+### Lasciato da UC 0100 (change 0096)
+
+- **La tolleranza `admin` è già ritirata sulle persone e sugli inviti dell'account**, in anticipo su
+  questa storia: `UserResource` e `InvitationResource` ammettono il **solo** owner, perché governare le
+  persone è esattamente il potere che UC 0100 gli riserva. La costante `Roles.ADMIN` e le altre otto
+  operazioni che la nominano (diritti dell'interessato, pagamenti, ticket, posti del Mini-CRM) restano
+  intatte e il loro ritiro — con la data — è ancora qui. Conseguenza da tenere presente nel piano di
+  rilascio: chi ha in mano un token coniato con `admin` e senza `owner` perde la gestione dei membri
+  **subito**, non alla data del ritiro generale.
+- **La colonna `invitations.role` non è più scritta con un valore scelto**: il ruolo è uscito dal
+  contratto dell'invito (corpo e vista) e la colonna vale sempre `member`, perché è `NOT NULL` senza
+  valore predefinito e perché il suo valore è quello con cui nasce l'appartenenza all'accettazione. La
+  **rimozione** della colonna appartiene alla conversione, insieme a quella delle righe `admin`: da
+  fare quando nessun invito in attesa porta più un valore diverso.

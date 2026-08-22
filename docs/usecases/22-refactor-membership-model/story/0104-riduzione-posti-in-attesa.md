@@ -153,3 +153,14 @@ riduzione è in corso di esecuzione»), errore.
 - **Durata massima dell'attesa**: coincide col periodo di fatturazione (un mese). Se un giorno esistesse
   il ciclo annuale, un'attesa di undici mesi sarebbe inaccettabile e servirebbe una regola diversa.
   Proprietario: UC 0102.
+
+### Lasciato da UC 0100 (change 0096)
+
+- **Lo stato «in cessazione» nell'elenco unico delle persone** non esiste ancora, e l'elenco mostra
+  **tre** stati invece dei quattro che la storia 0100 §4 elencava: attiva, invito in attesa, sospesa.
+  Motivo: l'appartenenza ha due soli stati nel modello (`active`, `suspended`) e la cessazione nasce
+  qui, con la logica dei posti. Aggiungere subito a schermo una etichetta che nessun dato può produrre
+  avrebbe significato scrivere in cinque lingue una parola morta. Quando questa storia introduce
+  l'indicazione per la cessazione, l'elenco unico va esteso con il quarto stato (**con la data di
+  esecuzione**, perché «in cessazione» senza il quando non dice nulla) e con la sua azione di riga.
+  Proprietario: questa storia.

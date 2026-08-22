@@ -9,7 +9,10 @@ import jakarta.inject.Inject;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-/** Matrice ruoli (UC 0013 §8): owner/admin gestiscono utenti/inviti; member sola lettura del proprio profilo. */
+/**
+ * Matrice ruoli: da UC 0100 <b>solo l'owner</b> gestisce persone e inviti dell'account; chiunque altro
+ * legge e rettifica il proprio profilo, e nulla più.
+ */
 @QuarkusTest
 class RolesTest {
 
@@ -24,7 +27,7 @@ class RolesTest {
     void memberCannotCreateInvitation() {
         given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "member"))
                 .contentType(ContentType.JSON)
-                .body(Map.of("email", "role-member@example.test", "role", "member"))
+                .body(Map.of("email", "role-member@example.test"))
                 .when().post(INVITATIONS)
                 .then().statusCode(403);
     }
@@ -33,18 +36,38 @@ class RolesTest {
     void ownerCanCreateInvitation() {
         given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "owner"))
                 .contentType(ContentType.JSON)
-                .body(Map.of("email", "role-owner@example.test", "role", "member"))
+                .body(Map.of("email", "role-owner@example.test"))
                 .when().post(INVITATIONS)
                 .then().statusCode(201);
     }
 
+    /**
+     * <b>Il collaudo che prova il contrario di prima</b>, e non la sua cancellazione (UC 0100). Fino a
+     * questa storia un token che portava {@code admin} poteva invitare: {@code admin} non è più un ruolo
+     * di appartenenza (UC 0098) e la gestione delle persone è dell'owner. Cancellare il collaudo vecchio
+     * senza rimpiazzarlo avrebbe lasciato riaprire il varco senza che nulla diventasse rosso.
+     */
     @Test
-    void adminCanCreateInvitation() {
+    void adminCannotCreateInvitation() {
         given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "admin"))
                 .contentType(ContentType.JSON)
-                .body(Map.of("email", "role-admin@example.test", "role", "member"))
+                .body(Map.of("email", "role-admin@example.test"))
                 .when().post(INVITATIONS)
-                .then().statusCode(201);
+                .then().statusCode(403);
+    }
+
+    @Test
+    void adminCannotListUsers() {
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "admin"))
+                .when().get(USERS)
+                .then().statusCode(403);
+    }
+
+    @Test
+    void adminCannotListInvitations() {
+        given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "admin"))
+                .when().get(INVITATIONS)
+                .then().statusCode(403);
     }
 
     @Test

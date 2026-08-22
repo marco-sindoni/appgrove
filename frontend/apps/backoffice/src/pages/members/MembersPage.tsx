@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ApiError, type InvitationView, type UserView } from '@appgrove/api-client'
+import { ApiError, type UserAppView } from '@appgrove/api-client'
 import { Badge, Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useConfig } from '../../config'
@@ -20,23 +20,38 @@ import {
 import { QueryState } from '../../shell/QueryState'
 import { Field } from '../auth/Field'
 import { ConfirmDialog } from './ConfirmDialog'
+import { buildRoster, type RosterRow } from './roster'
 
 /**
- * Il ruolo di piattaforma ha **due soli valori** (UC 0098): `owner` — chi possiede l'account — e
- * `member`, tutte le altre persone. Che cosa una persona possa *fare* non lo dice questo ruolo: lo dice
- * il ruolo su ciascuna applicazione, che si governa dalla gestione utenti dell'applicazione (UC 0111).
- * Per questo il ruolo qui è una **etichetta in sola lettura** e non più un selettore: non c'è nulla da
- * scegliere. La colonna sparirà del tutto con l'elenco unico di UC 0100.
+ * Sezione «Members» come **registro delle persone** dell'account (UC 0100).
+ *
+ * Che cosa è cambiato rispetto a UC 0059, e perché — perché la prima reazione di chi conosceva la
+ * schermata di prima sarà «manca qualcosa»:
+ *
+ * - **una** tabella invece di due. Le persone e gli inviti in attesa erano due elenchi della stessa
+ *   cosa, e chi guardava doveva sommare a mente per sapere quante persone aveva. Chi ha un invito in
+ *   attesa è una persona dell'account che sta arrivando, e occupa già un posto;
+ * - **nessun ruolo**. Il ruolo di piattaforma ha due soli valori (UC 0098) e non dice che cosa una
+ *   persona possa *fare*: lo dice il ruolo su ciascuna applicazione. Una colonna che ripete «Membro»
+ *   su tutte le righe tranne una non è informazione, è arredamento;
+ * - la colonna **applicazioni**, che è l'informazione che quella colonna nascondeva: su quante e quali
+ *   applicazioni ciascuno è abilitato, in **sola lettura**.
+ *
+ * L'enforcement vero è nel core (`@RolesAllowed(owner)` su persone e inviti); il gating qui è cortesia.
  */
-const roleLabel = (t: TFn, role?: string) =>
-  role === 'owner' ? t('members.roleOwner') : t('members.roleMember')
 
-const statusBadge = (t: TFn, status?: string) =>
-  status === 'suspended' ? (
-    <Badge tone="warning">{t('members.statusSuspended')}</Badge>
-  ) : (
-    <Badge tone="success">{t('members.statusActive')}</Badge>
-  )
+const statusBadge = (t: TFn, row: RosterRow) => {
+  if (row.status === 'invited') {
+    return <Badge tone="info">{t('members.statusInvited')}</Badge>
+  }
+  if (row.status === 'suspended') {
+    return <Badge tone="warning">{t('members.statusSuspended')}</Badge>
+  }
+  return <Badge tone="success">{t('members.statusActive')}</Badge>
+}
+
+const formatDate = (iso: string | undefined, locale: string) =>
+  iso ? new Date(iso).toLocaleDateString(locale) : '—'
 
 /**
  * Le due collisioni **lecite** dell'invito (UC 0118 §5) hanno due messaggi distinti, e la causa la
@@ -72,14 +87,37 @@ interface InviteSuccess {
 }
 
 type Confirm =
-  | { kind: 'suspend' | 'remove'; user: UserView }
-  | { kind: 'revoke'; invitation: InvitationView }
+  | { kind: 'suspend' | 'remove'; row: RosterRow }
+  | { kind: 'revoke'; row: RosterRow }
 
 /**
- * Sezione "Membri" (UC 0059): lista membri + inviti pendenti, invito (POST core + send auth),
- * revoca, cambio ruolo, sospendi/riattiva, rimuovi. Gating UX su self/ultimo-owner (difesa in
- * profondità; l'enforcement vero è nel core via @RolesAllowed). EN/IT, a11y.
+ * Il dettaglio delle applicazioni di una persona, in **sola lettura**.
+ *
+ * Non è un collegamento: la schermata dove si cambia il ruolo su una applicazione è di UC 0111 e non
+ * esiste ancora, e un collegamento verso il nulla è peggio della sua assenza. La frase dice comunque
+ * *dove* si cambia, così l'assenza del comando non si legge come una dimenticanza.
  */
+function AppsDetail({ row, t }: { row: RosterRow; t: TFn }) {
+  if (row.apps.length === 0) {
+    return <p className="text-[12.5px] text-fg-muted">{t('members.appsNoneHint')}</p>
+  }
+  const roleLabel = (a: UserAppView) =>
+    a.implicit || !a.role ? t('members.appsImplicit') : t(`roles.${a.role}` as 'roles.viewer')
+  return (
+    <div className="space-y-1.5">
+      <ul className="flex flex-wrap gap-2">
+        {row.apps.map((a) => (
+          <li key={a.appId ?? a.app} className="flex items-center gap-1.5 text-[12.5px]">
+            <span className="font-semibold text-fg">{a.app}</span>
+            <Badge tone="neutral">{roleLabel(a)}</Badge>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[12px] text-fg-muted">{t('members.appsManagedInApp')}</p>
+    </div>
+  )
+}
+
 export function MembersPage() {
   const { t, i18n } = useTranslation()
   const config = useConfig()
@@ -97,21 +135,22 @@ export function MembersPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<Confirm | null>(null)
   const [copied, setCopied] = useState(false)
+  /** Righe con il dettaglio delle applicazioni aperto (chiave della riga). */
+  const [expanded, setExpanded] = useState<string[]>([])
 
-  const memberList = members.data?.content ?? []
-  const inviteList = invitations.data?.content ?? []
-  const ownersCount = useMemo(
-    () => memberList.filter((m) => m.role === 'owner').length,
-    [memberList],
+  const roster = useMemo(
+    () =>
+      buildRoster({
+        members: members.data?.content,
+        invitations: invitations.data?.content,
+        meId: me.data?.id as string | undefined,
+      }),
+    [members.data, invitations.data, me.data],
   )
-
-  const isSelf = (u: UserView) => !!me.data?.id && u.id === me.data.id
-  const isLastOwner = (u: UserView) => u.role === 'owner' && ownersCount <= 1
-  const locked = (u: UserView) => isSelf(u) || isLastOwner(u)
 
   const form = useForm<z.infer<ReturnType<typeof inviteSchema>>>({
     resolver: zodResolver(inviteSchema(t)),
-    defaultValues: { email: '', role: 'member' },
+    defaultValues: { email: '' },
   })
 
   const onInvite = form.handleSubmit(async (values) => {
@@ -129,25 +168,24 @@ export function MembersPage() {
         await sendInvitation(config.authBaseUrl, {
           email: values.email,
           token,
-          role: values.role,
           locale: i18n.language,
         })
       } catch {
         emailed = false
       }
       setInvite({ email: values.email, link, emailed })
-      form.reset({ email: '', role: 'member' })
+      form.reset({ email: '' })
     } catch (err) {
       setInviteError(inviteErrorMessage(err, t))
     }
   })
 
-  const onToggleStatus = async (u: UserView) => {
+  const onToggleStatus = async (row: RosterRow) => {
     setActionError(null)
     try {
       await updateMember.mutateAsync({
-        id: u.id as string,
-        status: u.status === 'suspended' ? 'active' : 'suspended',
+        id: row.id,
+        status: row.status === 'suspended' ? 'active' : 'suspended',
       })
     } catch {
       setActionError(t('errors.generic'))
@@ -159,11 +197,11 @@ export function MembersPage() {
     setActionError(null)
     try {
       if (confirm.kind === 'revoke') {
-        await revokeInvitation.mutateAsync(confirm.invitation.id as string)
+        await revokeInvitation.mutateAsync(confirm.row.id)
       } else if (confirm.kind === 'remove') {
-        await removeMember.mutateAsync(confirm.user.id as string)
+        await removeMember.mutateAsync(confirm.row.id)
       } else {
-        await onToggleStatus(confirm.user)
+        await onToggleStatus(confirm.row)
       }
       setConfirm(null)
     } catch {
@@ -182,11 +220,17 @@ export function MembersPage() {
     }
   }
 
+  const toggleExpanded = (key: string) =>
+    setExpanded((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]))
+
   const busy =
     createInvitation.isPending ||
     revokeInvitation.isPending ||
     updateMember.isPending ||
     removeMember.isPending
+
+  const th =
+    'border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint'
 
   return (
     <div className="space-y-[22px]">
@@ -195,13 +239,17 @@ export function MembersPage() {
         <p className="mt-1 text-sm text-fg-muted">{t('members.subtitle')}</p>
       </div>
 
+      {/* Riquadro dei posti (posti usati su totali, costo del posto successivo, riduzione in attesa):
+          arriva con UC 0103 e va QUI, fra l'intestazione e l'elenco. Il posto è lasciato apposta, per
+          non rimaneggiare la struttura una seconda volta. */}
+
       {actionError && (
         <p role="alert" className="text-sm text-danger">
           {actionError}
         </p>
       )}
 
-      {/* Form invito */}
+      {/* Invito: solo l'indirizzo. Nessun selettore di ruolo, e la riga sotto spiega perché. */}
       <Card>
         <CardHeader>
           <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
@@ -220,19 +268,20 @@ export function MembersPage() {
                 {...form.register('email')}
               />
             </div>
-            {/* Nessun selettore di ruolo: si entra sempre come `member` (UC 0098), e i poteri si
-                concedono dopo, una applicazione alla volta. Il campo resta nel corpo della richiesta
-                finché il contratto lo prevede; sparirà con UC 0100. */}
             <Button type="submit" className="mt-6" disabled={form.formState.isSubmitting}>
               {t('members.inviteSubmit')}
             </Button>
           </form>
 
+          {/* La differenza più visibile rispetto a prima è una SPARIZIONE: il selettore del ruolo. Una
+              sparizione non spiegata si legge come un difetto, quindi si spiega. */}
+          <p className="mt-3 text-[12.5px] text-fg-muted">{t('members.noRoleHint')}</p>
+
           {/* Il posto è dell'ACCOUNT, non della persona (UC 0118 §7): la stessa persona in due
               account occupa un posto in ciascuno, perché ogni account paga le persone che usano le
               *sue* applicazioni. Va scritto qui perché la prima reazione sarà «ma la paga già
               l'altra azienda» — e una regola che il cliente scopre in fattura è una regola sbagliata. */}
-          <p className="mt-3 text-[12.5px] text-fg-muted">{t('members.seatNote')}</p>
+          <p className="mt-1.5 text-[12.5px] text-fg-muted">{t('members.seatNote')}</p>
 
           {inviteError && (
             <p role="alert" className="mt-3 text-sm text-danger">
@@ -260,133 +309,144 @@ export function MembersPage() {
         </CardContent>
       </Card>
 
-      {/* Tabella membri */}
+      {/* Elenco UNICO: persone e inviti in attesa nella stessa tabella, l'owner in testa. */}
       <Card>
         <CardHeader>
           <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
-            {t('members.membersHeading')}
+            {t('members.rosterHeading')}
           </h2>
         </CardHeader>
         <CardContent>
           <QueryState
-            isLoading={members.isLoading}
-            isError={members.isError}
-            onRetry={() => void members.refetch()}
+            isLoading={members.isLoading || invitations.isLoading}
+            isError={members.isError || invitations.isError}
+            onRetry={() => {
+              void members.refetch()
+              void invitations.refetch()
+            }}
           >
-            {memberList.length === 0 ? (
+            {roster.length === 0 ? (
               <p className="text-sm text-fg-muted">{t('members.noMembers')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colEmail')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colName')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colRole')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colStatus')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colActions')}</th>
+                      <th scope="col" className={th}>{t('members.colEmail')}</th>
+                      <th scope="col" className={th}>{t('members.colName')}</th>
+                      <th scope="col" className={th}>{t('members.colStatus')}</th>
+                      <th scope="col" className={th}>{t('members.colApps')}</th>
+                      <th scope="col" className={th}>{t('members.colJoined')}</th>
+                      <th scope="col" className={th}>{t('members.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {memberList.map((u) => (
-                      <tr key={u.id} className="border-b border-line last:border-b-0">
-                        <td className="py-2 pr-4">{u.email}</td>
-                        <td className="py-2 pr-4 text-fg-muted">{u.displayName ?? '—'}</td>
-                        <td className="py-2 pr-4">
-                          <span>{roleLabel(t, u.role)}</span>
-                        </td>
-                        <td className="py-2 pr-4">{statusBadge(t, u.status)}</td>
-                        <td className="py-2 pr-4">
-                          <div className="flex flex-wrap gap-2">
-                            {u.status === 'suspended' ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={locked(u) || busy}
-                                onClick={() => void onToggleStatus(u)}
-                              >
-                                {t('members.reactivate')}
-                              </Button>
+                    {roster.map((row) => {
+                      const open = expanded.includes(row.key)
+                      return [
+                        <tr key={row.key} className="border-b border-line last:border-b-0">
+                          <td className="py-2 pr-4">{row.email}</td>
+                          <td className="py-2 pr-4 text-fg-muted">{row.displayName ?? '—'}</td>
+                          <td className="py-2 pr-4">
+                            <div className="flex flex-col gap-0.5">
+                              {statusBadge(t, row)}
+                              {row.status === 'invited' && (
+                                <span className="text-[11.5px] text-fg-faint">
+                                  {t('members.inviteExpiresOn', {
+                                    date: formatDate(row.expiresAt, i18n.language),
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 pr-4">
+                            {row.kind === 'invitation' ? (
+                              <span className="text-fg-faint">—</span>
                             ) : (
                               <Button
                                 type="button"
-                                variant="secondary"
+                                variant="ghost"
                                 size="sm"
-                                disabled={locked(u) || busy}
-                                onClick={() => setConfirm({ kind: 'suspend', user: u })}
+                                aria-expanded={open}
+                                aria-label={t('members.appsDetailLabel', { email: row.email })}
+                                onClick={() => toggleExpanded(row.key)}
                               >
-                                {t('members.suspend')}
+                                {row.apps.length === 0
+                                  ? t('members.appsNone')
+                                  : t('members.appsCount', { count: row.apps.length })}
                               </Button>
                             )}
-                            <Button
-                              type="button"
-                              variant="danger"
-                              size="sm"
-                              disabled={locked(u) || busy}
-                              onClick={() => setConfirm({ kind: 'remove', user: u })}
+                          </td>
+                          <td className="py-2 pr-4 text-fg-muted">
+                            {row.kind === 'invitation' ? '—' : formatDate(row.joinedAt, i18n.language)}
+                          </td>
+                          <td className="py-2 pr-4">
+                            <div
+                              className="flex flex-wrap gap-2"
+                              title={
+                                row.isSelf
+                                  ? t('members.selfHint')
+                                  : row.locked
+                                    ? t('members.lastOwnerHint')
+                                    : undefined
+                              }
                             >
-                              {t('members.remove')}
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </QueryState>
-        </CardContent>
-      </Card>
-
-      {/* Tabella inviti pendenti */}
-      <Card>
-        <CardHeader>
-          <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
-            {t('members.invitesHeading')}
-          </h2>
-        </CardHeader>
-        <CardContent>
-          <QueryState
-            isLoading={invitations.isLoading}
-            isError={invitations.isError}
-            onRetry={() => void invitations.refetch()}
-          >
-            {inviteList.length === 0 ? (
-              <p className="text-sm text-fg-muted">{t('members.noInvites')}</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-[13px]">
-                  <thead>
-                    <tr>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colEmail')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colRole')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colExpires')}</th>
-                      <th scope="col" className="border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint">{t('members.colActions')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inviteList.map((inv) => (
-                      <tr key={inv.id} className="border-b border-line last:border-b-0">
-                        <td className="py-2 pr-4">{inv.email}</td>
-                        <td className="py-2 pr-4">{roleLabel(t, inv.role)}</td>
-                        <td className="py-2 pr-4 text-fg-muted">
-                          {inv.expiresAt ? new Date(inv.expiresAt).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="py-2 pr-4">
-                          <Button
-                            type="button"
-                            variant="danger"
-                            size="sm"
-                            disabled={busy}
-                            onClick={() => setConfirm({ kind: 'revoke', invitation: inv })}
-                          >
-                            {t('members.revoke')}
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                              {row.kind === 'invitation' ? (
+                                <Button
+                                  type="button"
+                                  variant="danger"
+                                  size="sm"
+                                  disabled={busy}
+                                  onClick={() => setConfirm({ kind: 'revoke', row })}
+                                >
+                                  {t('members.revoke')}
+                                </Button>
+                              ) : (
+                                <>
+                                  {row.status === 'suspended' ? (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled={row.locked || busy}
+                                      onClick={() => void onToggleStatus(row)}
+                                    >
+                                      {t('members.reactivate')}
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      type="button"
+                                      variant="secondary"
+                                      size="sm"
+                                      disabled={row.locked || busy}
+                                      onClick={() => setConfirm({ kind: 'suspend', row })}
+                                    >
+                                      {t('members.suspend')}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    type="button"
+                                    variant="danger"
+                                    size="sm"
+                                    disabled={row.locked || busy}
+                                    onClick={() => setConfirm({ kind: 'remove', row })}
+                                  >
+                                    {t('members.remove')}
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>,
+                        open ? (
+                          <tr key={`${row.key}:apps`} className="border-b border-line bg-surface-2">
+                            <td colSpan={6} className="px-1 py-2.5">
+                              <AppsDetail row={row} t={t} />
+                            </td>
+                          </tr>
+                        ) : null,
+                      ]
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -406,9 +466,9 @@ export function MembersPage() {
           )}
           body={
             confirm.kind === 'remove'
-              ? t('members.confirmRemoveBody', { email: confirm.user.email })
+              ? t('members.confirmRemoveBody', { email: confirm.row.email })
               : confirm.kind === 'revoke'
-                ? t('members.confirmRevokeBody', { email: confirm.invitation.email })
+                ? t('members.confirmRevokeBody', { email: confirm.row.email })
                 : t('members.confirmSuspendBody')
           }
           confirmLabel={t(
