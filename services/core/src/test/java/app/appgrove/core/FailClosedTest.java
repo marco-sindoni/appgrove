@@ -18,7 +18,7 @@ class FailClosedTest {
 
     @Test
     void noTokenIsUnauthorized() {
-        given().contentType(ContentType.JSON).body(Map.of("email", "x@example.test", "role", "member"))
+        given().contentType(ContentType.JSON).body(Map.of("email", "x@example.test"))
                 .when().post(PATH)
                 .then().statusCode(401);
     }
@@ -26,7 +26,7 @@ class FailClosedTest {
     @Test
     void tokenWithoutTenantIsForbidden() {
         given().header("Authorization", "Bearer " + TestTokens.withRolesNoTenant("owner"))
-                .contentType(ContentType.JSON).body(Map.of("email", "x@example.test", "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", "x@example.test"))
                 .when().post(PATH)
                 .then().statusCode(403);
     }

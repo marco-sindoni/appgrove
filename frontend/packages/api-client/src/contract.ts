@@ -8,6 +8,12 @@ import type { components, paths } from './schema'
 export type UserView =
   paths['/api/platform/v1/users/me']['get']['responses']['200']['content']['application/json']
 
+/**
+ * Una applicazione su cui una persona dell'account è abilitata, col ruolo che vi ha (UC 0100). Serve
+ * all'elenco unico della schermata «Members»: il numero in colonna e il dettaglio a richiesta.
+ */
+export type UserAppView = components['schemas']['UserAppView']
+
 export type AccountView =
   paths['/api/platform/v1/accounts/me']['get']['responses']['200']['content']['application/json']
 

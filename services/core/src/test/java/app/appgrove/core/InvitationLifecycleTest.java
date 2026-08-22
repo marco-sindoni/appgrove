@@ -2,6 +2,7 @@ package app.appgrove.core;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,8 +15,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Ciclo di vita inviti (UC 0013 §5): create→list→revoke, duplicato pending (409), ruolo non
- * invitabile (400).
+ * Ciclo di vita inviti (UC 0013 §5): create→list→revoke, duplicato pending (409), e — da UC 0100 —
+ * l'assenza del ruolo dal contratto: un ruolo inviato nel corpo non concede nulla.
  *
  * <p>Qui vivono anche i <b>tre esiti dell'invio</b> di UC 0118, ed è il posto giusto: sono la stessa
  * operazione. Due sono rifiuti leciti e riconoscibili da un programma; il terzo è la prova che tiene
@@ -41,7 +42,7 @@ class InvitationLifecycleTest {
     @Test
     void createReturnsRawToken() {
         given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-token@example.test", "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", "lc-token@example.test"))
                 .when().post(PATH)
                 .then().statusCode(201)
                 .body("token", notNullValue())
@@ -51,7 +52,7 @@ class InvitationLifecycleTest {
     @Test
     void createListRevoke() {
         String id = given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-flow@example.test", "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", "lc-flow@example.test"))
                 .when().post(PATH)
                 .then().statusCode(201)
                 .extract().path("id");
@@ -73,19 +74,33 @@ class InvitationLifecycleTest {
     @Test
     void duplicatePendingIsConflict() {
         given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-dup@example.test", "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", "lc-dup@example.test"))
                 .when().post(PATH).then().statusCode(201);
         given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-dup@example.test", "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", "lc-dup@example.test"))
                 .when().post(PATH).then().statusCode(409);
     }
 
+    /**
+     * <b>Il collaudo che sostituisce «il ruolo owner non è invitabile»</b> (UC 0100). Il ruolo è uscito
+     * dal contratto dell'invito: non c'è più nulla da rifiutare, ma resta da provare che chi lo manda
+     * comunque — un chiamante vecchio, o qualcuno che ci prova — <b>non ottiene niente</b>. La garanzia
+     * non è il codice di stato: è che l'invito nasce sempre {@code member}. Cancellare il collaudo
+     * vecchio senza questo avrebbe lasciato senza rete la via di entrata nell'account con i poteri.
+     */
     @Test
-    void ownerRoleIsNotInvitable() {
-        given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", "lc-owner@example.test", "role", "owner"))
+    void unRuoloNelCorpoNonConcedeNulla() {
+        String id = given().header("Authorization", owner())
+                .contentType(ContentType.JSON)
+                .body(Map.of("email", "lc-owner@example.test", "role", "owner"))
                 .when().post(PATH)
-                .then().statusCode(400);
+                .then().statusCode(201)
+                // Il ruolo non esce nemmeno nella risposta: l'elenco unico non ha dove metterlo.
+                .body("$", not(hasKey("role")))
+                .extract().path("id");
+
+        assertEquals("member", data.invitationRole(java.util.UUID.fromString(id)),
+                "l'invito nasce member qualunque cosa dica il corpo");
     }
 
     // ── UC 0118: i tre esiti dell'invio ──────────────────────────────────────
@@ -110,7 +125,6 @@ class InvitationLifecycleTest {
                 sconosciuto.jsonPath().getMap("$").keySet(),
                 "stesse chiavi nel corpo: nessun campo in più da una parte");
         assertEquals(esistente.jsonPath().getString("status"), sconosciuto.jsonPath().getString("status"));
-        assertEquals(esistente.jsonPath().getString("role"), sconosciuto.jsonPath().getString("role"));
 
         // La differenza esiste, ma vive SOLO nella banca dati e non esce mai verso chi ha invitato.
         assertNotNull(data.invitationIdentityId(java.util.UUID.fromString(esistente.jsonPath().getString("id"))));
@@ -138,7 +152,7 @@ class InvitationLifecycleTest {
 
     private io.restassured.response.Response invita(String email) {
         return given().header("Authorization", owner())
-                .contentType(ContentType.JSON).body(Map.of("email", email, "role", "member"))
+                .contentType(ContentType.JSON).body(Map.of("email", email))
                 .when().post(PATH);
     }
 }

@@ -16,7 +16,7 @@ export {
   type ProblemDetail,
   type FetchResult,
 } from './problem'
-export type { UserView, AccountView, InvitationView, MyMembershipsView } from './contract'
+export type { UserView, UserAppView, AccountView, InvitationView, MyMembershipsView } from './contract'
 export type { paths, components } from './schema'
 
 // Ruolo della persona su un'applicazione e suo confronto (UC 0101): parte del contratto di piattaforma,

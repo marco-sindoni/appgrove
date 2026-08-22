@@ -429,16 +429,12 @@
       },
       "CreateInvitation" : {
         "type" : "object",
-        "required" : [ "email", "role" ],
+        "required" : [ "email" ],
         "properties" : {
           "email" : {
             "type" : "string",
             "pattern" : "\\S",
             "maxLength" : 320
-          },
-          "role" : {
-            "type" : "string",
-            "pattern" : "\\S"
           }
         }
       },
@@ -583,9 +579,6 @@
             "$ref" : "#/components/schemas/UUID"
           },
           "email" : {
-            "type" : "string"
-          },
-          "role" : {
             "type" : "string"
           },
           "status" : {
@@ -1650,6 +1643,23 @@
           }
         }
       },
+      "UserAppView" : {
+        "type" : "object",
+        "properties" : {
+          "appId" : {
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "app" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "implicit" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "UserView" : {
         "type" : "object",
         "properties" : {
@@ -1670,6 +1680,15 @@
           },
           "tenantId" : {
             "type" : "string"
+          },
+          "joinedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "apps" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserAppView"
+            }
           }
         }
       },
@@ -2969,7 +2988,7 @@
         "summary" : "List Pending",
         "tags" : [ "Invitation Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       },
       "post" : {
@@ -3000,7 +3019,7 @@
         "summary" : "Create",
         "tags" : [ "Invitation Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       }
     },
@@ -3028,7 +3047,7 @@
         "summary" : "Revoke",
         "tags" : [ "Invitation Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       }
     },
@@ -3926,7 +3945,7 @@
         "summary" : "List",
         "tags" : [ "User Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       }
     },
@@ -4053,7 +4072,7 @@
         "summary" : "Update",
         "tags" : [ "User Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       },
       "get" : {
@@ -4086,7 +4105,7 @@
         "summary" : "Get",
         "tags" : [ "User Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       },
       "delete" : {
@@ -4112,7 +4131,7 @@
         "summary" : "Delete",
         "tags" : [ "User Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner" ]
         } ]
       }
     },

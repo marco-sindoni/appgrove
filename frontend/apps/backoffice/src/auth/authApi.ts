@@ -254,7 +254,9 @@ export async function lookupInvitation(
  */
 export async function sendInvitation(
   authBaseUrl: string,
-  body: { email: string; token: string; role?: string; locale?: string },
+  // Nessun ruolo (UC 0100): non c'è più un ruolo da scegliere all'invito. Il servizio di
+  // autenticazione ha il proprio valore predefinito per il testo dell'email.
+  body: { email: string; token: string; locale?: string },
 ): Promise<void> {
   await post(authBaseUrl, '/invitations/send', body)
 }

@@ -42,7 +42,8 @@ test('[J-INVITE-EXISTING] invito a chi ha già un account → accettazione dal c
 
   // ── 2. l'azienda invita l'indirizzo della persona ──────────────────────────
   const res = await authedFetch(CORE_API, '/api/platform/v1/invitations', azienda.tokens, {
-    body: { email: persona.email, role: 'member' },
+    // Solo l'indirizzo (UC 0100): il ruolo è uscito dal contratto dell'invito.
+    body: { email: persona.email },
   })
   expect(res.status, "l'invito a chi esiste già si crea come qualunque altro").toBe(201)
   const created = (await res.json()) as Record<string, unknown>

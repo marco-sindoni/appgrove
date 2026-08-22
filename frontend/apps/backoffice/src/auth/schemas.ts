@@ -52,8 +52,7 @@ export const workspaceSchema = (t: TFn) => z.object({ name: nameField(t) })
 /** Form invito membro (UC 0059), allineato a `CreateInvitation` (@Email, @Size(max=320), role admin/member). */
 export const inviteSchema = (t: TFn) =>
   z.object({
+    // Solo l'indirizzo (UC 0100): il ruolo è uscito dal contratto dell'invito, perché non era una
+    // scelta — il ruolo di piattaforma ha due valori e l'owner nasce con l'account (UC 0098).
     email: emailField(t).refine((v) => v.length <= 320, t('validation.tooLong', { max: 320 })),
-    // Un solo valore ammesso: il ruolo di piattaforma ha due valori e l'owner nasce con l'account
-    // (UC 0098). Il campo resta perché il contratto dell'invito lo prevede ancora; sparirà con UC 0100.
-    role: z.enum(['member']),
   })

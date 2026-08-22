@@ -37,6 +37,7 @@ usecases_con_superficie:
   - "0096" # Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute)
   - "0097" # Dashboard operativa del workspace (+ Workspace ID in Account)
   - "0099" # Rifiuti dell'autorizzazione per applicazione, letti a schermo nel Mini-CRM
+  - "0100" # Sezione «Members» come elenco unico di persone, senza ruolo (applicazioni per persona)
   - "0101" # Semantica dei tre ruoli: i due rifiuti letti a schermo nell'app #1, che il ruolo ora governa
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
   - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
@@ -273,8 +274,10 @@ percorsi:
         file: frontend/apps/backoffice/e2e/crm.spec.ts
 
   - id: L2-MEMBERS
-    titolo: Membri e inviti — invito, comparsa fra i pendenti, revoca
-    usecases: ["0013", "0059"]
+    titolo: >-
+      Persone dell'account — elenco unico senza ruolo, applicazioni per persona con dettaglio in sola
+      lettura, invito che chiede solo l'indirizzo, comparsa nello stesso elenco, revoca
+    usecases: ["0013", "0059", "0100"]
     stato: coperto
     test:
       - livello: l2
@@ -729,9 +732,6 @@ esenzioni:
       0100 (elenco unico), 0107 (menu per ruolo) e 0111 (gestione utenti dentro l'applicazione). L'unico
       effetto visibile qui è una SPARIZIONE — il selettore del ruolo nella schermata dei membri — e J-MEMBERS
       ne pretende l'assenza invece di esercitarlo.
-  - usecase: "0100"
-    categoria: non-implementato
-    motivo: «Members» come elenco unico senza ruolo — avrà superficie, coperta dal percorso di livello 2 dei membri e da J-ROLES.
   - usecase: "0102"
     categoria: non-implementato
     motivo: Listino dei posti a fasce, modello e calcolo — nessuna superficie propria (diventerà senza-superficie).

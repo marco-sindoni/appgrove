@@ -110,5 +110,163 @@
   {
     "id": 14,
     "decision": "(autopilot) Le letture di persone e inviti si abilitano solo per l'owner anche nel cruscotto (UC 0097), che mostra gli stessi due numeri: la condizione era «owner oppure admin». Motivo: se la lettura è dell'owner, chiederla a un collaboratore produce un rifiuto e una riga rotta a schermo. La riga si omette, come già faceva per chi non poteva leggerla. Non si tocca invece la condizione che governa il comando «gestisci abbonamento» del cruscotto: quella superficie è dei pagamenti, che questa storia non stringe."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il ruolo di piattaforma RESTA nel contratto di UserView (`role`), pur sparendo dalla schermata: serve a riconoscere l'owner — che va in testa all'elenco, non si sospende e non si rimuove, e ha accesso implicito a tutte le applicazioni. Ciò che la storia toglie è la COLONNA, non il dato: una colonna che ripete «Membro» su tutte le righe tranne una non è informazione.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/roster.ts",
+        "description": "`isOwner` e `locked` derivano dal ruolo, che quindi resta necessario nella lettura."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) La fusione delle due letture vive in una funzione PURA fuori dal componente (`buildRoster`), provata da sola: è la parte con le regole — ordinamento, traduzione degli stati, righe intoccabili — e le regole si provano meglio da sole che attraverso un rendering. Nove collaudi di unità, fra cui il caso «due owner: nessuno dei due è l'ultimo» che un collaudo di componente non avrebbe messo in scena.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/roster.ts",
+        "description": "buildRoster + il tipo RosterRow, unica sede delle regole dell'elenco unico."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/roster.test.ts",
+        "description": "Collaudo di unità della fusione."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Rimossa la guardia `requireAnyRole` dal frontend: era usata SOLO dalla rotta dei membri, che ora chiede `requireRole('owner')`. Una guardia generica senza consumatori invita a riusarla per «owner oppure admin» sulla prossima schermata, che è esattamente ciò che il rifacimento del modello sta smontando. Se un giorno servisse un vero «almeno uno di», si riscrive in tre righe.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/routing/guards.tsx",
+        "description": "Tolta requireAnyRole; restano requireAuth, requireRole, requireEntitlement."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Il collaudo del costo della lettura si limita alla CORRETTEZZA su cinque persone e nove righe di permesso (che coglie l'attribuzione sbagliata), non al conteggio delle interrogazioni: misurarlo avrebbe richiesto di accendere le statistiche di Hibernate nel profilo di collaudo e avrebbe prodotto un'asserzione fragile su un numero globale al motore di persistenza. La garanzia sul numero di interrogazioni è quindi STRUTTURALE e visibile nel codice (una lettura degli accessi, una del catalogo, una dei diritti solo se serve), non provata da un collaudo: è un limite dichiarato, non una dimenticanza.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/MembersRosterApiTest.java",
+        "description": "ilRaggruppamentoReggeConPiuPersone: correttezza del raggruppamento, non conteggio delle interrogazioni."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Il collaudo dell'owner confronta le sue applicazioni contro i DIRITTI dell'account letti dalla loro API, non contro un numero fisso: il catalogo di collaudo porta anche le applicazioni con fascia gratuita, a cui ogni account ha diritto senza abbonamento, e un numero scritto a mano sarebbe diventato falso al primo cambio di listino. È la differenza fra un collaudo che prova la regola e uno che fotografa lo stato del catalogo."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Copertura end-to-end (UC 0094): scelta «COPRIRE ORA». Il percorso di livello 2 L2-MEMBERS è stato riscritto sul flusso nuovo — una sola tabella, sei intestazioni verificate una per una, l'assenza della colonna del ruolo, i tre casi della colonna delle applicazioni (due implicite, una con ruolo, nessuna), il dettaglio in sola lettura, l'invito che manda SOLO l'indirizzo (verificato leggendo il corpo della richiesta), la comparsa nello stesso elenco e la revoca. Nel registro: UC 0100 entra in `usecases_con_superficie`, la sua esenzione `non-implementato` esce, e L2-MEMBERS elenca 0100 fra i suoi use case. Il percorso di piattaforma J-MEMBERS continua a girare sulla schermata nuova senza modifiche, perché già selezionava per riga e per cella e non per tabella.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0100 fra gli use case con superficie; esenzione rimossa; L2-MEMBERS aggiornato di titolo e use case."
+      },
+      {
+        "file": "frontend/apps/backoffice/e2e/members.spec.ts",
+        "description": "Percorso L2-MEMBERS riscritto."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) `run-tests.sh` NON è stato modificato: la change non aggiunge né rimuove moduli (nessun `services/<app>` nuovo, nessun pacchetto frontend nuovo) e non cambia il comando di collaudo di alcuna area. I collaudi nuovi vivono dentro moduli già coperti dall'entrypoint. Verificato esplicitamente, come chiede il Definition of Done."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Gate privacy (UC 0031) ESEGUITO: lo scanner segnala due segnali, entrambi classificati come falsi positivi con il loro motivo. (1) `Invitation.role` non è un campo nuovo: è quello esistente, di cui cambia solo il valore iniziale (sempre `member`). (2) `UserResource.ownerApps` è un campo privato di un aiutante per-richiesta, non un'entità né un DTO: nulla di persistito. Il segnale che lo scanner NON può vedere — l'API espone all'owner quali applicazioni una persona usa e con quale ruolo — è stato valutato a parte: è il dato di `platform.app_access.identity_id`, già dichiarato con finalità «consentire alle persone dell'account di usare le applicazioni acquistate, con il ruolo assegnato», mostrato allo stesso titolare (l'account) che lo ha creato. Nessuna categoria nuova, nessuna finalità nuova, nessuna base giuridica nuova, nessun destinatario nuovo: classificazione MINOR, nessun aggiornamento di manifesto né rigenerazione della RoPA, nessun potenziale responsabile esterno."
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Le tre etichette di traduzione uscite (`colRole`, `roleOwner`, `roleMember`) e quelle della seconda tabella (`membersHeading`, `invitesHeading`, `colExpires`, `noInvites`, `invite`, `statusPending`) sono state RIMOSSE dalle cinque lingue invece di lasciate orfane: il collaudo di parità pretende lo stesso insieme di chiavi in tutte le lingue ma non segnala una chiave che nessuno usa, quindi le chiavi morte non diventano mai rosse e restano per sempre. Le chiavi `lastOwnerHint` e `selfHint`, che erano orfane da prima, sono state invece MESSE IN USO come spiegazione dei comandi disabilitati."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) La lettura di persone e inviti è stata stretta all'owner anche nel cruscotto (UC 0097) con un `useCanReadMembers` esportato e usato in due posti, invece di duplicare la condizione: la condizione «chi può leggere le persone dell'account» esiste ora in UN posto solo, ed è la stessa che abilita le due letture. Il `canManage` del cruscotto, che governa il comando «gestisci abbonamento», resta «owner oppure admin»: è superficie dei pagamenti, che questa storia non stringe.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/api/hooks.ts",
+        "description": "useCanReadMembers esportato: solo owner."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/dashboard/DashboardPage.tsx",
+        "description": "Le due righe di persone e inviti usano useCanReadMembers, non canManage."
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Rimandi differiti scritti (regola di tracciamento di CLAUDE.md): lo stato «in cessazione» e la sua azione → storia 0104; il dettaglio delle applicazioni che diventerà un collegamento → storia 0111; il ritiro anticipato della tolleranza `admin` su persone e inviti e la rimozione della colonna `invitations.role` → storia 0113. Nessuna voce in docs/_BACKLOG.md: tutti i rimandi hanno uno use case proprietario dentro l'epica 22.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md",
+        "description": "Sezione «Lasciato da UC 0100 (change 0096)»: il quarto stato dell'elenco."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0111-schermata-gestione-utenti-app.md",
+        "description": "Sezione «Lasciato da UC 0100 (change 0096)»: il collegamento dal dettaglio."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0113-migrazione-account-e-copertura-e2e.md",
+        "description": "Sezione «Lasciato da UC 0100 (change 0096)»: tolleranza admin e colonna del ruolo dell'invito."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Guida di collaudo `how-to-test.md` scritta ED ESEGUITA nei suoi passi non visivi sullo stack locale (§1 elenco delle persone con applicazioni e data di ingresso, §2 rifiuti per ruolo, §3 contratto dell'invito senza ruolo, §6.1 chiavi delle cinque lingue). L'esecuzione ha prodotto CINQUE correzioni alla guida — indirizzo con il punto di domanda da racchiudere fra apici (la shell lo prendeva per un carattere jolly), programma Python del §1 scritto con apici sfuggiti dentro una stringa formattata e quindi non compilabile, elenco dei diritti dell'account che NON contiene `crm` (la prima stesura lo dava per presente), lettura del ruolo memorizzato senza filtro sugli inviti in attesa e quindi sporca alla seconda esecuzione — e — quinta — le etichette dei passi visivi, che erano scritte in italiano mentre l'interfaccia parte in INGLESE (le persone del seme hanno `locale = 'en'`): non si possono eseguire, ma si possono verificare contro le stringhe delle cinque lingue, ed è stato fatto. NESSUN difetto di prodotto. Restano allo sviluppatore i passi visivi (§4 la schermata, §5 la rotta e il cruscotto, §6.2 le cinque lingue a schermo): non sono eseguibili senza occhi.",
+    "files": [
+      {
+        "file": "changes/0096-use-case-0100-sezione-members/how-to-test.md",
+        "description": "Guida eseguita nei passi non visivi; le correzioni sono nel testo committato."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Osservazione emersa ESEGUENDO la guida, scritta nel §1 bis perché altrimenti sembra un errore di conteggio: nel seme locale l'owner di Acme vede tre applicazioni (fatture, notes, teams — i diritti dell'account) mentre due collaboratori mostrano `crm`, a cui l'account NON ha diritto. Sono due verità diverse, entrambe volute: per l'owner la colonna dice a quali applicazioni l'account ha diritto (il suo accesso è implicito), per gli altri dice quali permessi hanno — e un permesso sopravvive al decadere del diritto dell'account, per decisione esplicita di UC 0098. Non si filtra l'elenco dei permessi sui diritti vivi: nasconderebbe un permesso che torna valido appena il diritto torna."
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Lo stato della storia 0100 passa a «✅ implementato (change 0096)» nella sua intestazione, come la 0098 dopo la change 0091. Nella stessa passata è stato corretto un DRIFT lasciato dalla change 0095: la storia 0101 era ancora «🟢 scritto (da implementare)» pur essendo implementata e già su main. Non è lavoro anticipato, è una riga di catalogo che era falsa: correggerla costa una riga, lasciarla falsa costa la fiducia nell'intero indice. L'indice di esecuzione docs/usecases/_INDEX.md non elenca le storie dell'epica 22 e resta quindi intatto.",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md",
+        "description": "Stato → implementato (change 0096); data di ultimo aggiornamento."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0101-semantica-ruoli-viewer-editor-admin.md",
+        "description": "Stato → implementato (change 0095): drift corretto."
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "(autopilot) L'OFFERTA DI RIMANDARE un invito già in attesa (storia 0100 §5) è stata implementata solo a metà — il secondo invito non si crea e il rifiuto è riconoscibile e tradotto — e il comando per rispedire il collegamento NON c'è. Motivo: rimandare non è un pulsante ma un'operazione nuova del servizio (il token grezzo esce una sola volta e su banca dati resta solo la sua impronta, quindi servono token nuovo, impronta e scadenza aggiornate, traccia di controllo), e non era nei requisiti scritti e committati di questa change: in modalità fast si sta dentro il perimetro scritto, e ciò che resta fuori si traccia. Tracciato in docs/_BACKLOG.md con il dettaglio di dove andrà (la riga dell'invito nell'elenco unico, accanto a «Revoca») e delle due trappole (ricalcolare la scadenza, limitare la frequenza perché è un modo di far arrivare email a un indirizzo che non ha acconsentito), più il rimando nella storia 0100.",
+    "files": [
+      {
+        "file": "docs/_BACKLOG.md",
+        "description": "Voce «L'invito già in attesa dice esiste già ma non offre di rimandarlo»."
+      },
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md",
+        "description": "Sezione «Lasciato aperto dalla change 0096»."
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "decision": "(autopilot) La distinzione visiva fra sospensione amministrativa e sospensione per limitazione del trattamento (art. 18) resta NON implementata, e il rimando è stato portato nello use case che la possiede (UC 0033) invece di restare solo un punto aperto della storia 0100. Motivo: oggi non è nemmeno rappresentabile — la vista della persona collassa le due sospensioni nello stesso valore, per scelta di UC 0116 — quindi non è una questione di interfaccia ma di quanto si può dire all'owner senza rivelare che quella persona ha esercitato un diritto. È una classificazione su dati personali che non spetta a un agente: si traccia, non si decide.",
+    "files": [
+      {
+        "file": "docs/usecases/08-compliance-gdpr/0033-self-service-gdpr.md",
+        "description": "Punto aperto aggiunto, con le due domande da chiudere e il rischio concreto (l'owner che toglie per errore una sospensione che non è sua)."
+      }
+    ]
   }
 ]

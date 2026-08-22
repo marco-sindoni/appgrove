@@ -1,6 +1,6 @@
 # UC 0101 — Semantica dei tre ruoli (viewer, editor, admin) come contratto di piattaforma
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change 0095)
 **Epica**: [E22.1 Fondamenta](../epic/E22-01-fondamenta-modello-centralizzato.md)
 **Dipendenze**: UC 0098 (modello dati), UC 0099 (varco riusabile)
 **Sostituisce**: UC 0072 dell'epica 14 (semantica della gestione utenti per applicazione)
