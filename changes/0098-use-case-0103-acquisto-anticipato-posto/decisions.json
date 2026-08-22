@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata dall'orchestratore go-fast. Nessuna fermata di workflow (né revisione dei requisiti né consenso al commit); in contropartita: suite completa `./run-tests.sh` senza parametri verde prima del commit, registro delle decisioni integrale, guida di collaudo manuale `how-to-test.md` scritta ED ESEGUITA nei suoi passi non visivi. Merge e push restano del chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0103 «Acquisto anticipato del posto all'invito (abbonamento di piattaforma)» dell'area 22-refactor-membership-model, indicato esplicitamente all'invocazione. Da qui la forma del branch `0098-use-case-0103-…`. Il numero progressivo 0098 è quello derivato da `changes/` (l'ultima cartella è 0097): combacia con l'atteso."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) `docs/usecases/_INDEX.md` NON viene toccato: l'indice di esecuzione contiene la tabella topologica degli use case base (0001–0060) e la mappatura dei residui, e le storie evolutive dell'epica 22 non hanno una riga di stato lì — come già per le change 0088–0097. Non si inventa una riga per rispettare la lettera del Definition of Done: lo stato delle storie evo vive nel loro drill-down e in docs/usecases/README.md."
+  }
+]
