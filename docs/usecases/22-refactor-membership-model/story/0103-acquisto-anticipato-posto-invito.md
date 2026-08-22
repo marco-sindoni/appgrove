@@ -185,3 +185,23 @@ il collegamento all'invito, come oggi.
   invecchiare in silenzio. Questa storia, che crea la voce, deve escluderla **nello stesso momento** —
   il punto esatto del codice è segnato da un commento in `MeAppAccessResource.entitledSlugs()`, e la scelta
   naturale è un attributo del catalogo («questa voce è una applicazione da aprire?») invece di un elenco.
+
+### Lasciato da UC 0102 (change 0097)
+
+- **La finalità di `membership.identity_id` nel manifesto dei dati va estesa quando il posto si paga
+  davvero.** La change 0097 ha scritto la regola «che cosa occupa un posto» (`SeatCount`), ma **nessun
+  percorso di prodotto la consuma ancora**: il calcolo del dovuto non viene mostrato né addebitato a
+  nessuno. Perciò il manifesto non è stato toccato — dichiarare oggi la finalità «il numero delle
+  appartenenze determina l'importo dovuto» sarebbe stato dichiarare un trattamento che non avviene. È
+  questa storia, che fa passare l'invito dalla cassa, a rendere quella finalità reale: quando lo fa deve
+  (1) estendere `purpose` di `membership.identity_id` in `docs/compliance/manifests/platform.yaml` nelle
+  due lingue, (2) rigenerare il registro dei trattamenti (`npm run assemble` in `tools/compliance`) e
+  (3) classificare il cambio MAGGIORE/MINORE con la sua motivazione — una finalità nuova sulla stessa base
+  giuridica (contratto) e senza categorie né conservazione nuove è il caso di confine da argomentare, non
+  da dare per scontato. Proprietario: UC 0103.
+- **Il conteggio dei posti non ha ancora una superficie di rete.** `SeatCount` è provato attraverso un
+  endpoint di collaudo che vive solo nel classpath di test
+  (`SeatProbeResource`, `services/core/src/test/java/app/appgrove/core/billing/seats/`): quando questa
+  storia esporrà il riquadro dei posti con il dovuto, il collaudo va agganciato all'operazione **vera** e
+  il probe va ritirato. Un endpoint di collaudo che sopravvive alla superficie che doveva anticipare
+  diventa l'unica cosa che qualcuno prova. Proprietario: UC 0103.

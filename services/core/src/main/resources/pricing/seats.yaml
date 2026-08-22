@@ -1,0 +1,31 @@
+# Listino dei POSTI come codice (UC 0102) — valore INIZIALE della prima versione.
+#
+# Sta FUORI da pricing/index.yaml, che elenca le applicazioni: i posti non sono un'applicazione, non hanno
+# un prodotto presso il fornitore di pagamento generato da questo file e non vanno sincronizzati con esso.
+# Mescolarli là confonderebbe la sincronizzazione dei listini delle app.
+#
+# Questo file è il valore iniziale, non la verità: al primo avvio SeatPricingLoader crea da qui la prima
+# versione; da lì in poi la verità è la banca dati e le versioni nuove nascono dalla console di piattaforma
+# (UC 0105). Modificare questo file su un ambiente già avviato NON cambia alcun prezzo.
+#
+# Le tariffe sono decisioni dello sviluppatore, già fissate nel drill-down di UC 0102 §4 e nell'epica E22.2.
+
+# Decorrenza all'inizio dei tempi: la prima versione deve risultare vigente per QUALUNQUE data
+# interrogabile, comprese quelle anteriori all'installazione. Con una decorrenza «adesso», una domanda su un
+# periodo passato riceverebbe l'errore «nessuna versione vigente» invece del listino con cui si è nati.
+effectiveFrom: 1970-01-01T00:00:00Z
+currency: EUR
+note: >-
+  Listino iniziale dei posti (UC 0102): scaglioni progressivi, franchigia di tre posti compreso l'owner
+  rappresentata come prima fascia a tariffa zero.
+
+# Fasce a SCAGLIONI PROGRESSIVI: ogni posto paga la tariffa della fascia in cui cade QUEL posto.
+# Contigue, senza buchi, ultima aperta (posto finale assente) — il caricamento rifiuta ogni altra forma.
+# Tariffa mensile del singolo posto, in centesimi interi.
+bands:
+  # La franchigia: non è un caso speciale nel codice, è questa riga.
+  - { fromSeat: 1,   toSeat: 3,    unitPriceCents: 0 }
+  - { fromSeat: 4,   toSeat: 10,   unitPriceCents: 299 }
+  - { fromSeat: 11,  toSeat: 50,   unitPriceCents: 199 }
+  - { fromSeat: 51,  toSeat: 100,  unitPriceCents: 99 }
+  - { fromSeat: 101,               unitPriceCents: 49 }

@@ -1,5 +1,6 @@
 package app.appgrove.core;
 
+import app.appgrove.core.billing.seats.SeatPricingLoader;
 import app.appgrove.core.catalog.PricingSyncService;
 import app.appgrove.core.gdpr.AppOffboarding;
 import app.appgrove.core.legal.LegalVersionSyncService;
@@ -19,6 +20,12 @@ import org.jboss.logging.Logger;
  *   <li>{@code sync-legal} — sync delle versioni legali una tantum e termina (UC 0056): legge i frontmatter di
  *       {@code content/legal/} e riconcilia {@code platform.legal_version}. La pipeline la invoca <b>dopo il
  *       migrate</b> al deploy dei legali; in locale/test gira allo startup ({@code appgrove.legal.sync-on-startup});</li>
+ *   <li>{@code seed-seat-pricing} — crea la <b>prima</b> versione del listino dei posti dal file di risorse
+ *       {@code pricing/seats.yaml}, se non esiste ancora, e termina (UC 0102). La pipeline la invoca
+ *       <b>dopo il migrate</b>; in locale/test gira allo startup
+ *       ({@code appgrove.seat-pricing.seed-on-startup}). <b>Semina, non sincronizza</b>: se una versione
+ *       esiste già non scrive nulla, perché dal primo cambio di tariffa da console (UC 0105) la verità è
+ *       la banca dati e risincronizzare dal file annullerebbe quel cambio;</li>
  *   <li>{@code migrate} — applica le migrazioni Flyway (schema {@code platform}) e termina; è il task ECS
  *       one-shot in VPC della pipeline (UC 0005, #07 14/15: {@code build → test → migrate → deploy}),
  *       connessione diretta Agroal (il Proxy è solo per le Lambda, #05 dec.3).</li>
@@ -35,6 +42,7 @@ public class CoreMain implements QuarkusApplication {
 
     static final String SYNC_PRICING = "sync-pricing";
     static final String SYNC_LEGAL = "sync-legal";
+    static final String SEED_SEAT_PRICING = "seed-seat-pricing";
     static final String MIGRATE = "migrate";
     static final String OFFBOARD_APP = "offboard-app";
 
@@ -43,6 +51,9 @@ public class CoreMain implements QuarkusApplication {
 
     @Inject
     LegalVersionSyncService legalSync;
+
+    @Inject
+    SeatPricingLoader seatPricingLoader;
 
     @Inject
     Flyway flyway;
@@ -62,6 +73,13 @@ public class CoreMain implements QuarkusApplication {
         if (args.length > 0 && SYNC_LEGAL.equals(args[0])) {
             LegalVersionSyncService.Report report = legalSync.sync();
             LOG.infof("sync-legal completata: componenti=%d", report.components());
+            return 0;
+        }
+        if (args.length > 0 && SEED_SEAT_PRICING.equals(args[0])) {
+            boolean created = seatPricingLoader.ensureInitialVersion();
+            LOG.infof(
+                    "seed-seat-pricing completata: %s",
+                    created ? "prima versione del listino dei posti creata dal file" : "listino già presente");
             return 0;
         }
         if (args.length > 0 && MIGRATE.equals(args[0])) {

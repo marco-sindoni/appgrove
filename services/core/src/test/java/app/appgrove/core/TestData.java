@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -606,6 +607,66 @@ public class TestData {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // ── Listino dei posti (UC 0102) ───────────────────────────────────────────
+
+    /** Crea una versione del listino dei posti e ne ritorna l'id — serve alla selezione per data. */
+    public UUID seatPricingVersion(OffsetDateTime effectiveFrom, String currency, String note) {
+        UUID id = UUID.randomUUID();
+        exec("insert into platform.seat_pricing_version(id,effective_from,currency,note,created_at,updated_at,"
+                        + "created_by) values (?,?,?,?,?,?,?)",
+                id, effectiveFrom, currency, note, OffsetDateTime.now(), OffsetDateTime.now(), "test");
+        return id;
+    }
+
+    /** Aggiunge una fascia a una versione del listino dei posti ({@code toSeat} nullo = fascia aperta). */
+    public void seatPricingBand(UUID versionId, int fromSeat, Integer toSeat, int unitPriceCents) {
+        exec("insert into platform.seat_pricing_band(id,version_id,from_seat,to_seat,unit_price_cents,"
+                        + "created_at,updated_at,created_by) values (?,?,?,?,?,?,?,?)",
+                UUID.randomUUID(), versionId, fromSeat, toSeat, unitPriceCents,
+                OffsetDateTime.now(), OffsetDateTime.now(), "test");
+    }
+
+    /** Quante versioni vive del listino dei posti esistono. */
+    public int seatPricingVersionCount() {
+        return queryInt("select count(*) from platform.seat_pricing_version where deleted_at is null");
+    }
+
+    /** Le fasce vive di una versione del listino dei posti, ordinate dal primo posto. */
+    public List<int[]> seatPricingBands(UUID versionId) {
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement(
+                        "select from_seat, to_seat, unit_price_cents from platform.seat_pricing_band"
+                                + " where version_id = ? and deleted_at is null order by from_seat")) {
+            ps.setObject(1, versionId);
+            List<int[]> bands = new java.util.ArrayList<>();
+            try (var rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int from = rs.getInt(1);
+                    int to = rs.getInt(2);
+                    // wasNull() vale per l'ULTIMA colonna letta: va interrogato qui, non dentro un
+                    // inizializzatore di array dove l'ordine di valutazione lo riferirebbe ad altro.
+                    boolean aperta = rs.wasNull();
+                    bands.add(new int[] {from, aperta ? -1 : to, rs.getInt(3)});
+                }
+            }
+            return bands;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Rimuove del tutto una versione del listino dei posti e le sue fasce (pulizia fra collaudi). */
+    public void deleteSeatPricingVersion(UUID versionId) {
+        exec("delete from platform.seat_pricing_band where version_id = ?", versionId);
+        exec("delete from platform.seat_pricing_version where id = ?", versionId);
+    }
+
+    /** Porta un invito allo stato indicato: serve a provare che revocati e accettati non occupano posto. */
+    public void setInvitationStatus(UUID invitationId, String status) {
+        exec("update platform.invitations set status = ?, updated_at = ? where id = ?",
+                status, OffsetDateTime.now(), invitationId);
     }
 
     private UUID queryUuid(String sql, Object... params) {

@@ -733,8 +733,15 @@ esenzioni:
       effetto visibile qui è una SPARIZIONE — il selettore del ruolo nella schermata dei membri — e J-MEMBERS
       ne pretende l'assenza invece di esercitarlo.
   - usecase: "0102"
-    categoria: non-implementato
-    motivo: Listino dei posti a fasce, modello e calcolo — nessuna superficie propria (diventerà senza-superficie).
+    categoria: senza-superficie
+    motivo: >-
+      Listino dei posti a scaglioni progressivi: modello versionato e calcolo (change 0097). Storia di
+      modello e calcolo, senza superficie propria — lo dichiara il suo §6 («Nessuna schermata»). Il calcolo è
+      provato dal collaudo tabellare di unità sui casi della storia §4 (confini compresi, monotonia del
+      dovuto e discesa del costo del posto successivo), la conservazione versionata e la selezione per data
+      dai collaudi di integrazione, il conteggio dei posti dalla prova stato per stato con separazione fra
+      account. Le superfici che consumeranno questo listino arrivano con 0103 (riquadro dei posti), 0105
+      (governo delle tariffe in console) e 0106 (i posti nella sezione «Billing»).
   - usecase: "0103"
     categoria: non-implementato
     motivo: Acquisto anticipato del posto all'invito — avrà superficie (riquadro dei posti), coperta da J-SEATS.
