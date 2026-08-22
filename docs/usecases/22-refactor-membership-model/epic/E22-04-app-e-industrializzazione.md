@@ -1,7 +1,7 @@
 # E22.4 — Dentro le applicazioni e industrializzazione
 
-**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0111, 0112, 0114, 0115, 0113
-**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-19
+**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0111, 0112, 0114, 0115, 0113, **0120**
+**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-22
 
 ## Obiettivo
 
@@ -72,6 +72,20 @@ che superano la franchigia e la loro gestione come **caso di comunicazione comme
 addebito automatico. È una decisione che vale denaro e che va confermata da chi decide i prezzi: la
 storia la marca come punto aperto invece di risolverla d'autorità.
 
+## La sesta storia, aggiunta dopo: il collaudo manuale di chiusura (UC 0120)
+
+[UC 0120](../story/0120-guida-collaudo-manuale-epica.md) sta qui perché questa è la sotto-epica che
+**chiude**, e perché la sua gemella è già dentro: 0113 porta la copertura **automatica** per ruolo
+(`J-ROLES`, `J-SEATS`) e 0120 porta quella **manuale** — una guida unica, di soli passi visivi, ricavata
+dalle guide di tutte le change dell'epica e riscritta per percorsi coerenti. Le due si eseguono in fila,
+0120 subito dopo 0113, e insieme sono l'unico momento in cui l'epica viene guardata per intero.
+
+Ha senso solo alla fine, e per la stessa ragione per cui il collaudo visivo delle singole storie è stato
+**sospeso** (decisione del 22 agosto 2026,
+[§9 dell'epica madre](E22-00-rifacimento-modello-appartenenza.md#9-il-collaudo-di-questa-epica-visivo-sospeso-unico-a-chiusura)):
+in un rifacimento, gli stati intermedi non sono giudicabili a vista. È 0120, eseguendo la guida, a far
+**decadere** quella sospensione.
+
 ## Come si vede che ha funzionato
 
 - Un'applicazione generata da zero rispetta i tre ruoli **senza che nessuno scriva codice** di
@@ -80,3 +94,6 @@ storia la marca come punto aperto invece di risolverla d'autorità.
 - Dopo la migrazione, nessun cliente segnala accessi persi.
 - Esistono percorsi di prova automatici che entrano nel prodotto come `owner`, `admin`, `editor` e
   `viewer` e verificano ciò che ognuno vede.
+- Lo sviluppatore ha percorso il prodotto **una volta**, a epica chiusa, seguendo una guida sola: e ciò
+  che ha trovato è stato discriminato fra «la guida è sbagliata» e «il prodotto è sbagliato», senza
+  ammorbidire nessun passo.

@@ -238,7 +238,14 @@ migrazioni. Altre due storie nascono dalla **riverifica della categorizzazione B
 `0114` la **ritira** (il nuovo modello la rende falsa) e `0115` mette al suo posto l'**ambito dei dati**
 (del gruppo di lavoro contro della singola persona), che ha conseguenze verificabili nel codice. L'uso di
 «B2C/B2B» in senso **giuridico** — titolare verso i consumatori, responsabile verso i clienti-azienda —
-resta valido e non viene toccato. Indice dell'area e decisioni già prese:
+resta valido e non viene toccato. **Due storie aggiunte il 22 agosto 2026**, dopo il collaudo manuale del
+lotto `0095`–`0099`: `0119` rende **esigibile** la responsività del backoffice — requisito che
+[docs/03-frontend.md](../03-frontend.md) punto 12 prescrive dal principio e che nessuna storia
+presidiava — e si esegue **subito**, prima delle storie che allargano ancora le stesse tabelle; `0120`
+raccoglie le guide di collaudo dell'epica in **una** guida manuale per percorsi e si esegue **ultima**,
+dopo `0113`. Con loro il **collaudo visivo delle singole storie è sospeso** fino a fine epica
+([§9 dell'epica madre](22-refactor-membership-model/epic/E22-00-rifacimento-modello-appartenenza.md#9-il-collaudo-di-questa-epica-visivo-sospeso-unico-a-chiusura)).
+Indice dell'area e decisioni già prese:
 [22-refactor-membership-model/README.md](22-refactor-membership-model/README.md).
 
 **Supera l'epica 14** (`0072`–`0074`): l'appartenenza torna **centralizzata** (elenco unico di persone,
@@ -257,6 +264,7 @@ come scartata. Le tre storie dell'epica 14 restano come archivio della decisione
 | [0102](22-refactor-membership-model/story/0102-listino-posti-a-fasce.md) | Listino dei posti a fasce: modello versionato e calcolo del dovuto | 0098, 0022 | 🟢 |
 | [0103](22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md) | Acquisto anticipato del posto all'invito (abbonamento di piattaforma) | 0100, 0102, 0024, 0025, 0026 | 🟢 |
 | [0104](22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md) | Riduzione dei posti in attesa: scelta delle persone, blocco, annullamento, scadenza | 0103, 0026, 0028 | 🟢 |
+| [0119](22-refactor-membership-model/story/0119-responsivita-backoffice.md) | Responsività del backoffice: tabelle a più colonne, barra laterale e comandi su schermo stretto (rende esigibile [docs/03-frontend.md](../03-frontend.md) punto 12) | 0100, 0103, 0104, 0020, 0019 | 🟢 |
 | [0105](22-refactor-membership-model/story/0105-governo-listino-console-piattaforma.md) | Governo del listino dei posti dalla console di piattaforma (dal ciclo successivo) | 0102, 0021, 0047 | 🟢 |
 | [0106](22-refactor-membership-model/story/0106-posti-in-billing.md) | I posti nella sezione «Billing»: righe, storico, prossimo rinnovo | 0103, 0105, 0096, 0067 | 🟢 |
 | [0107](22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md) | Menu, rotte e visibilità per ruolo (intersezione a tre; Account/Billing/Members all'owner) | 0099, 0100, 0020, 0077 | 🟢 |
@@ -268,6 +276,7 @@ come scartata. Le tre storie dell'epica 14 restano come archivio della decisione
 | [0114](22-refactor-membership-model/story/0114-ritiro-categoria-b2c-b2b.md) | Ritiro della categoria B2C/B2B delle app (`App.user_model`): il nuovo modello la rende falsa | 0099, 0101, 0112 | 🟢 |
 | [0115](22-refactor-membership-model/story/0115-ambito-dati-applicazione.md) | Ambito dei dati di un'app: del gruppo di lavoro o della persona che li ha creati (dichiarazione + guardia; il filtro va con la prima app che lo usa) | 0114, 0101, 0032 | 🟢 |
 | [0113](22-refactor-membership-model/story/0113-migrazione-account-e-copertura-e2e.md) | Migrazione degli account esistenti + copertura end-to-end per ruolo | 0098–0112, 0114, 0115, 0090, 0093 | 🟢 |
+| [0120](22-refactor-membership-model/story/0120-guida-collaudo-manuale-epica.md) | Guida di collaudo manuale unica di fine epica (soli passi visivi, per percorsi; il collaudo visivo per storia è sospeso fino a qui) | tutte le storie dell'epica, in particolare 0113 | 🟢 |
 
 ---
 **Numerazione**: segue l'ordine delle aree (`01` → `11`) per `0001`–`0054`; **0055–0060** appesi col prossimo `NNNN`

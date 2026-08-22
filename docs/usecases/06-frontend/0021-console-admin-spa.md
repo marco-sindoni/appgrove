@@ -83,3 +83,14 @@ _Tracciati dalla change `0005-use-case-0019-…` (regola CLAUDE.md "Tracciamento
   barre; ricerca e filtri pill nelle liste (accounts/users); schermate Invitations, System health e Settings
   admin; modale di edit del catalogo; skeleton di caricamento; matrice entitlement a griglia cliccabile
   (oggi è una tabella piatta).
+
+- **Responsività delle tabelle della console admin** — _tracciato dalla change che ha scritto
+  [UC 0119](../22-refactor-membership-model/story/0119-responsivita-backoffice.md), 22 agosto 2026._
+  Le tabelle di questa console (ticket, dettaglio account, diritti dell'interessato) hanno lo stesso
+  difetto del backoffice su schermo stretto: molte colonne, scorrimento orizzontale che fa perdere di
+  vista l'identità della riga, comandi in fondo alla riga. UC 0119 le lascia **fuori dal perimetro** per
+  una ragione di merito, non per dimenticanza: la platea di questa console è **una persona sola**
+  (l'amministratore di appgrove) che lavora a scrivania, mentre il backoffice lo usano i clienti dai loro
+  telefoni. Il requisito di [docs/03-frontend.md](../../03-frontend.md) punto 12 («tutto responsive dal
+  PoC») però vale anche qui. **Proprietario**: questo use case. Quando lo si affronterà, il criterio
+  verificabile e la forma del collaudo sono già scritti nel §9 di UC 0119 e si riusano tali e quali.

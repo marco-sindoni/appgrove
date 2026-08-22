@@ -1,7 +1,7 @@
 # E22.3 — Esperienza del backoffice per ruolo
 
-**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0107, 0108, 0109, 0110
-**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-19
+**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: 0107, 0108, 0109, 0110, **0119**
+**Stato**: 🟢 analisi scritta · **Ultimo aggiornamento**: 2026-08-22
 **Prototipi**: [owner](../prototype/owner.html) · [admin](../prototype/admin.html) · [editor](../prototype/editor.html) · [viewer](../prototype/viewer.html)
 
 ## Obiettivo
@@ -11,7 +11,7 @@ interfaccia, comprese leve che non gli competono; da domani il collaboratore ved
 piccolo ma **coerente**: nessuna voce che porti a un rifiuto, nessun pulsante che produca un errore di
 autorizzazione.
 
-## Il principio che tiene insieme le quattro storie
+## Il principio che tiene insieme le prime quattro storie
 
 **Non mostrare ciò che non si può fare — ma non mentire su ciò che esiste.** Due regole applicate con
 criterio diverso:
@@ -62,9 +62,30 @@ destinatario. La storia 0109 prevede quindi: **una richiesta per applicazione og
 per persona, una traccia visibile di ciò che è stato chiesto («già richiesto il …»), e **nessun dato
 personale nel corpo oltre il nome di chi chiede** — l'owner sa già chi sono i suoi collaboratori.
 
+## La quinta storia, aggiunta dopo: la responsività (UC 0119)
+
+[UC 0119](../story/0119-responsivita-backoffice.md) sta in questa sotto-epica, e non nelle altre, per una
+ragione di materia: **E22.3 è la sotto-epica che possiede la forma con cui il backoffice si presenta**.
+Le prime quattro storie decidono *che cosa* si mostra a chi; la quinta decide *che il mostrato stia dentro
+lo schermo*. Sono due dimensioni della stessa superficie — il ruolo di chi guarda e la larghezza da cui
+guarda — e lavorano sugli stessi componenti: la barra laterale e il menu che 0107 rifà, le tabelle che
+0100 e 0111 riempiono.
+
+Il requisito **preesiste** e non lo inventa questa epica:
+[docs/03-frontend.md](../../../03-frontend.md) punto 12 prescrive «tutto responsive dal PoC, backoffice
+incluso» dal primo giorno. Nessuna storia dell'epica 22 lo presidiava e nessun collaudo lo misurava: 0119
+lo rende **esigibile**, con un criterio verificabile invece di un giudizio a occhio.
+
+**Si esegue per prima delle cinque**, non nell'ordine in cui è scritta — come E22.5 rispetto all'epica
+intera. Il motivo è che le storie 0107–0111 aggiungono ancora colonne e comandi alle stesse tabelle:
+mettere il collaudo prima significa che ognuna di esse trova un rosso se lo dimentica, invece di lasciare
+il conto da pagare alla fine.
+
 ## Come si vede che ha funzionato
 
 - Un collaboratore non incontra **mai** una pagina di rifiuto navigando normalmente.
 - Un `viewer` capisce **perché** non può creare un contatto, senza dover chiedere.
 - L'owner riceve richieste di installazione utili e non ripetute.
 - Ogni persona, qualunque ruolo, può scaricare i propri dati.
+- Le stesse schermate, su una finestra da telefono, non debordano e i loro comandi si raggiungono col
+  pollice — e un collaudo automatico lo afferma a ogni commit, invece di lasciarlo alla vista.

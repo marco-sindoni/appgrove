@@ -2,9 +2,9 @@
 
 **Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 analisi scritta (da implementare)
 **Sotto-epiche**: [E22.5 Identità e appartenenze](E22-05-identita-e-appartenenze.md) *(si esegue per prima)* · [E22.1 Fondamenta](E22-01-fondamenta-modello-centralizzato.md) · [E22.2 Posti a pagamento](E22-02-posti-a-pagamento.md) · [E22.3 Esperienza per ruolo](E22-03-esperienza-per-ruolo.md) · [E22.4 Dentro le applicazioni](E22-04-app-e-industrializzazione.md)
-**Storie**: UC 0098 – 0118 (ventuno) · **Prototipi**: [prototype/](../prototype/README.md)
-**Origine**: change `0087` — requisiti dettati dallo sviluppatore
-**Ultimo aggiornamento**: 2026-08-20
+**Storie**: UC 0098 – 0120 (ventitré) · **Prototipi**: [prototype/](../prototype/README.md)
+**Origine**: change `0087` — requisiti dettati dallo sviluppatore; storie `0119` e `0120` aggiunte il 22 agosto 2026 (vedi §9)
+**Ultimo aggiornamento**: 2026-08-22
 
 ---
 
@@ -147,21 +147,21 @@ Che cosa dell'epica 14 **sopravvive**, tradotto:
 - la distinzione `App.user_model` fra applicazione a utente singolo e multi-utente: **resta utile**,
   ma cambia significato (§7).
 
-## 5. Le quattro sotto-epiche e le sedici storie
+## 5. Le cinque sotto-epiche e le ventitré storie
 
 | Sotto-epica | Storie | Che cosa consegna |
 |---|---|---|
 | [E22.5 — Identità e appartenenze](E22-05-identita-e-appartenenze.md) *(prima)* | 0116, 0117, 0118 | Una persona, più appartenenze; account attivo e selettore; inviti e registrazione con identità esistente |
 | [E22.1 — Fondamenta del modello centralizzato](E22-01-fondamenta-modello-centralizzato.md) | 0098, 0099, 0100, 0101 | I dati, l'autorizzazione, l'elenco unico, il contratto dei tre ruoli |
 | [E22.2 — Posti a pagamento](E22-02-posti-a-pagamento.md) | 0102, 0103, 0104, 0105, 0106 | Listino a fasce, acquisto anticipato, riduzione in attesa, governo del listino, trasparenza |
-| [E22.3 — Esperienza del backoffice per ruolo](E22-03-esperienza-per-ruolo.md) | 0107, 0108, 0109, 0110 | Menu e rotte, cruscotto, catalogo con richiesta all'owner, «I miei dati» ridotto |
-| [E22.4 — Dentro le applicazioni e industrializzazione](E22-04-app-e-industrializzazione.md) | 0111, 0112, 0114, 0115, 0113 | Gestione utenti nell'app, copilota della skill, ritiro della categoria B2C/B2B, ambito dei dati, migrazione e collaudo |
+| [E22.3 — Esperienza del backoffice per ruolo](E22-03-esperienza-per-ruolo.md) | 0107, 0108, 0109, 0110, **0119** | Menu e rotte, cruscotto, catalogo con richiesta all'owner, «I miei dati» ridotto, **responsività del backoffice** |
+| [E22.4 — Dentro le applicazioni e industrializzazione](E22-04-app-e-industrializzazione.md) | 0111, 0112, 0114, 0115, 0113, **0120** | Gestione utenti nell'app, copilota della skill, ritiro della categoria B2C/B2B, ambito dei dati, migrazione e collaudo, **guida di collaudo manuale unica** |
 
 **Ordine di esecuzione** (topologico sulle dipendenze reali):
 
 ```
-0116 → 0117 → 0118 → 0098 → 0099 → 0101 → 0100 → 0102 → 0103 → 0104 → 0105 → 0106
-                          → 0107 → 0108 → 0109 → 0110 → 0111 → 0112 → 0114 → 0115 → 0113
+0116 → 0117 → 0118 → 0098 → 0099 → 0101 → 0100 → 0102 → 0103 → 0104 → 0119 → 0105 → 0106
+                          → 0107 → 0108 → 0109 → 0110 → 0111 → 0112 → 0114 → 0115 → 0113 → 0120
 ```
 
 **Le prime tre aprono l'epica pur essendo state scritte per ultime** (sotto-epica
@@ -176,6 +176,13 @@ categoria B2C/B2B delle applicazioni (che questo modello rende falsa) e **0115**
 l'**ambito dei dati**, la distinzione che invece ha conseguenze vere. Stanno dopo 0112 perché è lì che il
 generatore di applicazioni viene rifatto, e prima di 0113 perché la migrazione finale deve trovare il
 modello già assestato.
+
+**Le due aggiunte dopo il collaudo del lotto `0095`–`0099`** (22 agosto 2026, §9) stanno agli estremi
+opposti dell'ordine. **0119** (responsività del backoffice) va **subito**, prima di 0105: presidia le
+tabelle che le storie successive continuano ad allargare, e scoprirlo dopo altre undici storie
+significherebbe rifarne un pezzo. **0120** (guida di collaudo manuale unica) va **ultima**, dopo 0113:
+raccoglie le guide di tutta l'epica e le riscrive per percorsi, quindi non può esistere prima che l'epica
+esista per intero. Come per E22.5, il numero è l'identità, non l'ordine.
 
 Il criterio è duplice e semplice: **nulla si può mostrare per ruolo prima che il ruolo esista** nei
 dati e nel token (da qui 0098 e 0099 in testa), e **nulla si può vendere prima che il posto esista**
@@ -231,7 +238,57 @@ Non si toccano ora (questa change è analisi), ma le storie li nominano una per 
 | [UC 0054](../../11-apps/0054-app2-b2b-via-new-application.md) | I posti locali del Mini-CRM vengono ritirati; nota sull'etichetta «b2b» nel titolo (UC 0114) |
 | [docs/01-architettura.md](../../../01-architettura.md) · [UC 0051](../../11-apps/0051-app1-backend.md) · [UC 0052](../../11-apps/0052-app1-modulo-frontend.md) | La categoria B2C/B2B delle applicazioni si ritira (UC 0114) |
 
-## 9. Punti aperti / decisioni differite
+## 9. Il collaudo di questa epica: visivo sospeso, unico a chiusura
+
+**Decisione dello sviluppatore, 22 agosto 2026**, presa dopo aver collaudato a mano le cinque storie del
+lotto `0095`–`0099`.
+
+### Che cosa è stato deciso
+
+1. **Il collaudo visivo delle singole storie è sospeso** fino alla fine dell'epica. Allo sviluppatore non
+   si chiede più di guardare schermate a ogni storia.
+2. **Nasce una storia dedicata al collaudo manuale di chiusura** — [UC 0120](../story/0120-guida-collaudo-manuale-epica.md),
+   da eseguire **dopo `0113`** — che dalle guide delle singole change ricava **una** guida di collaudo
+   manuale, per percorsi coerenti e di soli passi visivi.
+3. **Nasce una storia per la responsività del backoffice** — [UC 0119](../story/0119-responsivita-backoffice.md),
+   da eseguire **subito**, prima delle storie che aggiungono ancora colonne e comandi alle stesse
+   tabelle. È il difetto che quel collaudo a mano ha effettivamente trovato, e la sua correzione non
+   aspetta la fine dell'epica: la tabella delle persone ha già sette colonne e ogni storia che arriva le
+   aggiunge qualcosa.
+
+### Perché
+
+In un'epica di **rifacimento**, collaudare a vista una storia per volta significa **giudicare la forma di
+stati intermedi che nessun utente vedrà mai**. La schermata «Membri» guardata dopo il lotto `0095`–`0099`
+è per costruzione un mezzo passaggio: `0100` ha tolto il ruolo dall'elenco, `0111` costruirà il posto dove
+il ruolo si governa, `0107` deciderà che cosa si vede per ruolo. Il collaudo manuale serve a giudicare
+**forma, coerenza e sequenza** — e questo ha senso solo su un insieme completo. Prima è un giudizio su un
+cantiere: costa attenzione a ogni storia e produce osservazioni che la storia successiva rende obsolete.
+
+### Che cosa continua a valere — la sospensione non è uno sconto
+
+- le storie **continuano a scrivere** `how-to-test.md` e a **eseguirne i passi non visivi**: costa solo
+  agli agenti, intercetta i difetti veri (il lotto `0095`–`0099` ne ha trovati eseguendo le guide, non
+  rileggendole) ed è il **materiale grezzo** della guida unica di `0120`;
+- la **passata di fine lotto** di `go-fast` resta: riesegue le guide del lotto contro lo stato finale di
+  `main`;
+- il presidio contro i **regressi** resta quello che già c'è, e non è il collaudo a vista: **suite
+  automatica completa verde a ogni commit**, percorsi Playwright di livello 2, suite di piattaforma;
+- le **fermate di escalation** restano attive: prezzi, direzione di prodotto, dati personali ambigui,
+  effetti irreversibili. La sospensione riguarda il *guardare le schermate*, non il *chiedere*.
+
+### Quando decade
+
+**A epica chiusa**, quando la guida unica di [UC 0120](../story/0120-guida-collaudo-manuale-epica.md)
+viene **eseguita**. È `0120` a dichiarare la decadenza in questo documento: da allora il collaudo visivo
+torna alla sua forma normale, storia per storia.
+
+### Che cosa **non** cambia
+
+La decisione vale per **questa epica**. L'ipotesi di farne una regola generale per tutte le epiche è
+stata esaminata e **scartata**: `CLAUDE.md` e le skill non vengono toccati.
+
+## 10. Punti aperti / decisioni differite
 
 - **Secondo owner e passaggio di proprietà**: fuori scope per volontà dello sviluppatore. Da riprendere
   quando un cliente chiederà di non essere l'unico responsabile dell'account. Il modello dati previsto

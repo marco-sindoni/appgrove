@@ -798,3 +798,26 @@ esenzioni:
   - usecase: "0113"
     categoria: non-implementato
     motivo: Migrazione degli account e copertura per ruolo — introduce J-ROLES e J-SEATS, non ha superficie propria (diventerà senza-superficie).
+
+  # Le due storie aggiunte all'epica 22 il 22 agosto 2026, dopo il collaudo a mano del lotto 0095–0099
+  # (decisione nel §9 di docs/usecases/22-refactor-membership-model/epic/E22-00-…).
+  - usecase: "0119"
+    categoria: non-implementato
+    motivo: >-
+      Responsività del backoffice: tabelle a più colonne, barra laterale e comandi su schermo stretto. Le
+      schermate del perimetro esistono già in main; il loro comportamento su schermo stretto NO, ed è
+      quello che la storia costruisce — perciò `non-implementato` e non una superficie scoperta. Quando
+      sarà implementata, questo use case passa fra le superfici con un percorso NUOVO di livello 2,
+      L2-RESPONSIVE: le stesse schermate su finestra da telefono, con asserzioni misurabili invece di un
+      giudizio a occhio (nessun debordamento della pagina, cassetto al posto della barra laterale,
+      comandi con area di tocco di almeno 44x44 pixel). Non serve un percorso di piattaforma: la
+      disposizione non ha bisogno di banca dati, code ed email vere.
+  - usecase: "0120"
+    categoria: senza-superficie
+    motivo: >-
+      Guida di collaudo manuale unica di fine epica: consegna un DOCUMENTO di processo — una guida di soli
+      passi visivi, per percorsi coerenti — e non ha superficie applicativa propria. Le schermate che la
+      guida percorre appartengono alle altre storie dell'epica, che le hanno già dichiarate; i percorsi
+      automatici della stessa materia (J-ROLES, la stessa applicazione vista dai quattro ruoli, e
+      J-SEATS, il ciclo di vita del posto) sono di 0113. Un percorso dichiarato qui li conterebbe due
+      volte. Esenzione permanente: la storia non avrà superficie nemmeno una volta implementata.

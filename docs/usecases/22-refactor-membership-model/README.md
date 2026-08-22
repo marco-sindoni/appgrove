@@ -9,14 +9,14 @@ Epica evolutiva che rifà la gestione degli utenti della piattaforma: **elenco u
 | Cartella | Che cosa contiene |
 |---|---|
 | [epic/](epic/) | l'epica madre e le cinque sotto-epiche: visione, decisioni portanti, rischi |
-| [story/](story/) | le ventuno storie, numerate `0098`–`0118`, nel formato drill-down del catalogo |
-| [task/](task/) | i ventuno piani di lavoro: passi ordinati, percorsi di file reali, trappole note |
+| [story/](story/) | le ventitré storie, numerate `0098`–`0120`, nel formato drill-down del catalogo |
+| [task/](task/) | i ventuno piani di lavoro delle storie dell'analisi (`0098`–`0118`): passi ordinati, percorsi di file reali, trappole note. Le due storie aggiunte dopo (`0119`, `0120`) non ne hanno: i loro passi stanno nel drill-down, e il perché è scritto in coda al §10 di ciascuna |
 | [prototype/](prototype/README.md) | cinque prototipi navigabili (quattro ruoli + console di piattaforma) e la loro documentazione per l'implementazione |
 
 Punto di ingresso consigliato: **[l'epica madre](epic/E22-00-rifacimento-modello-appartenenza.md)** per
 capire il modello, poi i **[prototipi](prototype/README.md)** per vederlo.
 
-## Le ventuno storie, nell'ordine di esecuzione
+## Le ventitré storie, nell'ordine di esecuzione
 
 | # | UC | Titolo | Sotto-epica | Dipende da |
 |---|---|---|---|---|
@@ -30,20 +30,29 @@ capire il modello, poi i **[prototipi](prototype/README.md)** per vederlo.
 | 8 | [0102](story/0102-listino-posti-a-fasce.md) | Listino dei posti a fasce: modello versionato e calcolo | E22.2 | 0098 |
 | 9 | [0103](story/0103-acquisto-anticipato-posto-invito.md) | Acquisto anticipato del posto all'invito | E22.2 | 0100, 0102 |
 | 10 | [0104](story/0104-riduzione-posti-in-attesa.md) | Riduzione dei posti in attesa | E22.2 | 0103 |
-| 11 | [0105](story/0105-governo-listino-console-piattaforma.md) | Governo del listino dalla console di piattaforma | E22.2 | 0102 |
-| 12 | [0106](story/0106-posti-in-billing.md) | I posti nella sezione «Billing» | E22.2 | 0103, 0105 |
-| 13 | [0107](story/0107-menu-rotte-visibilita-per-ruolo.md) | Menu, rotte e visibilità per ruolo | E22.3 | 0099, 0100 |
-| 14 | [0108](story/0108-cruscotto-collaboratore.md) | Cruscotto del collaboratore, senza azioni dispositive | E22.3 | 0107 |
-| 15 | [0109](story/0109-catalogo-sola-lettura-richiesta-owner.md) | Catalogo in sola lettura e richiesta «chiedi all'owner» | E22.3 | 0107 |
-| 16 | [0110](story/0110-miei-dati-forma-ridotta.md) | «I miei dati» in forma ridotta per il collaboratore | E22.3 | 0107 |
-| 17 | [0111](story/0111-schermata-gestione-utenti-app.md) | Schermata «Gestione utenti» dentro ogni applicazione | E22.4 | 0098, 0107 |
-| 18 | [0112](story/0112-copilota-ruoli-new-application.md) | Copilota dei ruoli nella skill `new-application` | E22.4 | 0101, 0111 |
-| 19 | [0114](story/0114-ritiro-categoria-b2c-b2b.md) | Ritiro della categoria B2C/B2B (`App.user_model`) | E22.4 | 0099, 0101, 0112 |
-| 20 | [0115](story/0115-ambito-dati-applicazione.md) | Ambito dei dati: del gruppo di lavoro o della persona | E22.4 | 0114, 0101 |
-| 21 | [0113](story/0113-migrazione-account-e-copertura-e2e.md) | Migrazione degli account esistenti e copertura end-to-end | E22.4 | tutte |
+| 11 | [0119](story/0119-responsivita-backoffice.md) | Responsività del backoffice: tabelle a più colonne, barra laterale e comandi su schermo stretto | E22.3 | 0100, 0103, 0104 |
+| 12 | [0105](story/0105-governo-listino-console-piattaforma.md) | Governo del listino dalla console di piattaforma | E22.2 | 0102 |
+| 13 | [0106](story/0106-posti-in-billing.md) | I posti nella sezione «Billing» | E22.2 | 0103, 0105 |
+| 14 | [0107](story/0107-menu-rotte-visibilita-per-ruolo.md) | Menu, rotte e visibilità per ruolo | E22.3 | 0099, 0100 |
+| 15 | [0108](story/0108-cruscotto-collaboratore.md) | Cruscotto del collaboratore, senza azioni dispositive | E22.3 | 0107 |
+| 16 | [0109](story/0109-catalogo-sola-lettura-richiesta-owner.md) | Catalogo in sola lettura e richiesta «chiedi all'owner» | E22.3 | 0107 |
+| 17 | [0110](story/0110-miei-dati-forma-ridotta.md) | «I miei dati» in forma ridotta per il collaboratore | E22.3 | 0107 |
+| 18 | [0111](story/0111-schermata-gestione-utenti-app.md) | Schermata «Gestione utenti» dentro ogni applicazione | E22.4 | 0098, 0107 |
+| 19 | [0112](story/0112-copilota-ruoli-new-application.md) | Copilota dei ruoli nella skill `new-application` | E22.4 | 0101, 0111 |
+| 20 | [0114](story/0114-ritiro-categoria-b2c-b2b.md) | Ritiro della categoria B2C/B2B (`App.user_model`) | E22.4 | 0099, 0101, 0112 |
+| 21 | [0115](story/0115-ambito-dati-applicazione.md) | Ambito dei dati: del gruppo di lavoro o della persona | E22.4 | 0114, 0101 |
+| 22 | [0113](story/0113-migrazione-account-e-copertura-e2e.md) | Migrazione degli account esistenti e copertura end-to-end | E22.4 | tutte |
+| 23 | [0120](story/0120-guida-collaudo-manuale-epica.md) | Guida di collaudo manuale unica di fine epica | E22.4 | tutte, e in particolare 0113 |
 
 Criterio dell'ordine: **nulla si mostra per ruolo prima che il ruolo esista** nei dati e nel token;
 **nulla si vende prima che il posto esista** come oggetto contabile.
+
+**Le due storie aggiunte il 22 agosto 2026**, dopo il collaudo manuale del lotto `0095`–`0099`, stanno
+agli estremi: `0119` (responsività del backoffice) **subito**, perché presidia tabelle che le storie
+successive continuano ad allargare; `0120` (guida di collaudo manuale unica) **ultima**, perché raccoglie
+le guide di tutta l'epica. Con loro arriva la decisione di **sospendere il collaudo visivo delle singole
+storie** fino a fine epica: sta nel
+[§9 dell'epica madre](epic/E22-00-rifacimento-modello-appartenenza.md#9-il-collaudo-di-questa-epica-visivo-sospeso-unico-a-chiusura).
 
 ## Rapporto con l'epica 14
 
