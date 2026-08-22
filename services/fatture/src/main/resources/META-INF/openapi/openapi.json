@@ -227,7 +227,7 @@
         "summary" : "List",
         "tags" : [ "Invoice Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       },
       "post" : {
@@ -258,7 +258,7 @@
         "summary" : "Create",
         "tags" : [ "Invoice Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       }
     },
@@ -303,7 +303,7 @@
         "summary" : "Update",
         "tags" : [ "Invoice Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       },
       "get" : {
@@ -336,7 +336,7 @@
         "summary" : "Get",
         "tags" : [ "Invoice Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       },
       "delete" : {
@@ -362,7 +362,7 @@
         "summary" : "Delete",
         "tags" : [ "Invoice Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       }
     },
@@ -389,7 +389,7 @@
         "summary" : "Fatture",
         "tags" : [ "Quota Resource" ],
         "security" : [ {
-          "SecurityScheme" : [ "owner", "admin" ]
+          "SecurityScheme" : [ "owner", "admin", "member" ]
         } ]
       }
     }

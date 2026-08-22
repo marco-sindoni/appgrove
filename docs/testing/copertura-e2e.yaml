@@ -37,6 +37,7 @@ usecases_con_superficie:
   - "0096" # Billing solo-fatturazione (abbonamenti + storico pagamenti/ricevute)
   - "0097" # Dashboard operativa del workspace (+ Workspace ID in Account)
   - "0099" # Rifiuti dell'autorizzazione per applicazione, letti a schermo nel Mini-CRM
+  - "0101" # Semantica dei tre ruoli: i due rifiuti letti a schermo nell'app #1, che il ruolo ora governa
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
   - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
 
@@ -362,20 +363,28 @@ percorsi:
 
   - id: J-APP-ROLE-REFUSALS
     titolo: Autorizzazione per applicazione — i due rifiuti si distinguono a parole sullo schermo
-    usecases: ["0099"]
+    usecases: ["0099", "0101"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/roles.spec.ts
+
+  - id: J-ROLES
+    titolo: La stessa applicazione vista dai quattro ruoli — comandi disabilitati con spiegazione, sezioni in sola lettura, ambiti assenti
+    usecases: ["0101"]
     stato: da-coprire
     motivo: >-
-      L'esito visibile della storia sono DUE rifiuti che una persona legge e distingue: «non hai accesso a
-      questa applicazione, chiedi l'abilitazione» e «serve almeno editor, il tuo ruolo è viewer». La prima
-      classificazione li dava per non-superficie («nessun comando visibile»), e il 2026-08-21 il collaudo
-      manuale ha mostrato il costo dell'errore: le schermate del Mini-CRM buttavano via la frase del server
-      e mostravano «si è verificato un errore», senza che nulla diventasse rosso. Oggi i due messaggi sono
-      coperti al livello di modulo (`frontend/apps/backoffice/src/modules/crm/crm.test.tsx`), non
-      end-to-end. L'impedimento al percorso vero è concreto e non è pigrizia: il Mini-CRM è `inactive` nel
-      listino e accenderlo è un cambiamento GLOBALE di piattaforma, non per-conto — un percorso che lo
-      accende disturberebbe tutti quelli in esecuzione in parallelo. Si copre quando l'accensione di
-      un'applicazione sarà isolabile per conto, o quando `fatture` (già attiva) adotterà il varco del ruolo.
-    possiede: "0099"
+      Il percorso pretende che una persona apra la STESSA applicazione con quattro ruoli diversi e veda
+      quattro schermate coerenti: il comando dispositivo presente-ma-disabilitato con la spiegazione del
+      ruolo mancante, la sezione di governo visibile in sola lettura, gli ambiti che non competono al ruolo
+      assenti dalla navigazione. Di questo, la change 0095 (UC 0101) consegna il CONTRATTO e l'involucro
+      condiviso (`DisabledForRole` del design system, coperto al livello di componente), ma nessuna
+      schermata lo monta ancora: perché lo monti, il browser deve conoscere il ruolo della persona
+      sull'applicazione — la lettura `GET /api/platform/v1/me/app-access` portata nella shell, che è la
+      fondazione di UC 0107, e la schermata di governo, che è UC 0111. Un percorso che non può cliccare
+      niente non è un percorso: si scrive quando quelle due storie esistono. Ciò che è visibile OGGI —
+      i due rifiuti letti a parole — è coperto da J-APP-ROLE-REFUSALS.
+    possiede: "0113"
 
   - id: J-PWD-REVOKE
     titolo: Reimpostazione password — le sessioni aperte in precedenza smettono di valere
@@ -723,9 +732,6 @@ esenzioni:
   - usecase: "0100"
     categoria: non-implementato
     motivo: «Members» come elenco unico senza ruolo — avrà superficie, coperta dal percorso di livello 2 dei membri e da J-ROLES.
-  - usecase: "0101"
-    categoria: non-implementato
-    motivo: Semantica dei tre ruoli come contratto di piattaforma — contratto e collaudi strutturali (diventerà senza-superficie).
   - usecase: "0102"
     categoria: non-implementato
     motivo: Listino dei posti a fasce, modello e calcolo — nessuna superficie propria (diventerà senza-superficie).

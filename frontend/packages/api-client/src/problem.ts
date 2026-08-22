@@ -68,3 +68,33 @@ export async function unwrap<T>(promise: Promise<FetchResult<T>>): Promise<T> {
   if (!response.ok) throw await toApiError(response, error)
   return data as T
 }
+
+/**
+ * Codici di stato con cui il server **parla alla persona**: il loro `detail` è un messaggio scritto per
+ * essere letto, già nella lingua di chi chiede, e va mostrato tale e quale.
+ *
+ * Tutto il resto — e in particolare i `5xx` — resta dietro il messaggio generico: là il `detail`, quando
+ * c'è, descrive un guasto interno e non serve a chi guarda.
+ */
+const SPEAKING_STATUSES = new Set([400, 402, 403, 409, 422, 429])
+
+/**
+ * Messaggio da mostrare per un rifiuto, con ripiego sul generico (UC 0099, promosso qui da UC 0101).
+ *
+ * Serve perché l'autorizzazione per applicazione poggia interamente su rifiuti che si **distinguono a
+ * parole**: «non hai accesso a questa applicazione, chiedi l'abilitazione» e «serve almeno `editor`, il tuo
+ * ruolo è `viewer`» sono due `403` con lo stesso codice e due significati diversi, e la seconda frase è
+ * l'unica che dice alla persona cosa può fare. Un `catch` che scrive «si è verificato un errore» butta via
+ * esattamente l'informazione per cui quei messaggi sono stati scritti.
+ *
+ * <p>È nato dentro il modulo del Mini-CRM, quando era la sola applicazione col varco del ruolo, con scritto
+ * nel suo commento che si sarebbe promosso qui appena l'avesse adottato anche `fatture`. UC 0101 lo fa
+ * adottare a tutte: l'aiutante si sposta invece di essere duplicato, e chi scriverà l'applicazione numero
+ * tre lo trova senza doverlo cercare in un modulo altrui.
+ */
+export function refusalMessage(err: unknown, fallback: string): string {
+  if (!(err instanceof ApiError)) return fallback
+  const detail = err.problem?.detail
+  if (!detail || !SPEAKING_STATUSES.has(err.status)) return fallback
+  return detail
+}

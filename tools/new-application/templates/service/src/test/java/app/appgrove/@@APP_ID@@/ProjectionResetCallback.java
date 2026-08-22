@@ -5,7 +5,8 @@ import io.quarkus.test.junit.callback.QuarkusTestBeforeEachCallback;
 import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 
 /**
- * Azzera la proiezione entitlement <b>prima di ogni test</b> (UC 0046).
+ * Azzera le <b>copie locali</b> — diritti d'accesso (UC 0046) e ruolo per applicazione (UC 0099/0101) —
+ * prima di ogni test.
  *
  * <p>Serve perché la proiezione è una cache <b>su tabella</b>, non in memoria: sopravvive alla fine
  * di un test e persino al ripristino di {@code MockEntitlementService}. Senza questo azzeramento un
@@ -31,5 +32,9 @@ public class ProjectionResetCallback implements QuarkusTestBeforeEachCallback {
         if (handle.isAvailable()) {
             handle.get().clear();
         }
+        // Il finto servizio del ruolo è stato in memoria: ripristinarlo qui evita che un test che
+        // abbassa il ruolo o simula il core giù faccia fallire quello successivo per il motivo
+        // sbagliato — la stessa trappola della copia su tabella, ma dall'altro lato.
+        MockAppRoleService.reset();
     }
 }

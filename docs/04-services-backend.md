@@ -83,6 +83,51 @@ Vale sia per i servizi per-app sia per il **core/platform service** (entrambi Qu
      irreversibili (`fresh = true`), che non si fidano mai della copia. Nessuna applicazione scrive confronti
      fra ruoli: il varco esiste per **non** avere dieci varchi diversi.
 
+### Semantica dei tre ruoli — la cascata di classificazione (UC 0101, change 0095)
+
+Il varco dice *come* si fa rispettare un ruolo minimo; questa è la regola che dice **quale** ruolo minimo va
+chiesto. Vale per **tutte** le applicazioni: due applicazioni che interpretassero `editor` in due modi
+diversi renderebbero il ruolo una parola vuota, e la differenza si scoprirebbe a incidente avvenuto.
+
+Ogni operazione esposta riceve **una** etichetta, secondo tre domande in cascata:
+
+1. **Cambia dati, invia qualcosa fuori, o consuma quota?** → almeno **`editor`**. Sono le operazioni
+   *dispositive*: creazione, modifica, cancellazione, invio, esportazione che genera un documento,
+   importazione, cambio di stato. La regola sta nella prima domanda e **non si negozia caso per caso** —
+   «segna come letto» cambia un dato, quindi è `editor`.
+2. **Governa *chi* usa l'applicazione?** → **`admin`**. Abilitazione, revoca, cambio di ruolo dentro
+   quell'applicazione. Le operazioni irreversibili di questa riga dichiarano anche `fresh = true`.
+3. **Altrimenti** → **`viewer`**. Elenchi, dettagli, ricerche, riepiloghi.
+
+Tre chiarimenti che evitano le discussioni ricorrenti: scaricare in foglio di calcolo ciò che si vede già è
+una **lettura** (diventa dispositiva solo se produce un effetto verso l'esterno, per esempio un'email al
+cliente); le **preferenze personali** — tema, lingua, colonne visibili — non sono dati dell'applicazione e
+le cambia chiunque; il `viewer` vede **tutti** i dati che l'**ambito** dell'applicazione gli attribuisce
+(UC 0115) — nascondergliene una parte sarebbe un ruolo nuovo, non una restrizione silenziosa. Se
+un'applicazione avesse bisogno di poteri intermedi, si dichiara come punto aperto della sua storia: **non**
+si inventa un quarto ruolo.
+
+**Le esenzioni sono poche, dichiarate e col motivo scritto**: i diritti dell'interessato sui propri dati
+personali (già esenti da ogni gate di enforcement, #09 F31) e lo **stato di quota informativo** — un banner
+del consumo che diventa un rifiuto non informa nessuno. Restano esenti *per costruzione*, perché
+`@RequiresAppRole` è volutamente opt-in: proteggerne una «per coerenza» rompe un diritto.
+
+**Il documento delle operazioni, e il collaudo che lo rende vero.** Ogni applicazione realizza
+`AppOperationsContract` (`services/commons/.../access/`) — sul modello di `AppDataContract` per il manifesto
+dati — e dichiara **tutte** le proprie operazioni, letture comprese: identificativo stabile, descrizione in
+italiano e in inglese, classe e metodo Java, e **o** il ruolo minimo **o** il motivo dell'esenzione (mai
+entrambi, mai nessuno dei due). Il collaudo `AppOperationsContractTest` di ogni servizio invoca
+`AppOperationsContractVerifier` (test-jar di `commons`) e verifica tre direzioni: *dichiarato → reale*,
+*reale → dichiarato* (la direzione che coglie la rotta aggiunta domani e dimenticata) e *coerenza col varco*
+(ruolo dichiarato = ruolo effettivo; ogni scrittura non esente almeno `editor`; ogni esenzione senza varco).
+Le annotazioni da sole non basterebbero: dicono cosa il varco fa, non che l'elenco sia **completo**.
+
+**Lato interfaccia**, la stessa regola ha una forma sola: comando dispositivo per chi non ha il ruolo →
+**presente ma disabilitato** con la spiegazione (`DisabledForRole` del design system); sezioni che governano
+l'applicazione → **visibili in sola lettura**; ambiti che non competono al ruolo di applicazione
+(fatturazione, persone dell'account) → **assenti** dalla navigazione (UC 0107). Nascondere un comando fa
+credere che la funzione non esista.
+
 ### Orchestrazione purge (topic H — aggiorna #05)
 8. **Eventi async (EventBridge)**: il core emette `tenant.offboarded`; ogni servizio **consuma e purga** i dati del
    tenant nel proprio schema. Primo pezzo di messaging; trasporto (EventBridge→SQS→servizio vs Lambda per-app) → [06-infra-iac](06-infra-iac.md).

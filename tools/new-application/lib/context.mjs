@@ -216,17 +216,16 @@ export function buildContext(options) {
       options.userModel === 'multi'
         ? 'multi-utente (B2B): piu utenti per account, con ruoli'
         : 'utente singolo (B2C): un solo utente per account',
-    // Ruoli ammessi sugli endpoint. In multi-utente esiste anche il membro semplice: senza di lui
-    // un'app B2B nascerebbe con tutti gli endpoint riservati ai soli amministratori.
-    ROLES_ALLOWED:
-      options.userModel === 'multi'
-        ? 'Roles.OWNER, Roles.ADMIN, Roles.MEMBER'
-        : 'Roles.OWNER, Roles.ADMIN',
+    // Ruoli di PIATTAFORMA ammessi sugli endpoint: sempre tutti, modello utente o no (UC 0101).
+    // Non sono i ruoli che decidono cosa si può fare dentro l'applicazione — quello lo dice AppRole
+    // (viewer/editor/admin) attraverso il varco condiviso. Questa lista dice soltanto «appartieni a un
+    // account», e Quarkus la applica PRIMA dei filtri JAX-RS: una lista che escludesse `member`
+    // risponderebbe 403 senza corpo a ogni collaboratore, e il varco del ruolo non arriverebbe mai a
+    // decidere. La rimozione di queste annotazioni appartiene a UC 0111/0114.
+    ROLES_ALLOWED: 'Roles.OWNER, Roles.ADMIN, Roles.MEMBER',
     ROLES_EXTRA_CONSTANTS:
-      options.userModel === 'multi'
-        ? '    /** Membro semplice dell\'account (solo modello multi-utente). */\n'
-          + '    public static final String MEMBER = "member";\n'
-        : '',
+      '    /** Collaboratore dell\'account: il suo potere sull\'applicazione lo dice AppRole, non questo. */\n'
+      + '    public static final String MEMBER = "member";\n',
     ICON: options.icon,
     ACCENT: options.accent,
     // Testi del manifesto dati che NESSUN generatore può inventare: restano marcati come da

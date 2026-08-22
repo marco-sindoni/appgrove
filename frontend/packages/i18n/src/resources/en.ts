@@ -410,6 +410,16 @@ export const en = {
     seatNote: 'The seat belongs to this account: it is paid here even if the person already works in another account.',
     emailAlreadyMember: 'This email is already a member or has a pending invitation.',
   },
+  // Ruoli su un'applicazione (UC 0101): come si dice «non puoi», e perché.
+  roles: {
+    viewer: 'Viewer',
+    editor: 'Editor',
+    admin: 'Admin',
+    needsRole: 'You need the {{role}} role: ask the owner or an application administrator.',
+    readOnlySection: 'You can see who has access to this application; changing it needs the Admin role.',
+    loading: 'Checking your role on this application…',
+    unreadable: 'We could not read your role on this application. Reload the page, or try again in a moment.',
+  },
   validation: {
     required: 'This field is required',
     email: 'Enter a valid email address',

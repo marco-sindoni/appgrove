@@ -1,5 +1,7 @@
 package app.appgrove.fatture;
 
+import app.appgrove.commons.access.AppRole;
+import app.appgrove.commons.access.RequiresAppRole;
 import app.appgrove.commons.entitlement.RequiresEntitlement;
 import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
@@ -34,13 +36,27 @@ import java.util.UUID;
  * API fatture del tenant. Tenant-scoped automatico (discriminator): ogni query filtra
  * {@code WHERE tenant_id = ?} senza codice manuale. La creazione consuma quota (metrica {@code fatture}).
  *
- * <p>{@code @RequiresEntitlement} (UC 0027): la risorsa passa dal gate entitlement (402) — accesso negato
- * (subscription canceled/paused, app disabilitata) → 402 prima ancora del gate quota. L'endpoint di stato
- * quota ({@code QuotaResource}) resta volutamente <b>fuori</b> dal gate (informativo).
+ * <p>Due varchi, nell'ordine in cui una persona può rimediare:
+ * <ul>
+ *   <li>{@code @RequiresEntitlement} (UC 0027): diritto dell'<b>account</b> all'applicazione (402 se
+ *       l'abbonamento è disdetto o sospeso, o se l'app è disabilitata) — prima ancora del gate quota;</li>
+ *   <li>{@link RequiresAppRole} (UC 0099, classificato da UC 0101): <b>ruolo della persona su questa
+ *       applicazione</b> — letture {@code viewer} dalla classe, operazioni dispositive {@code editor} dal
+ *       metodo. La creazione consuma quota, quindi sarebbe dispositiva anche se non scrivesse nulla.</li>
+ * </ul>
+ *
+ * <p>{@code @RolesAllowed} elenca invece i ruoli di <b>piattaforma</b> e comprende tutti quelli esistenti:
+ * dice soltanto «appartieni a un account» e non decide nulla qui (vedi {@link Roles}). La classificazione
+ * completa delle operazioni sta in {@link FattureOperationsContract}, e {@code AppOperationsContractTest}
+ * diventa rosso se una rotta nuova non la dichiara.
+ *
+ * <p>L'endpoint di stato quota ({@code QuotaResource}) resta volutamente <b>fuori</b> dai varchi: è
+ * informativo ed è dichiarato esente nel documento delle operazioni.
  */
 @Path("/api/fatture/v1/invoices")
 @Authenticated
 @RequiresEntitlement
+@RequiresAppRole(AppRole.viewer)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class InvoiceResource {
@@ -55,7 +71,7 @@ public class InvoiceResource {
     CallerContext caller;
 
     @GET
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     public Page<InvoiceView> list(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         PageRequest pr = PageRequest.of(page, size);
         List<InvoiceView> content = repository.findAll()
@@ -69,13 +85,14 @@ public class InvoiceResource {
 
     @GET
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     public InvoiceView get(@PathParam("id") UUID id) {
         return InvoiceView.from(require(id));
     }
 
     @POST
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RequiresAppRole(AppRole.editor)
+    @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional
     public Response create(@Valid CreateInvoice body) {
         // Gate quota PRIMA dell'azione che consuma quota (#09 A5/F30): a tetto raggiunto → 429.
@@ -95,8 +112,9 @@ public class InvoiceResource {
     }
 
     @PATCH
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional
     public InvoiceView update(@PathParam("id") UUID id, @Valid UpdateInvoice body) {
         Invoice invoice = require(id);
@@ -113,8 +131,9 @@ public class InvoiceResource {
     }
 
     @DELETE
+    @RequiresAppRole(AppRole.editor)
     @Path("/{id}")
-    @RolesAllowed({Roles.OWNER, Roles.ADMIN})
+    @RolesAllowed({Roles.OWNER, Roles.ADMIN, Roles.MEMBER})
     @Transactional
     public Response delete(@PathParam("id") UUID id) {
         require(id).markDeleted();

@@ -410,6 +410,16 @@ export const de: Resources = {
     seatNote: 'Der Platz gehört zu diesem Konto: er wird hier bezahlt, auch wenn die Person schon in einem anderen Konto arbeitet.',
     emailAlreadyMember: 'Diese E-Mail ist bereits Mitglied oder hat eine ausstehende Einladung.',
   },
+  // Ruoli su un'applicazione (UC 0101): come si dice «non puoi», e perché.
+  roles: {
+    viewer: 'Betrachter',
+    editor: 'Bearbeiter',
+    admin: 'Administrator',
+    needsRole: 'Dafür ist die Rolle {{role}} nötig: frage den Inhaber oder eine Administratorin der Anwendung.',
+    readOnlySection: 'Du siehst, wer Zugang zu dieser Anwendung hat; zum Ändern ist die Rolle Administrator nötig.',
+    loading: 'Deine Rolle in dieser Anwendung wird gelesen…',
+    unreadable: 'Deine Rolle in dieser Anwendung konnte nicht gelesen werden. Lade die Seite neu oder versuche es in einem Moment erneut.',
+  },
   validation: {
     required: 'Dieses Feld ist erforderlich',
     email: 'Geben Sie eine gültige E-Mail-Adresse ein',

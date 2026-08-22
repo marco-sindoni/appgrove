@@ -1,5 +1,7 @@
 package app.appgrove.crm;
 
+import app.appgrove.commons.access.AppRole;
+import app.appgrove.commons.access.RequiresAppRole;
 import app.appgrove.commons.entitlement.RequiresEntitlement;
 import app.appgrove.commons.quota.QuotaLimitSource;
 import app.appgrove.crm.CrmDtos.AssignSeat;
@@ -27,8 +29,19 @@ import org.jboss.logging.Logger;
  * Gestione dei <b>posti</b> del mini-CRM (UC 0054): chi, dentro l'account, può usare l'app. È la
  * schermata «Membri» vista dal backend.
  *
- * <p><b>Solo owner e admin</b> assegnano e revocano posti ({@code @RolesAllowed}); un member non li
- * gestisce. A differenza del dominio, queste rotte <b>non</b> passano dal varco {@link SeatAccess}: un
+ * <p><b>Chi governa gli accessi all'applicazione ha bisogno del ruolo {@code admin}</b> su di essa
+ * ({@link RequiresAppRole}, cascata di UC 0101 §4.2: «l'operazione governa <i>chi</i> usa
+ * l'applicazione?»). La lettura del riepilogo resta {@code viewer}, perché la storia §6 vuole le sezioni
+ * di governo <b>visibili in sola lettura</b>: un {@code viewer} e un {@code editor} vedono chi ha accesso,
+ * non lo cambiano. La <b>revoca</b> rilegge il ruolo dal core saltando la copia locale
+ * ({@code fresh = true}): togliere un accesso è irreversibile e non si fa con un ruolo revocato tre secondi
+ * fa.
+ *
+ * <p>I nomi di ruolo di <b>piattaforma</b> in {@code @RolesAllowed} restano ancora qui accanto: sono il
+ * varco vecchio, che si ritira insieme ai posti in UC 0111. Fino ad allora convivono, e il varco del ruolo
+ * per applicazione è quello che decide per primo.
+ *
+ * <p>A differenza del dominio, queste rotte <b>non</b> passano dal varco {@link SeatAccess}: un
  * titolare deve poter liberare un posto anche quando sono tutti occupati (compreso il caso in cui non
  * ne ha uno lui stesso), altrimenti un account pieno resterebbe bloccato.
  *
@@ -41,6 +54,7 @@ import org.jboss.logging.Logger;
 @Path("/api/crm/v1/seats")
 @Authenticated
 @RequiresEntitlement
+@RequiresAppRole(AppRole.viewer)
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SeatResource {
@@ -72,8 +86,12 @@ public class SeatResource {
         return SeatSummary.of(used, cap, list);
     }
 
-    /** Assegna un posto a un utente dell'account. OWNER/ADMIN. A tetto raggiunto → 429. */
+    /**
+     * Assegna un posto a un utente dell'account: governa <b>chi</b> usa l'applicazione, quindi
+     * {@code admin} (UC 0101 §4.2). A tetto raggiunto → 429.
+     */
     @POST
+    @RequiresAppRole(AppRole.admin)
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
     public Response assign(@Valid AssignSeat body) {
@@ -93,9 +111,14 @@ public class SeatResource {
         return Response.status(Response.Status.CREATED).entity(SeatView.from(seat)).build();
     }
 
-    /** Revoca il posto di un utente. OWNER/ADMIN. Libera subito la giacenza. */
+    /**
+     * Revoca il posto di un utente: governa <b>chi</b> usa l'applicazione, quindi {@code admin}, e con
+     * <b>rilettura dal core</b> ({@code fresh = true}) perché togliere un accesso è irreversibile
+     * (UC 0099 §5). Libera subito la giacenza.
+     */
     @DELETE
     @Path("/{userId}")
+    @RequiresAppRole(value = AppRole.admin, fresh = true)
     @RolesAllowed({Roles.OWNER, Roles.ADMIN})
     @Transactional
     public Response revoke(@PathParam("userId") String userId) {

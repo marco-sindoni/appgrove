@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { refusalMessage } from '@appgrove/api-client'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,7 +7,6 @@ import { z } from 'zod'
 import { Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
 import { Field } from '../../../pages/auth/Field'
 import { useCreateContact } from '../api/hooks'
-import { refusalMessage } from '../api/errors'
 import type { CreateContact } from '../api/client'
 import { t } from '../strings'
 

@@ -1,7 +1,7 @@
 # E22.1 — Fondamenta del modello centralizzato
 
-**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: **0098 ✅**, **0099 ✅**, 0100, 0101
-**Stato**: 🟡 in corso (0098 dalla change 0091, 0099 dalla change 0092) · **Ultimo aggiornamento**: 2026-08-21
+**Epica madre**: [Epica 22](E22-00-rifacimento-modello-appartenenza.md) · **Storie**: **0098 ✅**, **0099 ✅**, **0101 ✅**, 0100
+**Stato**: 🟡 in corso (0098 dalla change 0091, 0099 dalla change 0092, 0101 dalla change 0095) · **Ultimo aggiornamento**: 2026-08-22
 
 ## Obiettivo
 
@@ -23,9 +23,13 @@ possibile tutto il resto, e sbagliarle costringerebbe a rifare le altre dodici.
 2. **0099 — l'autorizzazione** ✅ *(change 0092)*. Avere il dato non basta: i servizi devono **negare** in base ad esso, e
    devono farlo in un modo unico e riusabile, non applicazione per applicazione. Qui si decide la cosa
    più delicata dell'intera epica: **il ruolo per applicazione non entra nel token**.
-3. **0101 — il contratto dei ruoli.** Prima di scrivere una sola schermata serve una definizione di
+3. **0101 — il contratto dei ruoli** ✅ *(change 0095)*. Prima di scrivere una sola schermata serve una definizione di
    `viewer`/`editor`/`admin` abbastanza precisa perché due applicazioni diverse la interpretino allo
-   stesso modo. È un documento *più* un pezzo di codice condiviso, non solo prosa.
+   stesso modo. È un documento *più* un pezzo di codice condiviso, non solo prosa. Consegnato: la cascata
+   di classificazione, il documento delle operazioni per applicazione (`AppOperationsContract`) col
+   collaudo che coglie la scrittura non protetta, le due applicazioni esistenti classificate, e
+   l'involucro `DisabledForRole` per la regola «disabilitato con spiegazione ≠ assente». Il suo
+   **cablaggio** nelle schermate resta a 0107/0111, che portano il ruolo nel browser.
 4. **0100 — l'elenco unico.** Ultima delle quattro perché è la prima cosa che si **vede**, e vederla
    prima che i tre pilastri esistano darebbe l'illusione che il modello sia pronto.
 

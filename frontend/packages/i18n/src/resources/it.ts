@@ -410,6 +410,16 @@ export const it: Resources = {
     seatNote: 'Il posto è di questo account: si paga qui anche se la persona lavora già in un altro account.',
     emailAlreadyMember: 'Questa email è già un membro o ha un invito in sospeso.',
   },
+  // Ruoli su un'applicazione (UC 0101): come si dice «non puoi», e perché.
+  roles: {
+    viewer: 'Viewer',
+    editor: 'Editor',
+    admin: 'Admin',
+    needsRole: 'Serve il ruolo {{role}}: chiedi all’owner o a un amministratore dell’applicazione.',
+    readOnlySection: 'Vedi chi ha accesso a questa applicazione; per cambiarlo serve il ruolo Admin.',
+    loading: 'Stiamo leggendo il tuo ruolo su questa applicazione…',
+    unreadable: 'Non riusciamo a leggere il tuo ruolo su questa applicazione. Ricarica la pagina, o riprova fra poco.',
+  },
   validation: {
     required: 'Campo obbligatorio',
     email: 'Inserisci un indirizzo email valido',

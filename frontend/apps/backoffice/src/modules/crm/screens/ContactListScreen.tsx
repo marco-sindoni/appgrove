@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ApiError } from '@appgrove/api-client'
+import { ApiError, refusalMessage } from '@appgrove/api-client'
 import {
   Button,
   Icon,
@@ -17,7 +17,6 @@ import { useContacts } from '../api/hooks'
 import { QuotaBanner } from '../components/QuotaBanner'
 import { ContactAvatar } from '../components/ContactAvatar'
 import { StageBadge } from '../components/StageBadge'
-import { refusalMessage } from '../api/errors'
 import { t } from '../strings'
 
 const STAGES = ['lead', 'qualified', 'negotiating', 'won', 'lost'] as const

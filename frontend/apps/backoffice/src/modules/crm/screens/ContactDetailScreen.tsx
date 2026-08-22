@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { refusalMessage } from '@appgrove/api-client'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Card, CardContent, CardHeader, Icon } from '@appgrove/design-system'
 import { QueryState } from '../../../shell/QueryState'
@@ -10,7 +11,6 @@ import {
   useInteractions,
   useUpdateContact,
 } from '../api/hooks'
-import { refusalMessage } from '../api/errors'
 import { StageBadge } from '../components/StageBadge'
 import { kindLabel, stageLabel, t } from '../strings'
 
