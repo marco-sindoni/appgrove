@@ -144,6 +144,25 @@ riduzione è in corso di esecuzione»), errore.
 
 ## Punti aperti / decisioni differite
 
+### Lasciato da UC 0103 (change 0098)
+
+- **Il gate «nessun invito con una riduzione in attesa» ha già il suo posto, e non fa ancora niente.** La
+  change 0098 ha scritto la sequenza ordinata della creazione dell'invito e ha lasciato il passo (3) come
+  **commento** in `InvitationResource.create`, subito dopo il controllo sullo stato dell'account e prima di
+  ogni calcolo: è lì che il rifiuto va aggiunto. Non è stato messo un metodo vuoto di proposito — un gate che
+  passa sempre è codice morto, un commento nel punto esatto è un'indicazione. Sul lato dell'interfaccia il
+  campo esiste già: `GET /api/platform/v1/me/seats` restituisce `pendingReduction`, oggi sempre falso, e il
+  riquadro dei posti sa già mostrare l'avviso e spegnere il pulsante di invito quando è vero — quindi questa
+  storia deve solo far diventare vero quel campo.
+- **La quantità dell'abbonamento dei posti scende solo qui.** La change 0098 la fa **solo salire** (è un
+  high-water mark del periodo, ed è la ragione per cui un invito scaduto non produce né rimborso né secondo
+  addebito). Il ritorno al numero di posti effettivamente occupati, alla scadenza dell'attesa, è di questa
+  storia: il punto di scrittura è `SeatSubscriptionWriter`, che ha già il metodo per riportare la quantità a
+  un valore precedente.
+
+### Altri punti
+
+
 - **Avviso per email alla persona indicata**: se e quando avvertirla. Proposta prudente: **non** avvisarla
   automaticamente (è una comunicazione che spetta al datore di lavoro, non alla piattaforma), ma renderlo
   possibile in futuro. Proprietario: questa storia.

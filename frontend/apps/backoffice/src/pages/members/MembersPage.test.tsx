@@ -13,6 +13,34 @@ const ME = { id: 'u-owner', email: 'owner@test', displayName: 'Owner', role: 'ow
 let members: Array<Record<string, unknown>>
 let invites: Array<Record<string, unknown>>
 let sentEmails: Array<{ email: string; token: string; body: Record<string, unknown> }>
+/**
+ * Il riquadro dei posti (UC 0103). Mutabile perché i collaudi ne cambiano un pezzo alla volta: entro la
+ * franchigia, oltre, al confine di fascia in cui il posto successivo costa meno, in errore.
+ *
+ * I numeri sono quelli che darebbe il servizio col listino iniziale — 3 posti compresi, poi 2,99 € —
+ * perché è l'unico modo di provare le frasi che il cliente legge davvero.
+ */
+let seats: Record<string, unknown> | null
+/** Esito della lettura dei posti: `null` = errore, per provare l'invito impedito. */
+const franchigia = () => ({
+  usedSeats: 3,
+  composition: { active: 3, suspended: 0, pendingInvitations: 0 },
+  currency: 'EUR',
+  freeSeats: 3,
+  paidSeats: 0,
+  dueCents: 0,
+  paidQuantity: 0,
+  currentBand: { fromSeat: 1, toSeat: 3, unitPriceCents: 0 },
+  next: {
+    seatNumber: 4,
+    unitPriceCents: 299,
+    dueCentsAfter: 299,
+    chargeCents: 299,
+    cheaperThanPrevious: false,
+  },
+  pendingReduction: false,
+  hasSubscription: false,
+})
 
 const server = setupServer(
   http.get('http://localhost/api/platform/v1/users/me', () => HttpResponse.json(ME)),
@@ -21,6 +49,11 @@ const server = setupServer(
   ),
   http.get('http://localhost/api/platform/v1/invitations', () =>
     HttpResponse.json({ content: invites, page: 0, size: 100, totalElements: invites.length }),
+  ),
+  http.get('http://localhost/api/platform/v1/me/seats', () =>
+    seats === null
+      ? HttpResponse.json({ title: 'Internal Server Error', status: 500 }, { status: 500 })
+      : HttpResponse.json(seats),
   ),
   http.post('http://localhost/api/platform/v1/invitations', async ({ request }) => {
     const body = (await request.json()) as { email: string }
@@ -106,8 +139,18 @@ beforeEach(() => {
     { id: 'inv-old', email: 'pending@test', status: 'pending', expiresAt: '2026-07-01T00:00:00Z' },
   ]
   sentEmails = []
+  seats = franchigia()
   useAuthStore.getState().setSession({ accessToken: fakeAccessToken({ sub: 'u-owner', roles: ['owner'] }) })
 })
+
+/**
+ * Attende che il costo del posto sia noto. Da UC 0103 il pulsante di invito resta **spento** finché non lo
+ * è: mai invitare alla cieca. Ogni collaudo che invita deve quindi aspettare la stima — non è un dettaglio
+ * di sincronizzazione, è la regola della storia vista dal collaudo.
+ */
+async function attendiIlCostoDelPosto() {
+  await screen.findByText(/will be seat number/)
+}
 
 describe('MembersPage — elenco unico di persone (UC 0100)', () => {
   /**
@@ -198,6 +241,7 @@ describe('MembersPage — elenco unico di persone (UC 0100)', () => {
       ),
     ).toBeInTheDocument()
 
+    await attendiIlCostoDelPosto()
     await user.type(screen.getByLabelText('Email'), 'new@acme.test')
     await user.click(screen.getByRole('button', { name: 'Send invitation' }))
 
@@ -224,6 +268,7 @@ describe('MembersPage — elenco unico di persone (UC 0100)', () => {
     renderWithProviders(<MembersPage />)
     await screen.findByText('owner@test')
 
+    await attendiIlCostoDelPosto()
     await user.type(screen.getByLabelText('Email'), 'gia-membro@x.io')
     await user.click(screen.getByRole('button', { name: 'Send invitation' }))
     expect(
@@ -271,5 +316,187 @@ describe('MembersPage — elenco unico di persone (UC 0100)', () => {
     const { container } = renderWithProviders(<MembersPage />)
     await screen.findByText('owner@test')
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+/**
+ * Il riquadro dei posti (UC 0103). Quello che si prova qui non è la grafica: sono le **frasi** che il
+ * cliente legge quando sta per spendere dei soldi, e il presidio che gli impedisce di spenderli alla cieca.
+ */
+describe('MembersPage — riquadro dei posti (UC 0103)', () => {
+  it('entro la franchigia dice che non si paga nulla, e quanto costerà il prossimo', async () => {
+    renderWithProviders(<MembersPage />)
+
+    expect(await screen.findByText('3 seats in use')).toBeInTheDocument()
+    expect(screen.getByText('3 active · 0 suspended · 0 pending invitations')).toBeInTheDocument()
+    // «Compresi», non «€0,00»: non sono la stessa promessa.
+    expect(screen.getByText('You are paying nothing: the first 3 seats are included.')).toBeInTheDocument()
+    expect(screen.queryByText(/You are paying €/)).not.toBeInTheDocument()
+    expect(
+      screen.getByText('The next seat costs €2.99: your total will become €2.99.'),
+    ).toBeInTheDocument()
+  })
+
+  it('mostra la stima PRIMA della conferma, con il numero del posto e il nuovo totale', async () => {
+    renderWithProviders(<MembersPage />)
+    expect(
+      await screen.findByText(
+        'This person will be seat number 4: it costs €2.99 per month, and your total will go from €0.00 to €2.99.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('oltre la franchigia dice quanto si paga, con la fascia e i posti a pagamento', async () => {
+    seats = {
+      ...franchigia(),
+      usedSeats: 5,
+      composition: { active: 4, suspended: 0, pendingInvitations: 1 },
+      paidSeats: 2,
+      dueCents: 598,
+      paidQuantity: 2,
+      currentBand: { fromSeat: 4, toSeat: 10, unitPriceCents: 299 },
+      next: {
+        seatNumber: 6,
+        unitPriceCents: 299,
+        dueCentsAfter: 897,
+        chargeCents: 299,
+        cheaperThanPrevious: false,
+      },
+      hasSubscription: true,
+    }
+    renderWithProviders(<MembersPage />)
+
+    expect(await screen.findByText('You are paying €5.98 per month')).toBeInTheDocument()
+    expect(screen.getByText('2 paid seats')).toBeInTheDocument()
+    expect(screen.getByText('seats 4–10: €2.99 each')).toBeInTheDocument()
+  })
+
+  /**
+   * **Il caso che va detto per esteso.** Al confine di fascia il posto successivo costa meno del
+   * precedente, ma il totale sale comunque: col listino progressivo sale sempre. Una frase che dicesse
+   * solo «costa meno» accanto a un totale più alto sembrerebbe un errore di conteggio.
+   */
+  it('quando il posto successivo costa meno lo dice per esteso, totale compreso', async () => {
+    seats = {
+      ...franchigia(),
+      usedSeats: 10,
+      composition: { active: 10, suspended: 0, pendingInvitations: 0 },
+      paidSeats: 7,
+      dueCents: 2093,
+      paidQuantity: 7,
+      currentBand: { fromSeat: 4, toSeat: 10, unitPriceCents: 299 },
+      next: {
+        seatNumber: 11,
+        unitPriceCents: 199,
+        dueCentsAfter: 2292,
+        chargeCents: 199,
+        cheaperThanPrevious: true,
+      },
+      hasSubscription: true,
+    }
+    renderWithProviders(<MembersPage />)
+
+    expect(
+      await screen.findByText(
+        'The next seat costs €1.99 instead of €2.99, because you enter the next tier. Your total goes from €20.93 to €22.92.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('se il posto era già pagato in questo periodo lo dice, e non promette un addebito', async () => {
+    seats = {
+      ...franchigia(),
+      usedSeats: 3,
+      paidSeats: 0,
+      paidQuantity: 1,
+      next: {
+        seatNumber: 4,
+        unitPriceCents: 299,
+        dueCentsAfter: 299,
+        chargeCents: 0,
+        cheaperThanPrevious: false,
+      },
+      hasSubscription: true,
+    }
+    renderWithProviders(<MembersPage />)
+
+    expect(
+      await screen.findByText(
+        'Seat number 4 is already paid for this period: this invitation triggers no new charge.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  /**
+   * **Mai invitare alla cieca.** Se il costo non è noto — lettura in errore — l'invito è impedito e la
+   * pagina dice perché. È il presidio contro la sorpresa in fattura, e vale anche quando il guasto è
+   * nostro: preferiamo far aspettare che addebitare una cifra che nessuno ha visto.
+   */
+  it('se il costo del posto non è noto, l’invito è impedito e si può riprovare', async () => {
+    seats = null
+    const user = userEvent.setup()
+    renderWithProviders(<MembersPage />)
+
+    // Il client ritenta una volta prima di dichiarare l'errore: l'attesa è più lunga del solito, e va
+    // dichiarata invece di sperare che il valore predefinito basti.
+    expect(
+      await screen.findByText(
+        'We cannot read the cost of your seats. Until we know it you cannot invite anyone: we would rather make you wait than charge you an unexpected amount.',
+        {},
+        { timeout: 5000 },
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled()
+    // Nessuna stima: non c'è nulla da stimare, e inventare uno zero sarebbe il difetto.
+    expect(screen.queryByText(/will be seat number/)).not.toBeInTheDocument()
+    // E si può riprovare: il riquadro offre il comando, non solo il messaggio.
+    expect(within(screen.getByRole('alert')).getByRole('button', { name: 'Retry' })).toBeEnabled()
+    await user.click(within(screen.getByRole('alert')).getByRole('button', { name: 'Retry' }))
+  })
+
+  /**
+   * **L'addebito rifiutato non crea l'invito**, e il motivo del fornitore arriva a chi ha invitato: è
+   * l'unica informazione con cui può rimediare.
+   */
+  it('mostra il motivo del fornitore quando l’addebito del posto è rifiutato', async () => {
+    server.use(
+      http.post('http://localhost/api/platform/v1/invitations', () =>
+        HttpResponse.json(
+          {
+            type: 'urn:appgrove:seats:charge-declined',
+            title: 'Payment Required',
+            status: 402,
+            detail: 'carta scaduta',
+          },
+          { status: 402 },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<MembersPage />)
+    await attendiIlCostoDelPosto()
+
+    await user.type(screen.getByLabelText('Email'), 'quattro@acme.test')
+    await user.click(screen.getByRole('button', { name: 'Send invitation' }))
+
+    expect(
+      await screen.findByText(
+        'The payment for the seat did not go through (carta scaduta): the invitation was not created. Check your payment method in Billing and try again.',
+      ),
+    ).toBeInTheDocument()
+    // L'invito non è nella tabella: non è stato creato.
+    expect(screen.queryByText('quattro@acme.test')).not.toBeInTheDocument()
+  })
+
+  it('avverte quando c’è una riduzione in attesa, e impedisce l’invito (UC 0104)', async () => {
+    seats = { ...franchigia(), pendingReduction: true }
+    renderWithProviders(<MembersPage />)
+
+    expect(
+      await screen.findByText(
+        'A seat reduction is pending: until it takes effect you cannot add people.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send invitation' })).toBeDisabled()
   })
 })

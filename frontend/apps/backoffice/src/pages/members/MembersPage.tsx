@@ -15,11 +15,15 @@ import {
   useMembers,
   useRemoveMember,
   useRevokeInvitation,
+  useSeats,
   useUpdateMember,
 } from '../../api/hooks'
+import { formatPrice } from '../../billing/checkoutMachine'
 import { QueryState } from '../../shell/QueryState'
 import { Field } from '../auth/Field'
 import { ConfirmDialog } from './ConfirmDialog'
+import { SeatsCard } from './SeatsCard'
+import { readSeats, type Seats } from './seats'
 import { buildRoster, type RosterRow } from './roster'
 
 /**
@@ -65,6 +69,17 @@ const formatDate = (iso: string | undefined, locale: string) =>
  * tentazione tornerà a ogni revisione di questa pagina.
  */
 function inviteErrorMessage(err: unknown, t: TFn): string {
+  // UC 0103 — l'addebito del posto è stato rifiutato: l'invito NON è stato creato. Il motivo lo dà il
+  // fornitore di pagamento e viaggia nel corpo del rifiuto: si mostra così com'è, perché è l'unica
+  // informazione con cui chi ha invitato può rimediare («carta scaduta» si rimedia in due minuti,
+  // «operazione non riuscita» no). Il testo attorno è nostro e tradotto; il motivo no, ed è giusto: è
+  // il fornitore a saperlo, e tradurlo a orecchio significherebbe inventarlo.
+  if (err instanceof ApiError && err.status === 402) {
+    const reason = err.problem?.detail
+    return reason
+      ? t('seats.chargeDeclinedWithReason', { reason })
+      : t('seats.chargeDeclined')
+  }
   if (err instanceof ApiError && err.status === 409) {
     switch (err.problem?.type) {
       case 'urn:appgrove:invitation:already-member':
@@ -78,6 +93,36 @@ function inviteErrorMessage(err: unknown, t: TFn): string {
     }
   }
   return t('errors.generic')
+}
+
+/**
+ * La frase di stima mostrata **prima** della conferma dell'invito (UC 0103 §4): «questa persona sarà il
+ * posto numero 4; costo 2,99 € al mese; il tuo totale passerà da 0,00 a 2,99 €».
+ *
+ * Tre casi, e sono tre frasi diverse perché dicono tre cose diverse:
+ *
+ * - il posto è **compreso** nella franchigia → non si parla di soldi, si dice quanti posti restano compresi;
+ * - il posto è **già pagato** in questo periodo (qualcuno non ha accettato e viene rimpiazzato) → questo
+ *   invito non produce alcun addebito, e va detto: è la contropartita del «nessun rimborso»;
+ * - il posto **costa** → si dice quanto, e come cambia il totale.
+ *
+ * Nessuna aritmetica: importi, numero d'ordine del posto e nuovo totale arrivano dal servizio.
+ */
+function seatEstimate(t: TFn, language: string, seats: Seats | null): string | null {
+  if (!seats) return null
+  const { next, currency } = seats
+  if (next.unitPriceCents === 0) {
+    return t('seats.estimateIncluded', { seatNumber: next.seatNumber, count: seats.freeSeats })
+  }
+  if (next.chargeCents === 0) {
+    return t('seats.estimateAlreadyPaid', { seatNumber: next.seatNumber })
+  }
+  return t('seats.estimate', {
+    seatNumber: next.seatNumber,
+    price: formatPrice(next.unitPriceCents, currency, language),
+    from: formatPrice(seats.dueCents, currency, language),
+    to: formatPrice(next.dueCentsAfter, currency, language),
+  })
 }
 
 interface InviteSuccess {
@@ -125,6 +170,7 @@ export function MembersPage() {
   const me = useCurrentUser()
   const members = useMembers()
   const invitations = useInvitations()
+  const seats = useSeats()
   const createInvitation = useCreateInvitation()
   const revokeInvitation = useRevokeInvitation()
   const updateMember = useUpdateMember()
@@ -223,6 +269,17 @@ export function MembersPage() {
   const toggleExpanded = (key: string) =>
     setExpanded((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]))
 
+  /**
+   * L'invito è **impedito** quando il costo del posto non è noto (lettura in corso o in errore) o quando
+   * c'è una riduzione in attesa (UC 0104). Non è una cortesia dell'interfaccia come il gating dei ruoli:
+   * è il presidio contro l'invito alla cieca, e il servizio non può farlo da sé perché il servizio non sa
+   * se chi invita ha letto il costo.
+   */
+  const seatSummary = readSeats(seats.data)
+  const inviteBlocked = seats.isLoading || seats.isError || !seatSummary || seatSummary.pendingReduction
+
+  const inviteEstimate = seatEstimate(t, i18n.language, seatSummary)
+
   const busy =
     createInvitation.isPending ||
     revokeInvitation.isPending ||
@@ -239,9 +296,17 @@ export function MembersPage() {
         <p className="mt-1 text-sm text-fg-muted">{t('members.subtitle')}</p>
       </div>
 
-      {/* Riquadro dei posti (posti usati su totali, costo del posto successivo, riduzione in attesa):
-          arriva con UC 0103 e va QUI, fra l'intestazione e l'elenco. Il posto è lasciato apposta, per
-          non rimaneggiare la struttura una seconda volta. */}
+      {/* Riquadro dei posti (UC 0103): posti usati e composizione, importo, costo del prossimo posto,
+          riduzione in attesa. Sta fra l'intestazione e l'invito perché è l'informazione che si legge
+          PRIMA di decidere di invitare qualcuno. */}
+      <SeatsCard
+        seats={seatSummary}
+        isLoading={seats.isLoading}
+        // Una risposta che non si capisce vale quanto una lettura fallita: in entrambi i casi non
+        // sappiamo quanto costa il posto, e in entrambi i casi non si invita.
+        isError={seats.isError || (!seats.isLoading && !seatSummary)}
+        onRetry={() => void seats.refetch()}
+      />
 
       {actionError && (
         <p role="alert" className="text-sm text-danger">
@@ -268,10 +333,24 @@ export function MembersPage() {
                 {...form.register('email')}
               />
             </div>
-            <Button type="submit" className="mt-6" disabled={form.formState.isSubmitting}>
+            <Button
+              type="submit"
+              className="mt-6"
+              disabled={form.formState.isSubmitting || inviteBlocked}
+              title={inviteBlocked ? t('seats.inviteBlockedHint') : undefined}
+            >
               {t('members.inviteSubmit')}
             </Button>
           </form>
+
+          {/* LA STIMA, PRIMA DELLA CONFERMA (UC 0103 §4). Finché il costo non è noto il pulsante è
+              spento: mai invitare alla cieca. È il presidio contro la sorpresa in fattura, e vale anche
+              quando la lettura è solo lenta — un secondo di attesa costa meno di un addebito inatteso. */}
+          {inviteEstimate && (
+            <p role="status" className="mt-3 text-[12.5px] font-semibold text-fg">
+              {inviteEstimate}
+            </p>
+          )}
 
           {/* La differenza più visibile rispetto a prima è una SPARIZIONE: il selettore del ruolo. Una
               sparizione non spiegata si legge come un difetto, quindi si spiega. */}

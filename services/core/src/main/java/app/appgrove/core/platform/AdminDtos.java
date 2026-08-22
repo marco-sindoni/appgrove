@@ -19,8 +19,16 @@ public final class AdminDtos {
     /** KPI base dell'Overview. */
     public record OverviewView(long accounts, long users, long activeSubscriptions, long disabledApps) {}
 
-    /** App del catalogo (platform-level). */
-    public record AppView(UUID id, String slug, String name, String userModel, String status) {}
+    /**
+     * App del catalogo (platform-level).
+     *
+     * <p>{@code kind} distingue una <b>applicazione</b> del marketplace da una <b>voce di piattaforma</b>
+     * (UC 0103): la console è l'unica superficie in cui la voce dei posti <b>si vede</b>, perché chi
+     * amministra deve poter constatare che esiste — ma va vista per quello che è, non confusa con una
+     * applicazione da vendere. Delle cinque esclusioni della scelta strutturale, questa è l'unica che non
+     * è una sparizione: è un'etichetta.
+     */
+    public record AppView(UUID id, String slug, String name, String userModel, String status, String kind) {}
 
     /** Riga della lista account (cross-tenant) con conteggi. */
     public record AdminAccountView(UUID id, String name, String status, long users, long activeSubscriptions) {}

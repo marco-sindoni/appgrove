@@ -62,6 +62,15 @@ public class SubscriptionReadModel {
             if (app == null) {
                 continue; // subscription orfana (app rimossa dal catalogo) → non mostrata
             }
+            if (!app.isApplication()) {
+                // L'abbonamento dei POSTI (UC 0103) non è l'abbonamento di una applicazione e non si
+                // governa da qui: questa sezione offre cambio fascia, disdetta e riattivazione, e nessuna
+                // delle tre ha senso sui posti — i posti si aggiungono invitando e si riducono con la
+                // riduzione in attesa (UC 0104). Mostrarlo qui offrirebbe all'owner tre comandi che
+                // farebbero la cosa sbagliata. La sua presentazione onesta — righe, fasce, calcolo — è di
+                // UC 0106, nella sezione «Billing».
+                continue;
+            }
             AppTier tier = sub.getAppTierId() != null ? tiers.findById(sub.getAppTierId()) : null;
             AppTier scheduledTier =
                     sub.getScheduledTierId() != null ? tiers.findById(sub.getScheduledTierId()) : null;

@@ -37,6 +37,15 @@ public class App extends BaseEntity {
     @Column(nullable = false, length = 32)
     private AppStatus status;
 
+    /**
+     * Applicazione del marketplace o voce di piattaforma (UC 0103). Il valore predefinito in banca dati è
+     * {@code application}: la sincronizzazione del listino non nomina questa colonna, quindi ogni app che
+     * nasce dal pricing-as-code nasce applicazione senza che il motore di sincronizzazione debba saperlo.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private AppKind kind = AppKind.application;
+
     @Column(name = "paddle_product_id")
     private String paddleProductId;
 
@@ -58,6 +67,18 @@ public class App extends BaseEntity {
 
     public AppStatus getStatus() {
         return status;
+    }
+
+    public AppKind getKind() {
+        return kind;
+    }
+
+    /**
+     * Vero se questa riga è una <b>applicazione</b> del marketplace, cioè qualcosa che si vende e si apre.
+     * Le superfici che elencano applicazioni chiedono questo, non «lo slug non è quello dei posti».
+     */
+    public boolean isApplication() {
+        return kind == AppKind.application;
     }
 
     public String getPaddleProductId() {

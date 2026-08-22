@@ -15,16 +15,16 @@ import java.util.Map;
 /**
  * Endpoint di collaudo (<b>solo classpath di test</b>), sullo stampo di {@code MdcProbeResource}.
  *
- * <p>Esiste perché due pezzi di questa storia sono corretti solo <b>dentro una richiesta autenticata</b> e
- * non hanno ancora una superficie di prodotto che li esponga:
+ * <p><b>Ridotto da UC 0103.</b> Alla nascita (UC 0102) esponeva anche il <b>conteggio dei posti</b>, perché
+ * quel conteggio non aveva ancora una superficie di prodotto. Ora ce l'ha — {@code GET
+ * /api/platform/v1/me/seats}, il riquadro dei posti — e il collaudo del conteggio è stato agganciato
+ * all'operazione <b>vera</b>: un endpoint di collaudo che sopravvive alla superficie che doveva anticipare
+ * diventa l'unica cosa che qualcuno prova, e da quel momento la superficie vera non è più coperta da nulla.
  *
- * <ul>
- *   <li>il <b>conteggio dei posti</b> prende il perimetro dal claim {@code tenant_id} attraverso il
- *       discriminatore; fuori da una richiesta il risolutore del tenant è fail-closed, quindi non c'è modo
- *       di provarlo da un collaudo di unità. La superficie vera arriva con UC 0103;</li>
- *   <li>la <b>selezione della versione per data</b> ha bisogno di una data scelta dal collaudo, mentre
- *       l'operazione di prodotto serve sempre il listino vigente adesso (per scelta, UC 0102 §8).</li>
- * </ul>
+ * <p>Resta la <b>selezione della versione per data</b>, e resta per una ragione che non scade: ha bisogno di
+ * una data scelta dal collaudo, mentre ogni operazione di prodotto serve — per scelta, UC 0102 §8 — il
+ * listino vigente <b>adesso</b>. La data passata è la domanda di UC 0106 («quanto pagava in marzo?»); il
+ * giorno in cui quella superficie esisterà, anche questo probe andrà ritirato.
  *
  * <p>Non è un'operazione di prodotto e non finisce nell'artefatto: sta in {@code src/test/java}.
  */
@@ -34,19 +34,7 @@ import java.util.Map;
 public class SeatProbeResource {
 
     @Inject
-    SeatCount seatCount;
-
-    @Inject
     SeatPricingRepository repository;
-
-    /** I posti occupati dall'account del token, a un istante scelto (la scadenza degli inviti dipende da esso). */
-    @GET
-    @Path("/count")
-    @Transactional
-    public Map<String, Object> count(@QueryParam("at") String at) {
-        Instant when = at == null ? Instant.now() : Instant.parse(at);
-        return Map.of("seats", seatCount.occupiedSeatsAt(when));
-    }
 
     /** La versione vigente a una data: 200 con la sua decorrenza e nota, 404 se nessuna vigeva. */
     @GET

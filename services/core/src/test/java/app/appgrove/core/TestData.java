@@ -398,6 +398,16 @@ public class TestData {
                 reason, UUID.fromString(tenantId));
     }
 
+    /**
+     * Porta l'account in <b>attesa di eliminazione</b> (UC 0033): lo stato in cui non si invita più nessuno
+     * (UC 0103 §5). Solo lo stato, senza il resto del percorso di eliminazione: qui serve la precondizione,
+     * non il processo.
+     */
+    public void setAccountPendingDeletion(String tenantId) {
+        exec("update platform.accounts set status = 'pending_deletion' where id = ?",
+                UUID.fromString(tenantId));
+    }
+
     /** Righe di audit purge (prova erasure #13 L70) per tenant — per i test GDPR (UC 0032). */
     public int gdprPurgeAuditCount(String tenantId, String appId) {
         return queryInt(
@@ -532,6 +542,47 @@ public class TestData {
         return queryInt(
                 "select count(*) from platform.subscription where tenant_id = ? and app_id = ? and deleted_at is null",
                 tenantId, appId);
+    }
+
+    /**
+     * Quantità della subscription per {@code (tenant, app)}, o {@code -1} se la riga non esiste (UC 0103).
+     *
+     * <p>Il {@code -1} distingue «nessun abbonamento» da «abbonamento con quantità zero», e la differenza
+     * conta: dentro la franchigia l'abbonamento dei posti <b>non deve esistere affatto</b>, e un collaudo
+     * che leggesse zero in entrambi i casi non se ne accorgerebbe.
+     */
+    public int seatSubscriptionQuantity(String tenantId, UUID appId) {
+        Integer q = queryInteger(
+                "select quantity from platform.subscription where tenant_id = ? and app_id = ?"
+                        + " and deleted_at is null",
+                tenantId, appId);
+        return q == null ? -1 : q;
+    }
+
+    /** Riferimento all'addebito che ha autorizzato il posto di un invito, o null se non è costato nulla. */
+    public String invitationSeatChargeRef(UUID invitationId) {
+        return queryString(
+                "select seat_charge_ref from platform.invitations where id = ?", invitationId);
+    }
+
+    /** Quanti inviti (in qualunque stato, non cancellati) ha l'account. */
+    public int invitationCount(String tenantId) {
+        return queryInt(
+                "select count(*) from platform.invitations where tenant_id = ? and deleted_at is null",
+                tenantId);
+    }
+
+    private Integer queryInteger(String sql, Object... params) {
+        try (Connection c = ds.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            for (int i = 0; i < params.length; i++) {
+                ps.setObject(i + 1, params[i]);
+            }
+            try (var rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** Stato della subscription per {@code (tenant, app)}, o null se assente (per gli assert L1 0025). */

@@ -119,6 +119,22 @@ stato irregolare, errore.
 
 ## Punti aperti / decisioni differite
 
+### Lasciato da UC 0103 (change 0098)
+
+- **Il periodo dell'abbonamento dei posti non si rinnova.** La change 0098 scrive `current_period_start` e
+  `current_period_end` alla creazione dell'abbonamento e non li tocca più: aggiungere una persona non fa
+  ripartire il mese (se lo facesse, si potrebbe rimandare il rinnovo all'infinito invitando qualcuno il
+  giorno prima della scadenza), ma **nessuno emette il rinnovo** quando il periodo finisce. La conseguenza
+  osservabile: la quantità pagata è un *high-water mark* che non torna mai giù, quindi un posto liberato
+  resta pagato **oltre** la fine del periodo invece che fino alla sua fine. Il rinnovo è la fatturazione
+  ricorrente dei posti — con la sua riga in fattura e il suo «prossimo rinnovo» — e appartiene a questa
+  storia; la discesa della quantità dopo una riduzione è di UC 0104.
+- **Il probe di collaudo della selezione del listino per data vive ancora** (`SeatProbeResource`, solo nel
+  classpath di collaudo). La change 0098 ne ha ritirato la parte sul conteggio dei posti, agganciata
+  all'operazione vera; resta la selezione **per data**, che non ha una superficie di prodotto perché ogni
+  operazione serve il listino vigente *adesso*. La data passata è la domanda «quanto pagava questo cliente
+  in marzo?», cioè di questa storia: quando la superficie esisterà, il probe va ritirato del tutto.
+
 - **Soglia dell'errore sistematico**: quanti tentativi falliti fanno scattare l'email all'amministratore
   di appgrove (proposta: tre sullo stesso account, entro lo stesso periodo). L'unica cosa rimasta aperta
   del §5: la regola generale è decisa.

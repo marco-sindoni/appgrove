@@ -1,11 +1,11 @@
 # UC 0103 — Acquisto anticipato del posto all'invito (abbonamento di piattaforma)
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0098`)
 **Epica**: [E22.2 Posti a pagamento](../epic/E22-02-posti-a-pagamento.md)
 **Dipendenze**: UC 0102 (listino e calcolo), UC 0100 (elenco unico), UC 0024 (pagamento), UC 0025 (ricezione degli eventi del fornitore), UC 0026 (ciclo di vita dell'abbonamento)
 **Piano di lavoro**: [task/0103](../task/0103-acquisto-anticipato-posto-invito.md)
 **Prototipo**: [owner.html](../prototype/owner.html), riquadro dei posti e finestra di invito
-**Ultimo aggiornamento**: 2026-08-19
+**Ultimo aggiornamento**: 2026-08-22
 
 ## 1. Obiettivo / Scope
 
@@ -162,6 +162,30 @@ il collegamento all'invito, come oggi.
   l'impianto; il debito è l'insieme delle esclusioni da mantenere. Se le esclusioni diventassero più di
   una manciata, va rivalutata la struttura dedicata. Proprietario: Epica 22.
 - **Chi paga se l'owner cambia**: legato al passaggio di proprietà, fuori scope.
+- **La chiamata al fornitore di pagamento avviene DENTRO la transazione che tiene il blocco sull'account**
+  — *deroga consapevole della change `0098`*. Il piano di lavoro chiedeva «prenota (transazione breve) →
+  addebita (fuori) → conferma (transazione breve)», e quella è la forma corretta a regime. Non è stata
+  adottata perché richiede uno **stato di prenotazione** del posto (una riga di invito in uno stato
+  intermedio, che occupa il posto durante la chiamata di rete) più un raccoglitore che pulisca le
+  prenotazioni rimaste appese: due cose che aggiungono uno stato al modello degli inviti — stato che UC 0104
+  e UC 0113 erediterebbero — per chiudere un rischio che oggi **non esiste**, perché in ogni ambiente
+  eseguibile il fornitore è il simulatore, che non fa rete. Fra le due, si è scelto di garantire
+  l'**assenza del doppio addebito** (che è un danno) accettando una contesa potenziale (che è una
+  prestazione). **Da chiudere prima che il fornitore vero sia attivo** (prerequisito #14): con una chiamata
+  di rete reale dentro il blocco, due inviti simultanei si accodano per la durata di una chiamata verso
+  l'esterno. Proprietario: questa storia, insieme all'attivazione del fornitore.
+- **Il periodo dell'abbonamento dei posti non si rinnova.** La colonna della quantità è un *high-water
+  mark* del periodo in corso e questa storia la fa solo salire; alla scadenza del periodo nessuno la
+  riporta al numero di posti effettivamente occupati, e nessuno emette il rinnovo. Il posto liberato resta
+  quindi pagato **oltre** il periodo, invece che fino alla sua fine. Non è stato fatto qui perché il
+  rinnovo è la fatturazione ricorrente dei posti, con la sua riga in fattura e il suo «prossimo rinnovo»:
+  appartiene a UC 0106, e la discesa della quantità a UC 0104. Proprietario: **UC 0106** (rinnovo del
+  periodo) e **UC 0104** (discesa della quantità).
+- **Il percorso end-to-end dei posti è coperto al solo livello 2** (backend simulato,
+  `frontend/apps/backoffice/e2e/seats.spec.ts`, percorso `J-SEATS` del registro di copertura). Il tratto
+  con lo **stack vero** — banca dati, simulatore del fornitore di pagamento, addebito che crea davvero
+  l'abbonamento — appartiene alla suite di piattaforma e alla storia che la costruisce.
+  Proprietario: **UC 0113**.
 - **Limite al numero di account che una persona può aprire** — *portato qui dalla change `0090`*
   (UC 0118). Il percorso «apri un altro account» esiste ed è senza limiti: oggi non è un problema perché
   aprire un account è gratuito e chi lo apre è già una persona conosciuta. Diventa una domanda vera
@@ -174,7 +198,12 @@ il collegamento all'invito, come oggi.
   l'altra azienda». Applicare la regola — contare i posti e rifiutare quando sono esauriti — è di questa
   storia.
 
-### Lasciato da UC 0099 (change 0092)
+### Lasciato da UC 0099 (change 0092) — ✅ chiuso dalla change 0098
+
+Chiuso con un **attributo del catalogo** (`platform.app.kind`), come la change 0092 aveva indicato: l'esclusione
+sta nel punto unico che governa l'accesso (`EntitlementReadModel` elenca solo `kind = application`) e da lì
+discende per costruzione in tutte le letture che la consumano. Sei prove di esclusione, una per superficie, in
+`PlatformSeatsExclusionTest`.
 
 - **La voce di catalogo di piattaforma dei posti va ESCLUSA dalla lettura «dove posso entrare»**
   (`GET /api/platform/v1/me/app-access`, change 0092). Quella lettura deriva l'elenco dal diritto
@@ -186,7 +215,13 @@ il collegamento all'invito, come oggi.
   il punto esatto del codice è segnato da un commento in `MeAppAccessResource.entitledSlugs()`, e la scelta
   naturale è un attributo del catalogo («questa voce è una applicazione da aprire?») invece di un elenco.
 
-### Lasciato da UC 0102 (change 0097)
+### Lasciato da UC 0102 (change 0097) — ✅ chiusi entrambi dalla change 0098
+
+Chiusi: (1) la finalità di `membership.identity_id` è stata estesa nelle due lingue e il registro dei
+trattamenti rigenerato, con la classificazione **MINORE** argomentata e portata alla revisione legale come voce
+**L18**; (2) l'endpoint di collaudo del **conteggio** è stato ritirato e il collaudo agganciato all'operazione
+vera (`GET /api/platform/v1/me/seats`). Del probe resta solo la **selezione della versione per data**, che non
+ha ancora una superficie di prodotto — quella data è la domanda di UC 0106, non di questa storia.
 
 - **La finalità di `membership.identity_id` nel manifesto dei dati va estesa quando il posto si paga
   davvero.** La change 0097 ha scritto la regola «che cosa occupa un posto» (`SeatCount`), ma **nessun

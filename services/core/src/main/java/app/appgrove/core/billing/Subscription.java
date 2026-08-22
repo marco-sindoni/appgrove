@@ -51,6 +51,18 @@ public class Subscription extends BaseTenantEntity {
     private String paddleSubscriptionId;
 
     /**
+     * Unità dell'abbonamento (UC 0103). Vale <b>1</b> per gli abbonamenti delle applicazioni — si compra
+     * una fascia, non N copie — e per l'abbonamento dei <b>posti</b> è il numero di posti a pagamento
+     * <b>già pagati per il periodo in corso</b>.
+     *
+     * <p>Sola lettura anche qui, come il resto dell'entità: la scrittura dell'abbonamento dei posti è del
+     * {@code SeatSubscriptionWriter} (SQL nativo, tenant esplicito), quella degli abbonamenti delle
+     * applicazioni del {@link SubscriptionWriter} a partire dagli eventi del fornitore.
+     */
+    @Column(nullable = false, insertable = false, updatable = false)
+    private int quantity = 1;
+
+    /**
      * Cambio tier <b>schedulato</b> a fine periodo (downgrade): tier di destinazione. Null se nessun
      * cambio programmato. Persiste ciò che la derivazione lifecycle non può inferire (a parità di accesso
      * un downgrade schedulato è {@code ACTIVE}); popolato/azzerato dal consumer webhook (UC 0028).
@@ -104,6 +116,11 @@ public class Subscription extends BaseTenantEntity {
 
     public String getPaddleSubscriptionId() {
         return paddleSubscriptionId;
+    }
+
+    /** Unità dell'abbonamento: 1 per le applicazioni, posti a pagamento pagati per i posti (UC 0103). */
+    public int getQuantity() {
+        return quantity;
     }
 
     public UUID getScheduledTierId() {

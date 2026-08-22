@@ -272,7 +272,12 @@ public class UserResource {
         private List<UserAppView> ownerApps;
 
         private AccountApps() {
-            for (App app : apps.listAll()) {
+            // Solo le APPLICAZIONI (UC 0103): la colonna «applicazioni» dell'elenco delle persone dice su
+            // che cosa ognuno è abilitato a lavorare. L'owner ha accesso implicito a tutto ciò che
+            // l'account ha diritto di usare, quindi senza questa esclusione la voce di piattaforma dei
+            // posti comparirebbe fra le sue applicazioni — e chi legge la schermata dei membri leggerebbe
+            // «l'owner è abilitato ai Posti dell'account», che non vuol dire niente.
+            for (App app : apps.listApplications()) {
                 nameByApp.put(app.getId(), app.getSlug());
             }
             for (AppAccess access : accesses.listAll()) {

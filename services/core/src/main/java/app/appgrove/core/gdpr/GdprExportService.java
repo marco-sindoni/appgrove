@@ -101,13 +101,21 @@ public class GdprExportService {
         return targets;
     }
 
-    /** Slug delle app con una subscription del tenant corrente (lettura tenant-filtered, #2). */
+    /**
+     * Slug delle app con una subscription del tenant corrente (lettura tenant-filtered, #2).
+     *
+     * <p>Solo le <b>applicazioni</b> (UC 0103): questa lettura decide a quali <b>servizi</b> chiedere i
+     * dati da esportare, e la voce di piattaforma dei posti non ha un servizio dietro — un bersaglio che
+     * nessuno può soddisfare bloccherebbe l'esportazione invece di arricchirla. I posti restano comunque
+     * nell'esportazione, dentro i dati di piattaforma: sono appartenenze e inviti, che il contratto dei
+     * dati di piattaforma già estrae.
+     */
     private List<String> activatedAppSlugs() {
         return subscriptions.listAll().stream()
                 .map(s -> s.getAppId())
                 .distinct()
                 .map(appId -> apps.findById(appId))
-                .filter(app -> app != null)
+                .filter(app -> app != null && app.isApplication())
                 .map(app -> app.getSlug())
                 .sorted()
                 .toList();

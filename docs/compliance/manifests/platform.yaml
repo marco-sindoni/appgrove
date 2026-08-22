@@ -174,10 +174,18 @@ entries:
     purpose:
       it: >-
         Stabilire chi può presentarsi come persona di quell'account e con quale ruolo (UC 0116);
-        l'account resta il confine dei dati
+        l'account resta il confine dei dati. Da UC 0103 il NUMERO delle appartenenze vive, sommato agli
+        inviti in attesa, determina anche l'importo dovuto dall'account per i posti: è una precisazione
+        di finalità dentro il trattamento di fatturazione già dichiarato — nessuna categoria nuova,
+        nessuna base giuridica nuova, nessun destinatario nuovo (al fornitore di pagamento vanno
+        l'importo e l'identificativo dell'account, mai l'elenco delle persone)
       en: >-
         Establishing who may act as a person of that account and in which role (UC 0116); the account
-        remains the data boundary
+        remains the data boundary. From UC 0103 the NUMBER of live memberships, plus pending invitations,
+        also determines the amount the account owes for its seats: this is a clarification of purpose
+        within the already declared billing processing — no new category, no new legal basis, no new
+        recipient (the payment provider receives the amount and the account identifier, never the list
+        of people)
     legal_basis:
       it: Contratto (art. 6.1.b GDPR)
       en: Contract (art. 6(1)(b) GDPR)
@@ -285,6 +293,44 @@ entries:
         #13 E25). It is NEVER returned to the inviter, and is exported only for ACCEPTED invitations —
         on a pending invitation it would reveal that the person already has a relationship with the
         platform, which is not the inviting account's information (UC 0118 §5)
+  - key: invitations.seat_charge_ref
+    entity: app.appgrove.core.platform.Invitation
+    field: seatChargeRef
+    location:
+      it: Tabella `platform.invitations` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.invitations` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persone invitate a entrare in un account il cui posto è stato pagato
+      en: People invited to join an account whose seat was paid for
+    data_category:
+      it: >-
+        Dato di fatturazione: riferimento opaco alla transazione presso il fornitore di pagamento che ha
+        autorizzato il posto di quella persona. Non contiene né importi né estremi di pagamento, ed è
+        dichiarato per prudenza: sta su una riga il cui soggetto è una persona, e collega quella persona
+        a un pagamento
+      en: >-
+        Billing data: opaque reference to the payment-provider transaction that authorised that person's
+        seat. It contains neither amounts nor payment details, and is declared out of caution: it sits on
+        a row whose subject is a person, and links that person to a payment
+    purpose:
+      it: >-
+        Poter dimostrare che il posto di quella persona era pagato prima che l'invito partisse (UC 0103),
+        e poter annullare l'addebito se l'invito non nasce
+      en: >-
+        Being able to show that the person's seat was paid before the invitation went out (UC 0103), and
+        to reverse the charge if the invitation is not created
+    legal_basis:
+      it: Contratto (art. 6.1.b GDPR) — esecuzione del contratto con l'account titolare
+      en: Contract (art. 6(1)(b) GDPR) — performance of the contract with the account holder
+    retention:
+      it: >-
+        Come l'invito che lo porta: fino a scadenza o chiusura dell'invito; eliminato con l'account
+        (+ 14 giorni di grace, #13 E25). Nullo quando il posto non è costato nulla (franchigia, o posto
+        già pagato nel periodo in corso)
+      en: >-
+        Same as the invitation carrying it: until the invitation expires or is closed; deleted with the
+        account (+ 14-day grace period, #13 E25). Null when the seat cost nothing (free allowance, or a
+        seat already paid for in the current period)
   - key: newsletter_subscribers.email
     entity: app.appgrove.core.newsletter.NewsletterSubscriber
     field: email

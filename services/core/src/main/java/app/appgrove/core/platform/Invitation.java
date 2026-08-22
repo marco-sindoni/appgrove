@@ -81,6 +81,30 @@ public class Invitation extends BaseTenantEntity {
     @Column(name = "identity_id")
     private UUID identityId;
 
+    /**
+     * L'addebito che ha <b>autorizzato</b> questo posto (UC 0103): riferimento opaco alla transazione
+     * presso il fornitore di pagamento.
+     *
+     * <p>Nullo quando l'invito non ha richiesto denaro — posto dentro la franchigia, oppure posto già
+     * pagato in questo periodo perché rimpiazza un invito scaduto o revocato. Un valore nullo significa
+     * «non è stato dovuto nulla», <b>non</b> «non verificato»: senza addebito riuscito l'invito non nasce
+     * affatto, quindi una riga esistente è per costruzione una riga autorizzata.
+     *
+     * <p><b>Dichiarato come dato personale per prudenza</b>, benché descriva una transazione dell'account
+     * e non la persona: sta su una riga il cui soggetto <i>è</i> una persona, e collega quella persona a
+     * un pagamento. La classificazione conservativa costa una voce di manifesto e nessun obbligo nuovo —
+     * la riga di invito è già esportata ed eliminata con l'account — mentre la classificazione permissiva
+     * costerebbe, se sbagliata, un campo non dichiarato.
+     */
+    @PersonalData(
+            category = "dato di fatturazione (riferimento alla transazione che ha autorizzato il posto)",
+            purpose = "dimostrare che il posto di quella persona era pagato prima che l'invito partisse, "
+                    + "e poter annullare l'addebito se l'invito non nasce",
+            legalBasis = "contratto",
+            retention = "come l'invito che lo porta; eliminato con l'account (#13 E25)")
+    @Column(name = "seat_charge_ref", length = 64)
+    private String seatChargeRef;
+
     protected Invitation() {
         // richiesto da JPA
     }
@@ -134,5 +158,13 @@ public class Invitation extends BaseTenantEntity {
 
     public void setIdentityId(UUID identityId) {
         this.identityId = identityId;
+    }
+
+    public String getSeatChargeRef() {
+        return seatChargeRef;
+    }
+
+    public void setSeatChargeRef(String seatChargeRef) {
+        this.seatChargeRef = seatChargeRef;
     }
 }

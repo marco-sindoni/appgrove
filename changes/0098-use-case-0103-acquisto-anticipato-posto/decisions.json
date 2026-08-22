@@ -1,0 +1,224 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata dall'orchestratore go-fast. Nessuna fermata di workflow (né revisione dei requisiti né consenso al commit); in contropartita: suite completa `./run-tests.sh` senza parametri verde prima del commit, registro delle decisioni integrale, guida di collaudo manuale `how-to-test.md` scritta ED ESEGUITA nei suoi passi non visivi. Merge e push restano del chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0103 «Acquisto anticipato del posto all'invito (abbonamento di piattaforma)» dell'area 22-refactor-membership-model, indicato esplicitamente all'invocazione. Da qui la forma del branch `0098-use-case-0103-…`. Il numero progressivo 0098 è quello derivato da `changes/` (l'ultima cartella è 0097): combacia con l'atteso."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) `docs/usecases/_INDEX.md` NON viene toccato: l'indice di esecuzione contiene la tabella topologica degli use case base (0001–0060) e la mappatura dei residui, e le storie evolutive dell'epica 22 non hanno una riga di stato lì — come già per le change 0088–0097. Non si inventa una riga per rispettare la lettera del Definition of Done: lo stato delle storie evo vive nel loro drill-down (0103 passa a «✅ implementato») e in docs/usecases/README.md."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) Nessuna escalation di prezzo. Tutte le scelte economiche di questa storia sono già fissate per iscritto dallo sviluppatore: le tariffe a scaglioni (0 / 2,99 / 1,99 / 0,99 / 0,49 €) e la franchigia di tre posti compreso l'owner stanno nel file di listino della change 0097; l'ordine degli atti (verifica → addebito → invito), l'assenza di rimborso sul posto liberato, «i posti si pagano anche in periodo di prova» e la via strutturale della voce di catalogo di piattaforma stanno nel drill-down di UC 0103 e nell'epica E22.2. Nessuna soglia, quota o prezzo NUOVO è stato introdotto. Nessuna chiamata reale verso il fornitore di pagamento: tutto passa dal simulatore già in uso.",
+    "files": [
+      { "file": "docs/usecases/22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md", "description": "Sorgente dei requisiti; passa a «✅ implementato (change 0098)»." }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) La voce di catalogo dei posti si distingue con un ATTRIBUTO del catalogo (`platform.app.kind` ∈ {application, platform}) e non con un elenco di slug da escludere. È la forma che la change 0092 aveva indicato lasciando il rimando: un elenco di slug è una regola che invecchia in silenzio (la seconda voce di piattaforma non comparirebbe in nessun elenco e nessun collaudo diventerebbe rosso). Valore predefinito `application`, così la sincronizzazione del listino pricing-as-code — che non nomina la colonna — continua a far nascere applicazioni senza saperlo.",
+    "files": [
+      { "file": "services/core/src/main/resources/db/migration/V22__platform_seat_subscription.sql", "description": "Colonna `kind` con vincolo di dominio, riga della voce dei posti, colonna `quantity` su subscription, colonna `seat_charge_ref` su invitations." },
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/AppKind.java", "description": "Il tipo di voce di catalogo, con la ragione per cui è un attributo e non un elenco." },
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/PlatformCatalog.java", "description": "Slug stabile `platform-seats` e identificativo derivato con lo stesso algoritmo del resto del catalogo." },
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/AppRepository.java", "description": "`listApplications()`: la lettura unica che ogni superficie del cliente usa al posto di «tutte le righe»." }
+    ]
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) L'identificativo della voce dei posti è scritto in DUE posti — in chiaro nella migrazione e derivato dallo slug nel codice — perché una migrazione non può chiamare Java. Due copie dello stesso valore divergono prima o poi: un collaudo verifica che coincidano, così un cambio di slug diventa rosso invece di lasciare in tabella una riga che nessuno raggiunge.",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatPurchaseApiTest.java", "description": "`laVoceDeiPostiHaLIdentificativoDerivatoDalSuoSlug` sorveglia le due copie." }
+    ]
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Le esclusioni della voce di piattaforma sono SEI, non cinque come elencava il piano di lavoro. Alle cinque previste (diritti d'accesso, vetrina, «dove posso entrare», applicazioni per persona, matrice dei diritti in console) si aggiungono la sezione degli ABBONAMENTI SELF-SERVICE e — con una motivazione diversa, di correttezza e non di presentazione — le due letture GDPR che derivano dagli abbonamenti «a quali servizi chiedere i dati». Senza queste ultime, un account con dei posti pagati avrebbe fatto chiedere export e purga a un servizio `platform-seats` che non esiste: l'esportazione si sarebbe bloccata su un bersaglio che nessuno può soddisfare. In console la voce resta VISIBILE, marcata: chi amministra deve poter constatare che esiste.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/EntitlementReadModel.java", "description": "Esclusione a monte: elenca solo le applicazioni. Da qui discende per costruzione «dove posso entrare» e il menu laterale." },
+      { "file": "services/core/src/main/java/app/appgrove/core/catalog/CatalogReadModel.java", "description": "Vetrina: esclusione PRIMA della condizione sull'abbonamento, che da sola non basterebbe (un account con posti ha un abbonamento su quella voce)." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionReadModel.java", "description": "Sezione degli abbonamenti: cambio fascia, disdetta e riattivazione non hanno senso sui posti. La loro presentazione onesta è di UC 0106." },
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/TenantOffboarding.java", "description": "Purga: solo le applicazioni, altrimenti si attende per sempre la conferma di un servizio che non esiste." },
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/GdprExportService.java", "description": "Esportazione: idem. I posti restano nell'esportazione dentro i dati di piattaforma (appartenenze e inviti)." },
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java", "description": "Applicazioni per persona: senza l'esclusione la schermata dei membri direbbe «l'owner è abilitato ai Posti dell'account»." },
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/AdminResource.java", "description": "Console: `kind` nell'elenco del catalogo (visibile, marcata) e filtro `kind = 'application'` nella matrice dei diritti." },
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/PlatformSeatsExclusionTest.java", "description": "Una prova per superficie, con l'abbonamento dei posti DAVVERO presente: senza quello ogni esclusione passerebbe per un'altra ragione." }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Il fornitore di pagamento acquisisce DUE metodi nuovi sul port già astratto: `chargeSeats` (porta la quantità al valore indicato e addebita la differenza) e `releaseSeatCharge` (annulla un addebito appena eseguito). `chargeSeats` è l'unico metodo del port che risponde subito «sì» o «no»: tutti gli altri delegano l'effetto al webhook perché nessuno ne aspetta l'esito, mentre qui l'invito NON deve nascere se l'addebito non riesce, e questo si decide solo con un esito sincrono. Un rifiuto è un ESITO del dominio (una carta scaduta è normale), non un'eccezione: la firma restituisce un risultato con il motivo del fornitore. L'implementazione reale verso Paddle resta il segnaposto che fallisce in modo esplicito, come ogni altro metodo del port (bloccata dal prerequisito #14).",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/PaymentProvider.java", "description": "I due metodi nuovi con i loro comandi ed esiti." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/StubPaymentProvider.java", "description": "Simulatore: accetta e riusa abbonamento e cliente quando esistono (cliente pigro)." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/PaddlePaymentProvider.java", "description": "Segnaposto reale che fallisce dichiarando la ragione." }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) Il RIFIUTO del simulatore si comanda da configurazione (`appgrove.seats.stub-decline-reason`, vuota = accetta sempre) e non da una regola cablata sui dati. Un indirizzo o un importo «magico» verrebbe inciampato per caso da un altro collaudo e nessuno capirebbe perché. Il collaudo del rifiuto usa un profilo di collaudo dedicato: costa un riavvio dell'applicazione per quella classe, e vale il prezzo perché quello è il collaudo che protegge la regola d'oro della storia.",
+    "files": [
+      { "file": "services/core/src/main/resources/application.properties", "description": "La proprietà con la sua motivazione; nessun ambiente vero la valorizza." },
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatChargeDeclinedApiTest.java", "description": "Addebito rifiutato → 402 con il motivo, nessun invito, nessun abbonamento. Prova anche che dentro la franchigia il fornitore non viene interpellato affatto." }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) L'abbonamento dei posti si scrive in modo SINCRONO, in deroga dichiarata all'invariante «l'abbonamento lo muove solo il webhook» (#09 C16). Quell'invariante esiste per gli abbonamenti delle applicazioni, dove nessuno aspetta l'esito; qui l'ordine degli atti impone il contrario. La scrittura resta a valle di una conferma del fornitore — mai ottimistica — e lascia nulla la guardia `last_event_occurred_at`, così il webhook che seguirà può riscrivere la riga senza essere scartato come vecchio. SQL nativo, come il writer degli abbonamenti: l'entità resta di sola lettura per contratto e il numero di punti che la scrivono resta contabile a mano.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatSubscriptionWriter.java", "description": "Upsert della riga e ripristino della quantità precedente." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/Subscription.java", "description": "`quantity` mappata in sola lettura, come il resto dell'entità." }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) `subscription.quantity` è il numero di posti A PAGAMENTO già pagati per il periodo in corso, ed è un high-water mark che in questa storia SALE SOLTANTO. Da questa sola proprietà derivano due casi dello use case senza scrivere una riga di codice per ciascuno: un invito scaduto o revocato libera il posto SENZA rimborso, e un invito nuovo entro lo stesso periodo NON produce un secondo addebito perché il posto bersaglio risulta già pagato. La discesa della quantità è di UC 0104; il rinnovo del periodo è di UC 0106 (rimando scritto).",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatPurchaseApiTest.java", "description": "`unPostoLiberatoNonSiRipagaNelloStessoPeriodo` prova scadenza e revoca con la stessa conclusione." }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) L'atomicità si ottiene con un BLOCCO PESSIMISTICO sulla riga dell'account, preso all'inizio della creazione dell'invito, prima di qualunque lettura che decida del denaro. Il rischio non è sforare un tetto di posti (non esiste) ma addebitare due volte lo stesso salto di fascia: due clic simultanei leggerebbero entrambi «tre posti» e chiederebbero due volte gli stessi 2,99 €. Con il blocco, la seconda richiesta legge quattro posti e paga il quinto.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatSubscriptionService.java", "description": "`lockAccount()` e la spiegazione del rischio vero." },
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatPurchaseApiTest.java", "description": "`dueInvitiSimultaneiNonAddebitanoDueVolteLoStessoSalto`: due inviti riusciti e quantità due." }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) DEROGA CONSAPEVOLE al piano di lavoro: la chiamata al fornitore di pagamento avviene DENTRO la transazione che tiene il blocco, invece dello schema «prenota (transazione breve) → addebita fuori → conferma (transazione breve)». Quello schema richiede uno stato di prenotazione del posto più un raccoglitore che pulisca le prenotazioni appese: due cose che aggiungono uno stato al modello degli inviti — stato che UC 0104 e UC 0113 erediterebbero — per chiudere un rischio che oggi non esiste, perché in ogni ambiente eseguibile il fornitore è il simulatore, che non fa rete. Fra le due si è scelto di garantire l'assenza del doppio addebito (un danno) accettando una contesa potenziale (una prestazione). Rimando scritto nei punti aperti di UC 0103, da chiudere prima che il fornitore vero sia attivo."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La sequenza ordinata vive in `InvitationResource.create` e la sua compensazione è racchiusa in un metodo separato per la creazione della riga: il chiamante deve poter distinguere «è fallita la creazione» da «è fallito qualcosa prima», perché solo nel primo caso c'è un addebito da annullare. Un `try` che abbracciasse anche i passi precedenti annullerebbe un addebito mai fatto. Se anche l'annullamento fallisce si registra un avviso di severità alta e non si solleva nulla: chi chiama sta già gestendo un guasto, e sostituirgli l'errore originale gli toglierebbe l'unica informazione utile.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationResource.java", "description": "La sequenza numerata, il rifiuto 402 con il motivo del fornitore e la compensazione." },
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatChargeCompensationTest.java", "description": "Addebito riuscito + creazione fallita → storno chiesto al fornitore e banca dati pulita." }
+    ]
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) Il collaudo della compensazione richiede di FAR ACCADERE un guasto — nessun dato di ingresso lo provoca, è per definizione un guasto — quindi si aggiunge a `services/core` la dipendenza di collaudo `quarkus-junit5-mockito`, già in uso in `services/auth`. L'alternativa era non provare quel ramo, cioè lasciare senza rete l'unico caso in cui un cliente può pagare per qualcosa che non ha. La dipendenza è di ambito `test`: non entra nell'artefatto e non è un responsabile esterno del trattamento.",
+    "files": [
+      { "file": "services/core/pom.xml", "description": "La dipendenza con la ragione per cui esiste." }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il gate «nessun invito con una riduzione in attesa» è un COMMENTO nel punto esatto della sequenza, non un metodo vuoto: un gate che passa sempre è codice morto, un commento nel punto giusto è un'indicazione. Sul lato del contratto di rete il campo `pendingReduction` esiste già e vale sempre falso, così il riquadro e il rifiuto leggeranno da UN SOLO posto quando UC 0104 lo renderà vero. Rimando scritto nei punti aperti di UC 0104, con il nome del file e del passo."
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) Aggiunto il gate «account in attesa di eliminazione → nessun invito» (§5 dello use case), come conflitto e non come mancanza di permessi: aggiungere una persona a un conto che sta chiudendo le farebbe occupare — e pagare — un posto che sparisce fra pochi giorni."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) `GET /api/platform/v1/me/seats` è riservata all'OWNER, non a qualunque autenticato come il listino: il listino è pubblico dentro il prodotto (sono tariffe uguali per tutti), questa lettura dice quanto paga QUESTO account e quante persone ha — informazione di chi governa il conto. Il metodo restituisce la vista e non un `Response`, così il contratto pubblicato porta lo schema del corpo e da quello nasce il client dell'interfaccia.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatQuoteResource.java", "description": "La lettura del riquadro, riservata all'owner." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDtos.java", "description": "Contratto del riquadro: ogni numero calcolato dal servizio, compreso il giudizio «il prossimo costa meno del precedente»." }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) Listino assente = ERRORE, non un dovuto zero. L'eccezione propaga e la risposta è un errore; scartata l'idea di un rifiuto tipizzato 503 con un identificativo stabile, perché avrebbe introdotto una convenzione nuova (annotazioni di contratto su un `Response`) per distinguere un caso che, per ammissione del suo stesso codice, «nella pratica non accade». L'interfaccia tratta QUALUNQUE errore di questa lettura allo stesso modo — riquadro in errore e invito spento — che è una garanzia più forte del distinguere la causa: non serve indovinare quale guasto sia per sapere che non si può invitare alla cieca."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Il riquadro dei posti e la stima dell'invito NON fanno aritmetica: importi, numero d'ordine del posto, nuovo totale e il giudizio «il prossimo costa meno» arrivano tutti dal servizio. È la sola forma in cui cinque traduzioni e un servizio dicono lo stesso importo. Il caso in cui la tariffa scende ai confini di fascia è una traduzione A SÉ e non la composizione di due pezzi: col listino progressivo il totale sale sempre, e «costa meno» accanto a un totale più alto senza spiegazione sembra un errore di conteggio.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/members/SeatsCard.tsx", "description": "Il riquadro: posti usati e composizione, importo con fascia, costo del prossimo, riduzione in attesa." },
+      { "file": "frontend/apps/backoffice/src/pages/members/MembersPage.tsx", "description": "La stima prima della conferma e il pulsante spento finché il costo non è noto." },
+      { "file": "frontend/packages/i18n/src/resources/it.ts", "description": "Le frasi dei posti nelle cinque lingue, plurali compresi; il caso «costa meno» è una frase intera." }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Il contratto generato descrive ogni campo come facoltativo (è come lo produce lo strumento a partire dal codice), quindi l'interfaccia avrebbe scritto `?? 0` su ogni importo. Su questi numeri quel `?? 0` è pericoloso: «stai pagando 0,00 €» per un campo assente è indistinguibile da «stai pagando 0,00 €» perché sei entro la franchigia. Si converte quindi UNA VOLTA all'ingresso in una forma stretta: risposta completa → oggetto senza valori incerti; risposta incompleta → stato di ERRORE del riquadro, con l'invito impedito. La sola assenza legittima è la fascia corrente (zero posti).",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/pages/members/seats.ts", "description": "La conversione e la sua motivazione." },
+      { "file": "frontend/apps/backoffice/src/pages/members/seats.test.ts", "description": "Prova che lo zero legittimo è zero e l'assenza è errore." }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) L'invito è IMPEDITO quando il costo del posto non è noto (lettura in corso, in errore, o risposta incompleta) e quando c'è una riduzione in attesa. Non è una cortesia dell'interfaccia come il gating dei ruoli: è il presidio contro l'invito alla cieca, e il servizio non può farlo da sé perché non sa se chi invita ha letto il costo."
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) DIFETTO TROVATO E CHIUSO nella stessa change: il rifiuto 402 dell'addebito del posto alzava il banner globale di enforcement, che avrebbe detto «il tuo abbonamento è scaduto, riattivalo o esporta i dati» a un account il cui abbonamento è perfettamente attivo — nascondendo la cosa vera da fare, cioè controllare il metodo di pagamento. Il 402 dei posti è ora escluso dal banner, discriminato per il suo identificativo di problema; il rifiuto si legge DOVE è avvenuto, sul modulo dell'invito, col motivo del fornitore accanto.",
+    "files": [
+      { "file": "frontend/apps/backoffice/src/billing/enforcement.ts", "description": "L'elenco dei 402 che non sono gate di entitlement, con la ragione." },
+      { "file": "frontend/apps/backoffice/src/billing/enforcement.test.ts", "description": "Il collaudo che vieta il ritorno del banner." }
+    ]
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) L'endpoint di collaudo del CONTEGGIO dei posti (`/test/seats/count`, lasciato da UC 0102) è stato RITIRATO e il suo collaudo agganciato all'operazione vera: un endpoint di collaudo che sopravvive alla superficie che doveva anticipare diventa l'unica cosa che qualcuno prova, e da quel momento la superficie vera non è più coperta. Del probe resta la SELEZIONE DELLA VERSIONE PER DATA, che non ha ancora una superficie di prodotto perché ogni operazione serve il listino vigente adesso: la data passata è la domanda di UC 0106, e il rimando è scritto lì.",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatProbeResource.java", "description": "Ridotto, con la spiegazione di che cosa resta e perché." },
+      { "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatCountApiTest.java", "description": "Ora interroga `GET /api/platform/v1/me/seats`: quello che era un numero letto da un probe è il numero che il cliente vede a schermo." }
+    ]
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) PRIVACY, classificazione MINORE, argomentata. La finalità di `membership.identity_id` è stata estesa nelle due lingue: il numero delle appartenenze vive più gli inviti in attesa determina ora l'importo dovuto. È una precisazione di finalità dentro il trattamento di fatturazione già dichiarato — nessuna categoria nuova (si contano righe che già esistono), nessuna base giuridica nuova (resta il contratto), nessuna conservazione nuova, nessun destinatario nuovo (al fornitore vanno l'importo e l'identificativo dell'account, mai l'elenco delle persone). Registro dei trattamenti rigenerato. NESSUN bump della privacy policy pubblica, coerente con le change 0088–0091 che hanno esteso lo stesso manifesto: il documento è a 1.0.0, pre-go-live, e nessuno l'ha ancora accettato. La lettura è portata alla revisione legale come voce L18.",
+    "files": [
+      { "file": "docs/compliance/manifests/platform.yaml", "description": "Finalità estesa di `membership.identity_id` nelle due lingue." },
+      { "file": "docs/_REVISIONE-LEGALE.md", "description": "Voce L18 con i tre punti da far confermare a un legale." }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) `invitations.seat_charge_ref` è dichiarato dato personale PER PRUDENZA, benché descriva una transazione dell'account e non la persona: sta su una riga il cui soggetto è una persona e collega quella persona a un pagamento. La classificazione conservativa costa una voce di manifesto e nessun obbligo nuovo — la riga di invito è già esportata ed eliminata con l'account — mentre la classificazione permissiva costerebbe, se sbagliata, un campo non dichiarato. La scelta ha avuto un effetto immediato e utile: il collaudo di contratto GDPR è diventato rosso perché il campo non era nell'esportazione, e ora lo è (senza restrizioni, a differenza di `identity_id`: dice che il posto è stato pagato e con quale transazione, cioè informazione che l'account già conosce dalla propria fatturazione).",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/platform/Invitation.java", "description": "Il campo con la sua annotazione e la ragione della prudenza." },
+      { "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java", "description": "Il campo nell'esportazione dei dati di piattaforma." }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) I segnali dello scanner privacy non classificati come dati personali, con la ragione: `platform.app.kind` descrive una riga di catalogo, non una persona; `subscription.quantity` è un conteggio dell'account; il motivo del rifiuto portato dall'eccezione dell'addebito non è persistito; `quarkus-junit5-mockito` è di ambito collaudo e non è un responsabile esterno del trattamento."
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) COPERTURA END-TO-END: si copre ORA. Lo use case 0103 esce dall'esenzione `non-implementato` ed entra fra le superfici; nasce il percorso `J-SEATS`, coperto al livello 2 da `frontend/apps/backoffice/e2e/seats.spec.ts` (due prove: il percorso felice dal riquadro al primo posto a pagamento, e l'addebito rifiutato che non crea l'invito). Il tratto di PIATTAFORMA dello stesso percorso — stack vero, banca dati, simulatore del fornitore — resta a UC 0113, con il rimando scritto lì: quando arriverà, la voce di livello platform si aggiunge accanto a quella di livello 2, non al suo posto. Aggiornato anche il motivo dell'esenzione di UC 0104, che rimandava a un J-SEATS che ora esiste.",
+    "files": [
+      { "file": "docs/testing/copertura-e2e.yaml", "description": "0103 fra le superfici, percorso J-SEATS coperto al livello 2, esenzione di 0103 rimossa e motivo di 0104 aggiornato." },
+      { "file": "frontend/apps/backoffice/e2e/seats.spec.ts", "description": "Il percorso di livello 2, con lo stato dei posti che cambia dopo l'invito come nella realtà." },
+      { "file": "frontend/apps/backoffice/e2e/members.spec.ts", "description": "Il riquadro dei posti va simulato anche qui: da questa storia il pulsante di invito resta spento finché il costo non è noto." }
+    ]
+  },
+  {
+    "id": 29,
+    "decision": "(autopilot) `run-tests.sh` NON viene modificato: la change non aggiunge né rimuove moduli (nessun `services/<app>` nuovo, nessun package frontend nuovo) e non cambia il comando di collaudo di alcuna area. I collaudi nuovi — backend, unità dell'interfaccia e Playwright di livello 2 — sono raccolti dai comandi già esistenti delle aree `backend` e `frontend`. La verifica è stata fatta eseguendo la suite completa senza parametri."
+  },
+  {
+    "id": 30,
+    "decision": "(autopilot) COMPLETAMENTO DELL'APPARECCHIATURA DI COLLAUDO, non ammorbidimento: tre collaudi preesistenti (`InvitationLifecycleTest`, `MultiTenancyTest`, `RolesTest`) invitavano usando un token il cui account NON esisteva in `platform.accounts`. Prima di questa storia nessun percorso leggeva quella riga e la lacuna non si vedeva; ora l'invito la blocca per serializzare gli inviti concorrenti, e un account che non c'è non si può bloccare. Si è completata la precondizione dei collaudi — non si è indebolito il presidio: proseguire senza serializzazione su un atto che muove denaro sarebbe peggio di un errore.",
+    "files": [
+      { "file": "services/core/src/test/java/app/appgrove/core/InvitationLifecycleTest.java", "description": "L'account del token creato in un `@BeforeEach`, con la ragione." }
+    ]
+  },
+  {
+    "id": 31,
+    "decision": "(autopilot) `SeatCount` espone ora anche la COMPOSIZIONE dei posti (attive, sospese, inviti in attesa), perché il riquadro deve mostrarla: un «7» senza composizione fa aprire un ticket, perché chi legge conta le righe della tabella e non gli torna. Il totale resta la regola e la composizione è una sua lettura: le sospese si contano a parte e le attive si ricavano per DIFFERENZA dal numero di appartenenze, mai elencando gli stati che «valgono» — così il giorno in cui UC 0104 aggiunge lo stato «in cessazione» il totale resta giusto da sé e la composizione mostra una voce in più invece di far sparire dei posti dal conto.",
+    "files": [
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatCount.java", "description": "`compositionAt` e la ragione della differenza invece dell'elenco." },
+      { "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricing.java", "description": "`freeSeats(version)`: la franchigia si deriva dal listino, non è una costante." }
+    ]
+  },
+  {
+    "id": 32,
+    "decision": "(autopilot) GUIDA DI COLLAUDO ESEGUITA. `how-to-test.md` è stata scritta e i suoi passi non visivi sono stati eseguiti contro lo stack locale prima del commit: comandi verso la banca dati, chiamate alle interfacce di programmazione e ispezioni dei log. I passi visivi (le frasi a schermo nel riquadro dei posti, la stima, il messaggio del rifiuto) restano da guardare a uno schermo e sono marcati come tali — e sono comunque coperti dai due collaudi Playwright di livello 2 e dai collaudi di componente."
+  },
+  {
+    "id": 33,
+    "decision": "(autopilot) RIPARAZIONE DELL'AMBIENTE LOCALE, non del prodotto: durante l'esecuzione la banca dati locale aveva già applicato la migrazione V22 con una somma di controllo precedente (il testo del file è stato poi corretto), e Flyway rifiutava la validazione. È un artefatto dell'ambiente di sviluppo — la migrazione è nuova e non è mai stata rilasciata in alcun ambiente reale — risolto allineando la somma di controllo nella cronologia locale. Nessun cambio di prodotto e nessuna guida ammorbidita."
+  }
+]

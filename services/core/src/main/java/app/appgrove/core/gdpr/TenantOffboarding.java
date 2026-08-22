@@ -72,9 +72,13 @@ public class TenantOffboarding {
         List<String> slugs = new ArrayList<>();
         try (Connection c = ds.getConnection();
                 PreparedStatement ps = c.prepareStatement(
+                        // Solo le APPLICAZIONI (UC 0103): questa lettura decide a QUALI SERVIZI chiedere
+                        // la purga dei dati del conto. La voce di piattaforma dei posti porta un
+                        // abbonamento ma non ha alcun servizio dietro: senza il filtro si aspetterebbe
+                        // per sempre la conferma di una purga che nessuno può eseguire.
                         "select distinct a.slug from platform.subscription s"
                                 + " join platform.app a on a.id = s.app_id"
-                                + " where s.tenant_id = ? order by a.slug")) {
+                                + " where s.tenant_id = ? and a.kind = 'application' order by a.slug")) {
             ps.setString(1, tenantId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

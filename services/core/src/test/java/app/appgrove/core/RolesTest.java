@@ -34,6 +34,8 @@ class RolesTest {
 
     @Test
     void ownerCanCreateInvitation() {
+        // L'account del token deve esistere: da UC 0103 l'invito lo blocca per serializzare gli inviti.
+        data.account(TENANT, "Acme");
         given().header("Authorization", "Bearer " + TestTokens.withTenant(TENANT, "owner"))
                 .contentType(ContentType.JSON)
                 .body(Map.of("email", "role-owner@example.test"))

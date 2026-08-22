@@ -9,6 +9,7 @@ import app.appgrove.core.billing.EntitlementAccess;
 import app.appgrove.core.billing.ReconciliationDtos.ReconciliationView;
 import app.appgrove.core.billing.ReconciliationService;
 import app.appgrove.core.billing.SubscriptionStatus;
+import app.appgrove.core.catalog.AppKind;
 import app.appgrove.core.catalog.AppStatus;
 import app.appgrove.core.catalog.AppStatusService;
 import app.appgrove.core.platform.AdminDtos.BillingRow;
@@ -72,15 +73,21 @@ public class AdminResource {
         return new OverviewView(num(r[0]), num(r[1]), num(r[2]), num(r[3]));
     }
 
+    /**
+     * Il catalogo per chi amministra: <b>tutte</b> le righe, voci di piattaforma comprese (UC 0103), ognuna
+     * con il suo {@code kind}. È l'unica superficie che le mostra, e di proposito: nascondere alla console
+     * una riga che esiste in tabella significherebbe rendere invisibile a chi amministra proprio la cosa
+     * che ha il comportamento più insolito.
+     */
     @GET
     @Path("/apps")
     public List<AppView> apps() {
         return rows("""
-                select id, slug, name, user_model, status
+                select id, slug, name, user_model, status, kind
                 from platform.app where deleted_at is null order by slug
                 """)
                 .stream()
-                .map(r -> new AppView((UUID) r[0], str(r[1]), str(r[2]), str(r[3]), str(r[4])))
+                .map(r -> new AppView((UUID) r[0], str(r[1]), str(r[2]), str(r[3]), str(r[4]), str(r[5])))
                 .toList();
     }
 
@@ -192,8 +199,11 @@ public class AdminResource {
         if (result == null) {
             throw new NotFoundException("App non trovata");
         }
+        // Il tipo di voce non cambia mai da qui: si cambia lo stato di una applicazione, e una voce di
+        // piattaforma non ha uno stato da cambiare per mano di nessuno.
         return new AppView(
-                result.appId(), result.slug(), result.name(), result.userModel(), result.status().name());
+                result.appId(), result.slug(), result.name(), result.userModel(), result.status().name(),
+                AppKind.application.name());
     }
 
     /** Registro delle transizioni di stato delle app (UC 0076): chi, quando, quale app, perché. */
@@ -240,7 +250,12 @@ public class AdminResource {
                                  where p.app_tier_id = t.id and p.deleted_at is null)
                        ) as free_tier
                 from platform.app app
-                where app.deleted_at is null
+                -- Solo le APPLICAZIONI (UC 0103): la matrice risponde alla domanda «che cosa vede questo
+                -- cliente», e un account che ha comprato dei posti ha un abbonamento sulla voce di
+                -- piattaforma — quindi senza questo filtro comparirebbe una colonna «Posti dell'account»
+                -- fra le applicazioni, con lo stato «attiva». La voce si vede nell'elenco del catalogo,
+                -- marcata; qui no, perché qui si legge chi può usare che cosa.
+                where app.deleted_at is null and app.kind = 'application'
             ) app
             left join platform.subscription s
                    on s.tenant_id = acc.id::text and s.app_id = app.id and s.deleted_at is null

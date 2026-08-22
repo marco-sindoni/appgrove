@@ -174,6 +174,8 @@ components:
           type: string
         status:
           type: string
+        kind:
+          type: string
     ApplyRestriction:
       type: object
       required:
@@ -561,6 +563,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SubscriptionView"
+    NextSeatView:
+      type: object
+      properties:
+        seatNumber:
+          type: integer
+          format: int32
+        unitPriceCents:
+          type: integer
+          format: int32
+        dueCentsAfter:
+          type: integer
+          format: int64
+        chargeCents:
+          type: integer
+          format: int64
+        cheaperThanPrevious:
+          type: boolean
     OpenTicket:
       type: object
       required:
@@ -910,6 +929,18 @@ components:
         unitPriceCents:
           type: integer
           format: int32
+    SeatCompositionView:
+      type: object
+      properties:
+        active:
+          type: integer
+          format: int32
+        suspended:
+          type: integer
+          format: int32
+        pendingInvitations:
+          type: integer
+          format: int32
     SeatPricingView:
       type: object
       properties:
@@ -921,6 +952,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SeatBandView"
+    SeatSummaryView:
+      type: object
+      properties:
+        usedSeats:
+          type: integer
+          format: int32
+        composition:
+          $ref: "#/components/schemas/SeatCompositionView"
+        currency:
+          type: string
+        freeSeats:
+          type: integer
+          format: int32
+        paidSeats:
+          type: integer
+          format: int32
+        dueCents:
+          type: integer
+          format: int64
+        paidQuantity:
+          type: integer
+          format: int32
+        currentBand:
+          $ref: "#/components/schemas/SeatBandView"
+        next:
+          $ref: "#/components/schemas/NextSeatView"
+        pendingReduction:
+          type: boolean
+        hasSubscription:
+          type: boolean
     SetActiveAccount:
       type: object
       required:
@@ -2456,6 +2517,25 @@ paths:
       summary: Create
       tags:
       - Portal Resource
+      security:
+      - SecurityScheme:
+        - owner
+  /api/platform/v1/me/seats:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SeatSummaryView"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      summary: Summary
+      tags:
+      - Seat Quote Resource
       security:
       - SecurityScheme:
         - owner

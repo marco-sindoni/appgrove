@@ -131,6 +131,27 @@ implementano: è il dovere di ogni change, non una pulizia finale.
 
 ## Punti aperti / decisioni differite
 
+### Lasciato da UC 0103 (change 0098)
+
+- **Il percorso `J-SEATS` esiste solo al livello 2.** La change 0098 ha creato il percorso nel registro di
+  copertura e l'ha coperto con `frontend/apps/backoffice/e2e/seats.spec.ts`: backend **simulato**, quindi
+  prova le frasi che il cliente legge, la stima prima della conferma e il pulsante che resta spento — non
+  prova che l'addebito crei davvero l'abbonamento. Il tratto con lo **stack vero** (banca dati, simulatore
+  del fornitore di pagamento, abbonamento di piattaforma che nasce con la sua quantità) appartiene alla
+  suite di piattaforma, cioè a questa storia. Il registro dichiara `J-SEATS` come `coperto` con una sola
+  voce di livello 2: quando arriverà la voce di piattaforma andrà aggiunta accanto, non al posto.
+- **Gli account che esistono già hanno persone non pagate, e al primo invito si troverebbero addebitato
+  tutto l'arretrato.** Scoperto <b>eseguendo</b> la guida di collaudo della change 0098 sullo stack locale:
+  l'account di prova ha nove posti occupati, sei dei quali a pagamento — perché quelle persone sono entrate
+  quando il posto era gratuito — e la quantità pagata è **zero**. Il riquadro dice quindi, correttamente,
+  che il prossimo posto costa 20,93 €: è la differenza fra il dovuto dei posti bersaglio e quello dei posti
+  *già pagati*, che sono nessuno. Il calcolo è giusto; ciò che manca è la **decisione di migrazione**: agli
+  account preesistenti si porta la quantità pagata al numero di posti che hanno (regolarizzandoli a costo
+  zero), oppure si accetta che il primo invito paghi l'arretrato, oppure si applica una franchigia
+  transitoria. Oggi non è un problema perché non esistono account reali (pre-go-live), e proprio per questo
+  va deciso **prima** che ne esistano. È una decisione **commerciale** oltre che tecnica: va portata a chi
+  decide i prezzi. Proprietario: questa storia, che è quella della migrazione degli account.
+
 - ~~Trattamento economico degli account esistenti oltre la franchigia~~ — **chiuso**: nessun account
   supera i tre posti, la piattaforma è ancora solo in locale. Resta il controllo di sicurezza che fa
   fermare la migrazione se il presupposto non valesse più (§5).
