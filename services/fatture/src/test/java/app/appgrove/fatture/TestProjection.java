@@ -41,6 +41,27 @@ public class TestProjection {
         }
     }
 
+    /**
+     * Invecchia le righe del tenant di {@code seconds} secondi, spostandone indietro la data di
+     * rinfresco. Serve a provare la <b>scadenza</b> (change 0094) senza attese reali e senza toccare la
+     * configurazione: abbassare la durata massima nel profilo di test farebbe scadere anche le righe dei
+     * test che dimostrano il disaccoppiamento, e passerebbero — o falliranno — per la ragione sbagliata.
+     *
+     * <p>Non tocca {@code stale}: una riga invecchiata è diversa da una invalidata, ed è proprio quella
+     * distinzione che i test devono poter esercitare separatamente.
+     */
+    public void ageBySeconds(String tenantId, int seconds) {
+        try (Connection c = ds.getConnection();
+                PreparedStatement ps = c.prepareStatement("update " + TABLE
+                        + " set refreshed_at = refreshed_at - make_interval(secs => ?) where tenant_id = ?")) {
+            ps.setInt(1, seconds);
+            ps.setString(2, tenantId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("invecchiamento della proiezione di test fallito", e);
+        }
+    }
+
     /** Righe presenti per il tenant (per distinguere "assente" da "presente ma senza accesso"). */
     public int rowsFor(String tenantId) {
         try (Connection c = ds.getConnection();

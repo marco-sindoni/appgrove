@@ -18,7 +18,22 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 1,
-  reporter: 'list',
+  /*
+   * DUE resoconti, e il secondo non è un lusso: `list` è per chi guarda, `json` è per lo script.
+   *
+   * Playwright esce con codice ZERO quando un percorso fallisce al primo tentativo e passa al secondo:
+   * lo segnala come «flaky» nel testo, ma non nel codice di uscita. Finché `run.sh` si fidava solo di
+   * quel codice, un percorso instabile risultava VERDE — ed è il motivo per cui i tre difetti di
+   * instabilità corretti il 2026-08-21 (`J-INVITE-EXISTING` senza attesa del gate legale,
+   * `A-ENTITLE`/`A-GDPR` in fame di browser, `J-BUY` in attesa su un messaggio di passaggio) sono
+   * vissuti a lungo senza essere visti: la suite li perdonava a ogni corsa, e ci si accorge di loro
+   * solo quando anche il secondo tentativo fallisce, cioè quando il difetto è già peggiorato.
+   *
+   * Il ritentativo RESTA — serve a distinguere un difetto vero da un guasto d'ambiente, che in una
+   * suite con browser, stack reale e posta non è un'ipotesi. Ciò che si toglie è il condono: `run.sh`
+   * legge questo file e rende la suite rossa nominando i percorsi instabili (change 0094).
+   */
+  reporter: [['list'], ['json', { outputFile: './test-results/esito.json' }]],
   timeout: 180_000,
   /*
    * Parallelismo LIMITATO, e non è una preferenza: è la correzione di un difetto misurato.

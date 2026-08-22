@@ -54,6 +54,12 @@ class EntitlementProjectionTest {
     void clean() {
         projection.clear();
         MockEntitlementService.reset();
+        // Tetto alto: questa classe collauda la COPIA LOCALE, non la quota (per quella c'è QuotaTest), e
+        // le fatture create dai suoi test si sommano sullo stesso conto senza essere mai azzerate. Col
+        // tetto di default (10 al mese) la classe viveva a due fatture dal limite: aggiungerne tre test
+        // l'ha superato, e i test cadevano con «429 quota esaurita» — un rosso che non parla di ciò che
+        // il test verifica. Il tetto qui è rumore accidentale, e va tolto di mezzo.
+        MockEntitlementService.cap = 1000;
     }
 
     @AfterEach
@@ -101,6 +107,55 @@ class EntitlementProjectionTest {
         MockEntitlementService.accessGranted = false;
 
         createInvoice("Dopo la revoca").then().statusCode(402);
+    }
+
+    // ── Scadenza: la rete che tiene quando l'evento non arriva (change 0094) ──
+
+    @Test
+    void expiredProjectionIsRefreshedEvenWithoutAnyInvalidationEvent() {
+        // Questo è IL test della change 0094: prima della correzione fallisce, perché una riga presente
+        // e non marcata valeva per sempre. Il caso reale che l'ha fatto scoprire: spegnere
+        // un'applicazione nel listino NON produce alcun evento per i conti già visti, quindi
+        // l'applicazione spenta restava ACCESSIBILE a chi aveva in casa una copia «attiva».
+        createInvoice("Popola la copia").then().statusCode(201);
+
+        // L'accesso cade a monte, e NESSUN evento di invalidazione arriva: la riga resta «fresca».
+        MockEntitlementService.accessGranted = false;
+        createInvoice("Subito dopo, entro la durata").then().statusCode(201);
+
+        // Passata la durata massima (60 secondi), la copia va riletta anche senza evento.
+        projection.ageBySeconds(TENANT, 120);
+        createInvoice("Oltre la durata").then().statusCode(402);
+    }
+
+    @Test
+    void expiredProjectionFallsBackToLastKnownTruthWhenCoreIsUnreachable() {
+        // La scadenza significa RILEGGI, non NEGA: se la fonte non risponde si continua con l'ultima
+        // verità nota, esattamente come per una riga invalidata da un evento. È la ragione per cui il
+        // timore del «blocco a orologeria» — l'argomento con cui la scadenza era stata scartata in
+        // origine — non si materializza.
+        createInvoice("Popola la copia").then().statusCode(201);
+
+        projection.ageBySeconds(TENANT, 120);
+        MockEntitlementService.unreachable = true;
+
+        createInvoice("Scaduta, con la fonte giù").then().statusCode(201);
+    }
+
+    @Test
+    void withinTheMaxAgeTheSourceIsNotCalledAtAll() {
+        // Non-regressione del disaccoppiamento: «rileggi più spesso» non deve degenerare in «rileggi
+        // sempre», che è il difetto opposto e più costoso. Entro la durata, nessuna chiamata.
+        createInvoice("Prima").then().statusCode(201);
+        int dopoLaPrima = MockEntitlementService.calls.get();
+
+        projection.ageBySeconds(TENANT, 30); // invecchiata, ma NON scaduta (durata: 60 secondi)
+        createInvoice("Seconda").then().statusCode(201);
+
+        assertEquals(
+                dopoLaPrima,
+                MockEntitlementService.calls.get(),
+                "entro la durata massima la copia si usa senza interpellare la fonte");
     }
 
     // ── Situazione 3: proiezione assente + core giù → si nega ─────────────────

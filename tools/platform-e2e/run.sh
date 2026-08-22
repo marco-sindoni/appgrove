@@ -245,6 +245,45 @@ step "esecuzione journey (Playwright)…"
        npx playwright test ${PW_ARGS[@]+"${PW_ARGS[@]}"} )
 rc=$?
 
+# ── 5bis. i percorsi INSTABILI rendono la suite rossa ─────────────────────────
+# Playwright esce con codice ZERO anche quando un percorso fallisce al primo tentativo e passa al
+# secondo: lo chiama «flaky» nel testo e non nel codice di uscita. Fidarsi del solo codice significa
+# perdonare in silenzio esattamente il difetto che si stava cercando — è così che i tre casi di
+# instabilità del 2026-08-21 sono vissuti a lungo senza essere visti. Un test che ha fallito ha
+# fallito: qui lo si legge dal resoconto in formato dati e si NOMINA (change 0094).
+ESITO_JSON="$TOOL_DIR/test-results/esito.json"
+if [ "$rc" -eq 0 ] && [ -f "$ESITO_JSON" ]; then
+  INSTABILI="$(node -e '
+    const fs = require("fs");
+    const r = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+    const nomi = [];
+    const visita = (s) => {
+      for (const spec of s.specs ?? []) {
+        for (const t of spec.tests ?? []) {
+          // "flaky" = Playwright stesso dichiara che è passato solo grazie a un ritentativo.
+          if (t.status === "flaky") nomi.push(spec.title);
+        }
+      }
+      for (const f of s.suites ?? []) visita(f);
+    };
+    for (const s of r.suites ?? []) visita(s);
+    process.stdout.write(nomi.join("\n"));
+  ' "$ESITO_JSON" 2>/dev/null)"
+  if [ -n "$INSTABILI" ]; then
+    fail "suite di piattaforma: ROSSA per instabilità — questi percorsi sono passati solo al RITENTATIVO:"
+    printf '%s\n' "$INSTABILI" | sed 's/^/    · /'
+    printf '  %s\n' "Un percorso che ha bisogno di un secondo tentativo ha fallito il primo: è un difetto," \
+                     "non un incidente. Tracce, schermate e video del tentativo fallito sono in" \
+                     "tools/platform-e2e/test-results/ — si parte da là (diagnosi: README.md)."
+    rc=1
+  fi
+elif [ "$rc" -eq 0 ]; then
+  # Nessun resoconto in formato dati = non si può escludere l'instabilità. Si avvisa senza far rosso:
+  # un file mancante è un guasto dello strumento, non del prodotto, e non deve fermare una corsa sana.
+  warn_missing="resoconto in formato dati assente ($ESITO_JSON): instabilità non verificabile"
+  printf '%s! %s%s\n' "$C_RED" "$warn_missing" "$C_RESET"
+fi
+
 # ── 6. verdetto (teardown dei processi nel trap; i container compose restano su) ──
 if [ "$rc" -eq 0 ]; then ok "suite di piattaforma: verde"; else fail "suite di piattaforma: rossa (diagnosi: README.md)"; fi
 exit "$rc"

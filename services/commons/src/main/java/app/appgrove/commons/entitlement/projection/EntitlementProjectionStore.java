@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -189,13 +190,38 @@ public class EntitlementProjectionStore implements LocalProjection {
      *
      * @param view entitlement noto, o {@code null} se la proiezione registra un diniego
      * @param stale {@code true} se un evento ha invalidato la riga e serve un rinfresco
-     * @param refreshedAt ultimo rinfresco riuscito (per la misura di scostamento)
+     * @param refreshedAt ultimo rinfresco riuscito (misura di scostamento e base della scadenza)
      */
     public record ProjectedEntitlement(EntitlementView view, boolean stale, Instant refreshedAt) {
 
         /** {@code true} se la proiezione registra un accesso concesso. */
         public boolean hasAccess() {
             return view != null;
+        }
+
+        /**
+         * La riga è usabile senza rinfresco? Non marcata da rinfrescare <b>e</b> non più vecchia di
+         * {@code maxAge}. Gemello di {@code ProjectedAppRole.usable}: le due copie locali del servizio
+         * hanno la stessa postura, e la simmetria è deliberata perché chi legge una capisce l'altra.
+         *
+         * <p>La scadenza non è un dettaglio prestazionale, è la <b>rete che tiene quando il canale degli
+         * eventi è rotto</b>. Senza di essa una riga presente e non marcata vale per sempre: un diritto
+         * revocato — o un'applicazione spenta — sopravviverebbe indefinitamente nella copia, e nessun
+         * evento mancato verrebbe mai recuperato. Misurato il 2026-08-22 in entrambi i versi: un'app
+         * riaccesa non si sentiva (rifiuto perenne) e, peggio, un'app SPENTA restava accessibile.
+         *
+         * <p>Durata nulla o negativa = «mai usabile senza rinfresco»: la copia si degrada a memoria di
+         * ripiego per il solo caso di fonte irraggiungibile. È l'interruttore per disattivare il
+         * disaccoppiamento senza toccare il codice.
+         */
+        public boolean usable(Duration maxAge, Instant now) {
+            if (stale) {
+                return false;
+            }
+            if (maxAge == null || maxAge.isZero() || maxAge.isNegative()) {
+                return false;
+            }
+            return !refreshedAt.plus(maxAge).isBefore(now);
         }
     }
 }

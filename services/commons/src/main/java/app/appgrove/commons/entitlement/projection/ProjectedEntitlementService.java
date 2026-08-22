@@ -9,10 +9,13 @@ import app.appgrove.commons.entitlement.EntitlementViewSource;
 import app.appgrove.commons.tenancy.TenantNotResolvedException;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 
@@ -26,10 +29,26 @@ import org.jboss.logging.Logger;
  * La proiezione <b>non è la fonte del permesso, è la sua cache</b>. Tre situazioni, tre risposte:
  *
  * <ol>
- *   <li><b>Riga fresca</b> → si usa, senza soglia di scadenza. Un abbonamento cambia di rado: far
- *       scadere la proiezione dopo N ore introdurrebbe un blocco a orologeria senza aggiungere
- *       sicurezza reale, perché è l'<b>evento</b> — non il tempo — a dire che qualcosa è cambiato.</li>
- *   <li><b>Riga da rinfrescare</b> (un evento l'ha invalidata) → si tenta il rinfresco dalla rete di
+ *   <li><b>Riga usabile</b> (non invalidata e non scaduta) → si usa, senza toccare la rete. È il caso
+ *       normale.
+ *
+ *       <p><b>La scadenza è arrivata dopo, rovesciando una scelta deliberata.</b> Qui c'era scritto che
+ *       una soglia di scadenza non serviva, «perché è l'evento — non il tempo — a dire che qualcosa è
+ *       cambiato», e che farla scadere avrebbe introdotto «un blocco a orologeria senza aggiungere
+ *       sicurezza reale». L'argomento è corretto per i cambiamenti che <b>generano</b> un evento — la
+ *       disdetta, il passaggio di fascia — ed è falso per tutti gli altri. Il 2026-08-22 il collaudo
+ *       manuale ne ha trovato uno che conta: lo <b>stato dell'applicazione nel listino</b>. Spegnerla e
+ *       riaccenderla non produce alcun evento per i conti già visti, quindi un conto che avesse chiesto
+ *       durante lo spegnimento restava rifiutato <b>a tempo indeterminato</b> (otto letture in due
+ *       minuti, data di rinfresco immobile) e — nel verso opposto, più grave — un'applicazione
+ *       <b>spenta</b> restava <b>accessibile</b> a chi aveva in casa una copia «attiva».
+ *
+ *       <p>Il timore del «blocco a orologeria» non si materializza, e vale capire perché: la scadenza
+ *       significa <b>rileggi</b>, non <b>nega</b>. Scaduta la riga si interpella la fonte; se la fonte
+ *       non risponde si continua con l'ultima verità nota, esattamente come nel caso qui sotto. Un
+ *       blocco ci sarebbe stato solo se la scadenza avesse comportato un diniego.</li>
+ *   <li><b>Riga da rinfrescare</b> (un evento l'ha invalidata, <b>o è passata la durata massima</b>) →
+ *       si tenta il rinfresco dalla rete di
  *       sicurezza; se core non risponde <b>si continua a usare il valore vecchio</b>, che resta
  *       l'ultima verità nota, emettendo la misura di scostamento. Un guasto di core non deve
  *       trasformarsi nel blocco di tutti i clienti paganti — è esattamente il disastro che la
@@ -64,6 +83,15 @@ public class ProjectedEntitlementService implements EntitlementService {
 
     @Inject
     JsonWebToken jwt;
+
+    /**
+     * Durata massima della copia locale. Sessanta secondi: lo stesso valore della copia del ruolo
+     * (UC 0099), perché avere <b>un solo numero</b> da ricordare per le due copie locali del servizio vale
+     * più di due valori finemente calibrati. Si cambia per ambiente, non nel codice; zero o negativo
+     * disattiva l'uso della copia senza rinfresco (vedi {@code ProjectedEntitlement.usable}).
+     */
+    @ConfigProperty(name = "appgrove.entitlement.projection.max-age", defaultValue = "60s")
+    Duration maxAge;
 
     /** Memoizzazione per-richiesta: {@code appSlug → esito}. */
     private final Map<String, Resolution> perRequest = new HashMap<>();
@@ -109,12 +137,15 @@ public class ProjectedEntitlementService implements EntitlementService {
         String tenantId = tenantId();
         Optional<EntitlementProjectionStore.ProjectedEntitlement> row = store.find(tenantId, appSlug);
 
-        if (row.isPresent() && !row.get().stale()) {
+        if (row.isPresent() && row.get().usable(maxAge, Instant.now())) {
             metrics.hit();
             return new Resolution(row.get().view(), Source.PROJECTION);
         }
 
-        String motivo = row.isPresent() ? "da_rinfrescare" : "assente";
+        // Tre motivi distinti, non due: separare «scaduta» da «invalidata da un evento» è ciò che
+        // permette di accorgersi che il canale degli eventi non sta funzionando. Se le riletture sono
+        // quasi tutte per scadenza, gli eventi non arrivano — e la scadenza sta coprendo il guasto.
+        String motivo = row.isEmpty() ? "assente" : row.get().stale() ? "da_rinfrescare" : "scaduta";
         try {
             EntitlementView fresh = safetyNetView(appSlug);
             store.save(tenantId, appSlug, fresh);
