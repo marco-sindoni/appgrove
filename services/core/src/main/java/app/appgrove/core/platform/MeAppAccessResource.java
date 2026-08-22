@@ -100,12 +100,15 @@ public class MeAppAccessResource {
      * regola è quella già unica di {@code EntitlementAccess} e qui si <b>consuma</b>, non si riscrive
      * (stessa scelta di {@link AppAccessResource}). Una seconda copia della condizione divergerebbe.
      *
-     * <p><b>Da escludere qui, quando esisterà: la voce di catalogo di piattaforma dei posti (UC 0103).</b>
-     * Oggi quella voce non esiste e nessun attributo del catalogo distingue una applicazione di marketplace
-     * da una voce di piattaforma, quindi un elenco di slug da escludere sarebbe una regola destinata a
-     * invecchiare in silenzio. UC 0103, che crea quella voce, deve escluderla nello stesso momento:
-     * altrimenti comparirà nel menu laterale come se fosse una applicazione — ed è esattamente il tipo di
-     * dimenticanza che si nota solo guardando la schermata.
+     * <p><b>La voce di catalogo di piattaforma dei posti è esclusa</b> (UC 0103), e lo è <b>a monte</b>:
+     * il read-model degli entitlement elenca soltanto le righe di catalogo con {@code kind = application},
+     * quindi la voce dei posti non arriva mai fin qui. È il motivo per cui in questo metodo non si vede
+     * alcuna condizione sui posti, e non è una dimenticanza: la regola sta nel punto unico che governa
+     * l'accesso, com'è già per la condizione di accesso stessa. Una seconda copia qui divergerebbe.
+     *
+     * <p>L'esclusione, però, va <b>provata su questa superficie</b>, non solo su quella a monte: è il menu
+     * laterale del cliente a essere sbagliato se la voce compare, e un collaudo che si accontenti di
+     * provare il read-model non se ne accorgerebbe.
      */
     private Set<String> entitledSlugs() {
         Set<String> slugs = new LinkedHashSet<>();

@@ -87,6 +87,32 @@ public final class SeatPricing {
     }
 
     /**
+     * Quanti posti sono <b>compresi nella franchigia</b>: i posti coperti dalle fasce iniziali a tariffa
+     * zero. Col listino iniziale sono tre, owner compreso.
+     *
+     * <p>Si <b>deriva</b> dal listino e non è una costante: la franchigia è una riga di listino, non una
+     * regola di codice (UC 0102), e il giorno in cui cambia deve cambiare in un posto solo. Serve alle
+     * interfacce, che devono poter dire «tre posti sono compresi» senza saperlo da sé.
+     *
+     * <p>Una fascia a tariffa zero <b>aperta</b> significherebbe posti illimitati gratis: il caso non è
+     * escluso dalla coerenza del listino, e qui si legge come {@link Integer#MAX_VALUE} invece di far
+     * fallire un conto che sarebbe comunque corretto (il dovuto resterebbe zero).
+     */
+    public static int freeSeats(SeatPricingVersion version) {
+        int free = 0;
+        for (SeatPricingBand band : requireCoherent(version)) {
+            if (band.getUnitPriceCents() != 0) {
+                return free;
+            }
+            if (band.isOpenEnded()) {
+                return Integer.MAX_VALUE;
+            }
+            free = band.getToSeat();
+        }
+        return free;
+    }
+
+    /**
      * Verifica che il listino sia utilizzabile e restituisce le sue fasce ordinate: fasce presenti, prima
      * fascia dal posto 1, contigue senza buchi né sovrapposizioni, <b>solo l'ultima</b> aperta verso
      * l'alto, tariffe non negative.

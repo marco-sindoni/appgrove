@@ -133,6 +133,18 @@
       <artifactId>quarkus-junit5</artifactId>
       <scope>test</scope>
     </dependency>
+    <!--
+      Mock CDI nei collaudi (UC 0103): serve a provare il percorso di guasto più pericoloso della storia
+      dei posti — l'addebito riesce e la creazione dell'invito fallisce subito dopo, quindi l'addebito va
+      annullato. Quel percorso non si raggiunge da fuori: nessun dato di ingresso lo provoca, perché è per
+      definizione un guasto. Provarlo richiede di farlo accadere, e l'alternativa — non provarlo — lascerebbe
+      senza rete l'unico ramo in cui un cliente può pagare per qualcosa che non ha.
+    -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit5-mockito</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>

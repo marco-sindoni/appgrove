@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { unwrap, type InvitationView } from '@appgrove/api-client'
+import { unwrap, type InvitationView, type SeatSummaryView } from '@appgrove/api-client'
 import { useAuthStore } from '../auth/authStore'
 import { useApiClient } from './apiClient'
 
@@ -106,7 +106,35 @@ export function useRemoveMember() {
   return useMutation({
     mutationFn: (id: string) =>
       unwrap(client.DELETE('/api/platform/v1/users/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users', 'list'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['users', 'list'] })
+      // Rimuovere una persona libera il posto: il riquadro va riletto (UC 0103).
+      void queryClient.invalidateQueries({ queryKey: SEATS_KEY })
+    },
+  })
+}
+
+/** Chiave della lettura dei posti: una sola, così l'invalidazione dopo ogni atto è un posto solo. */
+const SEATS_KEY = ['seats', 'summary']
+
+/**
+ * Il **riquadro dei posti** dell'account (`GET /me/seats`, UC 0103): posti usati e composizione, dovuto
+ * attuale, fascia, costo del posto successivo e nuovo totale.
+ *
+ * Riservata all'owner come il resto della sezione: non si chiede ciò che sappiamo verrebbe rifiutato.
+ *
+ * **Nessun dato scade da sé qui**: la lettura si invalida esplicitamente dopo ogni atto che cambia i posti
+ * — invito mandato, invito revocato, persona rimossa. Affidarsi a una scadenza a tempo mostrerebbe per
+ * qualche secondo un importo vecchio accanto a una tabella nuova, e sull'importo che il cliente confronta
+ * con la fattura quei secondi sono esattamente quelli in cui apre un ticket.
+ */
+export function useSeats() {
+  const client = useApiClient()
+  const canRead = useCanReadMembers()
+  return useQuery({
+    queryKey: SEATS_KEY,
+    enabled: canRead,
+    queryFn: () => unwrap<SeatSummaryView>(client.GET('/api/platform/v1/me/seats')),
   })
 }
 
@@ -134,7 +162,11 @@ export function useCreateInvitation() {
   return useMutation({
     mutationFn: (vars: { email: string }) =>
       unwrap<InvitationView>(client.POST('/api/platform/v1/invitations', { body: vars })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] })
+      // Il posto è occupato dall'invito, non dall'accettazione (UC 0103): il riquadro cambia subito.
+      void queryClient.invalidateQueries({ queryKey: SEATS_KEY })
+    },
   })
 }
 
@@ -145,7 +177,11 @@ export function useRevokeInvitation() {
   return useMutation({
     mutationFn: (id: string) =>
       unwrap(client.DELETE('/api/platform/v1/invitations/{id}', { params: { path: { id } } })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['invitations', 'list'] })
+      // La revoca libera il posto (senza rimborso, UC 0103): il numero usato scende, l'importo pagato no.
+      void queryClient.invalidateQueries({ queryKey: SEATS_KEY })
+    },
   })
 }
 

@@ -123,12 +123,17 @@ public class PlatformDataContract implements AppDataContract {
         // persona aveva già un rapporto con la piattaforma — l'informazione che l'invito ha
         // deliberatamente tenuto fuori dalla propria risposta. Stessa forma della restrizione usata
         // per identity.active_membership_id (UC 0117).
+        // `seat_charge_ref` (UC 0103) esce SENZA restrizioni, a differenza di `identity_id`: dice che il
+        // posto di quella persona è stato pagato e con quale transazione — informazione dell'account che
+        // ha pagato, che l'account già conosce dalla propria fatturazione. Non rivela nulla sulla persona
+        // invitata che l'account non sappia già, quindi non c'è nulla da tenere fuori.
         entities.put("invitations", query(
-                "select id, email, role, status, expires_at, created_at,"
+                "select id, email, role, status, expires_at, created_at, seat_charge_ref,"
                         + " case when status = 'accepted' then identity_id end as identity_id"
                         + " from platform.invitations where tenant_id = ? order by email",
                 scope.tenantId(),
-                "id", "email", "role", "status", "expires_at", "created_at", "identity_id"));
+                "id", "email", "role", "status", "expires_at", "created_at", "seat_charge_ref",
+                "identity_id"));
 
         entities.put("support_tickets", query(
                 "select id, type, subject, priority, status, due_at, created_at, closed_at"

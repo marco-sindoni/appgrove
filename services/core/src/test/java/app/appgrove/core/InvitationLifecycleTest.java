@@ -35,6 +35,18 @@ class InvitationLifecycleTest {
     @jakarta.inject.Inject
     TestData data;
 
+    /**
+     * L'account del token deve <b>esistere</b>. Da UC 0103 l'invito è un'operazione che muove denaro e la
+     * prima cosa che fa è bloccare la riga dell'account per serializzare gli inviti concorrenti: un
+     * account che non c'è non si può bloccare, e proseguire senza serializzazione su un atto d'acquisto
+     * sarebbe peggio di un errore. Prima di questa storia la riga mancava e non se ne accorgeva nessuno,
+     * perché nessun percorso la leggeva — era una lacuna dell'apparecchiatura di collaudo, non una scelta.
+     */
+    @org.junit.jupiter.api.BeforeEach
+    void account() {
+        data.account(TENANT, "Acme inviti");
+    }
+
     private String owner() {
         return "Bearer " + TestTokens.withTenant(TENANT, "owner");
     }
@@ -134,7 +146,6 @@ class InvitationLifecycleTest {
     @Test
     void giaMembroDiQuestoAccount_rifiutoRiconoscibile() {
         // Informazione dell'account: lecita, e la più utile delle tre.
-        data.account(TENANT, "Acme inviti");
         data.user(TENANT, "sub-0118-giamembro", "gia-membro-0118@example.test", "member");
 
         invita("gia-membro-0118@example.test")

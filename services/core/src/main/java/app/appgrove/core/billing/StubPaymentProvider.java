@@ -7,7 +7,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Provider di pagamento finto per dev/test (#09 I39): "API Paddle finta" che ritorna ID plausibili,
@@ -18,6 +20,13 @@ import java.util.UUID;
 @ApplicationScoped
 @IfBuildProperty(name = "appgrove.payments.provider", stringValue = "stub", enableIfMissing = true)
 public class StubPaymentProvider implements PaymentProvider {
+
+    /**
+     * Motivo con cui rifiutare gli addebiti dei posti (UC 0103); assente o vuoto = si accetta sempre.
+     * Proprietà di <b>esecuzione</b>, non di compilazione: un collaudo la valorizza con il proprio profilo.
+     */
+    @ConfigProperty(name = "appgrove.seats.stub-decline-reason")
+    Optional<String> declineReason;
 
     @Override
     public CheckoutInit startCheckout(StartCheckoutCommand command) {
@@ -79,6 +88,41 @@ public class StubPaymentProvider implements PaymentProvider {
     public CustomerPortalSession createCustomerPortalSession(String paddleCustomerId) {
         return new CustomerPortalSession(
                 "https://sandbox-customer-portal.paddle.com/stub/" + det(paddleCustomerId));
+    }
+
+    /**
+     * Addebito dei posti finto (UC 0103): <b>accetta</b> e restituisce identificativi plausibili, riusando
+     * l'abbonamento e il cliente quando già esistono (customer lazy, come il checkout).
+     *
+     * <p><b>Il rifiuto si simula da configurazione</b> ({@code appgrove.seats.stub-decline-reason}): con un
+     * motivo valorizzato ogni addebito dei posti viene rifiutato con quel motivo. Serve a provare il caso
+     * che conta di più della storia — l'invito che <b>non nasce</b> perché l'addebito non è andato — e la
+     * via della configurazione è preferibile a una regola cablata sui dati (un indirizzo «magico», un
+     * importo «magico»): una regola cablata verrebbe inciampata da un collaudo qualunque che usa per caso
+     * quel valore, e nessuno capirebbe perché.
+     */
+    @Override
+    public SeatChargeResult chargeSeats(SeatChargeCommand command) {
+        if (declineReason.isPresent() && !declineReason.get().isBlank()) {
+            return SeatChargeResult.declined(declineReason.get());
+        }
+        String subscriptionId = command.paddleSubscriptionId() != null
+                ? command.paddleSubscriptionId()
+                : "sub_" + token();
+        String customerId = command.existingPaddleCustomerId() != null
+                ? command.existingPaddleCustomerId()
+                : "ctm_" + token();
+        return SeatChargeResult.accepted(subscriptionId, customerId, "txn_" + token());
+    }
+
+    /**
+     * Storno finto: <b>no-op</b>, come ogni altra mutazione dello stub. Non c'è stato presso il fornitore da
+     * riportare indietro, perché non c'è un fornitore: l'effetto che conta e che si può provare è che
+     * l'unità di lavoro locale non lasci nulla dietro di sé.
+     */
+    @Override
+    public void releaseSeatCharge(SeatChargeReversal reversal) {
+        // no-op: nessuno stato finto da stornare.
     }
 
     /** ID plausibile e opaco (stile Paddle), deterministicamente unico. */

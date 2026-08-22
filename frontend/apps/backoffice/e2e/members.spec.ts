@@ -101,6 +101,33 @@ async function mockAuthed(page: Page) {
     await route.fulfill({ status: 204, body: '' })
   })
   await page.route('**/api/auth/invitations/send', (route) => route.fulfill({ status: 202, body: '' }))
+  // Il riquadro dei posti (UC 0103): va simulato sempre, perché da questa storia il pulsante di invito
+  // resta SPENTO finché il costo del posto non è noto — mai invitare alla cieca. Qui l'account è entro la
+  // franchigia, così questo collaudo continua a provare quello che gli compete (l'elenco e l'invito) e non
+  // il denaro, che ha il suo percorso.
+  await page.route('**/api/platform/v1/me/seats', (route) =>
+    route.fulfill({
+      json: {
+        usedSeats: 3,
+        composition: { active: 3, suspended: 0, pendingInvitations: 0 },
+        currency: 'EUR',
+        freeSeats: 3,
+        paidSeats: 0,
+        dueCents: 0,
+        paidQuantity: 0,
+        currentBand: { fromSeat: 1, toSeat: 3, unitPriceCents: 0 },
+        next: {
+          seatNumber: 4,
+          unitPriceCents: 299,
+          dueCentsAfter: 299,
+          chargeCents: 299,
+          cheaperThanPrevious: false,
+        },
+        pendingReduction: false,
+        hasSubscription: false,
+      },
+    }),
+  )
 }
 
 test('[L2-MEMBERS] persone: elenco unico senza ruolo, applicazioni per persona, invito e revoca', async ({ page }) => {

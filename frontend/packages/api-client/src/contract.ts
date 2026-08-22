@@ -25,3 +25,14 @@ export type MyMembershipsView =
 // benché il servizio ritorni `InvitationView` col token grezzo → usiamo il componente schema, non il path.
 // Gap backend tracciato in UC 0013 (response body + status 201 da annotare).
 export type InvitationView = components['schemas']['InvitationView']
+
+/**
+ * Il riquadro dei posti dell'account (UC 0103): posti usati e loro composizione, dovuto attuale, fascia
+ * applicata e **costo del posto successivo**.
+ *
+ * Ogni numero arriva dal servizio: l'interfaccia non somma scaglioni, non sottrae la franchigia e non
+ * decide se la tariffa scende. È la sola forma in cui cinque traduzioni e un servizio dicono lo stesso
+ * importo — e su un importo che il cliente confronta con la fattura non c'è margine per due versioni.
+ */
+export type SeatSummaryView =
+  paths['/api/platform/v1/me/seats']['get']['responses']['200']['content']['application/json']

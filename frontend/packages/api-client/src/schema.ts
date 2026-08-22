@@ -2661,6 +2661,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/seats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Summary */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SeatSummaryView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/subscriptions": {
         parameters: {
             query?: never;
@@ -3078,6 +3128,56 @@ export interface paths {
             responses: {
                 /** @description OK */
                 200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/seat-pricing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SeatPricingView"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -3747,6 +3847,7 @@ export interface components {
             name?: string;
             userModel?: string;
             status?: string;
+            kind?: string;
         };
         ApplyRestriction: {
             targetKind: components["schemas"]["TargetKind"];
@@ -3934,6 +4035,17 @@ export interface components {
         MySubscriptionsView: {
             subscriptions?: components["schemas"]["SubscriptionView"][];
         };
+        NextSeatView: {
+            /** Format: int32 */
+            seatNumber?: number;
+            /** Format: int32 */
+            unitPriceCents?: number;
+            /** Format: int64 */
+            dueCentsAfter?: number;
+            /** Format: int64 */
+            chargeCents?: number;
+            cheaperThanPrevious?: boolean;
+        };
         OpenTicket: {
             type: components["schemas"]["TicketType"];
             subject: string;
@@ -4118,6 +4230,45 @@ export interface components {
         RestrictionsView: {
             active?: components["schemas"]["RestrictionView"][];
             auditTrail?: components["schemas"]["RestrictionAuditView"][];
+        };
+        SeatBandView: {
+            /** Format: int32 */
+            fromSeat?: number;
+            /** Format: int32 */
+            toSeat?: number;
+            /** Format: int32 */
+            unitPriceCents?: number;
+        };
+        SeatCompositionView: {
+            /** Format: int32 */
+            active?: number;
+            /** Format: int32 */
+            suspended?: number;
+            /** Format: int32 */
+            pendingInvitations?: number;
+        };
+        SeatPricingView: {
+            currency?: string;
+            effectiveFrom?: components["schemas"]["Instant"];
+            bands?: components["schemas"]["SeatBandView"][];
+        };
+        SeatSummaryView: {
+            /** Format: int32 */
+            usedSeats?: number;
+            composition?: components["schemas"]["SeatCompositionView"];
+            currency?: string;
+            /** Format: int32 */
+            freeSeats?: number;
+            /** Format: int32 */
+            paidSeats?: number;
+            /** Format: int64 */
+            dueCents?: number;
+            /** Format: int32 */
+            paidQuantity?: number;
+            currentBand?: components["schemas"]["SeatBandView"];
+            next?: components["schemas"]["NextSeatView"];
+            pendingReduction?: boolean;
+            hasSubscription?: boolean;
         };
         SetActiveAccount: {
             accountId: string;

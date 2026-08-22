@@ -106,4 +106,81 @@ public interface PaymentProvider {
 
     /** Esito: l'URL della sessione portal da aprire lato client (nessun dato PCI passa da noi). */
     record CustomerPortalSession(String url) {}
+
+    /**
+     * Porta l'abbonamento dei <b>posti</b> alla quantità indicata e addebita la differenza per il periodo
+     * in corso (UC 0103), creando l'abbonamento se non esiste ancora.
+     *
+     * <p><b>È l'unico metodo del port che risponde subito «sì» o «no».</b> Tutti gli altri delegano
+     * l'effetto al webhook, perché nessuno aspetta la risposta: qui invece l'invito <b>non deve nascere</b>
+     * se l'addebito non riesce, e questo si può decidere solo con un esito sincrono. La regola d'oro della
+     * storia — meglio un invito mancato che un posto attivo non pagato — è tutta in questa firma.
+     *
+     * <p>Un rifiuto <b>non è un'eccezione</b>: una carta scaduta è un esito normale del dominio, di cui va
+     * mostrato il motivo a chi ha invitato. Le eccezioni restano per ciò che è rotto.
+     */
+    SeatChargeResult chargeSeats(SeatChargeCommand command);
+
+    /**
+     * Comando di addebito dei posti. Il {@code tenantId} arriva dal JWT verificato (invariante #1).
+     *
+     * @param paddleSubscriptionId abbonamento dei posti già esistente, {@code null} la prima volta (è il
+     *     quarto posto dell'account: prima non c'era nulla da pagare, quindi nemmeno un abbonamento)
+     * @param quantity posti <b>a pagamento</b> dopo l'addebito
+     * @param newTotalCents dovuto mensile complessivo dopo l'addebito, in centesimi interi
+     * @param deltaCents quanto si addebita <b>adesso</b> per il periodo in corso, in centesimi interi
+     */
+    record SeatChargeCommand(
+            String tenantId,
+            String paddleSubscriptionId,
+            String existingPaddleCustomerId,
+            String customerEmail,
+            int quantity,
+            long newTotalCents,
+            long deltaCents,
+            String currency) {}
+
+    /**
+     * Esito dell'addebito dei posti.
+     *
+     * @param accepted esito positivo; se falso, l'invito non nasce
+     * @param declineReason motivo restituito dal fornitore, valorizzato <b>solo</b> quando è un rifiuto —
+     *     va mostrato a chi ha invitato, perché «non è andata» senza il perché non permette di rimediare
+     */
+    record SeatChargeResult(
+            boolean accepted,
+            String declineReason,
+            String paddleSubscriptionId,
+            String paddleCustomerId,
+            String paddleTransactionId) {
+
+        /** Esito positivo. */
+        public static SeatChargeResult accepted(
+                String paddleSubscriptionId, String paddleCustomerId, String paddleTransactionId) {
+            return new SeatChargeResult(
+                    true, null, paddleSubscriptionId, paddleCustomerId, paddleTransactionId);
+        }
+
+        /** Rifiuto, col motivo del fornitore. */
+        public static SeatChargeResult declined(String reason) {
+            return new SeatChargeResult(false, reason, null, null, null);
+        }
+    }
+
+    /**
+     * Annulla un addebito dei posti <b>appena eseguito</b> (UC 0103 §5): storno della transazione e ritorno
+     * alla quantità precedente.
+     *
+     * <p>Serve al solo caso in cui l'addebito riesce e la creazione dell'invito fallisce subito dopo.
+     * <b>Non</b> è la riduzione dei posti, che è un atto del cliente con una scadenza e una sua storia
+     * (UC 0104): questa è una rettifica tecnica di qualcosa che non è mai diventato vero.
+     */
+    void releaseSeatCharge(SeatChargeReversal reversal);
+
+    /** Riferimento allo storno: la transazione da annullare e la quantità a cui tornare. */
+    record SeatChargeReversal(
+            String tenantId,
+            String paddleSubscriptionId,
+            String paddleTransactionId,
+            int previousQuantity) {}
 }

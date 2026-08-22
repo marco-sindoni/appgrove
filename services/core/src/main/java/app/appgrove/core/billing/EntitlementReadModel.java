@@ -73,7 +73,13 @@ public class EntitlementReadModel {
         }
 
         List<EntitlementView> entitled = new ArrayList<>();
-        for (App app : apps.listAll()) {
+        // Solo le APPLICAZIONI (UC 0103): la voce di piattaforma dei posti porta un abbonamento — quindi
+        // qui entrerebbe, e con lo stato che concede accesso — ma non è una applicazione a cui si acceda.
+        // Senza questa esclusione comparirebbe nel menu laterale del cliente come se fosse un'app da
+        // aprire, perché il menu deriva proprio da questa lettura. È la prima delle cinque esclusioni che
+        // la scelta strutturale dell'epica E22.2 impone, e la più a monte: escludendola qui, ne discende
+        // per costruzione l'esclusione da «dove posso entrare» (che consuma questa lettura).
+        for (App app : apps.listApplications()) {
             Subscription sub = byApp.get(app.getId());
             // Il tier free serve solo in assenza di subscription: non lo cerchiamo quando c'è.
             Optional<AppTier> free = sub == null ? freeTier(app.getId()) : Optional.empty();

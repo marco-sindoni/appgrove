@@ -39,6 +39,10 @@ class MultiTenancyTest {
 
     @Test
     void rowsAreIsolatedByTenant() {
+        // Gli account del token devono esistere: da UC 0103 l'invito blocca la riga dell'account prima di
+        // qualunque calcolo, perché è un atto che muove denaro e va serializzato per account.
+        data.account(TENANT_A, "Conto A inviti");
+        data.account(TENANT_B, "Conto B inviti");
         String tokenA = TestTokens.withTenant(TENANT_A, "owner");
         String tokenB = TestTokens.withTenant(TENANT_B, "owner");
 

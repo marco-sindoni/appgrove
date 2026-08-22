@@ -3,6 +3,7 @@ package app.appgrove.core.billing.seats;
 import app.appgrove.core.platform.InvitationRepository;
 import app.appgrove.core.platform.InvitationStatus;
 import app.appgrove.core.platform.MembershipRepository;
+import app.appgrove.core.platform.MembershipStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
@@ -79,9 +80,34 @@ public class SeatCount {
      * un'esecuzione all'altra.
      */
     public int occupiedSeatsAt(Instant when) {
+        return compositionAt(when).total();
+    }
+
+    /**
+     * Come i posti occupati si <b>compongono</b>: persone attive, persone sospese, inviti in attesa. È
+     * quello che il riquadro dei posti mostra sotto il numero grande (UC 0103 §6): un «7» senza la sua
+     * composizione fa aprire un ticket, perché chi legge conta le righe della tabella e non gli torna.
+     *
+     * <p><b>Il totale resta la regola, la composizione è una lettura del totale.</b> Le persone sospese si
+     * contano a parte e le attive si ricavano per <b>differenza</b> dal numero di appartenenze, mai
+     * elencando gli stati che «valgono»: così il giorno in cui UC 0104 aggiunge lo stato «in cessazione»
+     * il totale resta giusto da sé, e la composizione mostra una voce in più invece di far sparire dei
+     * posti dal conto. È la stessa ragione per cui la regola del totale è scritta sull'esistenza
+     * dell'appartenenza e non sull'elenco dei suoi stati.
+     */
+    public SeatComposition compositionAt(Instant when) {
         long people = memberships.count();
+        long suspended = memberships.count("status", MembershipStatus.suspended);
         long pendingInvitations =
                 invitations.count("status = ?1 and expiresAt > ?2", InvitationStatus.pending, when);
-        return (int) (people + pendingInvitations);
+        return new SeatComposition((int) (people - suspended), (int) suspended, (int) pendingInvitations);
+    }
+
+    /** La composizione dei posti occupati. Il totale è la somma: nessuna voce è fuori dal conto. */
+    public record SeatComposition(int active, int suspended, int pendingInvitations) {
+
+        public int total() {
+            return active + suspended + pendingInvitations;
+        }
     }
 }

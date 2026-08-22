@@ -50,6 +50,20 @@ public class PaddlePaymentProvider implements PaymentProvider {
     }
 
     @Override
+    public SeatChargeResult chargeSeats(SeatChargeCommand command) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.chargeSeats reale non implementato (gated #14): l'abbonamento dei "
+                        + "posti con la sua quantità passa dalle API di Paddle e va scritto quando il "
+                        + "fornitore sarà attivabile — tracciato nei Punti aperti di UC 0103");
+    }
+
+    @Override
+    public void releaseSeatCharge(SeatChargeReversal reversal) {
+        throw new UnsupportedOperationException(
+                "PaddlePaymentProvider.releaseSeatCharge reale non implementato (gated #14, UC 0103)");
+    }
+
+    @Override
     public PricingSyncResult syncPricing(PricingSyncRequest request) {
         // UC 0022, slice offline: il motore di sync è esercitato contro lo stub. L'integrazione REALE
         // (REST Product/Price API di Paddle + secret per-ambiente da Secrets Manager, #09 I38) è BLOCCATA

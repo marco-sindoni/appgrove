@@ -90,7 +90,12 @@ public class CatalogReadModel {
         Map<UUID, String> freeTiers = freeTierNames();
 
         List<CatalogAppView> view = new ArrayList<>();
-        for (App app : apps.listAll()) {
+        // Solo le APPLICAZIONI (UC 0103): la vetrina è l'elenco di ciò che si può comprare e aprire, e la
+        // voce di piattaforma dei posti non è né l'uno né l'altro — i posti si comprano invitando una
+        // persona, non da una card del catalogo. Nota che l'esclusione va fatta PRIMA della condizione
+        // sull'abbonamento qui sotto: un account che ha comprato dei posti ha un abbonamento su quella
+        // voce, quindi la regola «spenta e mai sottoscritta resta invisibile» non basterebbe a nasconderla.
+        for (App app : apps.listApplications()) {
             Subscription sub = byApp.get(app.getId());
             if (app.getStatus() != AppStatus.active && sub == null) {
                 continue; // spenta e mai sottoscritta: fuori dalla vetrina

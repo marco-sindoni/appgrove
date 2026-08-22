@@ -39,6 +39,7 @@ usecases_con_superficie:
   - "0099" # Rifiuti dell'autorizzazione per applicazione, letti a schermo nel Mini-CRM
   - "0100" # Sezione «Members» come elenco unico di persone, senza ruolo (applicazioni per persona)
   - "0101" # Semantica dei tre ruoli: i due rifiuti letti a schermo nell'app #1, che il ruolo ora governa
+  - "0103" # Acquisto anticipato del posto all'invito (riquadro dei posti, stima prima della conferma)
   - "0117" # Account attivo nella sessione e selettore (barra laterale, cambio con ricarica)
   - "0118" # Inviti e registrazione con identità esistente (sezione inviti nel cruscotto, scelta account all'accesso)
 
@@ -272,6 +273,17 @@ percorsi:
     test:
       - livello: l2
         file: frontend/apps/backoffice/e2e/crm.spec.ts
+
+  - id: J-SEATS
+    titolo: >-
+      Posti a pagamento — riquadro dei posti (usati, composizione, importo, fascia), stima del posto
+      successivo prima della conferma, primo posto oltre la franchigia che crea l'abbonamento, e addebito
+      rifiutato che NON crea l'invito
+    usecases: ["0103"]
+    stato: coperto
+    test:
+      - livello: l2
+        file: frontend/apps/backoffice/e2e/seats.spec.ts
 
   - id: L2-MEMBERS
     titolo: >-
@@ -742,12 +754,11 @@ esenzioni:
       dai collaudi di integrazione, il conteggio dei posti dalla prova stato per stato con separazione fra
       account. Le superfici che consumeranno questo listino arrivano con 0103 (riquadro dei posti), 0105
       (governo delle tariffe in console) e 0106 (i posti nella sezione «Billing»).
-  - usecase: "0103"
-    categoria: non-implementato
-    motivo: Acquisto anticipato del posto all'invito — avrà superficie (riquadro dei posti), coperta da J-SEATS.
   - usecase: "0104"
     categoria: non-implementato
-    motivo: Riduzione dei posti in attesa — avrà superficie, coperta da J-SEATS.
+    motivo: >-
+      Riduzione dei posti in attesa — avrà superficie (scelta delle persone, avviso di attesa, invito
+      bloccato), da coprire estendendo J-SEATS, che la change 0098 ha creato per l'acquisto.
   - usecase: "0105"
     categoria: non-implementato
     motivo: Governo del listino dalla console di piattaforma — avrà superficie nella console admin.
