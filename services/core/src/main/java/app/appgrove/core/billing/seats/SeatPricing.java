@@ -68,6 +68,51 @@ public final class SeatPricing {
     }
 
     /**
+     * Come il dovuto si <b>compone</b> per scaglione: quante persone cadono in ciascuna fascia e quanto
+     * pesa quella fascia sul totale. Con dodici posti e il listino iniziale sono due righe,
+     * {@code 7 × 2,99} e {@code 2 × 1,99}.
+     *
+     * <p>Serve alla <b>conferma della riduzione</b> (UC 0104 §4.2), dove l'owner deve poter vedere non solo
+     * «pagherai 17,94 € invece di 24,91 €» ma <i>perché</i>: da {@code 7 × 2,99 + 2 × 1,99} a
+     * {@code 6 × 2,99}. Sta qui e non nell'interfaccia per la stessa ragione di ogni altro numero: cinque
+     * traduzioni e un servizio devono dire lo stesso importo, e una composizione ricalcolata a schermo
+     * sarebbe l'unico numero che il cliente vede senza che nessun collaudo del servizio lo provi.
+     *
+     * <p>Le fasce <b>vuote</b> non compaiono: una riga «0 × 1,99 €» non è informazione. Le fasce a tariffa
+     * zero invece compaiono, perché «3 posti compresi» è una parte del conto che chi legge vuole ritrovare.
+     *
+     * @param seats posti occupati; con zero posti la composizione è vuota
+     */
+    public static List<SeatBandUsage> breakdown(int seats, SeatPricingVersion version) {
+        if (seats < 0) {
+            throw new IllegalArgumentException("numero di posti negativo: " + seats);
+        }
+        List<SeatBandUsage> usage = new java.util.ArrayList<>();
+        for (SeatPricingBand band : requireCoherent(version)) {
+            int upper = band.isOpenEnded() ? seats : Math.min(seats, band.getToSeat());
+            int inBand = upper - band.getFromSeat() + 1;
+            if (inBand > 0) {
+                usage.add(new SeatBandUsage(
+                        band.getFromSeat(),
+                        band.isOpenEnded() ? null : band.getToSeat(),
+                        band.getUnitPriceCents(),
+                        inBand,
+                        (long) inBand * band.getUnitPriceCents()));
+            }
+        }
+        return List.copyOf(usage);
+    }
+
+    /**
+     * Una riga della composizione: «in questa fascia cadono {@code seats} posti, a {@code unitPriceCents}
+     * l'uno, per {@code subtotalCents} in tutto».
+     *
+     * @param toSeat limite superiore della fascia; {@code null} per l'ultima, aperta verso l'alto
+     */
+    public record SeatBandUsage(
+            int fromSeat, Integer toSeat, int unitPriceCents, int seats, long subtotalCents) {}
+
+    /**
      * La fascia in cui cade un singolo posto.
      *
      * @param seat numero d'ordine del posto, a partire da 1

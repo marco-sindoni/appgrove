@@ -2711,6 +2711,231 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/v1/me/seats/reduction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        /** Request */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RequestReduction"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        /** Cancel */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/seats/reduction/people/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Person */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    userId: components["schemas"]["UUID"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/v1/me/seats/reduction/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview */
+        get: {
+            parameters: {
+                query?: {
+                    userId?: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ReductionPreview"];
+                    };
+                };
+                /** @description Not Authorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not Allowed */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/v1/me/subscriptions": {
         parameters: {
             query?: never;
@@ -4193,6 +4418,56 @@ export interface components {
             /** Format: int64 */
             payoutMaxAgeDays?: number;
         };
+        ReductionBandView: {
+            /** Format: int32 */
+            fromSeat?: number;
+            /** Format: int32 */
+            toSeat?: number;
+            /** Format: int32 */
+            unitPriceCents?: number;
+            /** Format: int32 */
+            seats?: number;
+            /** Format: int64 */
+            subtotalCents?: number;
+        };
+        ReductionPersonView: {
+            userId?: components["schemas"]["UUID"];
+            email?: string;
+            displayName?: string;
+        };
+        ReductionPreview: {
+            executeAt?: components["schemas"]["Instant"];
+            people?: components["schemas"]["ReductionPersonView"][];
+            /** Format: int32 */
+            seatsNow?: number;
+            /** Format: int32 */
+            seatsAfter?: number;
+            /** Format: int64 */
+            dueCentsNow?: number;
+            /** Format: int64 */
+            dueCentsAfter?: number;
+            currency?: string;
+            bandsNow?: components["schemas"]["ReductionBandView"][];
+            bandsAfter?: components["schemas"]["ReductionBandView"][];
+        };
+        ReductionView: {
+            id?: components["schemas"]["UUID"];
+            executeAt?: components["schemas"]["Instant"];
+            requestedAt?: components["schemas"]["Instant"];
+            overdue?: boolean;
+            people?: components["schemas"]["ReductionPersonView"][];
+            /** Format: int32 */
+            seatsAfter?: number;
+            /** Format: int64 */
+            dueCentsNow?: number;
+            /** Format: int64 */
+            dueCentsAfter?: number;
+            currency?: string;
+            bandsAfter?: components["schemas"]["ReductionBandView"][];
+        };
+        RequestReduction: {
+            userIds: string[];
+        };
         RequestView: {
             type?: string;
             refId?: components["schemas"]["UUID"];
@@ -4268,6 +4543,7 @@ export interface components {
             currentBand?: components["schemas"]["SeatBandView"];
             next?: components["schemas"]["NextSeatView"];
             pendingReduction?: boolean;
+            reduction?: components["schemas"]["ReductionView"];
             hasSubscription?: boolean;
         };
         SetActiveAccount: {
@@ -4408,6 +4684,7 @@ export interface components {
             status?: string;
             tenantId?: string;
             joinedAt?: components["schemas"]["Instant"];
+            endingAt?: components["schemas"]["Instant"];
             apps?: components["schemas"]["UserAppView"][];
         };
         WithdrawalView: {

@@ -146,6 +146,10 @@ test('[L2-MEMBERS] persone: elenco unico senza ruolo, applicazioni per persona, 
   // ── una sola tabella, e nessuna colonna di ruolo ────────────────────────────
   await expect(page.getByRole('table')).toHaveCount(1)
   await expect(page.getByRole('columnheader')).toHaveText([
+    // La prima colonna è quella di SELEZIONE per la cessazione programmata (UC 0104): intestazione non
+    // visibile ma con un nome, perché un'intestazione vuota è un'omissione per chi usa un lettore di
+    // schermo.
+    'Schedule termination',
     'Email',
     'Name',
     'Status',

@@ -5,6 +5,7 @@ import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.core.billing.EntitlementInvalidationPublisher;
 import app.appgrove.core.billing.EntitlementReadModel;
+import app.appgrove.core.billing.seats.SeatDowngradeService;
 import app.appgrove.core.catalog.App;
 import app.appgrove.core.catalog.AppRepository;
 import app.appgrove.core.platform.UserDtos.UpdateMe;
@@ -29,6 +30,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -85,6 +87,9 @@ public class UserResource {
     @Inject
     AuditLogger audit;
 
+    @Inject
+    SeatDowngradeService reductions;
+
     /**
      * Le persone dell'account, ciascuna con le applicazioni su cui è abilitata (UC 0100): è la lettura
      * che alimenta l'elenco unico della schermata «Members».
@@ -94,11 +99,15 @@ public class UserResource {
     public Page<UserView> list(@QueryParam("page") Integer page, @QueryParam("size") Integer size) {
         PageRequest pr = PageRequest.of(page, size);
         AccountApps accountApps = new AccountApps();
+        // La riduzione in attesa si legge UNA VOLTA per richiesta, non una per riga: è un atto
+        // dell'account con una data comune, e interrogarla per persona sarebbe N interrogazioni per
+        // ottenere N copie dello stesso valore (UC 0104).
+        SeatDowngradeService.PendingReduction reduction = reductions.pendingSummary().orElse(null);
         List<UserView> content = memberships.findAll()
                 .page(io.quarkus.panache.common.Page.of(pr.page(), pr.size()))
                 .list()
                 .stream()
-                .map(m -> view(m, accountApps))
+                .map(m -> view(m, accountApps, reduction))
                 .filter(java.util.Objects::nonNull)
                 .toList();
         return Page.of(content, pr, memberships.count());
@@ -133,9 +142,14 @@ public class UserResource {
     @RolesAllowed(Roles.OWNER)
     public UserView get(@PathParam("id") UUID id) {
         Membership membership = requireMembership(id);
-        // Stessa forma della riga dell'elenco, applicazioni comprese: una lettura di dettaglio che
-        // mostrasse meno della riga da cui si arriva sarebbe una trappola per chi la consuma.
-        return UserView.from(membership, requireIdentity(membership), new AccountApps().of(membership));
+        // Stessa forma della riga dell'elenco, applicazioni e cessazione programmata comprese: una lettura
+        // di dettaglio che mostrasse meno della riga da cui si arriva sarebbe una trappola per chi la
+        // consuma.
+        return UserView.from(
+                membership,
+                requireIdentity(membership),
+                new AccountApps().of(membership),
+                endingAt(reductions.pendingSummary().orElse(null), membership));
     }
 
     @PATCH
@@ -194,6 +208,11 @@ public class UserResource {
         Membership membership = requireMembership(id);
         requireNotLastOwner(membership, "rimuovere");
         membership.markDeleted();
+        // Se la persona era indicata per la cessazione (UC 0104), la sua riga fra gli indicati non ha più
+        // senso: la rimozione immediata è un'operazione diversa e più forte, e ha già ottenuto l'effetto.
+        // Se era l'ultima indicata, l'attesa si chiude da sé — altrimenti bloccherebbe gli inviti senza
+        // avere più nulla da ridurre.
+        boolean wasIndicated = reductions.removeIfIndicated(membership.getIdentityId());
         // Gli accessi alle applicazioni escono con la persona (UC 0098 §5): un permesso che sopravvive a
         // chi non fa più parte dell'account tornerebbe valido il giorno in cui quella persona rientra —
         // silenziosamente, e con i poteri di prima. La cancellazione è logica, come quella
@@ -212,7 +231,8 @@ public class UserResource {
         audit.success("member.removed", Map.of(
                 "user_id", membership.getIdentityId().toString(),
                 "actor", caller.subject(),
-                "app_accesses_revoked", Integer.toString(revoked)));
+                "app_accesses_revoked", Integer.toString(revoked),
+                "was_indicated_for_reduction", Boolean.toString(wasIndicated)));
         return Response.noContent().build();
     }
 
@@ -246,9 +266,29 @@ public class UserResource {
     }
 
     /** Vista di un'appartenenza; {@code null} se l'identità collegata non è più viva (riga orfana). */
-    private UserView view(Membership membership, AccountApps accountApps) {
+    private UserView view(
+            Membership membership,
+            AccountApps accountApps,
+            SeatDowngradeService.PendingReduction reduction) {
         Identity identity = identities.findById(membership.getIdentityId());
-        return identity == null ? null : UserView.from(membership, identity, accountApps.of(membership));
+        return identity == null
+                ? null
+                : UserView.from(
+                        membership,
+                        identity,
+                        accountApps.of(membership),
+                        endingAt(reduction, membership));
+    }
+
+    /**
+     * La data di <b>cessazione programmata</b> di questa persona, o {@code null} se non è indicata
+     * (UC 0104). La data è quella comune della riduzione: la persona non ne ha una propria.
+     */
+    private static Instant endingAt(
+            SeatDowngradeService.PendingReduction reduction, Membership membership) {
+        return reduction != null && reduction.identityIds().contains(membership.getIdentityId())
+                ? reduction.executeAt()
+                : null;
     }
 
     /**

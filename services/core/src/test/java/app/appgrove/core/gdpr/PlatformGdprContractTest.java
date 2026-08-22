@@ -50,6 +50,11 @@ class PlatformGdprContractTest {
         // Accesso per applicazione (UC 0098): l'export dell'account deve restituire anche i permessi.
         java.util.UUID abilitata = data.user(TENANT_A, "sub-gdpr-access", "gdpr-access@example.test", "member");
         data.appAccess(TENANT_A, gdprApp, abilitata, "editor");
+        // Riduzione dei posti (UC 0104): l'export dell'account deve restituire anche chi è stato indicato
+        // per la cessazione e da chi. È il collaudo che rende impossibile dichiarare un campo personale
+        // nuovo e dimenticarsi di esportarlo.
+        data.seatDowngrade(
+                TENANT_A, abilitata, abilitata, java.time.OffsetDateTime.now().plusDays(10));
 
         ExportResult export = contract.exportData(new GdprScope(TENANT_A));
         assertEquals("platform", export.appId());

@@ -55,6 +55,7 @@ public final class UserDtos {
             String status,
             String tenantId,
             Instant joinedAt,
+            Instant endingAt,
             List<UserAppView> apps) {
 
         /**
@@ -64,11 +65,26 @@ public final class UserDtos {
          * persona che non può accedere.
          */
         public static UserView from(Membership membership, Identity identity) {
-            return from(membership, identity, null);
+            return from(membership, identity, null, null);
         }
 
         /** Come sopra, con l'elenco delle applicazioni della persona (letture di governo dell'account). */
         public static UserView from(Membership membership, Identity identity, List<UserAppView> apps) {
+            return from(membership, identity, apps, null);
+        }
+
+        /**
+         * La forma completa delle letture di governo: applicazioni della persona ed eventuale data di
+         * <b>cessazione programmata</b> (UC 0104).
+         *
+         * <p>{@code endingAt} è un campo <b>a sé</b> e non un quarto valore di {@code status}, ed è una
+         * scelta: la cessazione programmata e la sospensione sono <b>ortogonali</b> (una riguarda il posto,
+         * l'altra l'accesso — UC 0104 §5), e una persona può essere sospesa <i>e</i> in cessazione. Con un
+         * quarto valore di stato una delle due informazioni sarebbe andata perduta a schermo, e il comando
+         * «riattiva» avrebbe smesso di sapere se la persona era sospesa.
+         */
+        public static UserView from(
+                Membership membership, Identity identity, List<UserAppView> apps, Instant endingAt) {
             String status = identity.getStatus() == IdentityStatus.suspended
                     ? IdentityStatus.suspended.name()
                     : membership.getStatus().name();
@@ -80,6 +96,7 @@ public final class UserDtos {
                     status,
                     membership.getTenantId(),
                     membership.getCreatedAt(),
+                    endingAt,
                     apps);
         }
     }

@@ -36,3 +36,22 @@ export type InvitationView = components['schemas']['InvitationView']
  */
 export type SeatSummaryView =
   paths['/api/platform/v1/me/seats']['get']['responses']['200']['content']['application/json']
+
+/**
+ * La **riduzione dei posti in attesa** (UC 0104): data di esecuzione, persone indicate, posti e dovuto
+ * dopo, e la composizione degli scaglioni che si applicherà.
+ *
+ * Arriva **dentro** il riquadro dei posti e non da una lettura a sé, così che l'avviso si possa disegnare
+ * senza una seconda chiamata. Il tipo è esportato comunque, perché la schermata lo maneggia come una cosa
+ * propria: chi legge il codice deve poter dire «questa è la riduzione», non «questo è un pezzo del
+ * riquadro».
+ */
+export type SeatReductionView = components['schemas']['ReductionView']
+
+/**
+ * L'**effetto prima della conferma** (UC 0104 §4.2): che cosa cambierebbe indicando quelle persone.
+ *
+ * Dipende da chi si è appena selezionato, quindi è l'unica lettura della sezione che cambia a ogni casella
+ * spuntata — ed è una lettura, non un atto: chiederla non programma nulla.
+ */
+export type SeatReductionPreview = components['schemas']['ReductionPreview']

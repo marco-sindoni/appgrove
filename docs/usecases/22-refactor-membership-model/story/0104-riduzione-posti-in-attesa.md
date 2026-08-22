@@ -1,11 +1,11 @@
 # UC 0104 — Riduzione dei posti in attesa: scelta delle persone, blocco, annullamento, scadenza
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0099-use-case-0104-riduzione-posti-attesa`)
 **Epica**: [E22.2 Posti a pagamento](../epic/E22-02-posti-a-pagamento.md)
 **Dipendenze**: UC 0102 (calcolo), UC 0103 (acquisto e abbonamento di piattaforma), UC 0026 (ciclo di vita dell'abbonamento), UC 0028 (cambio di piano programmato)
 **Piano di lavoro**: [task/0104](../task/0104-riduzione-posti-in-attesa.md)
 **Prototipo**: [owner.html](../prototype/owner.html), stato «riduzione in attesa»
-**Ultimo aggiornamento**: 2026-08-19
+**Ultimo aggiornamento**: 2026-08-22
 
 ## 1. Obiettivo / Scope
 
@@ -165,15 +165,27 @@ riduzione è in corso di esecuzione»), errore.
 
 - **Avviso per email alla persona indicata**: se e quando avvertirla. Proposta prudente: **non** avvisarla
   automaticamente (è una comunicazione che spetta al datore di lavoro, non alla piattaforma), ma renderlo
-  possibile in futuro. Proprietario: questa storia.
+  possibile in futuro. Proprietario: questa storia. **Confermato dalla change 0099**: nessun avviso
+  automatico è stato implementato, la scelta è dichiarata nel manifesto dati (voce
+  `seat_reduction_people.identity_id`) e il dubbio di trasparenza verso l'interessato (art. 13/14) è
+  tracciato come voce **L19** in [docs/_REVISIONE-LEGALE.md](../../../_REVISIONE-LEGALE.md).
 - **Riduzione parziale automatica** quando una persona rifiuta o un invito scade: già gestita come
   liberazione di posto in UC 0103, senza passare dall'attesa. Confermare che i due meccanismi non si
-  sovrappongano in implementazione.
+  sovrappongano in implementazione. **Verificato dalla change 0099**: non si sovrappongono, e la ragione è
+  strutturale — l'attesa agisce sulle **appartenenze**, la liberazione del posto sugli **inviti**. Un invito
+  scaduto o revocato non è indicabile per la cessazione (non ha un'appartenenza), e la quantità
+  dell'abbonamento non scende per quella via: scende solo all'esecuzione della riduzione, ricalcolata.
 - **Durata massima dell'attesa**: coincide col periodo di fatturazione (un mese). Se un giorno esistesse
   il ciclo annuale, un'attesa di undici mesi sarebbe inaccettabile e servirebbe una regola diversa.
   Proprietario: UC 0102.
 
-### Lasciato da UC 0100 (change 0096)
+### Lasciato da UC 0100 (change 0096) — **chiuso dalla change 0099**
+
+L'elenco unico ha ora il **quarto stato**, «in cessazione dal …», con la data e nelle cinque lingue. Una
+precisazione rispetto a come il punto era stato scritto: lo stato **non sostituisce** «sospesa» ma le si
+affianca — la sospensione e la cessazione programmata sono ortogonali (§5), e mostrarne una sola avrebbe
+fatto sparire l'altra dalla schermata. In pratica la riga porta la data in un campo suo (`endingAt`) e
+l'interfaccia mostra due etichette quando i due stati convivono.
 
 - **Lo stato «in cessazione» nell'elenco unico delle persone** non esiste ancora, e l'elenco mostra
   **tre** stati invece dei quattro che la storia 0100 §4 elencava: attiva, invito in attesa, sospesa.
@@ -183,3 +195,28 @@ riduzione è in corso di esecuzione»), errore.
   l'indicazione per la cessazione, l'elenco unico va esteso con il quarto stato (**con la data di
   esecuzione**, perché «in cessazione» senza il quando non dice nulla) e con la sua azione di riga.
   Proprietario: questa storia.
+
+### Lasciato dalla change 0099 (questa storia, implementata)
+
+- **La riduzione presuppone un abbonamento dei posti, e senza quello si rifiuta.** Un account interamente
+  dentro la franchigia riceve un rifiuto tipizzato (`urn:appgrove:seats:reduction-not-needed`) che indirizza
+  alla rimozione immediata, gratuita. È la lettura letterale della precondizione §3, e regge finché la
+  franchigia è di tre posti su un solo scaglione gratuito. Se un giorno il listino avesse **due** scaglioni
+  a pagamento e un account potesse voler scendere di scaglione restando a pagamento, il rifiuto resterebbe
+  giusto; se invece la franchigia diventasse configurabile per account, andrebbe rivisto. Proprietario:
+  UC 0105 (governo del listino).
+- **Il rinnovo del periodo dei posti non esiste ancora**, e questa storia non lo introduce: `execute_at` è
+  la fine del periodo scritto sull'abbonamento, e nessuno lo fa avanzare (rimando già di UC 0106). La
+  conseguenza pratica, e va detta perché è visibile in collaudo: eseguita una riduzione, la data del periodo
+  resta nel passato finché UC 0106 non arriva, quindi una **seconda** riduzione nascerebbe con una data di
+  esecuzione già passata e verrebbe eseguita al primo giro dello spazzino — cioè subito. Non è un difetto di
+  questa storia (la permanenza minima è già stata pagata e consumata) ma diventa scorretto nel momento in
+  cui il periodo si rinnova: la correttezza dipende da UC 0106, non da un presidio in più qui.
+  Proprietario: **UC 0106**.
+- **L'ordine col rinnovo è presidiato ma non ancora esercitato dal vero.** La riduzione dovuta si esegue
+  nella stessa transazione dell'evento del fornitore che riscrive il periodo dell'abbonamento dei posti
+  (`SubscriptionWriter`), e c'è un collaudo che lo prova consegnando l'evento a mano. Nella realtà oggi
+  quell'evento non arriva mai, perché il prodotto dei posti presso il fornitore non esiste (prerequisito
+  #14): quando esisterà, il percorso va riesercitato con il fornitore vero. Proprietario: UC 0106.
+- **Lo spazzino gira sullo scheduler applicativo**, come gli altri: il richiamo dal temporizzatore gestito
+  del cloud è di UC 0035, e vale per questo spazzino come per `AccountDeletionSweeper`.

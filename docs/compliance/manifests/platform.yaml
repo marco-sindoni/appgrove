@@ -235,6 +235,88 @@ entries:
         with the account itself (+ 14-day grace period, #13 E25). Revocation is a logical deletion, so
         that re-granting access does not require rebuilding its history
 
+  - key: seat_reduction_people.identity_id
+    entity: app.appgrove.core.billing.seats.SeatDowngradeItem
+    field: identityId
+    location:
+      it: Tabella `platform.seat_downgrade_item` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.seat_downgrade_item` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persone dell'account indicate per la cessazione alla fine del periodo pagato
+      en: People of the account marked for termination at the end of the paid period
+    data_category:
+      it: >-
+        Identificativo online (riferimento all'identità della persona indicata). Non contiene né nome
+        né indirizzo, ma dice una cosa delicata: che il rapporto fra quella persona e quell'account è
+        stato messo in scadenza. Nessuna categoria particolare (art. 9): è un dato di gestione del
+        rapporto, non un giudizio sulla persona
+      en: >-
+        Online identifier (reference to the identity of the person marked). It contains neither name
+        nor email, but it states something sensitive: that the relationship between that person and
+        that account has been put on notice. No special category (art. 9): it is relationship
+        management data, not a judgement on the person
+    purpose:
+      it: >-
+        Eseguire la riduzione dei posti alla fine del periodo già pagato: sapere quali persone
+        usciranno dall'account e quanti posti a pagamento resteranno (UC 0104). È una precisazione
+        dentro la finalità già dichiarata per l'appartenenza — gestione del rapporto e determinazione
+        dell'importo dovuto per i posti — non una finalità nuova
+      en: >-
+        Executing the seat reduction at the end of the already-paid period: knowing which people will
+        leave the account and how many paid seats will remain (UC 0104). It is a clarification within
+        the purpose already declared for the membership — relationship management and determination of
+        the amount due for seats — not a new purpose
+    legal_basis:
+      it: Contratto con l'account titolare (art. 6.1.b GDPR)
+      en: Contract with the controlling account (art. 6(1)(b) GDPR)
+    retention:
+      it: >-
+        Finché la riduzione è conservata (in attesa, eseguita o annullata); eliminata con l'account
+        (+ 14 giorni di grace, #13 E25). L'annullamento e la rimozione della persona dall'elenco sono
+        cancellazioni logiche, così che la storia di che cosa era stato deciso resti leggibile a chi
+        governa l'account. Nessun avviso automatico viene inviato alla persona indicata: la
+        comunicazione spetta al datore di lavoro, non alla piattaforma
+      en: >-
+        While the reduction is retained (pending, executed or cancelled); deleted with the account
+        (+ 14-day grace period, #13 E25). Cancelling the reduction and removing a person from the list
+        are logical deletions, so that the history of what had been decided stays readable to whoever
+        runs the account. No automatic notice is sent to the person marked: that communication is the
+        employer's, not the platform's
+
+  - key: seat_reductions.requested_by
+    entity: app.appgrove.core.billing.seats.SeatDowngrade
+    field: requestedBy
+    location:
+      it: Tabella `platform.seat_downgrade` (Aurora PostgreSQL, eu-west-1) — dato dell'account
+      en: Table `platform.seat_downgrade` (Aurora PostgreSQL, eu-west-1) — account data
+    data_subjects:
+      it: Persona dell'account (owner) che ha chiesto la riduzione dei posti
+      en: Person of the account (owner) who requested the seat reduction
+    data_category:
+      it: >-
+        Identificativo online (riferimento all'identità di chi ha chiesto la riduzione): traccia di
+        controllo di chi, dentro l'account, ha deciso la cessazione di una o più persone
+      en: >-
+        Online identifier (reference to the identity of whoever requested the reduction): audit trail
+        of who, inside the account, decided the termination of one or more people
+    purpose:
+      it: >-
+        Rendere ricostruibile chi ha deciso una cessazione, come per ogni altro atto privilegiato
+        dell'account (UC 0104, UC 0006). Non serve all'autorizzazione: quella è nell'annotazione
+        dell'operazione di rete
+      en: >-
+        Making it reconstructable who decided a termination, as for any other privileged act of the
+        account (UC 0104, UC 0006). It is not used for authorisation: that lives in the annotation of
+        the network operation
+    legal_basis:
+      it: Contratto con l'account titolare (art. 6.1.b GDPR)
+      en: Contract with the controlling account (art. 6(1)(b) GDPR)
+    retention:
+      it: >-
+        Finché la riduzione è conservata; eliminata con l'account (+ 14 giorni di grace, #13 E25)
+      en: >-
+        While the reduction is retained; deleted with the account (+ 14-day grace period, #13 E25)
+
   - key: invitations.email
     entity: app.appgrove.core.platform.Invitation
     field: email

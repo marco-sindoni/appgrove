@@ -12,8 +12,15 @@ import type { InvitationView, UserAppView, UserView } from '@appgrove/api-client
  * intoccabili) e le regole si provano meglio da sole che attraverso un rendering.
  */
 
-/** Stato di una riga dell'elenco. Tre valori: sono i tre che il modello sa produrre oggi. */
-export type RosterStatus = 'active' | 'suspended' | 'invited'
+/**
+ * Stato di una riga dell'elenco. **Quattro** valori da UC 0104: la cessazione programmata è il quarto, che
+ * la storia 0100 aveva elencato e la change 0096 aveva lasciato fuori perché nessun dato poteva produrlo.
+ *
+ * `ending` **non sostituisce** `suspended`: le due cose sono ortogonali (una riguarda il posto, l'altra
+ * l'accesso) e una persona può essere entrambe. Per questo lo stato porta il valore più informativo e la
+ * data vive in `endingAt`, che si legge accanto — non invece.
+ */
+export type RosterStatus = 'active' | 'suspended' | 'invited' | 'ending'
 
 export interface RosterRow {
   /** Chiave stabile per il rendering: il tipo di riga più l'identificativo. */
@@ -32,6 +39,19 @@ export interface RosterRow {
   joinedAt?: string
   /** Scadenza dell'invito: l'informazione utile su una riga che non è ancora una persona. */
   expiresAt?: string
+  /**
+   * Data di **cessazione programmata** (UC 0104), assente per chi non è indicato. «In cessazione» senza il
+   * quando non dice nulla: la data non è un dettaglio dell'etichetta, è l'etichetta.
+   */
+  endingAt?: string
+  /** Vero quando la persona è **sospesa**, anche se è al contempo in cessazione (i due stati convivono). */
+  suspended: boolean
+  /**
+   * La riga si può **indicare per la cessazione** (UC 0104): solo le persone, non l'owner, non gli inviti
+   * in attesa (che si revocano, non si cessano) e non chi è già indicato. È il gating a schermo; il
+   * rifiuto vero arriva dal servizio.
+   */
+  selectable: boolean
   /** L'owner dell'account: va in testa e non si tocca. */
   isOwner: boolean
   /** Vero quando la riga è quella di chi sta guardando. */
@@ -66,15 +86,23 @@ export function buildRoster({ members = [], invitations = [], meId }: BuildRoste
   const people: RosterRow[] = members.map((m) => {
     const isOwner = m.role === 'owner'
     const isSelf = !!meId && m.id === meId
+    const suspended = m.status === 'suspended'
+    const ending = !!m.endingAt
     return {
       key: `person:${m.id}`,
       kind: 'person',
       id: m.id as string,
       email: m.email ?? '',
       displayName: m.displayName,
-      status: m.status === 'suspended' ? 'suspended' : 'active',
+      // La cessazione programmata vince sull'etichetta perché è l'informazione che scade: chi guarda
+      // deve accorgersene senza cercarla. La sospensione non si perde — resta in `suspended`, e la
+      // schermata mostra le due cose insieme quando convivono.
+      status: ending ? 'ending' : suspended ? 'suspended' : 'active',
       apps: m.apps ?? [],
       joinedAt: m.joinedAt,
+      endingAt: m.endingAt,
+      suspended,
+      selectable: !isOwner && !ending,
       isOwner,
       isSelf,
       locked: isSelf || (isOwner && owners <= 1),
@@ -89,6 +117,9 @@ export function buildRoster({ members = [], invitations = [], meId }: BuildRoste
     status: 'invited',
     apps: [],
     expiresAt: i.expiresAt,
+    suspended: false,
+    // Un invito in attesa non si «cessa»: si revoca, ed è un'operazione immediata e gratuita.
+    selectable: false,
     isOwner: false,
     isSelf: false,
     locked: false,

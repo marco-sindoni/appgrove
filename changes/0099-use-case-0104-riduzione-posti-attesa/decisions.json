@@ -1,0 +1,288 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast, dichiarata espressamente dall'orchestratore go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow (rilettura dei requisiti, consenso al commit, consenso al merge); restano obbligatori la suite completa verde prima del commit, il registro delle decisioni integrale e la guida di collaudo manuale scritta ED eseguita nei passi non visivi. Merge e push non sono di questa change: restano dell'orchestratore."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0104 «Riduzione dei posti in attesa» dell'epica 22 (E22.2 Posti a pagamento). Numero progressivo derivato da changes/: il massimo presente era 0098, quindi 0099 — coincide con il numero atteso dichiarato dall'orchestratore. Forma del branch: change/0099-use-case-0104-riduzione-posti-attesa."
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) docs/usecases/_INDEX.md NON viene toccato: l'indice di esecuzione elenca solo gli use case base (0001–0060) e le storie evo dell'epica 22 non vi compaiono. È la stessa constatazione già registrata dalla change 0098 (sua decisione 3). Lo stato della storia è annotato nel suo drill-down, che passa da «🟢 scritto (da implementare)» a «✅ implementato».",
+    "files": [
+      {
+        "file": "docs/usecases/22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md",
+        "description": "Intestazione portata a ✅ implementato con il riferimento alla change; data di ultimo aggiornamento allineata."
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La riduzione è modellata come DUE TABELLE — `platform.seat_downgrade` (l'atto) e `platform.seat_downgrade_item` (le persone indicate) — e non come un contrassegno sulla riga dell'appartenenza. È la via che lo use case §7 indicava, e le due ragioni sono operative: (a) la data di esecuzione è UNA per l'intera riduzione, e con il contrassegno starebbe scritta N volte e potrebbe divergere — tre persone con tre date sarebbero tre riduzioni, e l'account non ne ha chiesta nessuna delle tre; (b) l'annullamento è un atto unico, e con il contrassegno diventerebbe «azzera N colonne», cioè un'operazione che può riuscire a metà.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V23__seat_downgrade.sql",
+        "description": "Le due tabelle, con l'indice unico parziale `ux_seat_downgrade_pending` che rende IMPOSSIBILE una seconda riduzione in attesa per lo stesso account, e `ix_seat_downgrade_due` per la sola lettura non filtrata per account (quella dello spazzino)."
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) «Una sola riduzione in attesa per account» è garantita in BANCA DATI (indice unico parziale sullo stato `pending` delle righe vive), non da un controllo applicativo. Il controllo applicativo esiste comunque, ma è il secondo presidio e serve solo a restituire un rifiuto comprensibile invece di una violazione di indice: due richieste simultanee dello stesso owner passerebbero entrambe il controllo, e solo una passa dall'indice. È la stessa gerarchia che il piano di lavoro chiedeva («il vincolo in banca dati vale più di qualunque controllo applicativo»)."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) L'unicità della coppia (riduzione, persona) è anch'essa PARZIALE, sulle sole righe vive: togliere una persona dall'elenco degli indicati e poi reindicarla deve restare possibile, e con un vincolo incondizionato il primo ripensamento l'avrebbe esclusa per sempre da quella riduzione. È la stessa forma di `ux_app_access_tenant_app_identity` (V20)."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Il codice è diviso in DUE percorsi, e la divisione non è stilistica ma imposta dall'architettura: `SeatDowngradeService` lavora dentro una richiesta autenticata con le entità tenant-scoped (filtro per account automatico, invariante #2 per costruzione), mentre `SeatDowngradeExecutor` lavora FUORI da una richiesta — lo chiamano il lavoro periodico e il consumatore degli eventi del fornitore — a SQL nativo con l'account passato esplicitamente. La ragione: il risolutore del perimetro di Hibernate è fail-closed in assenza di token (`JwtTenantResolver`), quindi senza JWT nessuna sessione si apre. È la stessa postura già usata da `AccountDeletionSweeper`, `TenantOffboarding`, `SubscriptionWriter` e `PlatformDataContract`.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeService.java",
+        "description": "Richiesta, stima, annullamento, rimozione di una persona, lettura dello stato, predicato che blocca le aggiunte. Entità tenant-scoped."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeExecutor.java",
+        "description": "Esecuzione alla scadenza, idempotente, a SQL nativo con l'account esplicito. Espone anche `execute(Connection, tenant, now)` per chi ha già una transazione aperta e vuole la riduzione PRIMA del proprio effetto."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) La franchigia, dentro l'esecutore, si legge in SQL invece di riusare `SeatPricing.freeSeats` — non per duplicare una regola, ma perché quella funzione ha bisogno dell'entità del listino, cioè di una sessione Hibernate, cioè di un token che qui non c'è. La lettura equivalente sfrutta una proprietà che il listino ha per vincolo di coerenza (le fasce sono contigue dal posto 1): la franchigia finisce dove comincia la prima fascia a pagamento. Listino assente = errore esplicito (`NoSeatPricingVersionException`), non franchigia zero: indovinare vorrebbe dire scrivere una quantità sbagliata sull'abbonamento di un cliente.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeExecutor.java",
+        "description": "`freeSeats(Connection, Instant)` con le due interrogazioni `PRICING_VERSION` e `FIRST_PAID_SEAT`; il commento dichiara la duplicazione e la ragione."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La quantità dell'abbonamento dei posti, all'esecuzione, si RICALCOLA dai posti effettivamente occupati (posti occupati meno franchigia) e non si decrementa del numero di persone indicate. È la scelta che rende l'esecuzione ripetibile senza danni: un decremento applicato due volte lascerebbe l'account a pagare MENO del dovuto — l'errore nel verso in cui nessuno lo scopre, perché nessun cliente segnala di aver pagato poco. Lo prova un collaudo che esegue due volte e confronta il valore.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeExecutor.java",
+        "description": "`paidSeatsAfter` + `LOWER_QUANTITY`: si scrive un valore assoluto, mai una differenza."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) L'idempotenza dell'esecuzione è ottenuta passo per passo e non con un lucchetto: la chiusura delle appartenenze e la revoca degli accessi hanno `deleted_at is null` nella condizione (una riga già cancellata non si ricancella, e la data della prima cancellazione resta quella vera), la quantità si scrive assoluta, la chiusura della riduzione è condizionata allo stato `pending` (la seconda esecuzione non trova nulla da chiudere). L'ordine è persone → accessi → quantità → chiusura, tutto nella stessa transazione: interrompendosi nel mezzo non si applica nulla e la riduzione resta in attesa con la data passata — cioè nello stato che la misura rende visibile."
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) L'ORDINE COL RINNOVO è presidiato dentro `SubscriptionWriter`: quando arriva un evento del fornitore per l'abbonamento dei POSTI, la riduzione dovuta si esegue PRIMA che l'evento riscriva il periodo, sulla stessa connessione e nella stessa transazione. Il piano di lavoro chiedeva di decidere leggendo `PaddleWebhookConsumer`: la lettura dice che gli eventi arrivano da una coda drenata in modo asincrono e lo spazzino gira ogni ora, quindi l'ordine fra i due NON è garantito — e nell'ordine sbagliato il cliente pagherebbe un mese intero alla quantità vecchia. Si è scelto di tenere ENTRAMBI i percorsi con un solo punto di esecuzione idempotente: lo spazzino è il meccanismo di oggi (l'abbonamento dei posti non riceve alcun evento dal fornitore, perché il prodotto presso il fornitore non esiste ancora — prerequisito #14), il presidio nel writer è quello che continuerà a funzionare quando quegli eventi arriveranno. Metterlo dopo avrebbe voluto dire che nessuno si ricordava di metterlo.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/SubscriptionWriter.java",
+        "description": "In `applyEffect`, prima dell'upsert dell'abbonamento: se l'evento riguarda la voce di piattaforma dei posti, `seatDowngrades.execute(c, tenant, now)`."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) La MISURA «riduzioni scadute e non eseguite» esiste come strumentazione di piattaforma (`appgrove.seats.reduction.overdue`), senza dimensioni per account (regola dei due piani, #08 30-31), con avviso di severità alta sopra zero e un testo che dice la conseguenza — «quegli account stanno pagando posti che credevano chiusi» — e non «contatore diverso da zero». Non è un extra: una riduzione non eseguita è invisibile da ogni altro punto di osservazione (il cliente non riceve errori, la schermata mostra una data passata) e senza la misura il primo a scoprirlo è il cliente dalla fattura. Non esiste uno stato «scaduta» nell'enumerazione, deliberatamente: uno stato dedicato la renderebbe un fatto normale invece di un guasto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeMetrics.java",
+        "description": "Rilevazione periodica sfasata di 5 minuti rispetto allo spazzino: si misura DOPO che il giro di esecuzione ha avuto la sua occasione, altrimenti si misurerebbe la coda invece del ritardo."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Senza abbonamento dei posti la riduzione NON si programma: rifiuto tipizzato `urn:appgrove:seats:reduction-not-needed`, con un testo che indirizza alla rimozione immediata (immediata e gratuita). Ragione: un account interamente dentro la franchigia non otterrebbe alcun risparmio programmando una cessazione per fine periodo, e si vedrebbe negare gli inviti per un mese in cambio di niente. È la lettura letterale della precondizione dello use case §3 («esiste l'abbonamento di piattaforma con la sua quantità e la data di fine periodo»). Il limite di validità di questa scelta è tracciato nei punti aperti dello use case, con UC 0105 come proprietario."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) La data di esecuzione è `platform.subscription.current_period_end` dell'abbonamento dei posti — non «fra un mese» e non «a fine mese solare»: il periodo è quello che l'abbonamento porta scritto, e la fine di quel periodo è l'unico istante in cui il posto smette di essere stato pagato. Se il periodo mancasse (non può accadere: si scrive alla creazione) si solleva invece di inventare una data, perché una riduzione con la data sbagliata si esegue nel mese sbagliato."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) I rifiuti della riduzione sono LECITI e TIPIZZATI: `409` con un identificativo stabile nel campo `type` del corpo problem+json (owner non indicabile, riduzione già in attesa, nulla da ridurre, persona sconosciuta, nessuna riduzione da annullare). Il codice è 409 e non 403 perché sono conflitti con lo stato dell'account e non mancanze di permesso — chi chiede è proprio l'owner, che di permessi ne ha tutti. Gli identificativi sono contratto: servono all'interfaccia per mostrare cinque testi diversi in cinque lingue senza interpretare un messaggio italiano.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeRefusedException.java",
+        "description": "I cinque identificativi stabili, ognuno con il suo commento sul perché quel rifiuto esiste."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Il varco sull'invito è stato aggiunto NEL PUNTO ESATTO che la change 0098 aveva segnato con un commento in `InvitationResource.create` — passo (3), subito dopo il controllo sullo stato dell'account e prima di ogni calcolo e di ogni addebito. Rifiuto `409` tipizzato `urn:appgrove:seats:reduction-pending` con un testo che offre DUE VIE D'USCITA (annullare la riduzione, oppure attendere la data): un rifiuto senza uscita è un vicolo cieco, e lo use case §5 insiste che il messaggio lo dica. Il presidio è nel servizio e non nel comando spento a schermo, perché un divieto che vive solo nell'interfaccia si aggira con una richiesta diretta.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/InvitationResource.java",
+        "description": "Passo (3) della sequenza ordinata: da commento a rifiuto vero. Il commento di classe non nomina più UC 0104 come lavoro futuro."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) `SeatCount` NON è stato toccato, ed è la conferma di una previsione della change 0098: il conteggio dei posti è scritto sull'ESISTENZA dell'appartenenza e non sull'elenco dei suoi stati, quindi le persone in cessazione continuano a occupare — e a costare — il loro posto senza che il conteggio debba sapere che quello stato esiste. È esattamente il caso che quella scelta di scrittura doveva coprire, e lo copre."
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) `GET /me/seats` porta il DETTAGLIO della riduzione (campo `reduction`) accanto al booleano `pendingReduction`, invece di lasciare all'interfaccia una seconda chiamata. Il booleano resta un campo a sé e non un semplice «reduction != null»: è la domanda che fanno sia il rifiuto dell'invito sia l'interfaccia, e una condizione esplicita non si sbaglia a leggere. Il campo dedicato serve anche a un caso concreto: se il dettaglio arrivasse incompleto, l'interfaccia smette di disegnare l'avviso ma NON smette di impedire l'invito.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDtos.java",
+        "description": "`SeatSummaryView.reduction`, facoltativo; il campo `pendingReduction` passa da «oggi sempre falso» a fatto vero."
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) La composizione degli scaglioni («da 7 × 2,99 + 2 × 1,99 a 6 × 2,99») è calcolata dal SERVIZIO, con una funzione pura nuova `SeatPricing.breakdown`, e non ricomposta dall'interfaccia. È la stessa regola di UC 0103 applicata a un numero in più: se l'interfaccia calcolasse anche un solo importo, quello sarebbe l'unico che il cliente vede e nessun collaudo del servizio lo proverebbe. Le fasce vuote non compaiono (una riga «0 × 1,99 €» non è informazione); quelle a tariffa zero sì, perché «3 posti compresi» è una parte del conto che chi legge vuole ritrovare.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricing.java",
+        "description": "`breakdown(int, SeatPricingVersion)` e il record `SeatBandUsage`: funzione pura, come il resto del calcolo."
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) L'effetto prima della conferma è una LETTURA (`GET /me/seats/reduction/preview?userId=…&userId=…`) e non una mutazione: si ripete a ogni casella spuntata e non crea nulla, e un POST per ottenere una stima avrebbe reso impossibile riconoscerla come innocua da fuori. La stima IGNORA le persone che non appartengono all'account invece di rifiutare — la selezione a schermo può essere diventata vecchia — mentre la richiesta vera rifiuta: lì il rigore serve, perché lì si crea uno stato."
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Lo stato «in cessazione» viaggia sulla riga della persona come CAMPO DATA (`UserView.endingAt`) e non come quarto valore di `status`. Ragione: la cessazione programmata e la sospensione sono ortogonali (use case §5, «sono cose ortogonali: una riguarda l'accesso, l'altra il posto») e una persona può essere entrambe — con un quarto valore di stato una delle due informazioni sarebbe sparita dalla schermata e il comando «riattiva» avrebbe smesso di sapere se la persona era sospesa. L'interfaccia mostra due etichette quando i due stati convivono. Questa è una precisazione rispetto a come il rimando della change 0096 era stato scritto, e sta annotata anche là.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserDtos.java",
+        "description": "`UserView.endingAt`, facoltativo, valorizzato solo nelle letture di governo dell'account."
+      },
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/roster.ts",
+        "description": "Quarto stato `ending` per l'etichetta, più `suspended` come campo a sé e `selectable` per il gating della casella di scelta."
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) La riduzione in attesa si legge UNA VOLTA per richiesta nell'elenco delle persone, non una volta per riga: è un atto dell'account con una data comune, e interrogarla per persona sarebbe N interrogazioni per ottenere N copie dello stesso valore. È la stessa disciplina già applicata all'indice «persona → applicazioni» nella change della sezione «Members».",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/platform/UserResource.java",
+        "description": "`reductions.pendingSummary()` chiamato una volta e passato a `view(...)`; l'appartenenza indicata riceve la data comune."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) La rimozione IMMEDIATA di una persona già indicata toglie anche la sua riga fra gli indicati, e se era l'ultima chiude l'attesa da sé — con un metodo indulgente (`removeIfIndicated`) che non rifiuta nulla se la persona non era indicata. Ragione: la rimozione immediata è un'operazione diversa e più forte, che ha già ottenuto l'effetto; e un'attesa senza nessuno da cessare bloccherebbe gli inviti senza ridurre niente, che è il peggiore dei due mondi. Il posto resta pagato fino a scadenza, senza rimborso, come sempre in questa epica. L'esito è registrato nell'evento di audit `member.removed` (`was_indicated_for_reduction`)."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) Il comando che toglie una persona dall'elenco degli indicati si chiama «Mantieni» e non «Rimuovi», e non ha un dialogo di conferma. Ragione: l'atto AGGIUNGE una persona all'account, non la toglie — un'etichetta distruttiva su un'azione che salva qualcuno è la peggiore delle ambiguità, e chiedere conferma per un atto non distruttivo insegna la paura sbagliata. L'annullamento dell'intera riduzione invece ha la conferma (lo use case §6 la chiede esplicitamente) ma con tono neutro, non distruttivo."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) Il comando «indica per la cessazione» compare solo quando c'è almeno una persona selezionata, invece di stare sempre lì e sempre spento: un pulsante permanentemente disabilitato non insegna a chi non ha capito che prima si scelgono le persone. Ed è bloccato finché la STIMA non è arrivata, con la stessa regola dell'invito di UC 0103: non si conferma un cambio di importo senza averlo visto."
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Il testo dell'interfaccia suggerisce la combinazione «togli gli accessi alle applicazioni + indica per la cessazione» a chi deve escludere qualcuno subito, come lo use case §5 chiede esplicitamente. È la domanda che l'owner si farà, e la risposta non è la cessazione programmata (che aspetta la fine del mese)."
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) La conversione della riduzione nella forma stretta lato interfaccia (`readReduction`) tratta «incompleta» come «assente», mentre `readSeats` tratta «incompleta» come «errore». La differenza è deliberata: il fatto che governa il divieto di invitare è `pendingReduction`, quindi il presidio non si perde; quello che si perde è il dettaglio, e la reazione giusta è non mostrare un avviso a metà («2 persone cesseranno il undefined»), non spegnere tutta la sezione. Le righe incomplete della composizione si scartano invece di comparire a zero.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/src/pages/members/seats.ts",
+        "description": "`readReduction` e `readBands`, con il commento che dichiara la differenza di postura rispetto a `readSeats`."
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) La chiave della lettura della stima ordina gli identificativi selezionati: la stessa selezione fatta in due ordini diversi è la stessa domanda e deve avere la stessa chiave, altrimenti si paga una chiamata per ogni ordine in cui le caselle sono state spuntate."
+  },
+  {
+    "id": 29,
+    "decision": "(autopilot) Classificazione privacy: **MINORE**, senza ri-accettazione dei documenti legali. Due campi nuovi, entrambi identificativi online: `seat_downgrade_item.identity_id` (la persona indicata) e `seat_downgrade.requested_by` (chi l'ha chiesta). Nessuna categoria particolare (art. 9) — è un dato di gestione del rapporto, non un giudizio sulla persona; base giuridica invariata (contratto con l'account titolare, art. 6.1.b); nessun responsabile esterno nuovo; nessun dato verso l'esterno (al fornitore di pagamento va la quantità dell'abbonamento, mai l'elenco delle persone). Manifesto aggiornato nelle due lingue, registro dei trattamenti rigenerato, annotazioni `@PersonalData` sulle entità, esportazione e purga estese.",
+    "files": [
+      {
+        "file": "docs/compliance/manifests/platform.yaml",
+        "description": "Due voci nuove con natura, finalità, base giuridica e conservazione nelle due lingue; la voce della persona indicata dichiara anche che nessun avviso automatico le viene inviato."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/gdpr/PlatformDataContract.java",
+        "description": "Esportazione (`seat_reductions`, `seat_reduction_people`) e purga fisica nell'ordine giusto rispetto alle chiavi esterne: le persone indicate prima dell'atto, entrambe prima delle identità."
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "decision": "(autopilot) I due campi personali nuovi si esportano SENZA restrizioni particolari, a differenza di `invitations.identity_id` (ristretto agli inviti accettati, UC 0118). Ragione: l'account che esporta è lo stesso che ha deciso la cessazione, quindi l'esportazione non gli rivela nulla che non sappia già. La scelta ha avuto un effetto immediato e utile: il collaudo di contratto GDPR (`PlatformGdprContractTest`) è diventato rosso finché le due tabelle non sono entrate nell'esportazione, ed è il presidio che rende impossibile dichiarare un campo personale e dimenticarsi di esportarlo."
+  },
+  {
+    "id": 31,
+    "decision": "(autopilot) NESSUN avviso automatico per email alla persona indicata, come il punto aperto dello use case proponeva: comunicare una cessazione spetta al datore di lavoro, non alla piattaforma. La scelta è dichiarata nel manifesto dati e il dubbio residuo di trasparenza verso l'interessato (art. 13/14) è tracciato come voce **L19** in docs/_REVISIONE-LEGALE.md, insieme alla conservazione della traccia di una riduzione annullata e all'assenza di rimborso.",
+    "files": [
+      {
+        "file": "docs/_REVISIONE-LEGALE.md",
+        "description": "Voce L19, tre punti da far confermare a un legale prima del go-live."
+      }
+    ]
+  },
+  {
+    "id": 32,
+    "decision": "(autopilot) Copertura end-to-end: si COPRE ORA. Lo use case 0104 esce dall'esenzione `non-implementato` ed entra fra quelli con superficie; il percorso `J-SEATS` è stato ESTESO — non ne è nato uno nuovo — perché il registro stesso prescriveva «da coprire estendendo J-SEATS, che la change 0098 ha creato per l'acquisto», e perché acquisto e riduzione sono i due versi dello stesso riquadro: separarli avrebbe richiesto di riallestire due volte lo stesso stato simulato. Il percorso nuovo prova i quattro momenti nell'ordine della storia: indica con l'effetto prima della conferma → avviso e stato «in cessazione dal …» → invito impedito con la via d'uscita → annullamento che riapre l'invito.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "0104 fra gli use case con superficie; J-SEATS con titolo esteso e `usecases: [\"0103\", \"0104\"]`; esenzione di 0104 rimossa."
+      },
+      {
+        "file": "frontend/apps/backoffice/e2e/seats.spec.ts",
+        "description": "Terzo percorso `[J-SEATS]`, e lo stato simulato dei posti che ora porta anche l'elenco degli indicati."
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "decision": "(autopilot) `run-tests.sh` NON è stato modificato: nessun modulo è stato aggiunto o rimosso (le classi nuove stanno in `services/core`, i file nuovi dell'interfaccia in `frontend/apps/backoffice`, entrambi già coperti dai caratteri jolly dello script) e nessun comando d'area è cambiato. La verifica del Definition of Done è quindi «non necessario», non «dimenticato»."
+  },
+  {
+    "id": 34,
+    "decision": "(autopilot) Tre collaudi preesistenti sono stati aggiornati perché la realtà è cambiata, non per farli passare: `PlatformGdprContractTest` semina una riduzione (altrimenti pretenderebbe l'esportazione di una tabella vuota), `GdprExportApiTest` conta ora otto passi di raccolta invece di sette (la raccolta delle riduzioni è un passo nuovo e visibile a chi esporta), e nella schermata dei membri le prove sulle colonne e sull'owner in testa tengono conto della colonna di selezione — che ha un'intestazione non visibile ma con un nome per chi naviga con lettore di schermo, perché un'intestazione vuota sarebbe un'omissione."
+  },
+  {
+    "id": 35,
+    "decision": "(autopilot) Guida di collaudo manuale `how-to-test.md` scritta E i suoi passi non visivi eseguiti prima del commit, contro lo stack locale. Esito e discriminazione di ogni fallimento sono dichiarati nella guida e nel log di implementazione."
+  },
+  {
+    "id": 36,
+    "decision": "(autopilot) DIFETTO DI PRODOTTO trovato eseguendo la guida di collaudo (§9) e corretto: all'esecuzione di una riduzione le righe delle persone indicate NON venivano chiuse — l'istruzione che sembrava farlo aggiornava soltanto `updated_at`. La conseguenza osservata: una riduzione già eseguita lasciava una persona «indicata» viva in banca dati. La regola è stata resa unica per tutti i modi in cui una riduzione finisce: una riduzione che non è più in attesa non ha persone indicate vive — vale per l'annullamento (che passa dal servizio) e per l'esecuzione (che passa dall'esecutore). Nessuna informazione si perde, perché l'esportazione dei dati personali legge anche le righe cancellate logicamente (art. 15). La guida NON è stata ammorbidita: il passo è rimasto quello che era ed è stato rieseguito a correzione fatta.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatDowngradeExecutor.java",
+        "description": "`CLOSE_ITEMS` ora valorizza `deleted_at`, con `deleted_at is null` nella condizione per restare ripetibile."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatDowngradeExecutionTest.java",
+        "description": "Asserzione nuova: dopo l'esecuzione nessuna persona resta indicata. È il presidio che impedisce il ritorno del difetto."
+      }
+    ]
+  },
+  {
+    "id": 37,
+    "decision": "(autopilot) La suite completa ha reso rosso anche il percorso end-to-end `L2-MEMBERS`, che pretendeva l'elenco esatto delle intestazioni di colonna: la colonna di selezione ne aggiunge una. L'asserzione è stata AGGIORNATA e non allentata — continua a pretendere l'elenco esatto, con la nuova intestazione in testa — perché quel collaudo esiste per vietare il ritorno della colonna del ruolo, e un `toHaveText` sostituito da un confronto parziale avrebbe smesso di farlo.",
+    "files": [
+      {
+        "file": "frontend/apps/backoffice/e2e/members.spec.ts",
+        "description": "Elenco delle intestazioni con la colonna di selezione, e il commento che spiega perché ha un nome non visibile."
+      }
+    ]
+  },
+  {
+    "id": 38,
+    "decision": "(autopilot) `./run-tests.sh` senza parametri: VERDE su tutte le otto aree (backend, frontend, infra, compliance, tooling, smoke, platform, site). È il cancello della modalità fast, e il commit è avvenuto solo dopo. Nota operativa: al primo giro le aree `frontend` e `platform` erano rosse — la prima per l'asserzione della decisione 37, la seconda per un'interferenza transitoria con lo stack locale acceso durante il collaudo manuale; rieseguite, entrambe verdi."
+  }
+]

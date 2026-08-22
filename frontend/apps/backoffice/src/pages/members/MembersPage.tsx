@@ -2,19 +2,23 @@ import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ApiError, type UserAppView } from '@appgrove/api-client'
-import { Badge, Button, Card, CardContent, CardHeader } from '@appgrove/design-system'
+import { ApiError, type SeatReductionPreview, type UserAppView } from '@appgrove/api-client'
+import { Badge, Button, Card, CardContent, CardHeader, Checkbox } from '@appgrove/design-system'
 import { useTranslation } from '@appgrove/i18n'
 import { useConfig } from '../../config'
 import { sendInvitation } from '../../auth/authApi'
 import { inviteSchema, type TFn } from '../../auth/schemas'
 import {
+  useCancelSeatReduction,
   useCreateInvitation,
   useCurrentUser,
   useInvitations,
   useMembers,
+  useRemoveFromSeatReduction,
   useRemoveMember,
+  useRequestSeatReduction,
   useRevokeInvitation,
+  useSeatReductionPreview,
   useSeats,
   useUpdateMember,
 } from '../../api/hooks'
@@ -44,14 +48,33 @@ import { buildRoster, type RosterRow } from './roster'
  * L'enforcement vero è nel core (`@RolesAllowed(owner)` su persone e inviti); il gating qui è cortesia.
  */
 
-const statusBadge = (t: TFn, row: RosterRow) => {
+/**
+ * Lo stato di una riga, come etichette. **Possono essere due**: la cessazione programmata e la
+ * sospensione sono ortogonali (una riguarda il posto, l'altra l'accesso — UC 0104 §5), e una persona può
+ * essere entrambe. Mostrarne una sola avrebbe fatto sparire l'altra dalla schermata.
+ *
+ * L'etichetta della cessazione porta **la data** e ha tono attenuato: la persona sta lavorando
+ * normalmente, e un rosso allarmante accanto al nome di un collega sarebbe fuori misura.
+ */
+const statusBadges = (t: TFn, row: RosterRow, locale: string) => {
   if (row.status === 'invited') {
-    return <Badge tone="info">{t('members.statusInvited')}</Badge>
+    return [<Badge key="invited" tone="info">{t('members.statusInvited')}</Badge>]
   }
-  if (row.status === 'suspended') {
-    return <Badge tone="warning">{t('members.statusSuspended')}</Badge>
+  const badges = []
+  if (row.endingAt) {
+    badges.push(
+      <Badge key="ending" tone="neutral">
+        {t('members.statusEnding', { date: formatDate(row.endingAt, locale) })}
+      </Badge>,
+    )
   }
-  return <Badge tone="success">{t('members.statusActive')}</Badge>
+  if (row.suspended) {
+    badges.push(<Badge key="suspended" tone="warning">{t('members.statusSuspended')}</Badge>)
+  }
+  if (badges.length === 0) {
+    badges.push(<Badge key="active" tone="success">{t('members.statusActive')}</Badge>)
+  }
+  return badges
 }
 
 const formatDate = (iso: string | undefined, locale: string) =>
@@ -68,7 +91,7 @@ const formatDate = (iso: string | undefined, locale: string) =>
  * esattamente come per un indirizzo sconosciuto: qui non c'è nulla da distinguere, ed è voluto. La
  * tentazione tornerà a ogni revisione di questa pagina.
  */
-function inviteErrorMessage(err: unknown, t: TFn): string {
+function inviteErrorMessage(err: unknown, t: TFn, blockedUntil?: string): string {
   // UC 0103 — l'addebito del posto è stato rifiutato: l'invito NON è stato creato. Il motivo lo dà il
   // fornitore di pagamento e viaggia nel corpo del rifiuto: si mostra così com'è, perché è l'unica
   // informazione con cui chi ha invitato può rimediare («carta scaduta» si rimedia in due minuti,
@@ -82,6 +105,11 @@ function inviteErrorMessage(err: unknown, t: TFn): string {
   }
   if (err instanceof ApiError && err.status === 409) {
     switch (err.problem?.type) {
+      // UC 0104 — c'è una riduzione programmata. Il testo offre le DUE vie d'uscita, ed è la parte che
+      // conta: un rifiuto senza uscita è un vicolo cieco. La data arriva dal riquadro, non dal messaggio
+      // del server: qui si compone il testo tradotto con il dato che l'interfaccia ha già.
+      case 'urn:appgrove:seats:reduction-pending':
+        return t('seats.reductionInviteBlocked', { date: blockedUntil ?? '' })
       case 'urn:appgrove:invitation:already-member':
         return t('members.emailAlreadyMemberOnly')
       case 'urn:appgrove:invitation:already-invited':
@@ -90,6 +118,30 @@ function inviteErrorMessage(err: unknown, t: TFn): string {
         // Rifiuto 409 senza identificativo (versione precedente del servizio): il messaggio storico,
         // che copre entrambi i casi senza mentire.
         return t('members.emailAlreadyMember')
+    }
+  }
+  return t('errors.generic')
+}
+
+/**
+ * I rifiuti **leciti** della riduzione dei posti (UC 0104 §5), riconosciuti dall'identificativo stabile e
+ * non dal messaggio del server — che è in italiano, mentre questa interfaccia parla cinque lingue.
+ *
+ * Ognuno dice anche *che cosa fare invece*, e non è un ornamento: «non stai pagando alcun posto» senza
+ * «rimuovila dall'elenco, è gratuito» lascia l'owner davanti a una porta chiusa senza dirgli che accanto
+ * ce n'è una aperta.
+ */
+function reductionErrorMessage(err: unknown, t: TFn): string {
+  if (err instanceof ApiError && err.status === 409) {
+    switch (err.problem?.type) {
+      case 'urn:appgrove:seats:reduction-owner':
+        return t('seats.markErrorOwner')
+      case 'urn:appgrove:seats:reduction-already-pending':
+        return t('seats.markErrorAlreadyPending')
+      case 'urn:appgrove:seats:reduction-not-needed':
+        return t('seats.markErrorNotNeeded')
+      default:
+        return t('seats.markError')
     }
   }
   return t('errors.generic')
@@ -125,6 +177,81 @@ function seatEstimate(t: TFn, language: string, seats: Seats | null): string | n
   })
 }
 
+/**
+ * La frase dell'**effetto della cessazione programmata** (UC 0104 §4.2): «cesseranno il 14 settembre; dal
+ * 15 pagherai 17,94 € invece di 24,91 €».
+ *
+ * Nessuna aritmetica: la data, i posti risultanti e i due importi arrivano dal servizio. Quando la data di
+ * esecuzione manca — l'account non paga alcun posto, quindi non c'è un periodo a cui agganciarsi — non si
+ * inventa: si dice che non c'è nulla da ridurre e si indica la via giusta, che è la rimozione immediata.
+ */
+function markEstimate(t: TFn, language: string, preview: SeatReductionPreview): string {
+  if (!preview.executeAt) {
+    return t('seats.markErrorNotNeeded')
+  }
+  return t('seats.markConfirmBody', {
+    date: formatDate(preview.executeAt, language),
+    from: formatPrice(preview.dueCentsNow ?? 0, preview.currency ?? 'EUR', language),
+    to: formatPrice(preview.dueCentsAfter ?? 0, preview.currency ?? 'EUR', language),
+  })
+}
+
+/** La chiave del titolo del dialogo di conferma, per ciascuno dei quattro atti che ne hanno bisogno. */
+function confirmTitleKey(confirm: Confirm) {
+  switch (confirm.kind) {
+    case 'remove':
+      return 'members.confirmRemoveTitle' as const
+    case 'revoke':
+      return 'members.confirmRevokeTitle' as const
+    case 'mark':
+      return 'seats.markConfirmTitle' as const
+    case 'cancelReduction':
+      return 'seats.reductionCancelTitle' as const
+    default:
+      return 'members.confirmSuspendTitle' as const
+  }
+}
+
+/** La chiave dell'etichetta del pulsante che conferma. */
+function confirmActionKey(confirm: Confirm) {
+  switch (confirm.kind) {
+    case 'remove':
+      return 'members.remove' as const
+    case 'revoke':
+      return 'members.revoke' as const
+    case 'mark':
+      return 'seats.markSubmit' as const
+    case 'cancelReduction':
+      return 'seats.reductionCancel' as const
+    default:
+      return 'members.suspend' as const
+  }
+}
+
+/**
+ * Il corpo del dialogo. Per la cessazione programmata **è la stima**: si conferma leggendo l'effetto, non
+ * una domanda generica — «vuoi procedere?» davanti a un cambio di importo non è una conferma informata.
+ */
+function confirmBody(
+  confirm: Confirm,
+  t: TFn,
+  language: string,
+  preview: SeatReductionPreview | undefined,
+): string {
+  switch (confirm.kind) {
+    case 'remove':
+      return t('members.confirmRemoveBody', { email: confirm.row.email })
+    case 'revoke':
+      return t('members.confirmRevokeBody', { email: confirm.row.email })
+    case 'mark':
+      return preview ? markEstimate(t, language, preview) : t('seats.markPreviewLoading')
+    case 'cancelReduction':
+      return t('seats.reductionCancelBody')
+    default:
+      return t('members.confirmSuspendBody')
+  }
+}
+
 interface InviteSuccess {
   email: string
   link: string
@@ -134,6 +261,10 @@ interface InviteSuccess {
 type Confirm =
   | { kind: 'suspend' | 'remove'; row: RosterRow }
   | { kind: 'revoke'; row: RosterRow }
+  /** Conferma della cessazione programmata: il corpo del dialogo è l'**effetto** (UC 0104 §4.2). */
+  | { kind: 'mark' }
+  /** Conferma dell'annullamento dell'attesa. */
+  | { kind: 'cancelReduction' }
 
 /**
  * Il dettaglio delle applicazioni di una persona, in **sola lettura**.
@@ -175,6 +306,9 @@ export function MembersPage() {
   const revokeInvitation = useRevokeInvitation()
   const updateMember = useUpdateMember()
   const removeMember = useRemoveMember()
+  const requestReduction = useRequestSeatReduction()
+  const cancelReduction = useCancelSeatReduction()
+  const keepPerson = useRemoveFromSeatReduction()
 
   const [invite, setInvite] = useState<InviteSuccess | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
@@ -183,6 +317,16 @@ export function MembersPage() {
   const [copied, setCopied] = useState(false)
   /** Righe con il dettaglio delle applicazioni aperto (chiave della riga). */
   const [expanded, setExpanded] = useState<string[]>([])
+  /**
+   * Le persone selezionate per la cessazione (identificativi). Vive qui e non nelle righe perché la
+   * selezione è **una scelta in corso**, non uno stato del gruppo di lavoro: si perde ricaricando, e va
+   * bene così.
+   */
+  const [selected, setSelected] = useState<string[]>([])
+
+  // La stima dell'effetto: dipende dalla selezione, quindi è l'unica lettura della sezione che cambia
+  // a ogni casella spuntata. È una lettura e non un atto — chiederla non programma nulla.
+  const preview = useSeatReductionPreview(selected)
 
   const roster = useMemo(
     () =>
@@ -222,7 +366,7 @@ export function MembersPage() {
       setInvite({ email: values.email, link, emailed })
       form.reset({ email: '' })
     } catch (err) {
-      setInviteError(inviteErrorMessage(err, t))
+      setInviteError(inviteErrorMessage(err, t, blockedUntil))
     }
   })
 
@@ -246,15 +390,33 @@ export function MembersPage() {
         await revokeInvitation.mutateAsync(confirm.row.id)
       } else if (confirm.kind === 'remove') {
         await removeMember.mutateAsync(confirm.row.id)
+      } else if (confirm.kind === 'mark') {
+        await requestReduction.mutateAsync(selected)
+        setSelected([])
+      } else if (confirm.kind === 'cancelReduction') {
+        await cancelReduction.mutateAsync()
       } else {
         await onToggleStatus(confirm.row)
       }
       setConfirm(null)
-    } catch {
-      setActionError(t('errors.generic'))
+    } catch (err) {
+      setActionError(reductionErrorMessage(err, t))
       setConfirm(null)
     }
   }
+
+  /** Toglie una singola persona dall'elenco degli indicati. Senza conferma: è l'atto che *salva* qualcuno. */
+  const onKeepPerson = async (userId: string) => {
+    setActionError(null)
+    try {
+      await keepPerson.mutateAsync(userId)
+    } catch (err) {
+      setActionError(reductionErrorMessage(err, t))
+    }
+  }
+
+  const toggleSelected = (id: string) =>
+    setSelected((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
 
   const copyLink = async (link: string) => {
     try {
@@ -280,11 +442,27 @@ export function MembersPage() {
 
   const inviteEstimate = seatEstimate(t, i18n.language, seatSummary)
 
+  /** La data fino alla quale gli inviti sono impediti, già formattata: entra nel testo del divieto. */
+  const blockedUntil = seatSummary?.reduction
+    ? formatDate(seatSummary.reduction.executeAt, i18n.language)
+    : undefined
+
   const busy =
     createInvitation.isPending ||
     revokeInvitation.isPending ||
     updateMember.isPending ||
-    removeMember.isPending
+    removeMember.isPending ||
+    requestReduction.isPending ||
+    cancelReduction.isPending ||
+    keepPerson.isPending
+
+  /**
+   * La selezione si può indicare quando ci sono persone scelte, non c'è già un'attesa in corso, e la
+   * **stima è arrivata**: si conferma una cessazione solo dopo aver visto che effetto ha, come per
+   * l'invito non si conferma senza aver visto il costo.
+   */
+  const markBlocked =
+    selected.length === 0 || !!seatSummary?.pendingReduction || !preview.data || preview.isError
 
   const th =
     'border-b border-line py-2.5 pr-4 text-[11px] font-bold uppercase tracking-[.05em] text-fg-faint'
@@ -306,6 +484,9 @@ export function MembersPage() {
         // sappiamo quanto costa il posto, e in entrambi i casi non si invita.
         isError={seats.isError || (!seats.isLoading && !seatSummary)}
         onRetry={() => void seats.refetch()}
+        onCancelReduction={() => setConfirm({ kind: 'cancelReduction' })}
+        onKeepPerson={(userId) => void onKeepPerson(userId)}
+        busy={busy}
       />
 
       {actionError && (
@@ -391,9 +572,47 @@ export function MembersPage() {
       {/* Elenco UNICO: persone e inviti in attesa nella stessa tabella, l'owner in testa. */}
       <Card>
         <CardHeader>
-          <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
-            {t('members.rosterHeading')}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-sans text-lg font-extrabold tracking-tight text-fg">
+              {t('members.rosterHeading')}
+            </h2>
+            {/* Il comando della cessazione programmata (UC 0104): compare solo con qualcuno selezionato,
+                perché un pulsante «indica per la cessazione» sempre presente e sempre spento non
+                insegna niente a chi non ha capito che prima si scelgono le persone. */}
+            {selected.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[12.5px] text-fg-muted">
+                  {t('seats.markSelected', { count: selected.length })}
+                </span>
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={busy || markBlocked}
+                  onClick={() => setConfirm({ kind: 'mark' })}
+                >
+                  {t('seats.markSubmit')}
+                </Button>
+              </div>
+            )}
+          </div>
+          {/* La stima appare accanto alla selezione, PRIMA di aprire la conferma: chi sta per far
+              cessare tre persone deve vedere l'effetto senza dover cliccare un pulsante distruttivo
+              per scoprirlo. */}
+          {selected.length > 0 && (
+            <p role="status" className="mt-2 text-[12.5px] text-fg">
+              {preview.isLoading
+                ? t('seats.markPreviewLoading')
+                : preview.isError || !preview.data
+                  ? t('seats.markPreviewError')
+                  : markEstimate(t, i18n.language, preview.data)}
+            </p>
+          )}
+          {/* La combinazione utile a chi vuole escludere qualcuno SUBITO: è la domanda che l'owner si
+              farà, e la risposta non è «indica per la cessazione» (che aspetta la fine del mese). */}
+          {selected.length > 0 && (
+            <p className="mt-1.5 text-[12px] text-fg-muted">{t('seats.markHintAppAccess')}</p>
+          )}
         </CardHeader>
         <CardContent>
           <QueryState
@@ -411,6 +630,12 @@ export function MembersPage() {
                 <table className="w-full text-left text-[13px]">
                   <thead>
                     <tr>
+                      {/* Colonna di selezione: senza intestazione visibile ma con un nome per chi
+                          naviga con lettore di schermo. Un'intestazione vuota è un'omissione; una
+                          nascosta è una scelta. */}
+                      <th scope="col" className={`${th} w-8`}>
+                        <span className="sr-only">{t('seats.markSubmit')}</span>
+                      </th>
                       <th scope="col" className={th}>{t('members.colEmail')}</th>
                       <th scope="col" className={th}>{t('members.colName')}</th>
                       <th scope="col" className={th}>{t('members.colStatus')}</th>
@@ -424,11 +649,21 @@ export function MembersPage() {
                       const open = expanded.includes(row.key)
                       return [
                         <tr key={row.key} className="border-b border-line last:border-b-0">
+                          <td className="py-2 pr-2">
+                            {row.selectable && (
+                              <Checkbox
+                                checked={selected.includes(row.id)}
+                                disabled={busy || !!seatSummary?.pendingReduction}
+                                aria-label={t('seats.selectLabel', { email: row.email })}
+                                onChange={() => toggleSelected(row.id)}
+                              />
+                            )}
+                          </td>
                           <td className="py-2 pr-4">{row.email}</td>
                           <td className="py-2 pr-4 text-fg-muted">{row.displayName ?? '—'}</td>
                           <td className="py-2 pr-4">
                             <div className="flex flex-col gap-0.5">
-                              {statusBadge(t, row)}
+                              {statusBadges(t, row, i18n.language)}
                               {row.status === 'invited' && (
                                 <span className="text-[11.5px] text-fg-faint">
                                   {t('members.inviteExpiresOn', {
@@ -519,7 +754,7 @@ export function MembersPage() {
                         </tr>,
                         open ? (
                           <tr key={`${row.key}:apps`} className="border-b border-line bg-surface-2">
-                            <td colSpan={6} className="px-1 py-2.5">
+                            <td colSpan={7} className="px-1 py-2.5">
                               <AppsDetail row={row} t={t} />
                             </td>
                           </tr>
@@ -536,27 +771,12 @@ export function MembersPage() {
 
       {confirm && (
         <ConfirmDialog
-          title={t(
-            confirm.kind === 'remove'
-              ? 'members.confirmRemoveTitle'
-              : confirm.kind === 'revoke'
-                ? 'members.confirmRevokeTitle'
-                : 'members.confirmSuspendTitle',
-          )}
-          body={
-            confirm.kind === 'remove'
-              ? t('members.confirmRemoveBody', { email: confirm.row.email })
-              : confirm.kind === 'revoke'
-                ? t('members.confirmRevokeBody', { email: confirm.row.email })
-                : t('members.confirmSuspendBody')
-          }
-          confirmLabel={t(
-            confirm.kind === 'remove'
-              ? 'members.remove'
-              : confirm.kind === 'revoke'
-                ? 'members.revoke'
-                : 'members.suspend',
-          )}
+          title={t(confirmTitleKey(confirm))}
+          body={confirmBody(confirm, t, i18n.language, preview.data)}
+          confirmLabel={t(confirmActionKey(confirm))}
+          // L'annullamento della riduzione non è un atto distruttivo: rimette tutti al loro posto. Un
+          // pulsante rosso su un'azione che non toglie niente a nessuno insegna la paura sbagliata.
+          tone={confirm.kind === 'cancelReduction' ? 'default' : 'danger'}
           busy={busy}
           onConfirm={() => void onConfirm()}
           onCancel={() => setConfirm(null)}

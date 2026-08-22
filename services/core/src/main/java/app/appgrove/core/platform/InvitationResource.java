@@ -6,6 +6,7 @@ import app.appgrove.commons.web.Page;
 import app.appgrove.commons.web.PageRequest;
 import app.appgrove.commons.web.ProblemDetail;
 import app.appgrove.core.billing.seats.SeatChargeDeclinedException;
+import app.appgrove.core.billing.seats.SeatDowngradeService;
 import app.appgrove.core.billing.seats.SeatSubscriptionService;
 import app.appgrove.core.platform.InvitationDtos.CreateInvitation;
 import app.appgrove.core.platform.InvitationDtos.InvitationView;
@@ -81,6 +82,13 @@ public class InvitationResource {
     /** L'account è in attesa di eliminazione: nessun invito ammesso (UC 0103 §5). */
     static final String TYPE_ACCOUNT_PENDING_DELETION = "urn:appgrove:account:pending-deletion";
 
+    /**
+     * C'è una <b>riduzione dei posti in attesa</b>: nessuna aggiunta finché non si chiude (UC 0104 §8).
+     * L'identificativo serve all'interfaccia per mostrare il testo con le <b>due vie d'uscita</b> nella
+     * lingua di chi legge: annullare la riduzione, oppure attendere la data.
+     */
+    static final String TYPE_REDUCTION_PENDING = "urn:appgrove:seats:reduction-pending";
+
     @Inject
     InvitationRepository repository;
 
@@ -101,6 +109,9 @@ public class InvitationResource {
 
     @Inject
     SeatSubscriptionService seats;
+
+    @Inject
+    SeatDowngradeService reductions;
 
     /**
      * Invio di un invito. Non c'è alcun ruolo da scegliere (UC 0100): si entra sempre come
@@ -128,11 +139,22 @@ public class InvitationResource {
                     "L'account è in attesa di eliminazione: non è possibile invitare nuove persone.");
         }
 
-        // (3) RIDUZIONE IN ATTESA → nessun invito ammesso. Il gate va QUI, subito dopo lo stato
-        // dell'account e prima di ogni calcolo, e non c'è perché lo stato «in cessazione» non esiste
-        // ancora: lo introduce UC 0104, che deve aggiungere in questo punto il rifiuto. La ragione del
-        // divieto è pratica: sommare un'aggiunta e una riduzione dentro lo stesso periodo renderebbe il
-        // conto del periodo indecidibile e la fattura inspiegabile.
+        // (3) RIDUZIONE IN ATTESA → nessun invito ammesso (UC 0104 §8). Il gate sta QUI, subito dopo lo
+        // stato dell'account e PRIMA di ogni calcolo e di ogni addebito: un rifiuto che si conosce in
+        // anticipo non deve costare denaro. La ragione del divieto è pratica: sommare un'aggiunta e una
+        // riduzione dentro lo stesso periodo renderebbe il conto del periodo indecidibile — il posto
+        // liberato è pagato fino a scadenza, quello nuovo si paga adesso, e i due non si compensano — e la
+        // fattura risultante sarebbe inspiegabile a chi la legge.
+        //
+        // Il presidio è QUI, nel servizio, e non nel comando spento a schermo: un divieto che vive solo
+        // nell'interfaccia si aggira con una richiesta diretta. Il testo offre DUE VIE D'USCITA, ed è la
+        // parte che conta — un rifiuto senza uscita è un vicolo cieco, e questo non lo è.
+        if (reductions.blocksAdditions()) {
+            return conflict(
+                    TYPE_REDUCTION_PENDING,
+                    "C'è una riduzione dei posti programmata: fino alla sua esecuzione non è possibile"
+                            + " aggiungere persone. Annulla la riduzione, oppure attendi la data prevista.");
+        }
 
         // La lettura dell'identità si esegue SEMPRE, prima di ogni ramo, e il suo risultato cambia solo
         // il valore scritto in `identity_id`: mai il codice di stato, mai il corpo, mai lavoro in più su
