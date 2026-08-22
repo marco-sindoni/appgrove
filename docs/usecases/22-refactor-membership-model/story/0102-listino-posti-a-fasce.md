@@ -1,6 +1,6 @@
 # UC 0102 — Listino dei posti a fasce: modello versionato e calcolo del dovuto
 
-**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: 🟢 scritto (da implementare)
+**Area**: 22-refactor-membership-model · **Fase**: evo · **Stato**: ✅ implementato (change `0097-use-case-0102-listino-posti-fasce`)
 **Epica**: [E22.2 Posti a pagamento](../epic/E22-02-posti-a-pagamento.md)
 **Dipendenze**: UC 0098 (modello dati dell'accesso), UC 0022 (listino come codice e sincronizzazione col fornitore di pagamento)
 **Sostituisce**: UC 0073 dell'epica 14 (posti come quota per applicazione)

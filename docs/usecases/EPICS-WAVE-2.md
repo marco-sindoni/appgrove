@@ -51,11 +51,11 @@ A parità di vincolo (la maggior parte delle storie non ha prerequisiti evo), si
 | 7 | [0118](22-refactor-membership-model/story/0118-inviti-e-registrazione-con-identita-esistente.md) | Inviti e registrazione quando l'identità esiste già | 22 | 0116, 0117 | 0013, 0058, 0059 | 🟢 | ✅ |
 | 8 | [0098](22-refactor-membership-model/story/0098-modello-dati-accesso-per-applicazione.md) | Modello dati dell'accesso per applicazione + ruolo di piattaforma a due valori | 22 | 0116 | 0013, 0059 | 🟢 | ✅ |
 | 9 | [0099](22-refactor-membership-model/story/0099-autorizzazione-per-applicazione.md) | Autorizzazione per applicazione: varco riusabile in `commons`, ruolo fuori dal token | 22 | 0098 | 0016, 0010, 0027 | 🟢 | ✅ |
-| 10 | [0101](22-refactor-membership-model/story/0101-semantica-ruoli-viewer-editor-admin.md) | Semantica dei tre ruoli come contratto di piattaforma verificabile | 22 | 0098, 0099 | 0051 | 🟢 | ⬜ |
-| 11 | [0100](22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md) | «Members» come elenco unico di persone, senza ruolo | 22 | 0098, 0099 | 0059 | 🟢 | ⬜ |
-| 12 | [0102](22-refactor-membership-model/story/0102-listino-posti-a-fasce.md) | Listino dei posti a **scaglioni progressivi**: modello versionato e calcolo | 22 | 0098 | 0022 | 🟢 | ⬜ |
-| 13 | [0103](22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md) | Acquisto anticipato del posto all'invito (abbonamento di piattaforma) | 22 | 0100, 0102 | 0024, 0025, 0026 | 🟢 | ⬜ |
-| 14 | [0104](22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md) | Riduzione dei posti in attesa: scelta, blocco, annullamento, scadenza | 22 | 0103 | 0026, 0028 | 🟢 | ⬜ |
+| 10 | [0101](22-refactor-membership-model/story/0101-semantica-ruoli-viewer-editor-admin.md) | Semantica dei tre ruoli come contratto di piattaforma verificabile | 22 | 0098, 0099 | 0051 | 🟢 | ✅ |
+| 11 | [0100](22-refactor-membership-model/story/0100-sezione-members-elenco-unico.md) | «Members» come elenco unico di persone, senza ruolo | 22 | 0098, 0099 | 0059 | 🟢 | ✅ |
+| 12 | [0102](22-refactor-membership-model/story/0102-listino-posti-a-fasce.md) | Listino dei posti a **scaglioni progressivi**: modello versionato e calcolo | 22 | 0098 | 0022 | 🟢 | ✅ |
+| 13 | [0103](22-refactor-membership-model/story/0103-acquisto-anticipato-posto-invito.md) | Acquisto anticipato del posto all'invito (abbonamento di piattaforma) | 22 | 0100, 0102 | 0024, 0025, 0026 | 🟢 | ✅ |
+| 14 | [0104](22-refactor-membership-model/story/0104-riduzione-posti-in-attesa.md) | Riduzione dei posti in attesa: scelta, blocco, annullamento, scadenza | 22 | 0103 | 0026, 0028 | 🟢 | ✅ |
 | 15 | [0105](22-refactor-membership-model/story/0105-governo-listino-console-piattaforma.md) | Governo del listino dalla console di piattaforma (dal ciclo successivo) | 22 | 0102 | 0021, 0047 | 🟢 | ⬜ |
 | 16 | [0106](22-refactor-membership-model/story/0106-posti-in-billing.md) | I posti nella sezione «Billing»: righe, storico, prossimo rinnovo | 22 | 0103, 0105, **0096** | 0067 | 🟢 | ⬜ |
 | 17 | [0107](22-refactor-membership-model/story/0107-menu-rotte-visibilita-per-ruolo.md) | Menu, rotte e visibilità per ruolo (intersezione a tre) | 22 | 0099, 0100, **0077** | 0020 | 🟢 | ⬜ |

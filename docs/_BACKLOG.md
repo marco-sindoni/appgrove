@@ -1327,3 +1327,34 @@ senso (le proprietà dei doppi di collaudo sono candidate naturali), così che i
 
 Proprietario: nessuno use case singolo — è l'esperienza di sviluppo locale (area #11) al servizio della **eseguibilità
 delle guide di collaudo** (UC 0093/0094). Per questo la voce sta qui.
+
+## Il Definition of Done nomina `_INDEX.md`, ma per le storie evo il registro di stato è `EPICS-WAVE-2.md` — e nessuno lo aggiorna (trovato dallo sviluppatore dopo il lotto `0095`–`0099`, 2026-08-22)
+
+Le cinque change del lotto `0095`–`0099` hanno implementato e mergiato le storie `0101`, `0100`, `0102`, `0103`, `0104`,
+e tutte e cinque hanno lasciato la loro riga in [docs/usecases/EPICS-WAVE-2.md](usecases/EPICS-WAVE-2.md) a **⬜ (da
+implementare)**. Non è una dimenticanza di una change: è **cinque su cinque**, cioè la regola che manca, non l'eccezione.
+
+La causa è una formulazione. Il Definition of Done in `CLAUDE.md` nomina **`_INDEX.md`** come registro da tenere
+allineato («sync da `new-change`»), e `_INDEX.md` contiene le sole use case **base** `0001`–`0060`: le storie
+**evolutive** non ci sono affatto. Per loro il registro di stato — con la colonna «Stato» ⬜/✅ — è `EPICS-WAVE-2.md`,
+che di `_INDEX.md` fa le veci senza che nessun documento lo dica. Una change che implementa una storia evo aggiorna
+diligentemente un file dove la sua storia non compare, e lascia indietro quello dove compare.
+
+Da non confondere con la colonna «Stato» di [docs/usecases/README.md](usecases/README.md), che è la **maturità del
+drill-down** (🟢 = scritto) e non l'implementazione: là le storie già implementate sono correttamente 🟢, e non va
+toccata. Il disallineamento è solo fra `EPICS-WAVE-2.md` e la realtà — più, come si è visto, l'intestazione **Stato**
+del file della singola storia, che la change `0097` aveva lasciato a «🟢 scritto (da implementare)» mentre le altre
+quattro l'avevano aggiornata: due luoghi, due abitudini diverse, nessuna delle due scritta.
+
+Vie possibili: (a) **nominare i registri per quello che sono** nel Definition of Done — «`_INDEX.md` per le use case
+base, `EPICS-WAVE-2.md` per le storie evo, più l'intestazione **Stato** del file della storia» — la via più piccola,
+e quella che rende la regola eseguibile da chi la legge; (b) far sorvegliare la coerenza da un **controllo automatico**
+nell'area `tooling`, sullo stesso principio del registro di copertura end-to-end: una storia con una cartella
+`changes/*-use-case-NNNN-*` mergiata su `main` e la riga ancora ⬜ è una suite rossa — è l'unica via che non dipende
+dalla diligenza; (c) unificare i due registri, così che di posti dove segnare lo stato ce ne sia uno solo.
+
+La (b) è la più fedele al principio già scritto per le guide di collaudo: la prosa che nessun controllo può far
+diventare rossa invecchia, e in un lotto di change consecutive invecchia sistematicamente.
+
+Proprietario: nessuno use case singolo — è il processo delle change (skill `new-change`/`go-fast`) e i registri del
+catalogo. Per questo la voce sta qui.
