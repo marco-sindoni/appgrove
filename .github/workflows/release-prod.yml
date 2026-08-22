@@ -277,6 +277,12 @@ jobs:
           # Riconcilia platform.legal_version dai frontmatter di content/legal (bundlati nell'immagine
           # core). Dopo il migrate; nessun secret richiesto. Idempotente.
           ./infra/scripts/oneshot prod platform "$IMAGE_TAG" sync-legal
+      - name: seed-seat-pricing (prima versione del listino dei posti, UC 0102)
+        run: |
+          # Crea la PRIMA versione del listino dei posti da pricing/seats.yaml, se non esiste ancora.
+          # Dopo il migrate; nessun secret richiesto. SEMINA, non sincronizza: a listino già presente non
+          # scrive nulla, perché dal primo cambio di tariffa da console (UC 0105) la verità è la banca dati.
+          ./infra/scripts/oneshot prod platform "$IMAGE_TAG" seed-seat-pricing
       - name: sync-pricing verso Paddle production (#09 H37) — se i secret esistono
         run: |
           if aws secretsmanager describe-secret --secret-id appgrove/prod/paddle >/dev/null 2>&1; then

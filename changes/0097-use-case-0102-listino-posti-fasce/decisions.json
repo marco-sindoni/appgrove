@@ -32,5 +32,185 @@
   {
     "id": 7,
     "decision": "(autopilot) Lo stato dell'IDENTITÀ della persona (sospensione di piattaforma, per esempio la limitazione del trattamento dell'art. 18) non libera il posto: il posto è dell'account e la sospensione dell'identità è una leva del titolare della piattaforma, non una riduzione decisa dall'account. Lo use case non nomina il caso; la scelta è coerente con il trattamento della sospensione dell'appartenenza (occupa posto). Chi vuole liberare il posto indica la persona per la cessazione (UC 0104)."
+  },
+  {
+    "id": 8,
+    "decision": "(autopilot) Migrazione V21__seat_pricing.sql con due tabelle di PIATTAFORMA senza `tenant_id` — `platform.seat_pricing_version` e `platform.seat_pricing_band` — come `platform.app`. L'assenza del discriminatore di account non è una dimenticanza dell'invariante #2 ma il suo contrario dichiarato: un listino per account sarebbe una tariffa negoziata, che l'epica 22 esclude. Aggiunto un indice UNICO parziale sulla decorrenza (`ux_seat_pricing_version_effective_from`): due versioni con la stessa decorrenza renderebbero ambigua proprio la domanda per cui il modello è versionato, e l'indice regge anche la corsa fra due istanze che si avviano insieme.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/db/migration/V21__seat_pricing.sql",
+        "description": "Numero V21 verificato: l'ultima migrazione esistente su main è V20__app_access.sql (UC 0098). Vincoli di riga su fascia: posto iniziale ≥ 1, posto finale ≥ posto iniziale, tariffa ≥ 0."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "decision": "(autopilot) La CONTIGUITÀ delle fasce (nessun buco, nessuna sovrapposizione, solo l'ultima aperta) non è esprimibile come vincolo di riga in banca dati: il presidio vive nel codice, in `SeatPricing.requireCoherent`, ed è attraversato SIA dal caricamento iniziale (prima di scrivere) SIA da ogni calcolo. La migrazione dichiara esplicitamente quale metà della regola copre l'indice unico, perché un vincolo che copre metà della regola dà una falsa sicurezza. Alternativa scartata: un trigger di banca dati, che avrebbe spostato una regola di dominio in un posto dove nessuno la cerca.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricing.java",
+        "description": "requireCoherent con messaggi che dicono QUAL È il difetto (chi li legge sta guardando un avvio fallito)."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "decision": "(autopilot) Le scritture del caricamento iniziale sono in SQL NATIVO e non via JPA, e non è una scorciatoia: il caricamento gira all'avvio, fuori da una richiesta autenticata, dove `JwtTenantResolver` è fail-closed e nessuna sessione Hibernate può aprirsi (il risolutore del tenant è per sessione, non per entità). È lo stesso motivo e lo stesso schema di `PricingSyncService`. Gli identificativi sono deterministici dalla decorrenza, con lo stesso algoritmo di `CatalogIds`, così l'inserzione è ripetibile.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricingLoader.java",
+        "description": "Inserzione con la condizione «se non esiste alcuna versione» DENTRO la SQL (`where not exists`): due avvii, o due istanze contemporanee, non possono creare due listini, e non serve leggere prima per decidere poi."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "decision": "(autopilot) Il listino dei posti si SEMINA una volta, non si SINCRONIZZA a ogni avvio — differenza sostanziale rispetto al listino delle applicazioni, da cui pure prende la forma. Motivo: sincronizzarlo vorrebbe dire che al riavvio successivo a un cambio di tariffa da console (UC 0105) il listino tornerebbe indietro, cioè un cambio di prezzo annullato da un riavvio. La condizione è «esiste una versione qualunque», non «esiste questa versione», ed è deliberata: dopo il primo cambio la versione del file non è più la vigente, e cercarla per riconoscerla la farebbe rinascere."
+  },
+  {
+    "id": 12,
+    "decision": "(autopilot) `SeatPricingStartup` è un bean SEPARATO da `SeatPricingLoader` per una ragione tecnica precisa: il metodo che scrive è `@Transactional`, e un osservatore che lo chiamasse su sé stesso salterebbe l'intercettore (auto-invocazione) restando senza transazione. La chiamata fra bean diversi passa dal proxy. È la stessa separazione di `PricingCatalogLoader`/`PricingSyncStartup`. La semina gira in OGNI profilo, non solo in sviluppo: senza una versione vigente nessun calcolo è possibile, quindi non è un comodo di sviluppo ma un prerequisito del prodotto.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricingStartup.java",
+        "description": "Osservatore di StartupEvent; il tentativo di catturare la violazione dell'indice in caso di corsa è stato rimosso perché la condizione `not exists` dentro l'inserzione rende la corsa innocua."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "decision": "(autopilot) Il «costo del posto successivo» è definito come la tariffa della fascia in cui cade il posto `n + 1`, ed è esposto da `SeatPricing.nextSeatCents` perché appartiene al calcolo e non alla presentazione (lo use case §4 chiede che l'interfaccia mostri entrambi i numeri). Conseguenza dichiarata: con 1 o 2 posti vale ZERO, perché la seconda e la terza persona sono gratuite. La riga «1 · 2 · 3 → 2,99 €» della tabella dello use case è una compressione di tre casi in uno e dice il costo del primo posto a pagamento: è esatta per 3 posti, non per 1 e 2. Tutte le righe non ambigue della tabella — compresi i tre confini in grassetto (10, 50, 100) — combaciano esattamente con questa definizione."
+  },
+  {
+    "id": 14,
+    "decision": "(autopilot) Tutto il denaro in CENTESIMI INTERI, mai in virgola mobile: il dovuto è un `long` (spazio per numeri di posti assurdi senza traboccare), le tariffe sono `int` come `amount` di `billing_transaction`. Nessun arrotondamento per riga, come chiede lo use case §5."
+  },
+  {
+    "id": 15,
+    "decision": "(autopilot) La decorrenza della prima versione è `1970-01-01T00:00:00Z` e sta nel file, non nel codice. Motivo: la prima versione deve risultare vigente per QUALUNQUE data interrogabile, comprese quelle anteriori all'installazione; con una decorrenza «adesso», una domanda su un periodo passato riceverebbe l'errore «nessuna versione vigente» invece del listino con cui il prodotto è nato. Il collaudo del rifiuto esplicito usa perciò una data del 1960.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/pricing/seats.yaml",
+        "description": "Il file sta FUORI da pricing/index.yaml, che elenca le applicazioni: i posti non sono un'applicazione, non hanno un prodotto presso il fornitore di pagamento generato da questo file e non vanno sincronizzati con esso."
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "decision": "(autopilot) Operazione di lettura `GET /api/platform/v1/seat-pricing`, aperta a QUALUNQUE autenticato (non solo owner): leggere quanto costa un posto non richiede il diritto di comprarlo, e il divieto vero sta a valle (comprare è di UC 0103, cambiare le tariffe è dell'amministratore di piattaforma in UC 0105). Nessun parametro, e in particolare NESSUNA data: si serve il listino vigente adesso, perché il listino di una data passata serve a ricostruire una fattura (UC 0106) e non ha ancora consumatori. Lo spec OpenAPI committato è stato rigenerato dal build.",
+    "files": [
+      {
+        "file": "services/core/src/main/resources/META-INF/openapi/openapi.yaml",
+        "description": "Rigenerato: aggiunta la sola operazione /api/platform/v1/seat-pricing con SeatPricingView e SeatBandView."
+      },
+      {
+        "file": "services/core/src/test/resources/application.properties",
+        "description": "`SeatProbeResource` aggiunto a mp.openapi.scan.exclude.classes: un endpoint del solo classpath di test non deve entrare nel contratto committato (stessa ragione di MdcProbeResource)."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "decision": "(autopilot) DEVIAZIONE CONSAPEVOLE dal piano di lavoro (task/0102, passo 4), che chiedeva «una sola interrogazione con unione». `SeatCount` fa DUE conteggi Panache, uno per tabella (appartenenze e inviti). Motivo: il difetto che il piano voleva evitare sono cinque conteggi, uno per stato, e qui non ce ne sono cinque. Scrivere l'unione in SQL nativo avrebbe avuto un prezzo alto: il perimetro dell'account andrebbe passato a mano, mentre con le entità già separate per account il filtro `WHERE tenant_id` lo aggiunge Hibernate — invariante #2 mantenuto per costruzione invece che per disciplina. Su un conto che decide quanto si paga, quel filtro non è un dettaglio di prestazioni.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatCount.java",
+        "description": "`occupiedSeatsAt(Instant)` esiste accanto a `occupiedSeats()` perché la scadenza degli inviti dipende dall'istante: un collaudo che non potesse fissarlo proverebbe qualcosa che cambia da un'esecuzione all'altra."
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "decision": "(autopilot) Gli inviti che occupano posto sono quelli in attesa E non scaduti: SERVONO ENTRAMBE le condizioni. «Scaduto» è uno stato che qualcuno deve scrivere, e fra la scadenza dell'ora e il passaggio che la registra esistono righe ancora `pending` con la data già passata: contarle significherebbe far pagare posti che nessuno può più occupare. Gli inviti accettati non si contano fra gli inviti perché l'accettazione ha già prodotto l'appartenenza, che è contata: contarli entrambi raddoppierebbe la persona. Entrambi i casi hanno un collaudo dedicato."
+  },
+  {
+    "id": 19,
+    "decision": "(autopilot) `SeatCount` e la selezione per data sono provati attraverso `SeatProbeResource`, un endpoint del SOLO classpath di test, sullo stampo del già esistente `MdcProbeResource`. Motivo: il conteggio è corretto solo dentro una richiesta autenticata (il perimetro viene dal claim `tenant_id` attraverso il discriminatore, e fuori da una richiesta il risolutore è fail-closed), e la selezione per data ha bisogno di una data scelta dal collaudo mentre l'operazione di prodotto serve sempre «adesso». Il ritiro del probe quando UC 0103 esporrà la superficie vera è tracciato come rimando nello use case 0103: un endpoint di collaudo che sopravvive alla superficie che doveva anticipare diventa l'unica cosa che qualcuno prova."
+  },
+  {
+    "id": 20,
+    "decision": "(autopilot) Il collaudo tabellare legge le FASCE dal file `pricing/seats.yaml` (attraverso `SeatPricingDefinition.asVersion()`), non da tariffe ricopiate nel codice del collaudo: è la trappola n. 3 del piano di lavoro, e una copia sarebbe divergita al primo cambio restando verde. Scritti nel collaudo sono soltanto i RISULTATI attesi, che vengono dalla tabella dello use case §4. Il collaudo è di unità (nessuna banca dati, nessun avvio) perché è il più importante della sotto-epica e deve dare esito immediato. Aggiunti i due collaudi che distinguono il modello adottato da quello scartato: monotonia del dovuto su 0…150 e discesa del costo del posto successivo ai tre confini.",
+    "files": [
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeatPricingTest.java",
+        "description": "30 casi: tabella §4 (17 righe), monotonia, confini, franchigia, fascia aperta su numeri grandi, sette forme di listino incoerente, argomenti negativi."
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "decision": "(autopilot) Asserzioni con le funzioni JUnit già in uso nel monorepo (`assertEquals`/`assertThrows`/`assertTrue`) e non con AssertJ: AssertJ non è fra le dipendenze di nessun modulo, e introdurre una libreria di asserzioni per un solo file di collaudo avrebbe lasciato due stili nella stessa cartella."
+  },
+  {
+    "id": 22,
+    "decision": "(autopilot) Passo di copertura end-to-end (UC 0094): esito «coprire ora non si applica — nessun impatto end-to-end». Lo use case 0102 passa nel registro `docs/testing/copertura-e2e.yaml` da esente `non-implementato` a esente `senza-superficie`, con il motivo scritto: il suo §6 dichiara «Nessuna schermata» e il §9 «Percorsi end-to-end: nessuno proprio; esente come senza superficie». Nessun percorso Playwright nuovo né esteso: nulla di ciò che questa change introduce è osservabile da un browser. Le superfici che consumeranno il listino arrivano con 0103, 0105 e 0106. `node tools/e2e-coverage/check.mjs` verde.",
+    "files": [
+      {
+        "file": "docs/testing/copertura-e2e.yaml",
+        "description": "Esenzione di 0102 riclassificata da non-implementato a senza-superficie."
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "decision": "(autopilot) Gate privacy (UC 0031): lo scanner segnala 10 elementi — due tabelle nuove e otto campi nuovi — e NESSUNO è un dato personale. Sono tariffe in centesimi, numeri d'ordine di posto, valuta, decorrenza, una nota e un lettore di file: nessuna persona è identificata né identificabile, e le due tabelle non portano nemmeno il discriminatore di account. Nessun manifesto da aggiornare, nessuna annotazione `@PersonalData` da scrivere, nessun responsabile esterno nuovo, nessun dato dell'art. 9. Classificazione del cambio: MINORE (nessuna variazione di finalità, base giuridica, categorie o conservazione dichiarate). Il punto delicato — la finalità di `membership.identity_id`, che con l'acquisto del posto comprenderà anche «il numero delle appartenenze determina l'importo dovuto» — è stato deliberatamente NON dichiarato ora e tracciato come rimando in UC 0103: nessun percorso di prodotto consuma ancora `SeatCount`, quindi dichiarare oggi quella finalità sarebbe dichiarare un trattamento che non avviene."
+  },
+  {
+    "id": 24,
+    "decision": "(autopilot) `run-tests.sh` non è stato modificato: la change non aggiunge né rimuove moduli (`services/core` esiste già) e non cambia il comando di test di alcuna area. `docs/usecases/_INDEX.md` non è stato modificato: l'indice di esecuzione elenca gli use case base 0001–0060 e i residui, non le storie evolutive dell'epica 22 — stessa scelta delle change 0091–0096. Il varco di parità dei modelli di scaffolding (`node tools/scaffold-parity/source-paths-scan.mjs`) non scatta: nessun percorso-sorgente toccato."
+  },
+  {
+    "id": 25,
+    "decision": "(autopilot) CORREZIONE della decisione 12 durante l'implementazione, e vale la pena dire come è emersa. La prima stesura seminava il listino allo startup in OGNI profilo, ritenendolo sicuro perché idempotente. È sbagliato per una ragione che non riguarda l'idempotenza: lo smoke di avvio (`tools/smoke/boot-profiles.sh`) lancia gli artefatti di spedizione nel profilo `prod` con una banca dati IRRAGGIUNGIBILE DI PROPOSITO, per cogliere i bean che la contattano allo startup invece che pigramente. Un bean che scrive all'avvio avrebbe fatto fallire quell'avvio — ed è esattamente la ragione per cui `PricingSyncStartup` e la sincronizzazione dei documenti legali sono gated. Correzione: la semina è governata da `appgrove.seat-pricing.seed-on-startup` (falso di default, vero in %dev e in test) e in produzione diventa il passo di distribuzione `seed-seat-pricing` di `CoreMain`, cablato nelle due pipeline DOPO il `migrate`, come `sync-legal`. Il rimando nello use case 0102 è stato riscritto di conseguenza.",
+    "files": [
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/billing/seats/SeatPricingStartup.java",
+        "description": "Aggiunto il gate di configurazione, col motivo scritto nella documentazione della classe (lo smoke, non l'idempotenza)."
+      },
+      {
+        "file": "services/core/src/main/java/app/appgrove/core/CoreMain.java",
+        "description": "Comando `seed-seat-pricing`: semina e termina, idempotente; stessa forma di `sync-legal`."
+      },
+      {
+        "file": "services/core/src/main/resources/application.properties",
+        "description": "appgrove.seat-pricing.seed-on-startup=false, %dev=true, accanto alle gemelle di listino e legali."
+      },
+      {
+        "file": ".github/workflows/deploy-test.yml",
+        "description": "Passo `oneshot test platform <tag> seed-seat-pricing` dopo il migrate."
+      },
+      {
+        "file": ".github/workflows/release-prod.yml",
+        "description": "Passo `oneshot prod platform <tag> seed-seat-pricing` dopo il migrate."
+      },
+      {
+        "file": "services/core/src/test/java/app/appgrove/core/billing/seats/SeedSeatPricingCommandTest.java",
+        "description": "Collaudo del percorso argomento → caricamento → uscita, in stile MigrateCommandTest; in test il listino c'è già, quindi prova anche l'idempotenza del passo di distribuzione."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "decision": "(autopilot) Guida di collaudo how-to-test.md scritta ED ESEGUITA nei passi non visivi (§1, §2, §3, §4, §5, §6, §7, §8, §9.2, §9.3) sullo stack locale il 2026-08-22, dopo la suite completa verde. Esito: NESSUN difetto di prodotto, DUE correzioni alla guida. (1) Il §7 dava per presupposto una banca dati appena seminata (3 persone + 2 inviti = 5 posti) senza dichiararlo: eseguito dopo la suite di piattaforma, l'account Acme ne aveva 6 e 3 — e il conto del prodotto era GIUSTO, con i due inviti accettati correttamente esclusi perché quelle persone sono già contate fra le appartenenze. Sbagliato era il numero atteso nella guida, non il conteggio: il paragrafo è stato riscritto per verificare la REGOLA invece del numero, dichiarando lo stato di partenza e aggiungendo l'elenco riga per riga di persone e inviti — un controllo migliore del precedente, perché mostra a occhio che le due liste non si sovrappongono. (2) Il §8 riavviava con `./dev.sh service core restart`, sottocomando che non esiste (il dispatcher conosce `service <app_id>`, non `restart`); sostituito con `./app-stop.sh --apps-only && ./app-start.sh --no-build --no-spa`. Il §8 eseguito ha poi confermato ciò che doveva: una sola versione dopo il riavvio e nessuna riga di semina nuova nel log del servizio. Resta allo sviluppatore il solo passo visivo §9.1, che è una verifica di assenza.",
+    "files": [
+      {
+        "file": "changes/0097-use-case-0102-listino-posti-fasce/how-to-test.md",
+        "description": "Intestazione con il commit di base e il resoconto dell'esecuzione; §7 riscritto; §8 con il comando di riavvio corretto."
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "decision": "(autopilot) Suite COMPLETA `./run-tests.sh` (senza parametri) verde su tutte e otto le aree — backend, frontend, infra, compliance, tooling, smoke, platform, site — sull'albero finale della change. La prima esecuzione era stata interrotta di proposito a metà: la correzione della decisione 25 (semina gated + comando di distribuzione) è stata individuata leggendo `tools/smoke/boot-profiles.sh` mentre la suite girava, e rilanciare su un albero già corretto è costato meno che vedere l'area smoke rossa e poi rilanciare comunque. L'area `smoke` verde è la prova che la correzione era quella giusta."
+  },
+  {
+    "id": 28,
+    "decision": "(autopilot) Varco di parità dei modelli di scaffolding: dopo l'aggiunta del passo di pipeline il rilevatore (strato 2) segnala due percorsi-sorgente toccati — deploy-test.yml e release-prod.yml. Scelta presa: OPZIONE 2, motivazione registrata in docs/_PARITA-SCAFFOLD.md. Motivo: `seed-seat-pricing` è un passo di PIATTAFORMA e non per-servizio (il listino dei posti è uno per tutto il marketplace e lo semina `core`, esattamente come `sync-legal`); un'app generata non ne ha uno proprio, non deve produrre alcun frammento, e nessun modello in tools/new-application/templates/ replica quei workflow. È lo stesso ragionamento — e la stessa forma di riga — della deroga già registrata per verify-pr.yml dalle change 0069 e 0075. Il collaudo di parità dello strato 1 resta verde, ed è quello che gira in run-tests.sh: il rilevatore dello strato 2 segnala il tocco, non lo risolve, e non fa parte della suite.",
+    "files": [
+      {
+        "file": "docs/_PARITA-SCAFFOLD.md",
+        "description": "Due righe nuove fra i marcatori delle deviazioni, con motivo, cosa le chiuderebbe e data."
+      }
+    ]
   }
 ]

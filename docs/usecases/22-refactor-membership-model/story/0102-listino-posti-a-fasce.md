@@ -155,6 +155,19 @@ Il file resta la sorgente del valore iniziale; da lì in poi la verità è la ba
   proprie. Proprietario: questa storia.
 - **Valute oltre l'euro**: rimandato; da allineare a come le applicazioni gestiscono la valuta.
   Proprietario: UC 0106.
+- **Il listino a una data passata non ha un'operazione di rete** (change 0097). La selezione per data
+  esiste nel servizio (`SeatPricingRepository.findVigenteAl`) ma l'operazione pubblica serve sempre il
+  listino **vigente adesso**: una data che arriva dal chiamante non ha ancora nessun consumatore. Serve a
+  ricostruire una fattura di un periodo chiuso, cioè alla trasparenza verso il cliente. Proprietario:
+  UC 0106.
+- **La semina del listino iniziale gira allo startup solo in locale e in test** (change 0097). In
+  produzione è **spenta** e la prima versione nasce dal passo di distribuzione `seed-seat-pricing`
+  (`CoreMain`), cablato nelle due pipeline dopo il `migrate` — esattamente come la sincronizzazione dei
+  listini delle applicazioni e quella dei documenti legali. La forma chiesta dalla storia («un file di
+  risorse del core, letto all'avvio») resta vera dove l'avvio ha una banca dati; l'artefatto di spedizione
+  invece deve arrivare in ascolto **senza toccarla**, ed è ciò che lo smoke di avvio verifica con una banca
+  dati irraggiungibile di proposito. Se un giorno servisse la semina anche al primo avvio in cloud, il
+  posto giusto è quel passo di distribuzione e non il bean di startup. Proprietario: questa storia.
 - **Sconti o tariffe negoziate per singolo account**: non previsti (il listino è di tutti). Se un giorno
   servisse, sarà una deroga per account sopra il listino, non una modifica del listino. Proprietario:
   Epica 22.
