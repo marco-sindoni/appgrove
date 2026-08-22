@@ -149,14 +149,16 @@ che **coglie** l'operazione di scrittura non protetta. Qui la si fa fallire di p
 |---|---|---|
 | 3.1 | Promuovi a `editor` (attenzione: il verbo è **PUT**, non PATCH):<br>`curl -sk -o /dev/null -w "%{http_code}\n" -X PUT "https://app.local.appgrove.app/api/platform/v1/apps/$FATTURE_ID/access/$MEMBER_ID" -H "authorization: Bearer $TOKEN_OWNER" -H 'content-type: application/json' -d '{"role":"editor"}'` | **200.** |
 | 3.2 | **Aspetta cinque secondi**, poi riprova la scrittura del passo 2.6 con lo **stesso** token di prima | **201.** Il ruolo nuovo vale **senza** che la persona rientri. L'attesa non è cortesia: è l'evento di invalidazione che viaggia sulla coda e marca la copia locale — misurata a ~5 secondi in locale. Se provi subito, la copia è ancora fresca e vedi ancora `403`: è la finestra di pochi secondi che UC 0099 dichiara di accettare, non un difetto. |
-| 3.3 | Revoca l'accesso:<br>`curl -sk -o /dev/null -w "%{http_code}\n" -X DELETE "https://app.local.appgrove.app/api/platform/v1/apps/$FATTURE_ID/access/$MEMBER_ID" -H "authorization: Bearer $TOKEN_OWNER"` | **204.** |
+| 3.3 | Revoca l'accesso:<br>`curl -sk -o /dev/null -w "%{http_code}\n" -X DELETE "https://app.local.appgrove.app/api/platform/v1/apps/$FATTURE_ID/access/$MEMBER_ID" -H "authorization: Bearer $TOKEN_OWNER"` | **204.** Ripetendo lo stesso comando una seconda volta si ottiene **404** con `"detail": "Accesso non trovato"`, e **non è un difetto**: la revoca non è idempotente per scelta (`AppAccessResource#revoke`), come l'accesso dell'owner dà `409` invece di un `204` silenzioso — revocare un accesso che non c'è è una richiesta senza oggetto, e rispondere `204` farebbe credere di aver revocato qualcosa. |
 | 3.4 | Aspetta cinque secondi, poi:<br>`curl -sk "https://app.local.appgrove.app/api/fatture/v1/invoices?page=0&size=5" -H "authorization: Bearer $TOKEN_MEMBER" \| python3 -m json.tool` | **403** con `"type": "urn:appgrove:app-role:no-access"` e la frase «Non hai accesso all'applicazione 'fatture': chiedi al titolare dell'account o a un amministratore dell'applicazione di abilitarti.» **Un rifiuto diverso, con parole diverse**: è il cuore del §3 di questa verifica. Le virgolette intorno all'URL sono obbligatorie — senza, la shell interpreta il `?`. |
 
 ---
 
 ## 4. I due rifiuti si leggono a parole — percorso VISIVO (per lo sviluppatore)
 
-Prerequisito: riporta `member@acme.test` a **viewer** su `fatture` (passo 2.3) e aspetta cinque secondi.
+Il prerequisito è il **passo 4.0** qui sotto, non una premessa da leggere: se arrivi qui in fila dopo il §3, che
+**finisce con la revoca**, `member@acme.test` non ha alcun accesso a `fatture` — il 4.1 mostrerebbe il riquadro
+del lucchetto invece dell'elenco, e il 4.3 risponderebbe `404` invece di `204`.
 
 > **L'interfaccia parte in inglese**, non in italiano: le persone del seme hanno `locale = 'en'`
 > (`dev/seed/seed.sql`), e la lingua della sessione è la loro. Le etichette qui sotto sono quindi quelle che
@@ -167,9 +169,10 @@ Prerequisito: riporta `member@acme.test` a **viewer** su `fatture` (passo 2.3) e
 
 | # | Azione | Risultato atteso |
 |---|---|---|
+| 4.0 | **Riporta l'accesso a `viewer`** e aspetta cinque secondi (è il passo 2.3, ripetuto qui per intero perché serve *adesso*):<br>`curl -sk -w "\nHTTP %{http_code}\n" -X POST "https://app.local.appgrove.app/api/platform/v1/apps/$FATTURE_ID/access" -H "authorization: Bearer $TOKEN_OWNER" -H 'content-type: application/json' -d "{\"identityId\":\"$MEMBER_ID\",\"role\":\"viewer\"}"` | **201** con `"role":"viewer"` (**200** se un accesso era ancora vivo). Deve essere un **POST**: il `PUT` del passo 3.1 su un accesso revocato risponde `404`, perché cambia il ruolo di una riga che c'è e qui la riga va **ricreata**. |
 | 4.1 | Apri `https://app.local.appgrove.app`, entra come **member@acme.test** / `Password1!`, e apri **Invoices** dalla barra laterale | La pagina **Invoices** si apre e l'elenco si vede: un `viewer` legge tutto ciò che l'applicazione mostra. Si vede anche il banner del consumo («Invoices this month»). |
 | 4.2 | Premi **New invoice**, compila **Customer name** e premi **Create invoice** | Compare un avviso rosso con la frase del server: «Per questa operazione su 'fatture' serve almeno il ruolo 'editor': il tuo ruolo è 'viewer'.» **Non** «Something went wrong. Please try again.» — quella frase generica era il difetto corretto da questa change. |
-| 4.3 | Revoca l'accesso (passo 3.3), aspetta cinque secondi e ricarica la pagina **Invoices** | Al posto dell'elenco c'è un riquadro con il lucchetto e la frase «Non hai accesso all'applicazione 'fatture': chiedi al titolare dell'account o a un amministratore dell'applicazione di abilitarti.» **Non c'è alcun pulsante «Retry»/«Riprova»**: un rifiuto non è un guasto, e invitare a ripetere una richiesta che fallirà sempre manda una persona a sbattere contro lo stesso muro. |
+| 4.3 | **Revoca l'accesso** e aspetta cinque secondi, poi ricarica la pagina **Invoices** (è il passo 3.3, per intero):<br>`curl -sk -o /dev/null -w "%{http_code}\n" -X DELETE "https://app.local.appgrove.app/api/platform/v1/apps/$FATTURE_ID/access/$MEMBER_ID" -H "authorization: Bearer $TOKEN_OWNER"` → **204**. Un **404** qui vuol dire che l'accesso era già revocato: rifà il passo 4.0 e ripeti. | Al posto dell'elenco c'è un riquadro con il lucchetto e la frase «Non hai accesso all'applicazione 'fatture': chiedi al titolare dell'account o a un amministratore dell'applicazione di abilitarti.» **Non c'è alcun pulsante «Retry»/«Riprova»**: un rifiuto non è un guasto, e invitare a ripetere una richiesta che fallirà sempre manda una persona a sbattere contro lo stesso muro. |
 | 4.4 | Confronta 4.2 e 4.3 | Due schermate **diverse** con due frasi **diverse**. È l'esito che la storia chiede: chi non entra sa a chi chiedere; chi è entrato ma non può fare *quella* cosa sa quale ruolo gli serve. |
 
 > **Ciò che NON si vede ancora, e non è una dimenticanza**: il comando **New invoice** è ancora

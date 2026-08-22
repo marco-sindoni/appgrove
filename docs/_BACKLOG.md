@@ -1358,3 +1358,33 @@ diventare rossa invecchia, e in un lotto di change consecutive invecchia sistema
 
 Proprietario: nessuno use case singolo — è il processo delle change (skill `new-change`/`go-fast`) e i registri del
 catalogo. Per questo la voce sta qui.
+
+## I comandi *dentro* i passi visivi non li esegue nessuno, e sbagliano indisturbati (trovato dallo sviluppatore collaudando la change `0095`, 2026-08-22)
+
+La modalità `fast` esegue i passi **non visivi** di una guida prima di committarla, e la passata di fine lotto di
+`go-fast` li riesegue contro lo stato finale di `main`. Restano fuori i passi **visivi**, per una ragione buona: nessun
+agente può guardare uno schermo. Ma un passo visivo non è fatto di sola osservazione — contiene spesso **comandi**, che
+visivi non sono: preparano lo stato da guardare, o lo cambiano fra una schermata e l'altra. Quei comandi cadono in un
+cono d'ombra: la sezione è marcata «VISIVO», quindi nessuno la esegue, quindi i suoi comandi non sono mai stati provati.
+
+Il caso concreto. Nella guida della change `0095` il §4 («i due rifiuti si leggono a parole») è marcato visivo. Il suo
+prerequisito — «riporta `member@acme.test` a *viewer*» — era scritto **in prosa sopra la tabella** invece che come passo
+numerato, e il passo 4.3 diceva «revoca l'accesso (passo 3.3)» senza il comando. Chi arriva al §4 in fila dopo il §3,
+che **finisce con la revoca**, non ha più alcun accesso da revocare: il 4.3 risponde `404`, e chi collauda deve fermarsi
+a capire se il difetto è nel prodotto o nella guida. Non era nel prodotto — la revoca non è idempotente per scelta,
+coerentemente col `409` sull'accesso dell'owner. Era la guida, e non l'aveva trovato né la change né la passata di fine
+lotto, perché **quella sezione nessuno dei due l'ha eseguita**.
+
+Vie possibili: (a) una **regola di forma** per le guide — in una sezione visiva ogni comando va scritto **per intero e
+incollabile**, e ogni prerequisito va reso **passo numerato** (`x.0`), mai premessa in prosa: è la correzione già
+applicata a mano qui, che conviene rendere norma nella skill `new-change`; (b) far eseguire, alla modalità `fast` e alla
+passata di fine lotto, **anche i comandi contenuti nelle sezioni visive**, saltando solo le osservazioni a schermo —
+copre il caso senza chiedere a nessuno di guardare; (c) separare nella guida i «passi di preparazione» (sempre
+eseguibili) dalle «osservazioni» (sempre dello sviluppatore), così che il confine passi fra *comando* e *sguardo*
+invece che fra sezioni.
+
+La (b) è la più efficace e la (a) la più economica; sono cumulabili, e insieme chiudono la classe: oggi l'unica parte di
+una guida che nessuno esegue è anche l'unica che contiene comandi mai provati.
+
+Proprietario: nessuno use case singolo — è la forma delle guide di collaudo e il processo che le esegue (UC 0093/0094,
+skill `new-change` e `go-fast`). Per questo la voce sta qui.
