@@ -1,0 +1,36 @@
+[
+  {
+    "id": 1,
+    "decision": "Modalità di esecuzione della change: fast — dichiarata all'invocazione dalla skill go-fast. Lo sviluppatore rinuncia in anticipo ai tre gate di workflow (rilettura dei requisiti, consenso al commit, consenso al merge); restano obbligatori la suite completa verde prima del commit (./run-tests.sh senza parametri), il registro integrale delle decisioni e la guida how-to-test.md scritta ED eseguita nei passi non visivi. Merge e spinta al remoto NON sono di questa change: restano al chiamante."
+  },
+  {
+    "id": 2,
+    "decision": "(autopilot) La change implementa lo use case 0102 «Listino dei posti a fasce: modello versionato e calcolo del dovuto» (docs/usecases/22-refactor-membership-model/story/0102-listino-posti-a-fasce.md), con il piano di lavoro task/0102. Da qui la forma del branch 0097-use-case-0102-listino-posti-fasce. Il numero 0097 è il progressivo della cartella changes/ (l'ultima è 0096) e coincide con quello atteso dall'orchestratore.",
+    "files": [
+      {
+        "file": "docs/usecases/_INDEX.md",
+        "description": "Nessuna modifica: l'indice di esecuzione elenca gli use case base 0001–0060 e i residui, non le storie evolutive dell'epica 22 (0098–0118), che stanno fuori dall'ordine topologico. Stessa scelta delle change 0095 e 0096."
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "decision": "(autopilot) La fermata di escalation «prezzi e quote» NON si applica a questa change, e la discriminazione è deliberata. Fasce e tariffe (1–3 → 0,00 · 4–10 → 2,99 · 11–50 → 1,99 · 51–100 → 0,99 · oltre 100 → 0,49 euro al mese per posto), franchigia di tre posti comprensiva dell'owner, valuta euro, ciclo mensile e modello a scaglioni progressivi sono scelte di prezzo GIÀ FISSATE PER ISCRITTO dallo sviluppatore nel drill-down §4 e nell'epica E22.2 («Le decisioni portanti»), con anche l'alternativa scartata e il motivo dello scarto. Sono decisioni prese, non decisioni da prendere: si implementano. Nessuna soglia, tariffa o quota nuova viene introdotta da questa change."
+  },
+  {
+    "id": 4,
+    "decision": "(autopilot) La franchigia è rappresentata come prima fascia a tariffa zero da 1 a 3 e NON come una condizione nel codice del calcolo, come chiede lo use case §7. Conseguenza voluta: il giorno in cui la franchigia cambia (UC 0105) cambia una riga di listino e non una riga di codice, e il calcolo non ha rami speciali da mantenere coerenti."
+  },
+  {
+    "id": 5,
+    "decision": "(autopilot) L'espressione «i tre punti in cui il dovuto scende» del §9 dello use case, e la «trappola nota» n. 1 del piano di lavoro («non presumere che il dovuto cresca»), sono residui del modello a tariffa unica di fascia che lo stesso use case dichiara SCARTATO. Col modello a scaglioni progressivi il dovuto è monotono crescente e ciò che scende ai tre confini di fascia è il costo del posto successivo — esattamente come dice il §4 («Il totale cresce sempre; a scendere è il costo del posto successivo»). Interpretazione adottata: si prova la monotonia del dovuto E la discesa del costo marginale ai tre confini. Alternativa scartata: prendere la trappola alla lettera, che avrebbe portato a non scrivere il collaudo di monotonia, cioè proprio il collaudo che distingue il modello adottato da quello scartato."
+  },
+  {
+    "id": 6,
+    "decision": "(autopilot) «Che cosa occupa un posto» si esprime come UNA regola sola: occupa posto chi ha un'appartenenza VIVA all'account, qualunque ne sia lo stato, più ogni invito in attesa non scaduto. L'owner rientra per costruzione (è un'appartenenza con ruolo owner) e non va sommato a parte: sommarlo sarebbe un doppio conteggio. Le persone sospese rientrano perché la sospensione è un provvedimento reversibile e non una riduzione (use case §4). Lo stato «indicata per la cessazione» non esiste ancora nel modello — lo introduce UC 0104 — e questa formulazione lo comprenderà DA SÉ quando arriverà, senza toccare il conteggio: è la ragione per cui la regola è scritta sull'esistenza dell'appartenenza e non sull'elenco dei suoi stati. Alternativa scartata: enumerare gli stati che occupano posto, che avrebbe richiesto una modifica del conteggio a ogni stato nuovo — e una modifica dimenticata è un posto non pagato."
+  },
+  {
+    "id": 7,
+    "decision": "(autopilot) Lo stato dell'IDENTITÀ della persona (sospensione di piattaforma, per esempio la limitazione del trattamento dell'art. 18) non libera il posto: il posto è dell'account e la sospensione dell'identità è una leva del titolare della piattaforma, non una riduzione decisa dall'account. Lo use case non nomina il caso; la scelta è coerente con il trattamento della sospensione dell'appartenenza (occupa posto). Chi vuole liberare il posto indica la persona per la cessazione (UC 0104)."
+  }
+]
