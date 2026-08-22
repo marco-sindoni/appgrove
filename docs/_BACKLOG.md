@@ -1268,3 +1268,62 @@ di far arrivare email a un indirizzo che non ha acconsentito a nulla.
 
 Proprietario: UC 0100 (la sezione «Members»), che però è chiusa — per questo la voce sta qui, dove il lavoro
 aperto è visibile.
+
+
+## La semina locale riporta a «in attesa» gli inviti del seme già accettati, e quella persona occupa due posti (trovato dalla passata di fine lotto del lotto `0095`–`0099`, 2026-08-22)
+
+Trovato **eseguendo** il §7.1 della guida di collaudo della change `0097`, che verifica che le due liste dei posti
+occupati — appartenenze vive e inviti in attesa — non si sovrappongano. In locale si sovrapponevano: l'indirizzo
+`invitee-member@acme.test` compariva sia come appartenenza `active` sia come invito `pending`, e nel conteggio dei posti
+occupava **due** posti.
+
+La causa non è il conteggio, ed **è confinata all'ambiente locale**: `dev/seed/seed.sql` riscrive i due inviti del seme
+con `ON CONFLICT (id) DO UPDATE SET … status = EXCLUDED.status`, quindi ogni semina li **riporta a `pending`** anche se
+nel frattempo erano stati accettati. L'appartenenza nata dall'accettazione invece resta. Basta una semina dopo
+un'accettazione perché la sovrapposizione compaia, e da allora resta.
+
+Che il **prodotto** non possa produrre questo stato è stato verificato nella stessa passata: invitare un indirizzo che è
+già membro risponde `409 urn:appgrove:invitation:already-member`, e l'accettazione chiude sempre l'invito prima di
+creare l'appartenenza (`markInvitationAccepted` in `services/auth/.../PlatformWriter.java` per il percorso di
+registrazione, `MeInvitationsResource#accept` in `core` per chi ha già un'identità). Non c'è quindi un difetto di
+conteggio da correggere in produzione.
+
+Perché vale la pena sistemarlo comunque: da UC 0102/0103 i posti sono **denaro**, e ogni guida o dimostrazione che
+legge i numeri dei posti in locale li legge **più alti del vero** — di uno per ciascun invito del seme già accettato.
+È il genere di scostamento che si attribuisce al prodotto invece che al seme.
+
+Vie possibili: (a) nella semina, **non toccare lo `status`** di un invito che esiste già (rimuoverlo dalla lista
+`DO UPDATE SET`), così un invito accettato resta accettato; (b) far dipendere il conflitto dal vincolo *vero* invece
+che dalla chiave primaria, come già si fa per appartenenze e permessi per applicazione nello stesso file; (c) non
+riseminare affatto gli inviti se ne esiste già uno con quell'indirizzo. La (a) è la più piccola e la più fedele
+all'intento («il seme prepara uno stato iniziale, non lo ripristina a forza»).
+
+Proprietario: nessuno use case singolo — è la semina locale (area #11 developer experience) al servizio del conteggio
+dei posti (UC 0102/0103). Per questo la voce sta qui.
+
+## Non si può riavviare un singolo servizio con una proprietà di esecuzione diversa (trovato dalla passata di fine lotto del lotto `0095`–`0099`, 2026-08-22)
+
+Trovato **provando a eseguire** il §7 della guida di collaudo della change `0098`, il passo che verifica il rifiuto
+dell'addebito del posto: per attivarlo serve far ripartire il solo servizio `core` con la proprietà di esecuzione
+`appgrove.seats.stub-decline-reason` valorizzata. L'unico modo che lo stack locale offre è `./app-stop.sh --apps-only`
+seguito da `./app-start.sh`, e `--apps-only` **spegne anche le tre interfacce** (backoffice 5173, console 5174, sito
+vetrina 4321) — verificato leggendo lo script. Non esiste un sottocomando per «riavvia solo questo servizio, con questa
+proprietà»: `./dev.sh service <app_id> restart` non esiste (la stessa assenza aveva già prodotto una correzione alla
+guida della change `0097`, §8).
+
+Conseguenza concreta, e la ragione per cui la voce sta qui: quel passo **non è riesercitabile** da una passata di fine
+lotto, che deve lasciare lo stack acceso per chi la segue. Ogni collaudo manuale che dipende da una proprietà di
+esecuzione diventa così l'unico passo che nessuno riesegue — esattamente la categoria di passi che invecchiano senza
+che nulla diventi rosso. Nella passata è stato surrogato con una verifica statica (la proprietà esiste ancora, è letta
+da `StubPaymentProvider`, la costante `urn:appgrove:seats:charge-declined` è ancora prodotta da `InvitationResource`)
+più i collaudi automatici che lo coprono (`SeatChargeDeclinedApiTest`, Playwright `[J-SEATS]`): sufficiente a non
+mentire, non equivalente a un'esecuzione.
+
+Vie possibili: (a) un sottocomando `./dev.sh service <app_id> restart [PROP=valore …]` che fermi e riavvii **il solo**
+servizio indicato, derivandone porta e schema dalla scoperta automatica già esistente (`dev/lib/services.sh`), lasciando
+in piedi tutto il resto; (b) un `--services-only` per `app-stop.sh`, che escluda le interfacce da ciò che spegne — più
+piccolo, ma non risolve il passaggio della proprietà; (c) leggere la proprietà a caldo invece che all'avvio, dove ha
+senso (le proprietà dei doppi di collaudo sono candidate naturali), così che il collaudo non richieda alcun riavvio.
+
+Proprietario: nessuno use case singolo — è l'esperienza di sviluppo locale (area #11) al servizio della **eseguibilità
+delle guide di collaudo** (UC 0093/0094). Per questo la voce sta qui.

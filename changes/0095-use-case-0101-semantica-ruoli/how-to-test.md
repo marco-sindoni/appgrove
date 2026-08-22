@@ -10,6 +10,15 @@
 > (messaggi attesi imprecisi ai passi 1.3, 1.5 e 5.3; un `grep` che tagliava la frase al passo 5.2) e ha
 > scoperto **un difetto di prodotto**, corretto in questa change (§0 bis).
 > Restano allo sviluppatore i passi **visivi** di §4.
+>
+> **Passata di fine lotto (change 0095–0099), 2026-08-22.** Tutti i passi non visivi sono stati
+> **rieseguiti** contro lo stato finale di `main` (dopo le change 0096, 0097, 0098 e 0099): §1 comprese le
+> tre manomissioni, §2, §3, §5, §6.1, §6.2, §7 — **tutti verdi, nessun punto superato e nessun difetto di
+> prodotto**. Le storie dei posti (0098, 0099) non hanno intaccato nulla di questa guida: in particolare il
+> §2.1 continua a elencare **soltanto** applicazioni vere (`fatture`, `notes`, `teams`), perché la voce di
+> piattaforma dei posti è esclusa da `me/app-access` per costruzione. L'unica correzione è alle **etichette
+> visive** del §4, che erano scritte in italiano mentre l'interfaccia parte in inglese (correzione di prosa:
+> non c'è nulla da rieseguire).
 
 Guida di verifica **manuale** per UC 0101. Serve a vedere con i propri occhi le quattro cose che questa
 change introduce e che nessun collaudo automatico può mostrare a una persona:
@@ -149,14 +158,21 @@ che **coglie** l'operazione di scrittura non protetta. Qui la si fa fallire di p
 
 Prerequisito: riporta `member@acme.test` a **viewer** su `fatture` (passo 2.3) e aspetta cinque secondi.
 
+> **L'interfaccia parte in inglese**, non in italiano: le persone del seme hanno `locale = 'en'`
+> (`dev/seed/seed.sql`), e la lingua della sessione è la loro. Le etichette qui sotto sono quindi quelle che
+> si leggono **davvero** a schermo (`frontend/apps/backoffice/src/modules/fatture/i18n/en.ts`). Le **frasi
+> dei due rifiuti**, invece, restano in italiano in qualunque lingua: le scrive il server e la schermata le
+> mostra tali e quali. *(Etichette corrette nella passata di fine lotto: la prima stesura le dava in
+> italiano — lo stesso errore che la guida della change 0096 aveva già corretto per sé.)*
+
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 4.1 | Apri `https://app.local.appgrove.app`, entra come **member@acme.test** / `Password1!`, e apri **Fatture** dalla barra laterale | La pagina **Fatture** si apre e l'elenco si vede: un `viewer` legge tutto ciò che l'applicazione mostra. Si vede anche il banner del consumo. |
-| 4.2 | Premi **Nuova fattura**, compila **Nome cliente** e premi **Crea fattura** | Compare un avviso rosso con la frase del server: «Per questa operazione su 'fatture' serve almeno il ruolo 'editor': il tuo ruolo è 'viewer'.» **Non** «Si è verificato un errore. Riprova.» — quella frase generica era il difetto corretto da questa change. |
-| 4.3 | Revoca l'accesso (passo 3.3), aspetta cinque secondi e ricarica la pagina **Fatture** | Al posto dell'elenco c'è un riquadro con il lucchetto e la frase «Non hai accesso all'applicazione 'fatture': chiedi al titolare dell'account o a un amministratore dell'applicazione di abilitarti.» **Non c'è alcun pulsante «Riprova»**: un rifiuto non è un guasto, e invitare a ripetere una richiesta che fallirà sempre manda una persona a sbattere contro lo stesso muro. |
+| 4.1 | Apri `https://app.local.appgrove.app`, entra come **member@acme.test** / `Password1!`, e apri **Invoices** dalla barra laterale | La pagina **Invoices** si apre e l'elenco si vede: un `viewer` legge tutto ciò che l'applicazione mostra. Si vede anche il banner del consumo («Invoices this month»). |
+| 4.2 | Premi **New invoice**, compila **Customer name** e premi **Create invoice** | Compare un avviso rosso con la frase del server: «Per questa operazione su 'fatture' serve almeno il ruolo 'editor': il tuo ruolo è 'viewer'.» **Non** «Something went wrong. Please try again.» — quella frase generica era il difetto corretto da questa change. |
+| 4.3 | Revoca l'accesso (passo 3.3), aspetta cinque secondi e ricarica la pagina **Invoices** | Al posto dell'elenco c'è un riquadro con il lucchetto e la frase «Non hai accesso all'applicazione 'fatture': chiedi al titolare dell'account o a un amministratore dell'applicazione di abilitarti.» **Non c'è alcun pulsante «Retry»/«Riprova»**: un rifiuto non è un guasto, e invitare a ripetere una richiesta che fallirà sempre manda una persona a sbattere contro lo stesso muro. |
 | 4.4 | Confronta 4.2 e 4.3 | Due schermate **diverse** con due frasi **diverse**. È l'esito che la storia chiede: chi non entra sa a chi chiedere; chi è entrato ma non può fare *quella* cosa sa quale ruolo gli serve. |
 
-> **Ciò che NON si vede ancora, e non è una dimenticanza**: il comando **Nuova fattura** è ancora
+> **Ciò che NON si vede ancora, e non è una dimenticanza**: il comando **New invoice** è ancora
 > *abilitato* per un `viewer`, che scopre il rifiuto premendolo. L'involucro condiviso che lo renderebbe
 > «presente ma disabilitato, con la spiegazione al passaggio del puntatore» esiste in questa change
 > (`DisabledForRole` del design system, con le sue traduzioni nelle cinque lingue e i suoi collaudi), ma

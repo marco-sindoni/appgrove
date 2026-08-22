@@ -20,6 +20,31 @@
 >
 > Resta allo sviluppatore il solo passo **visivo** §9.1 — ed è una verifica di *assenza*: non deve essere
 > comparso nulla di nuovo nell'interfaccia.
+>
+> **Passata di fine lotto (change 0095–0099), 2026-08-22.** Tutti i passi non visivi sono stati
+> **rieseguiti** contro lo stato finale di `main`. Il **cuore della storia è intatto**: listino unico e
+> versionato, cinque fasce, franchigia come riga di listino, conto a scaglioni identico alla tabella dello
+> use case (rifatto in SQL, riga per riga), i tre confini dove il posto successivo costa meno,
+> `200`/`200`/`401` sull'operazione di rete, e nessuna duplicazione del listino dopo il riavvio. **Nessun
+> difetto di prodotto.** Quattro punti sono stati corretti, tutti **superati dalle change 0098 e 0099**:
+>
+> 1. **§0.2 — «le migrazioni girano fino a `V21`»**: contro lo stato finale del lotto si arriva a `V23`,
+>    perché 0098 ha aggiunto `V22` e 0099 `V23`. Il numero da leggere è «**almeno** V21»;
+> 2. **§7 — il paragrafo non aveva un modo di chiedere il conteggio al prodotto**, e dichiarava che non
+>    esisteva («arriva con UC 0103»). Ora esiste: aggiunto il **§7.3**, che confronta il conto rifatto in SQL
+>    con quello di `GET /me/seats`. Eseguito: SQL `11 / 2292`, servizio `11 / 2292`;
+> 3. **§7.1 — «le due liste non si sovrappongono» non è sempre vero in locale**: la semina riporta a
+>    `pending` gli inviti del seme già accettati, e la stessa persona finisce contata due volte. **Non è un
+>    difetto del prodotto** (verificato: invitare chi è già dentro dà `409`, e l'accettazione chiude sempre
+>    l'invito) ma della semina locale, tracciato in [docs/_BACKLOG.md](../../docs/_BACKLOG.md). Dichiarato
+>    nel paragrafo, non ammorbidito;
+> 4. **§9 — il presidio di perimetro scattava a vuoto.** Diceva «la voce di catalogo dei posti arriva con
+>    UC 0103, quindi qui non c'è» e «il seme ha cinque applicazioni». Con la change 0098 la voce **esiste** e
+>    le righe sono sei: così scritto, il presidio avrebbe accusato il lavoro corretto della change
+>    successiva. **Convertito**: si verifica che la voce non compaia nelle superfici del cliente (conteggio
+>    `0` sul catalogo) e che le righe di specie `application` siano ancora **cinque**, con la sesta di specie
+>    `platform`. È un presidio migliore di prima, perché ora la prova conta davvero: la riga c'è, e resta
+>    invisibile.
 
 Questa storia **non ha schermate** (lo dice il suo §6: «Nessuna schermata»). Le superfici che mostreranno i
 posti al cliente arrivano dopo — il riquadro dei posti con UC 0103, la sezione «Billing» con UC 0106, il
@@ -45,7 +70,7 @@ Ogni voce è **azione → risultato atteso**.
 | # | Azione | Risultato atteso |
 |---|---|---|
 | 0.1 | `./app-start.sh` | Tutto verde: Postgres, proxy, Mailpit, MinIO, ElasticMQ, i servizi backend scoperti (`auth`, `core`, `crm`, `fatture`) e le due interfacce. |
-| 0.2 | `./dev.sh migrate` | Le migrazioni girano fino a `V21` senza errori (`app-start.sh` le applica già; questo passo serve solo se si parte da una banca dati vecchia). |
+| 0.2 | `./dev.sh migrate` | Le migrazioni girano senza errori (`app-start.sh` le applica già; questo passo serve solo se si parte da una banca dati vecchia). Questa change porta la banca dati a **`V21 — seat pricing`**; contro lo stato finale del lotto si arriva più avanti, perché le change 0098 e 0099 hanno aggiunto `V22 — platform seat subscription` e `V23 — seat downgrade`. Il numero da leggere è quindi «**almeno** V21», non «esattamente V21»: verificarlo con `select version, description from platform.flyway_schema_history order by installed_rank desc limit 3;`. |
 
 **I due token che servono** — comandi completi e incollabili:
 
@@ -272,6 +297,31 @@ contano **solo** quelle con `status = pending` **e** scadenza futura. Le righe `
 `persona`, e contarla due volte la farebbe pagare due volte. È il controllo che vale la pena fare con
 l'occhio, perché è l'unico modo di vedere che le due liste non si sovrappongono.
 
+> ⚠️ **Un'eccezione locale che NON è un difetto del prodotto** (trovata eseguendo questo passo nella
+> passata di fine lotto). In locale può capitare di vedere lo **stesso indirizzo** in entrambe le liste, una
+> volta come `persona` `active` e una volta come `invito` `pending`: nell'esecuzione del 2026-08-22 era
+> `invitee-member@acme.test`, e quella persona occupava **due** posti. La causa non è il conteggio: è la
+> **semina locale**, che riscrive i due inviti del seme con `ON CONFLICT (id) DO UPDATE SET … status =
+> EXCLUDED.status` (`dev/seed/seed.sql`) e quindi li **riporta a `pending`** anche se nel frattempo erano
+> stati accettati — mentre l'appartenenza nata dall'accettazione resta. Basta una semina dopo
+> un'accettazione perché la sovrapposizione compaia.
+>
+> Che il **prodotto** non possa produrre questo stato è verificabile in due mosse:
+>
+> ```bash
+> # invitare chi è già dentro è rifiutato
+> curl -sk -w "\nHTTP %{http_code}\n" -X POST https://api.local.appgrove.app/api/platform/v1/invitations \
+>   -H "authorization: Bearer $TOKEN_OWNER" -H 'content-type: application/json' \
+>   -d '{"email":"member@acme.test"}'
+> ```
+>
+> → **409** `urn:appgrove:invitation:already-member` «Questa persona è già membro di questo account.»; e
+> l'accettazione chiude sempre l'invito prima di creare l'appartenenza (`markInvitationAccepted` in
+> `services/auth/.../PlatformWriter.java`, `MeInvitationsResource#accept` in `core`). Il difetto è quindi
+> della semina locale, ed è tracciato in [docs/_BACKLOG.md](../../docs/_BACKLOG.md). Se lo incontri: il
+> numero di posti che leggi è più alto del vero di uno per ciascun invito del seme già accettato — e per
+> ripartire pulito serve `./app-stop.sh --wipe && ./app-start.sh`.
+
 **7.2 — il conteggio e il dovuto, calcolati insieme.** Questa interrogazione applica la regola e poi il
 listino vigente, quindi è **coerente con qualunque stato** si sia trovato al 7.1:
 
@@ -301,12 +351,27 @@ docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d ap
 
 **Atteso**: `posti` = il numero di righe contate al 7.1 secondo la regola, e `dovuto_euro` = il valore che
 la tabella del §4 dà per quel numero di posti. Su seme pulito: `5 posti → 5.98 €`. Dopo la suite di
-piattaforma, per esempio: `9 posti → 17.94 €` (nove posti, tre gratuiti, sei a 2,99 €).
+piattaforma, per esempio: `9 posti → 17.94 €` (nove posti, tre gratuiti, sei a 2,99 €); nell'esecuzione
+della passata di fine lotto: `11 posti → 22.92 €`.
 
-**Nota sull'assenza di un'operazione di rete per questo numero**: è voluta. Il conteggio esiste nel servizio
-(`SeatCount`) ma nessun percorso di prodotto lo espone ancora: il riquadro dei posti con il dovuto è di
-UC 0103. Nei collaudi automatici il conteggio è esercitato attraverso un endpoint che vive **solo** nel
-classpath di test.
+**7.3 — lo stesso numero, chiesto al prodotto** *(passo aggiunto dalla passata di fine lotto: quando questa
+guida è stata scritta non esisteva)*. Il testo originale diceva «nessun percorso di prodotto espone ancora
+questo conteggio: il riquadro dei posti con il dovuto è di UC 0103». **UC 0103 è arrivata** (change 0098):
+l'operazione di rete c'è, ed è il modo migliore di chiudere il paragrafo, perché confronta il conto rifatto
+a mano in SQL con quello che il servizio dice davvero.
+
+```bash
+curl -sk https://api.local.appgrove.app/api/platform/v1/me/seats \
+  -H "authorization: Bearer $TOKEN_OWNER" \
+  | python3 -c 'import sys,json;d=json.load(sys.stdin);print("posti",d["usedSeats"],"dovuto_centesimi",d["dueCents"])'
+```
+
+**Atteso**: gli **stessi due numeri** del 7.2 — `posti` uguale a `posti` e `dovuto_centesimi` uguale a
+`dovuto_centesimi`. Se divergono, il calcolo del servizio e il listino in banca dati non sono più
+d'accordo, e questo è un difetto vero. *(Misurato nella passata di fine lotto: SQL `11 / 2292`, servizio
+`11 / 2292`.)* Il riquadro è **dell'owner** — con il token di un collaboratore risponde `403`, e non è un
+errore: quanto paga l'account non è affare di chi non lo paga (si collauda nel §2 della guida della change
+0098).
 
 ## 8. Il riavvio non duplica il listino
 
@@ -343,16 +408,26 @@ a `false` con l'override `%dev` a `true`.
 
 ## 9. Che cosa NON deve essere cambiato
 
+> **Presidio riscritto dalla passata di fine lotto.** Il §9 nasceva come una verifica di **assenza**: «la
+> voce di catalogo dei posti *arriva con UC 0103*, quindi qui non deve esserci». Ora UC 0103 **è arrivata**
+> (change 0098) e quella riga esiste: un presidio scritto così scatterebbe a vuoto e accuserebbe il lavoro
+> **corretto** della change successiva. È stato quindi **convertito**, non cancellato: la cosa da presidiare
+> non era «la riga non esiste», era «i posti non si vedono dove si vedono le applicazioni» — e quella regola
+> vale ancora, per sempre, ed è ora verificabile con la riga presente in banca dati (che è l'unico stato in
+> cui la verifica prova qualcosa).
+
 | # | Azione | Risultato atteso |
 |---|---|---|
-| 9.1 | Aprire il backoffice e guardare il menu laterale | Nessuna voce nuova: questa change non ha schermate. |
-| 9.2 | `curl -sk https://api.local.appgrove.app/api/platform/v1/me/catalog -H "authorization: Bearer $TOKEN_OWNER" \| python3 -m json.tool \| head -20` | Il catalogo delle applicazioni è quello di prima: i posti **non** sono un'applicazione e non compaiono in vetrina. La voce di catalogo di piattaforma dei posti arriva con UC 0103. |
-| 9.3 | `docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "select count(*) from platform.app where deleted_at is null;"` | Lo stesso numero di applicazioni di prima della change (il seme ne ha cinque fra reali e fittizie). |
+| 9.1 | Aprire il backoffice e guardare il menu laterale | Nessuna voce nuova **per questa change**: il listino non ha schermate. (Dalla change 0098 la pagina «Members» ha il riquadro dei posti, e dalla 0099 la colonna di selezione: sono di quelle storie, e nemmeno quelle aggiungono voci al menu.) |
+| 9.2 | `curl -sk https://api.local.appgrove.app/api/platform/v1/me/catalog -H "authorization: Bearer $TOKEN_OWNER" \| grep -c 'platform-seats'` | **`0`**. I posti **non** sono un'applicazione e non compaiono in vetrina — *e ora la prova conta davvero*, perché la voce `platform-seats` **esiste** in banca dati dalla change 0098: se non fosse esclusa, comparirebbe. Le altre superfici del cliente sono controllate allo stesso modo nel §6 della guida della change 0098. |
+| 9.3 | `docker compose -f dev/docker-compose.yml exec -T postgres psql -U appgrove -d appgrove -c "select kind, count(*) from platform.app where deleted_at is null group by kind order by kind;"` | **`application` = 5** (il numero di prima di questa change: il seme ne ha cinque fra reali e fittizie) e **`platform` = 1** (la voce dei posti, nata con la change 0098). Il conteggio va letto **per specie**: il totale grezzo era `5` quando questa guida è stata scritta ed è `6` contro lo stato finale del lotto, e leggere il totale farebbe sembrare un difetto un'aggiunta legittima. Quel che questa change non deve aver toccato è il numero delle **applicazioni**. |
 
 ---
 
 ## Riepilogo di che cos'è «passato»
 
-- §1, §2, §3, §4, §5, §6, §7, §8, §9.2, §9.3 → **non visivi**, **eseguiti** il 2026-08-22 (vedi
-  l'intestazione per le due correzioni che l'esecuzione ha prodotto).
-- §9.1 → **visivo**, resta allo sviluppatore (ed è una verifica di *assenza*: non deve essere comparso nulla).
+- §0.2, §1, §2, §3, §4, §5, §6, §7 (7.1, 7.2, **7.3**), §8, §9.2, §9.3 → **non visivi**, **eseguiti** il
+  2026-08-22 e **rieseguiti** lo stesso giorno nella passata di fine lotto, contro lo stato finale di `main`
+  (vedi l'intestazione per le due correzioni della prima esecuzione e le quattro della passata).
+- §9.1 → **visivo**, resta allo sviluppatore (ed è una verifica di *assenza*: questa change non deve aver
+  aggiunto nulla all'interfaccia — le aggiunte alla pagina «Members» sono delle change 0098 e 0099).
